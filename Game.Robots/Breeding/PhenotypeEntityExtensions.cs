@@ -1,4 +1,4 @@
-﻿namespace Game.Robots.Breeding
+namespace Game.Robots.Breeding
 {
     using System.Linq;
 

@@ -1,4 +1,4 @@
-﻿namespace Game.Engine.Core.Steering
+namespace Game.Engine.Core.Steering
 {
     using System;
     using System.Numerics;

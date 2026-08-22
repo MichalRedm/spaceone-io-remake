@@ -1,4 +1,4 @@
-﻿namespace Game.Util.Commands
+namespace Game.Util.Commands
 {
     using McMaster.Extensions.CommandLineUtils;
     using System;

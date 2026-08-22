@@ -1,4 +1,4 @@
-﻿import "babel-polyfill";
+import "babel-polyfill";
 import PIXI = require("pixi.js");
 window.PIXI = PIXI;
 

@@ -1,4 +1,4 @@
-﻿namespace Game.API.Client
+namespace Game.API.Client
 {
     public class APIEndpoint
     {

@@ -1,4 +1,4 @@
-﻿namespace Game.Engine.Core.Pickups
+namespace Game.Engine.Core.Pickups
 {
     using Game.API.Common;
     using System;

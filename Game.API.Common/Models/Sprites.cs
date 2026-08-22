@@ -1,4 +1,4 @@
-﻿namespace Game.API.Common
+namespace Game.API.Common
 {
     public enum Sprites : ushort
     {

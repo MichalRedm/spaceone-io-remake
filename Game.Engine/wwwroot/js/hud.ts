@@ -1,4 +1,4 @@
-﻿import { Settings } from "./settings";
+import { Settings } from "./settings";
 
 const hudh = document.getElementById("hud");
 export class HUD {

@@ -1,4 +1,4 @@
-﻿namespace Game.Registry
+namespace Game.Registry
 {
     using Microsoft.Extensions.Configuration;
     using System;

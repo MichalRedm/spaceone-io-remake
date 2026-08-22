@@ -1,4 +1,4 @@
-﻿namespace Game.API.Client
+namespace Game.API.Client
 {
     using Game.API.Common.Models;
     using Game.API.Common.Models.Auditing;

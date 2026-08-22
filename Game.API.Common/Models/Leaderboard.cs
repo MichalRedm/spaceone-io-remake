@@ -1,4 +1,4 @@
-﻿namespace Game.API.Common
+namespace Game.API.Common
 {
     using System.Collections.Generic;
     using System.Numerics;

@@ -1,4 +1,4 @@
-﻿# AGENTS.md - Master Instructions & Context for AI Assistants
+# AGENTS.md - Master Instructions & Context for AI Assistants
 
 Welcome to the **Spaceone.io Remake** repository! This file serves as the primary entry point, high-level context map, and deterministic rule routing matrix for AI coding assistants.
 

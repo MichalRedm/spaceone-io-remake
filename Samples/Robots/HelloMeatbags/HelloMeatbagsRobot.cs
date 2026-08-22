@@ -1,4 +1,4 @@
-﻿namespace HelloMeatbags
+namespace HelloMeatbags
 {
     using System;
     using System.Numerics;

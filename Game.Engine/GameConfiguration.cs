@@ -1,4 +1,4 @@
-﻿namespace Game.Engine
+namespace Game.Engine
 {
     public class GameConfiguration
     {

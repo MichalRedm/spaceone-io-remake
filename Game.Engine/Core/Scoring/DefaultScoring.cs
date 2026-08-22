@@ -1,4 +1,4 @@
-﻿namespace Game.Engine.Core.Scoring
+namespace Game.Engine.Core.Scoring
 {
     using System;
 

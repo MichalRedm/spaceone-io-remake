@@ -1,4 +1,4 @@
-﻿namespace Game.Robots.Breeding
+namespace Game.Robots.Breeding
 {
     public interface IPhenotype
     {

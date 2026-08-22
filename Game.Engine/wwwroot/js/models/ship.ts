@@ -1,4 +1,4 @@
-﻿import { RenderedObject } from "./renderedObject";
+import { RenderedObject } from "./renderedObject";
 import { Fleet } from "./fleet";
 import { CustomContainer } from "../CustomContainer";
 

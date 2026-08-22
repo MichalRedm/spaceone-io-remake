@@ -1,4 +1,4 @@
-﻿namespace Game.Engine
+namespace Game.Engine
 {
     using Game.Engine.ChatBot;
     using Game.Engine.Crypto.LetsEncrypt;

@@ -1,4 +1,4 @@
-﻿namespace Game.Engine.Core.SystemActors.CTF
+namespace Game.Engine.Core.SystemActors.CTF
 {
     using Game.API.Common;
     using System;

@@ -1,4 +1,4 @@
-﻿namespace Game.Util.Commands
+namespace Game.Util.Commands
 {
     using Game.API.Client;
     using Game.API.Common.Models;

@@ -1,4 +1,4 @@
-﻿namespace Game.Robots.Targeting
+namespace Game.Robots.Targeting
 {
     using Game.Robots.Models;
     using System;

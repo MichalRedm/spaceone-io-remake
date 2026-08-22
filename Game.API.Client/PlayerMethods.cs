@@ -1,4 +1,4 @@
-﻿namespace Game.API.Client
+namespace Game.API.Client
 {
     using System.Threading;
     using System.Threading.Tasks;

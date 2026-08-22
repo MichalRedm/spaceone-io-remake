@@ -1,4 +1,4 @@
-﻿import { RenderedObject } from "./renderedObject";
+import { RenderedObject } from "./renderedObject";
 import { CustomContainer } from "../CustomContainer";
 
 export class Bullet extends RenderedObject {

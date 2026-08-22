@@ -1,4 +1,4 @@
-﻿# Git & Pull Request Standards
+# Git & Pull Request Standards
 
 > [!IMPORTANT]
 > **Trigger Paths**: Any workspace Git source control action (branching, committing, pushing, PR/issue creation).

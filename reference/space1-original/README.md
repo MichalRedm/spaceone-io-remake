@@ -1,4 +1,4 @@
-﻿# Original Spaceone.io Reference Archive
+# Original Spaceone.io Reference Archive
 
 This directory contains the original assets, client code, network decoders, and recorded gameplay sessions from [Spaceone.io](https://web.archive.org/web/20180424075135/http://spaceone.io/) (preserved via the `daud-io/space1-ansible` repository).
 

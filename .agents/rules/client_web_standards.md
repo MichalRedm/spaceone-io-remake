@@ -1,4 +1,4 @@
-﻿# Web Client & Rendering Standards
+# Web Client & Rendering Standards
 
 > [!IMPORTANT]
 > **Trigger Paths**: `Game.Engine/wwwroot/**`

@@ -1,4 +1,4 @@
-﻿namespace Game.Engine.Core
+namespace Game.Engine.Core
 {
     using Game.API.Common.Models;
     using System;

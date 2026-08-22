@@ -1,4 +1,4 @@
-﻿namespace Game.Engine.Hosting
+namespace Game.Engine.Hosting
 {
     using Docker.DotNet;
     using Docker.DotNet.Models;

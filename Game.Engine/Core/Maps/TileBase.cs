@@ -1,4 +1,4 @@
-﻿namespace Game.Engine.Core.Maps
+namespace Game.Engine.Core.Maps
 {
     public class TileBase : ActorBody
     {

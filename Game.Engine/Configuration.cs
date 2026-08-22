@@ -1,4 +1,4 @@
-﻿namespace Game.Engine
+namespace Game.Engine
 {
     using Microsoft.Extensions.Configuration;
     using System;

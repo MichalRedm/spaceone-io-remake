@@ -1,4 +1,4 @@
-﻿namespace Game.Robots.Behaviors
+namespace Game.Robots.Behaviors
 {
     using Game.API.Client;
     using System.Collections.Generic;

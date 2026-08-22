@@ -1,4 +1,4 @@
-﻿namespace Game.Registry.API.Authentication
+namespace Game.Registry.API.Authentication
 {
     using Microsoft.AspNetCore.Authentication.JwtBearer;
     using Microsoft.Extensions.DependencyInjection;

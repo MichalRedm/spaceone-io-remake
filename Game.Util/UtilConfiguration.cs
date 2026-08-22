@@ -1,4 +1,4 @@
-﻿namespace Game.Util
+namespace Game.Util
 {
     using System.Collections.Generic;
 

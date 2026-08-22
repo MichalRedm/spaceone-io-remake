@@ -1,4 +1,4 @@
-﻿namespace Game.Util.Commands
+namespace Game.Util.Commands
 {
     using Game.API.Common.Models;
     using McMaster.Extensions.CommandLineUtils;

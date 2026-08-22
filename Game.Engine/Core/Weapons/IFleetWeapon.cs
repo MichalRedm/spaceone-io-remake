@@ -1,4 +1,4 @@
-﻿namespace Game.Engine.Core.Weapons
+namespace Game.Engine.Core.Weapons
 {
     public interface IFleetWeapon
     {

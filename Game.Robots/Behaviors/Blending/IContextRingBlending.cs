@@ -1,4 +1,4 @@
-﻿namespace Game.Robots.Behaviors.Blending
+namespace Game.Robots.Behaviors.Blending
 {
     using System.Collections.Generic;
 

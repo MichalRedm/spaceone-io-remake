@@ -1,4 +1,4 @@
-﻿namespace Game.Registry
+namespace Game.Registry
 {
     using Game.API.Common.Models;
     using Game.API.Common.Security;

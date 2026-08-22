@@ -1,4 +1,4 @@
-﻿# CI Standards & Local Verification Rules
+# CI Standards & Local Verification Rules
 
 > [!IMPORTANT]
 > **Trigger Paths**: `.github/workflows/**`, `Game.Engine.sln`, `package.json`, `Game.Engine/wwwroot/package.json`

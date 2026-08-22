@@ -1,4 +1,4 @@
-﻿namespace Game.Robots.Contests
+namespace Game.Robots.Contests
 {
     using System.Collections.Generic;
 

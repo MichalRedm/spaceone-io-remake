@@ -1,4 +1,4 @@
-﻿using Game.API.Common.Models.Auditing;
+using Game.API.Common.Models.Auditing;
 using Game.Engine.Auditing;
 
 namespace Game.Engine.Core.Scoring

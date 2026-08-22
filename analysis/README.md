@@ -1,4 +1,4 @@
-﻿# Physics Analysis, Kinematics & ML Tuning
+# Physics Analysis, Kinematics & ML Tuning
 
 This directory contains research scripts, experiment harnesses, and automated parameter optimization routines to match the Spaceone remake simulation against original gameplay recordings (`reference/space1-original/recordings/`).
 

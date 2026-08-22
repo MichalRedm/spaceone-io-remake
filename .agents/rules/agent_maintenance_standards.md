@@ -1,4 +1,4 @@
-﻿# Agent Context Self-Maintenance Standards
+# Agent Context Self-Maintenance Standards
 
 > [!IMPORTANT]
 > **Trigger Paths**: `.agents/**`

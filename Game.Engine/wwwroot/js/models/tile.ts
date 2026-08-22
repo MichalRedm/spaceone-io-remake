@@ -1,4 +1,4 @@
-﻿import { RenderedObject } from "./renderedObject";
+import { RenderedObject } from "./renderedObject";
 
 export class Tile extends RenderedObject {
     constructor(container, cache) {
