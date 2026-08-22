@@ -1,15 +1,16 @@
-import { parseScssIntoRules, parseCssIntoRules, queryProperties } from "../parser/parseTheme.js";
-import { readFileSync } from "fs";
-import { Settings } from "../settings";
+import { parseScssIntoRules } from "../parser/parseTheme.js";
+import textureMapLow from "./textureMap_low.scss?raw";
+import textureMapMedium from "./textureMap_medium.scss?raw";
+import textureMapHigh from "./textureMap_high.scss?raw";
 
 export function getDefaultTextureMapRules(graphics) {
-    switch (graphics) {
-        case "low":
-            return parseScssIntoRules(readFileSync(__dirname + `/textureMap_low.scss`, "utf-8"));
-        case "medium":
-            return parseScssIntoRules(readFileSync(__dirname + `/textureMap_medium.scss`, "utf-8"));
-        default: // high
-            return parseScssIntoRules(readFileSync(__dirname + `/textureMap_high.scss`, "utf-8"));
-    }
+  switch (graphics) {
+    case "low":
+      return parseScssIntoRules(textureMapLow);
+    case "medium":
+      return parseScssIntoRules(textureMapMedium);
+    default: // high
+      return parseScssIntoRules(textureMapHigh);
+  }
 }
-export var textureMapRules = [parseScssIntoRules(readFileSync(__dirname + `/textureMap_high.scss`, "utf-8"))];
+export var textureMapRules = [parseScssIntoRules(textureMapHigh)];

@@ -1,71 +1,58 @@
-
 var popupShowing = false;
 
-function bootstrapPopups()
-{
-    $('.change-log-button').on( 'click', function()
-    {
-        pressPopup('changelog');
-    });
+function bootstrapPopups() {
+  $(".change-log-button").on("click", function () {
+    pressPopup("changelog");
+  });
 
-    $('#instructions').on( 'click', function()
-    {
-        pressPopup('instructions');
-    });
+  $("#instructions").on("click", function () {
+    pressPopup("instructions");
+  });
 
-    $('#changelogClose').on( 'click', function()
-    {
-        closePopup('changelog');
-    });
+  $("#changelogClose").on("click", function () {
+    closePopup("changelog");
+  });
 
-    $('#instructionsClose').on( 'click', function()
-    {
-        closePopup('instructions');
-    });
+  $("#instructionsClose").on("click", function () {
+    closePopup("instructions");
+  });
 
-    $('#changelogBack').on( 'click', function()
-    {
-        closePopup('changelog');
-    });
+  $("#changelogBack").on("click", function () {
+    closePopup("changelog");
+  });
 
-    $('#instructionsBack').on( 'click', function()
-    {
-        closePopup('instructions');
-    });
+  $("#instructionsBack").on("click", function () {
+    closePopup("instructions");
+  });
 }
 
-function pressPopup(popupPressed)
-{
-    window.popupShowing = true;
+function pressPopup(popupPressed) {
+  window.popupShowing = true;
 
-    var popupToFadeIn = sortPopup(popupPressed);
+  var popupToFadeIn = sortPopup(popupPressed);
 
-    $(popupToFadeIn).fadeIn(500);
+  $(popupToFadeIn).fadeIn(500);
 }
 
-function closePopup(popupPressed)
-{
-    window.popupShowing = false;
+function closePopup(popupPressed) {
+  window.popupShowing = false;
 
-    var popupToFadeOut = sortPopup(popupPressed);
+  var popupToFadeOut = sortPopup(popupPressed);
 
-    $(popupToFadeOut).fadeOut(500);
+  $(popupToFadeOut).fadeOut(500);
 }
 
-function sortPopup(popupPressed)
-{
-    return popupPressed = function()
-    {
-        switch(popupPressed)
-        {
-            case 'changelog':
-                return $('#popupChangelog');
-                break;
-            case 'instructions':
-                return $('#popupInstructions');
-                break;
-            default:
-                break;
-        }
-    }();
+function sortPopup(popupPressed) {
+  return (popupPressed = (function () {
+    switch (popupPressed) {
+      case "changelog":
+        return $("#popupChangelog");
+        break;
+      case "instructions":
+        return $("#popupInstructions");
+        break;
+      default:
+        break;
+    }
+  })());
 }

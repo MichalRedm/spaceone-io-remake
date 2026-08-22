@@ -35,7 +35,7 @@ fish_orange,
 fish_pink,
 fish_red,
 fish_yellow {
-    size: 2;
+  size: 2;
 }
 fish_cyan {
   file: "food_cyan";
@@ -65,14 +65,14 @@ food_orange_glow,
 food_pink_glow,
 food_red_glow,
 food_yellow_glow {
-    size: 4;
-    animated: true;
-    loop: true;
-    animation-speed: 0.4;
-    tile: {
-      size: 64;
-      count: 40;
-    }
+  size: 4;
+  animated: true;
+  loop: true;
+  animation-speed: 0.4;
+  tile: {
+    size: 64;
+    count: 40;
+  }
 }
 food_blue_glow {
   file: "food_blue_glow_ani";
@@ -317,7 +317,7 @@ laser_yellow_trail {
   offset: {
     x: -30;
     y: 0;
-  };
+  }
 }
 laser_blue_trail {
   file: "laser_blue_trail";
@@ -465,7 +465,7 @@ arrow {
 // Capture the Flag
 ctf_base {
   file: "ctf_base";
-  size:3.072;
+  size: 3.072;
 }
 ctf_flag_red,
 ctf_flag_blue {
@@ -597,5 +597,5 @@ map {
     width: 1024;
     height: 1024;
   }
-  size:67.072;
+  size: 67.072;
 }
