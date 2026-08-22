@@ -57,6 +57,8 @@ layers:
         - "Game.API.Common/**"
         - "reference/space1-original/**"
   skills:
+    - path: "./skills/git-pr-workflow/SKILL.md"
+      description: "End-to-end Git branching, atomic Conventional Commits, pre-push CI, and GitHub CLI PR workflow."
     - path: "./skills/agent-maintenance/SKILL.md"
       description: "Autonomous .agents/ context maintenance workflow."
 metadata:

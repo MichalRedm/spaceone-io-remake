@@ -21,7 +21,7 @@ Before writing or modifying any code, identify your target area and **read the c
 | **Robots & AI Behaviors** | `Game.Robots/**` | [`.agents/rules/robot_ai_standards.md`](.agents/rules/robot_ai_standards.md) | • Context-steering vector arithmetic<br>• Flocking & fleet avoidance heuristics<br>• Genetic algorithm controller constraints |
 | **Physics Analysis & ML Tuning** | `analysis/**` | [`.agents/rules/physics_tuning_standards.md`](.agents/rules/physics_tuning_standards.md) | • Ground-truth telemetry loss metrics<br>• Kinematic feature extraction & curve fitting<br>• Isolated dataset generation scripts |
 | **CI & Local Verification** | Monorepo root / CI scripts | [`.agents/rules/ci_standards.md`](.agents/rules/ci_standards.md) | • Multi-toolchain build checks (`dotnet`, `npm`)<br>• Clean output verification before pushing |
-| **Git & Commit Protocol** | Source control operations | [`.agents/rules/git_and_pr_standards.md`](.agents/rules/git_and_pr_standards.md) | • Strict Conventional Commits schema<br>• Pre-push validation & secret scanning |
+| **Git, Commits, CI, PRs & Issues** | Source control operations | [`.agents/skills/git-pr-workflow/SKILL.md`](.agents/skills/git-pr-workflow/SKILL.md)<br>[`.agents/rules/git_and_pr_standards.md`](.agents/rules/git_and_pr_standards.md) | • Atomic Conventional Commits (`feat(scope): ...`)<br>• Mandatory `.tmp_pr_body.md` for PR creation<br>• Hybrid issue protocol & pre-push local CI |
 
 ---
 
@@ -39,11 +39,11 @@ Every task must progress sequentially through these 5 lifecycle gates:
 2. **Gate 2: Implementation**:
    - Write clean, deterministic code adhering to golden patterns and avoiding anti-pattern traps in `.agents/rules/`.
 3. **Gate 3: Local CI Verification**:
-   - Execute all local verification commands (`dotnet build`, client bundle verification).
+   - Execute all local verification commands (`dotnet build Game.Engine.sln`, client format & build).
 4. **Gate 4: Context Self-Maintenance**:
    - Follow [`.agents/skills/agent-maintenance/SKILL.md`](.agents/skills/agent-maintenance/SKILL.md) whenever engine mechanics, models, or roadmap items evolve.
 5. **Gate 5: Git & PR Protocol**:
-   - Stage and commit with atomic Conventional Commits; push and verify remote status.
+   - Follow [`.agents/skills/git-pr-workflow/SKILL.md`](.agents/skills/git-pr-workflow/SKILL.md): Stage and commit with atomic Conventional Commits; push and create PR via temporary `.tmp_pr_body.md`.
 
 ---
 
@@ -65,8 +65,8 @@ Always run these commands from their respective working directories:
 
 - **Always**:
   - Consult the *Mandatory Rule Routing Matrix* before writing or modifying code.
+  - Follow [git-pr-workflow](.agents/skills/git-pr-workflow/SKILL.md) for branch naming, atomic commits, and PR creation via `.tmp_pr_body.md`.
   - Verify backend compilation (`dotnet build`) and frontend bundling before committing.
-  - Maintain atomic Conventional Commits (`feat:`, `fix:`, `refactor:`, `chore:`).
 - **Ask First (Human Escalation Gateways)**:
   - Introducing new native NuGet or npm dependencies.
   - Changing network serialization protocols or breaking backward compatibility.
@@ -74,13 +74,14 @@ Always run these commands from their respective working directories:
 - **Never (Safety & Workflow Anti-Patterns)**:
   - Never commit `.env` files, secrets, tokens, or temporary debug logs.
   - Never suppress compiler warnings or linter errors to force builds to pass.
-  - Never perform unverified direct pushes without checking build integrity.
+  - Never push directly to `main` without verified branch PR.
 
 ---
 
 ## 📁 Repository Layout & Navigation Map
 
 - `AGENTS.md`: Master entry point & rule routing matrix (this file)
+- `README.md`: Public project documentation
 - `Game.Engine/`: Authoritative C# ASP.NET Core game server, physics simulation & WebSockets
   - `wwwroot/`: Pixi.js 2D frontend web client & game UI
 - `Game.API.Common/` & `Game.API.Client/`: Shared networking contracts & API client library
@@ -89,3 +90,6 @@ Always run these commands from their respective working directories:
 - `reference/space1-original/`: Original Spaceone.io assets, wasm client, decoders & telemetry recordings
 - `analysis/`: Kinematic analysis scripts, physics experiments & ML parameter optimization
 - `.agents/`: Agent configuration schema, rules, architectural context, and maintenance skills
+  - `rules/`: Modular standards (`game_engine`, `client_web`, `robot_ai`, `physics_tuning`, `ci`, `git_and_pr`, `agent_maintenance`)
+  - `context/`: Deep domain context (`architecture_overview`, `physics_model`, `network_protocol`)
+  - `skills/`: Project-specific skills (`git-pr-workflow`, `agent-maintenance`)
