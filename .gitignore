@@ -316,3 +316,16 @@ _IGNORE/
 Game.Engine/wwwroot/img/new/base_white.xcf
 Game.Engine/wwwroot/img/base_white.png
 .parcel-cache/
+# =========================
+# AI Assistant Context Directory
+# =========================
+.agents/*
+!.agents/acs.yaml
+!.agents/project_context.md
+!.agents/rules/
+!.agents/context/
+!.agents/skills/
+
+# Ignore transient agent session logs and archives
+.agents/archive/
+.agents/memory.md

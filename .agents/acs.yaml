@@ -1,0 +1,64 @@
+﻿name: "spaceone-io-remake"
+version: "1.0"
+description: "High-performance remake of Spaceone.io multiplayer fleet game, featuring authoritative C# game server, Pixi.js client, and ML-assisted physics calibration."
+entrypoint: "../AGENTS.md"
+layers:
+  rules:
+    - path: "./rules/game_engine_standards.md"
+      description: "C# backend game loop, physics simulation, spatial index, and thread safety standards."
+      trigger_paths:
+        - "Game.Engine/**"
+        - "Game.API.Common/**"
+        - "Game.API.Client/**"
+        - "Game.Engine.Networking.FlatBuffers/**"
+    - path: "./rules/client_web_standards.md"
+      description: "Pixi.js rendering, WebGL performance, sprite atlases, and client interpolation standards."
+      trigger_paths:
+        - "Game.Engine/wwwroot/**"
+    - path: "./rules/robot_ai_standards.md"
+      description: "AI bot steering behaviors, flocking heuristics, and evolutionary chromosome controllers."
+      trigger_paths:
+        - "Game.Robots/**"
+    - path: "./rules/physics_tuning_standards.md"
+      description: "Empirical physics calibration, telemetry parsing, and ML optimization algorithms."
+      trigger_paths:
+        - "analysis/**"
+    - path: "./rules/ci_standards.md"
+      description: "Local CI validation equivalents and failure resolution protocols."
+      trigger_paths:
+        - ".github/workflows/**"
+        - "Game.Engine.sln"
+        - "package.json"
+        - "Game.Engine/wwwroot/package.json"
+    - path: "./rules/git_and_pr_standards.md"
+      description: "Strict Conventional Commits, repository hygiene, and pull request protocols."
+      trigger_paths:
+        - ".git/**"
+        - "AGENTS.md"
+    - path: "./rules/agent_maintenance_standards.md"
+      description: "Autonomous self-maintenance triggers and procedure."
+      trigger_paths:
+        - ".agents/**"
+  context:
+    - path: "./context/architecture_overview.md"
+      description: "End-to-end system architecture, monorepo breakdown, and data flow diagrams."
+      trigger_paths:
+        - "Game.Engine/**"
+        - "Game.Engine/wwwroot/**"
+    - path: "./context/physics_model.md"
+      description: "Kinematic equations, drag models, fleet cohesion forces, and bullet mechanics."
+      trigger_paths:
+        - "Game.Engine/**"
+        - "analysis/**"
+    - path: "./context/network_protocol.md"
+      description: "WebSocket binary framing, FlatBuffers message schemas, and telemetry formats."
+      trigger_paths:
+        - "Game.Engine.Networking.FlatBuffers/**"
+        - "Game.API.Common/**"
+        - "reference/space1-original/**"
+  skills:
+    - path: "./skills/agent-maintenance/SKILL.md"
+      description: "Autonomous .agents/ context maintenance workflow."
+metadata:
+  primary_agent: "Antigravity"
+  objective: "Rebuild Spaceone.io multiplayer gameplay, recreate visual assets, and tune server physics via empirical recording calibration."
