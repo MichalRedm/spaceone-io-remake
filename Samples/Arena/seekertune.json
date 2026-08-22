@@ -1,0 +1,8 @@
+{
+  "seekerNegotiation": true,
+  "seekerLead": 150,
+  "seekerRange": 2100,
+  "seekerCycle": 250,
+  "pickupSeekers": 5,
+  "pickupSeekersMultiplier": 0.0006
+}
