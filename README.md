@@ -64,7 +64,7 @@ spaceone-io-remake/
 
 ### Prerequisites
 - [.NET SDK](https://dotnet.microsoft.com/download) (supports building `Game.Engine.sln`)
-- [Node.js](https://nodejs.org/) (v18+ recommended) & npm
+- [Node.js](https://nodejs.org/) (v18, v20, v22+) & npm
 
 ### 1. Build the Web Client
 ```bash
