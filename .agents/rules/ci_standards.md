@@ -12,7 +12,7 @@ To maintain code quality and prevent CI build failures, all changes must be veri
 | :--- | :--- | :--- |
 | **Backend Solution** | `dotnet build Game.Engine.sln` | Build succeeded with 0 Errors. |
 | **Client Formatting** | `cd Game.Engine/wwwroot && npm run format` | Prettier formats code cleanly. |
-| **Client Build** | `cd Game.Engine/wwwroot && npm run build` | Parcel/Webpack bundle succeeds. |
+| **Client Build** | `cd Game.Engine/wwwroot && npm run build` | Vite bundle succeeds. |
 | **Analysis Scripts** | `python -m py_compile analysis/**/*.py` | Syntax and imports valid. |
 
 ---

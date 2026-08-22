@@ -7,31 +7,35 @@ const minimapMarginBottom = 15;
 const minimapMarginRight = 15;
 
 const colors = {
-    red: 0xff0000,
-    pink: 0xff00cb,
-    orange: 0xffa500,
-    yellow: 0xffff00,
-    cyan: 0x00ffff,
-    blue: 0x2255ff,
-    green: 0x00ff00
+  red: 0xff0000,
+  pink: 0xff00cb,
+  orange: 0xffa500,
+  yellow: 0xffff00,
+  cyan: 0x00ffff,
+  blue: 0x2255ff,
+  green: 0x00ff00,
 };
 
 export class Minimap {
-    ctx: PIXI.Graphics;
-    worldSize: number;
-    constructor(stage, size: Dimension2) {
-        this.ctx = new PIXI.Graphics();
-        this.size(size);
-        stage.addChild(this.ctx);
-    }
-    size(size: Dimension2) {
-        this.ctx.position = new Vector2(size.width - minimapSize - minimapMarginRight, size.height - minimapSize - minimapMarginBottom);
-    }
-    checkDisplay() {
-        if (Settings.displayMinimap != this.ctx.visible) this.ctx.visible = Settings.displayMinimap;
-    }
-    update(data, worldSize, fleetID) {
-        /*this.worldSize = worldSize;
+  ctx: PIXI.Graphics;
+  worldSize: number;
+  constructor(stage, size: Dimension2) {
+    this.ctx = new PIXI.Graphics();
+    this.size(size);
+    stage.addChild(this.ctx);
+  }
+  size(size: Dimension2) {
+    this.ctx.position = new Vector2(
+      size.width - minimapSize - minimapMarginRight,
+      size.height - minimapSize - minimapMarginBottom,
+    );
+  }
+  checkDisplay() {
+    if (Settings.displayMinimap != this.ctx.visible)
+      this.ctx.visible = Settings.displayMinimap;
+  }
+  update(data, worldSize, fleetID) {
+    /*this.worldSize = worldSize;
         const startIndex = data.Type === "Team" ? 2 : 0;
         const isCTF = data.Type === "CTF";
         this.ctx.clear();
@@ -49,9 +53,9 @@ export class Minimap {
                 this.drawMinimap(new Vector2(entry.Position.x, entry.Position.y), entry.Color, entryIsSelf, i, isCTF);
             }
         }*/
-    }
-    drawMinimap(position: Vector2, color, self, rank, isCTF) {
-        /*
+  }
+  drawMinimap(position: Vector2, color, self, rank, isCTF) {
+    /*
         const minimapX = ((position.x + this.worldSize) / 2 / this.worldSize) * minimapSize;
         const minimapY = ((position.y + this.worldSize) / 2 / this.worldSize) * minimapSize;
 
@@ -96,5 +100,5 @@ export class Minimap {
                 .endFill();
         }
         */
-    }
+  }
 }

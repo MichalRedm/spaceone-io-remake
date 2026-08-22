@@ -1,14 +1,16 @@
-import { parseScssIntoRules, parseCssIntoRules, queryProperties } from "../parser/parseTheme.js";
-import { readFileSync } from "fs";
+import { parseScssIntoRules } from "../parser/parseTheme.js";
+import spriteModeMapLow from "./spriteModeMap_low.scss?raw";
+import spriteModeMapMedium from "./spriteModeMap_medium.scss?raw";
+import spriteModeMapHigh from "./spriteModeMap_high.scss?raw";
 
 export function getDefaultSpriteModeMapRules(graphics) {
-    switch (graphics) {
-        case "low":
-            return parseScssIntoRules(readFileSync(__dirname + `/spriteModeMap_low.scss`, "utf-8"));
-        case "medium":
-            return parseScssIntoRules(readFileSync(__dirname + `/spriteModeMap_medium.scss`, "utf-8"));
-        default: // high
-            return parseScssIntoRules(readFileSync(__dirname + `/spriteModeMap_high.scss`, "utf-8"));
-    }
+  switch (graphics) {
+    case "low":
+      return parseScssIntoRules(spriteModeMapLow);
+    case "medium":
+      return parseScssIntoRules(spriteModeMapMedium);
+    default: // high
+      return parseScssIntoRules(spriteModeMapHigh);
+  }
 }
-export var spriteModeMapRules = [parseScssIntoRules(readFileSync(__dirname + `/spriteModeMap_high.scss`, "utf-8"))];
+export var spriteModeMapRules = [parseScssIntoRules(spriteModeMapHigh)];

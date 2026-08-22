@@ -3,9 +3,9 @@ import { Settings } from "./settings";
 // const hintbox = document.getElementById("instructions-text");
 
 const texts = [
-    "MOVE MOUSE to steer fleet",
-    "CLICK or SPACE to shoot",
-    "'S' to Split & Dash"
+  "MOVE MOUSE to steer fleet",
+  "CLICK or SPACE to shoot",
+  "'S' to Split & Dash",
 ];
 
 let index = 0;
@@ -26,21 +26,21 @@ if (new Date().getTime() < eventStart.getTime()) {
     }, 1000);
 } else {*/
 window.setInterval(() => {
-    //if (Settings.showHints) hintbox.style.visibility = "visible";
-    //else hintbox.style.visibility = "hidden";
-    $("#instructions-text").fadeOut(300, function(){
-        $("#instructions-text").html(texts[index % texts.length]);
-        $("#instructions-text").fadeIn(300);
-    });
-    
-    index++;
+  //if (Settings.showHints) hintbox.style.visibility = "visible";
+  //else hintbox.style.visibility = "hidden";
+  $("#instructions-text").fadeOut(300, function () {
+    $("#instructions-text").html(texts[index % texts.length]);
+    $("#instructions-text").fadeIn(300);
+  });
+
+  index++;
 }, 6000);
 //}
 
-$("#instructions").click(function(){
-    $("#popupInstructions").fadeIn(500);
+$("#instructions").click(function () {
+  $("#popupInstructions").fadeIn(500);
 });
 
-$("#instructionsClose, #instructionsBack").click(function(){
-    $("#popupInstructions").fadeOut(500);
+$("#instructionsClose, #instructionsBack").click(function () {
+  $("#popupInstructions").fadeOut(500);
 });
