@@ -1,4 +1,4 @@
-﻿namespace Game.Engine.Core.Steering
+namespace Game.Engine.Core.Steering
 {
     using Game.API.Common.Models;
     using System;

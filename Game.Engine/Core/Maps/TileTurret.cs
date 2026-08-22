@@ -1,4 +1,4 @@
-﻿namespace Game.Engine.Core.Maps
+namespace Game.Engine.Core.Maps
 {
     using Game.Engine.Core.Weapons;
     using System;

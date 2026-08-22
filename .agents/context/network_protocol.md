@@ -1,4 +1,4 @@
-﻿# Network Protocol and FlatBuffers Schema
+# Network Protocol and FlatBuffers Schema
 
 ## 1. Transport Layer
 - **Protocol**: Binary WebSocket (`ws://` / `wss://`).

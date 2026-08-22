@@ -1,4 +1,4 @@
-﻿namespace Game.Robots.Targeting
+namespace Game.Robots.Targeting
 {
     using System.Linq;
     using System.Numerics;

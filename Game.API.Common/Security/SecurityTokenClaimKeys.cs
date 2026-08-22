@@ -1,4 +1,4 @@
-﻿namespace Game.API.Common.Security
+namespace Game.API.Common.Security
 {
     public static class SecurityTokenClaimKeys
     {

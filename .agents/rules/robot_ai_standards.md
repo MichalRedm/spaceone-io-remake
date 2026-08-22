@@ -1,4 +1,4 @@
-﻿# Robot AI & Behavior Standards
+# Robot AI & Behavior Standards
 
 > [!IMPORTANT]
 > **Trigger Paths**: `Game.Robots/**`, `Samples/Robots/**`

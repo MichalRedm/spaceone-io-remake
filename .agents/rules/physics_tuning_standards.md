@@ -1,4 +1,4 @@
-﻿# Physics Analysis & ML Tuning Standards
+# Physics Analysis & ML Tuning Standards
 
 > [!IMPORTANT]
 > **Trigger Paths**: `analysis/**`, `reference/space1-original/recordings/**`

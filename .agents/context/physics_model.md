@@ -1,4 +1,4 @@
-﻿# Physics and Kinematic Simulation Model
+# Physics and Kinematic Simulation Model
 
 ## 1. Kinematic Equations of Motion
 

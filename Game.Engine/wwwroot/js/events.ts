@@ -1,4 +1,4 @@
-﻿export class Events {
+export class Events {
     static Report(category, action, value?) {
         (<any>window).dataLayer = (<any>window).dataLayer || [];
         function gtag(...args) {

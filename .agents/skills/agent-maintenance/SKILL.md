@@ -1,4 +1,4 @@
-﻿---
+---
 name: agent-maintenance
 description: Maintain and update the .agents/ directory structure to reflect the current state of the repository after completing features, updating models, or altering dependencies.
 ---

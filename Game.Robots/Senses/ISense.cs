@@ -1,4 +1,4 @@
-﻿namespace Game.Robots.Senses
+namespace Game.Robots.Senses
 {
     public interface ISense
     {

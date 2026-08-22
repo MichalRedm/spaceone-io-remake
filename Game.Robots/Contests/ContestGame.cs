@@ -1,4 +1,4 @@
-﻿namespace Game.Robots.Contests
+namespace Game.Robots.Contests
 {
     using Game.API.Client;
     using Game.API.Common.Models;

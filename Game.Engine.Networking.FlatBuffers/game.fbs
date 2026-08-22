@@ -1,4 +1,4 @@
-﻿namespace Game.Engine.Networking.FlatBuffers;
+namespace Game.Engine.Networking.FlatBuffers;
 
 union AllMessages
 {

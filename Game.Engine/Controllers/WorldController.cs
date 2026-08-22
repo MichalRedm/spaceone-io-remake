@@ -1,4 +1,4 @@
-﻿namespace Game.Engine.Controllers
+namespace Game.Engine.Controllers
 {
     using Game.API.Client;
     using Game.API.Common.Models;

@@ -1,4 +1,4 @@
-﻿namespace Game.Engine.Auditing
+namespace Game.Engine.Auditing
 {
     public class OnDeath
     {

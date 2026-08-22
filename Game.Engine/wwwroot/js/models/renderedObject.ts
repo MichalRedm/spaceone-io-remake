@@ -1,4 +1,4 @@
-﻿import images from "../../img/*.png";
+import images from "../../img/*.png";
 import * as emitters from "../../img/emitters.json";
 import { Settings } from "../settings";
 import { textureCache } from "./textureCache";

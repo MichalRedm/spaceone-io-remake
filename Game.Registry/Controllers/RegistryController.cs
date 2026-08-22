@@ -1,4 +1,4 @@
-﻿namespace Game.Registry.Controllers
+namespace Game.Registry.Controllers
 {
     using Game.API.Client;
     using Game.API.Common.Models;

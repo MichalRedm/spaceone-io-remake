@@ -1,4 +1,4 @@
-﻿import "babel-polyfill";
+import "babel-polyfill";
 
 import { fetch } from "whatwg-fetch";
 import * as dat from "dat.gui";

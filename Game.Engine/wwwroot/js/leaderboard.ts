@@ -1,4 +1,4 @@
-﻿import { Settings } from "./settings";
+import { Settings } from "./settings";
 import { RenderedObject } from "./models/renderedObject";
 import arrow from "../img/arrow.png";
 import { Vector2 } from "./Vector2";

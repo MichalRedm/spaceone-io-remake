@@ -1,4 +1,4 @@
-﻿---
+---
 name: git-pr-workflow
 description: End-to-end Git development workflow for spaceone-io-remake. Guides branch creation with standardized names, atomic Conventional Commits, local CI verification, context updates, and Pull Request creation via gh CLI using temporary markdown body files.
 ---

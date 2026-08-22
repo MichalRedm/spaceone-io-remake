@@ -1,4 +1,4 @@
-﻿# Architecture Overview - Spaceone.io Remake
+# Architecture Overview - Spaceone.io Remake
 
 ## 1. High-Level System Architecture
 

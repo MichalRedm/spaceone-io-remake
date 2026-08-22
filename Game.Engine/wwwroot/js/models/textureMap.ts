@@ -1,4 +1,4 @@
-﻿import { parseScssIntoRules, parseCssIntoRules, queryProperties } from "../parser/parseTheme.js";
+import { parseScssIntoRules, parseCssIntoRules, queryProperties } from "../parser/parseTheme.js";
 import { readFileSync } from "fs";
 import { Settings } from "../settings";
 

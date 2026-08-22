@@ -1,4 +1,4 @@
-﻿namespace Game.Registry
+namespace Game.Registry
 {
     using Elasticsearch.Net;
     using Game.API.Common.Security;

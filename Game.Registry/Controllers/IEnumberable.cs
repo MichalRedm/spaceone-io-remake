@@ -1,4 +1,4 @@
-﻿namespace Game.Registry.Controllers
+namespace Game.Registry.Controllers
 {
     public interface IEnumberable<T>
     {

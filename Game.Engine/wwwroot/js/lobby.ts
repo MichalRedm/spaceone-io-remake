@@ -1,4 +1,4 @@
-﻿import { fetch } from "whatwg-fetch";
+import { fetch } from "whatwg-fetch";
 import { Router } from "./router";
 import { __esModule } from "pixi.js/lib/core";
 

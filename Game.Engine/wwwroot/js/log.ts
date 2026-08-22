@@ -1,4 +1,4 @@
-﻿import Cookies from "js-cookie";
+import Cookies from "js-cookie";
 import { Settings } from "./settings";
 import { escapeHtml } from "./leaderboard";
 const log = document.getElementById("log");

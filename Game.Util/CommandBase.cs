@@ -1,4 +1,4 @@
-﻿namespace Game.Util
+namespace Game.Util
 {
     using ConsoleTableExt;
     using Game.API.Client;

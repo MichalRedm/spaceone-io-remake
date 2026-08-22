@@ -1,4 +1,4 @@
-﻿import Plotly from "../plotly-subset";
+import Plotly from "../plotly-subset";
 import { Settings } from "../settings";
 import "pixi.js";
 import { CustomContainer } from "../CustomContainer";

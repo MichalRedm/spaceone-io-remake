@@ -1,4 +1,4 @@
-﻿# Game Engine & Backend C# Standards
+# Game Engine & Backend C# Standards
 
 > [!IMPORTANT]
 > **Trigger Paths**: `Game.Engine/**`, `Game.API.Common/**`, `Game.API.Client/**`, `Game.Engine.Networking.FlatBuffers/**`

@@ -1,4 +1,4 @@
-﻿namespace Game.API.Client
+namespace Game.API.Client
 {
     using Game.API.Common.Models;
     using System.Net.Http;

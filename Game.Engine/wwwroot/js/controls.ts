@@ -1,4 +1,4 @@
-﻿import Cookies from "js-cookie";
+import Cookies from "js-cookie";
 import * as nipplejs from "nipplejs";
 import { Settings } from "./settings";
 import { Ship } from "./models/ship";

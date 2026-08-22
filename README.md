@@ -1,4 +1,4 @@
-﻿# 🚀 Spaceone.io Remake
+# 🚀 Spaceone.io Remake
 
 [![C# .NET Core](https://img.shields.io/badge/.NET-Core-512BD4?logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
 [![Pixi.js](https://img.shields.io/badge/Pixi.js-WebGL-E72264?logo=pixiv&logoColor=white)](https://pixijs.com/)

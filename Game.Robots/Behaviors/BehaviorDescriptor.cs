@@ -1,4 +1,4 @@
-﻿namespace Game.Robots.Behaviors
+namespace Game.Robots.Behaviors
 {
     public class BehaviorDescriptor
     {

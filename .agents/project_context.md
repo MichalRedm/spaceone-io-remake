@@ -1,4 +1,4 @@
-﻿# Project Context - Spaceone.io Remake
+# Project Context - Spaceone.io Remake
 
 ## Master Entry Point
 See [AGENTS.md](../AGENTS.md) at the repository root for immediate orientation and the Rule Routing Matrix.

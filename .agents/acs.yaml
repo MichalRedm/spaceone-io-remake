@@ -1,4 +1,4 @@
-﻿name: "spaceone-io-remake"
+name: "spaceone-io-remake"
 version: "1.0"
 description: "High-performance remake of Spaceone.io multiplayer fleet game, featuring authoritative C# game server, Pixi.js client, and ML-assisted physics calibration."
 entrypoint: "../AGENTS.md"

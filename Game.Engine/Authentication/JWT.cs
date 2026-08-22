@@ -1,4 +1,4 @@
-﻿namespace Game.API.Authentication
+namespace Game.API.Authentication
 {
     using Game.API.Common.Models;
     using Game.API.Common.Security;

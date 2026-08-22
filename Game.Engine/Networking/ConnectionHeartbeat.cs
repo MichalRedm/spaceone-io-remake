@@ -1,4 +1,4 @@
-﻿namespace Game.Engine.Networking
+namespace Game.Engine.Networking
 {
     using System.Collections.Generic;
 

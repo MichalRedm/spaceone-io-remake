@@ -1,4 +1,4 @@
-﻿namespace Game.Robots.Models
+namespace Game.Robots.Models
 {
     using System.Numerics;
 
