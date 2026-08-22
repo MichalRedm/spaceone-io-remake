@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8"/>
+		<title>SPACEONE.io</title>
+		<base href="">
+
+		<link rel="stylesheet" type="text/css" href="css/styles.css">
+		<link rel="stylesheet" type="text/css" href="css/ansible.css">
+		<link href="https://fonts.googleapis.com/css?family=Exo+2" rel="stylesheet" type='text/css'>
+		<link href="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" type='text/css'>
+		<!-- Favicon -->		
+		<link rel="apple-touch-icon" sizes="76x76" href="img/icons/apple-touch-icon.png">
+		<link rel="icon" type="image/png" href="img/icons/favicon-32x32.png" sizes="32x32">
+		<link rel="icon" type="image/png" href="img/icons/favicon-16x16.png" sizes="16x16">
+		<link rel="manifest" href="img/icons/manifest.json">
+		<link rel="mask-icon" href="img/icons/safari-pinned-tab.svg">
+		<link rel="shortcut icon" href="img/icons/favicon.ico">
+		<meta name="msapplication-config" content="img/icons/browserconfig.xml">
+		<meta name="theme-color" content="#072562">
+		<!-- Favicon over -->
+	</head>
+	
+	<body class="static_background">
+		<div id="cookie">
+				Cookies help us provide, protect and improve your experience, for example by saving high scores. Third parties also use cookies on our site to tailor ads. By using this site, you consent to this use of cookies.
+				<button id="cookie_ok" type="button" name="button">OK</button>
+		</div>
+		<canvas id="canvas" width="800" height="800"></canvas>
+		<div id="container" class="container visibility">
+			<div id="logo"></div>
+
+			<div id="selection-container">
+				<div id="ship-selection">
+					<div id="left-arrow" class="arrow">
+						<img src="img/main_menu/Color_Selector_Arrow_left.png" alt="Left Arrow">
+					</div>
+					<div id="right-arrow" class="arrow">
+						<img src="img/main_menu/Color_Selector_Arrow_right.png" alt="Right Arrow">
+					</div>
+					<div id="ships">
+						<ul></ul>
+					</div>
+					<div id="selection"></div>
+				</div>
+			</div>
+
+			<div id="main-ui" class="visibility">
+				<div id="high-score">
+            		High Score: <span></span>
+				</div>
+				<div id="user-name">
+					<input id="nameInput" class="input_name" type="text" maxlength="15" onfocus="isAbleToUseArrows(false)" onblur="isAbleToUseArrows(true)" placeholder="Your fleet name"/>
+				</div>
+				<div id="play-button">
+					PLAY
+				</div>
+			</div>
+		</div>
+
+		<div id="instructions" class="visibility">
+			<p id="instructions-text"></p>
+		</div>
+
+		<div id="popupInstructions" class="change-log-overlay">
+            <div id="instructionsBack" class="invisible-change-log-back"></div>
+            <div id="instructionsPopup" class="change-log-popup">
+                <div class="header">
+                    <div id="instructionsClose" class="close">&#x2715;</div>
+                    <div class="title">Instructions</div>
+                </div>
+				<span id="instructionsContent">
+					<br />
+					<span>MOVE MOUSE to steer fleet</span><br /><br />
+					<span>CLICK or SPACE to shoot</span><br /><br />
+					<span>'S' to Split & Dash</span>
+				</span>
+            </div>
+		</div>
+
+		<div id="arena-link" class="blue-box-border visibility" data-state="open">
+			<img id="arena-link-close" src="img/main_menu/Arena_Link_Close.png" alt="Close Arena Link"/>
+			<span id="arena-link-span">Play with friends!<br />Share this link:</span>
+			<input id="arena-link-input" type="text" readonly="readonly"/>
+			<div id="generate-link-button">
+				COPY LINK
+			</div>
+			<img id="arena-link-success" src="img/main_menu/Arena_Link_Success.png" alt="Success Arena Link"/>
+		</div>
+
+		<div id="support-game" class="blue-box-border visibility">
+			<!-- <script src="js/googlesheetsutils.js" charset="utf-8"></script>
+			<script async defer src="https://apis.google.com/js/api.js"
+			onload="this.onload=function(){};handleClientLoad()"
+			onreadystatechange="if (this.readyState === 'complete') this.onload()">
+			</script>
+			<div id="support-game-text">
+				Want to be featured here?<br />
+				Contact: space1iogame@gmail.com
+			</div>
+			<div id="player"></div>
+			<script src="js/videoutils.js" charset="utf-8"></script> -->
+			<div id="cross-promo">
+				<a href="//bit.ly/2vJl9Dx" target="_blank">
+					<img id="promo-image" src="img/main_menu/snok-x-promo.png"/>
+				</a>
+			</div>
+		</div>
+		<div id="support-game-buttons" class="visibility">
+			<a class="social-button" id="twitter-button" href="//twitter.com/space1guy" target="_blank"><img src="img/main_menu/twitter_button.png" alt="twitter logo" /></a>
+			<a class="social-button" id="youtube-button" href="//youtube.com/results?search_query=space1.io" target="_blank"><img src="img/main_menu/youtube_button.png" alt="youtube logo" /></a>
+		</div>
+
+		<div id="settings" class="blue-box-border visibility">
+			<div id="settings-text">
+				<span>Graphics:</span><span id="graphics-high" class="setting-selected">HIGH</span>/<span id="graphics-medium">MEDIUM</span>/<span id="graphics-low">LOW</span>
+			</div>
+		</div>
+		<footer id="adsFooter" class="visibility">
+			<h5>Advertisement</h5>
+			<div id="advertisement300x250" class="div_add_300_250"></div>
+			<div id="advertisement728x90" class="div_add_728_90"></div>
+		</footer>
+
+        <div class="visibility">
+            <a class="change-log-button">
+                <h4><strike>CAPTAIN'S</strike> Hacker's LOG</h4>
+                <span>28 October 2017</span><br />
+                <span>- Hint: hold your "f" key for FUN!</span><br />
+            </a>
+        </div>
+
+        <div id="popupChangelog" class="change-log-overlay">
+            <div id="changelogBack" class="invisible-change-log-back"></div>
+            <div class="change-log-popup">
+            
+                
+                <div class="header">
+                    <div id="changelogClose" class="close">&#x2715;</div>
+                    <div class="title">Captain's Log History</div>
+                    <div id="button-iluminati-container">
+                        <a class="social-button" id="iluminati-button" href="http://bit.ly/2qvVKNK" target="_blank"><img src="img/illuminati.png" alt="reddit logo" /></a>
+                    </div>
+                </div>
+
+                    <span>
+                        <br /><br /><br />
+                        
+                        <div style="color: red">
+                            <span>28 October 2017</span><br />
+                            <span>- HELP! we've been HACKED!</span><br /><br />
+                        </div>
+
+                        <span>17 May 2017</span><br />
+                        <span>- Autofire improvement</span><br />
+                        <span>- ?</span><br /><br />
+                        
+                        <span>12 May 2017</span><br />
+                        <span>- Server improvements</span><br /><br />
+                        
+                        <span>11 May 2017</span><br />
+                        <span>- Fix autofire bug</span><br /><br />
+                        
+                        <span>5 May 2017</span><br />
+                        <span>- Improved youtube featured system</span><br /><br />
+                        
+                        <span>2 May 2017</span><br />
+                        <span>- Improved flocking algorithm</span><br /><br />
+                        
+                        <span>28 April 2017</span><br />
+                        <span>- Ship selection fixed (left)</span><br /><br />
+                        
+						<span>27 April 2017</span><br />
+						<span>- Graphic Settings</span><br />
+						<span>- Instructions Popup</span><br />
+						<span>- Food spawn animation</span><br />
+						<span>- Score announcements</span><br />
+						<span>- Official Twitter account</span><br /><br />
+
+                        <span>21 April 2017</span><br />
+                        <span>- Revamp visuals</span><br />
+                        <span>- Dash and shoot mechanic</span><br />
+                        <span>- Change log history</span><br />
+                        <span>- Bug fixing</span><br />
+                        <span>- Improvement in overall performance</span><br /><br />
+                        
+                        <span>6 April 2017</span><br />
+                        <span>- Rotating Instruction text</span><br />
+                        <span>- Fixed bullets starting velocity</span><br />
+                        <span>- Fix soft lock when getting AFK</span><br /><br />
+                        
+                        <span>31 March 2017</span><br />
+                        <span>- Fixed invisible bullets bug</span><br /><br />
+                        
+                        <span>28 March 2017</span><br />
+                        <span>- Bullets are now displayed more accurately</span><br />
+                        <span>- Unknown fleets each have a number</span><br />
+                        <span>- Improved feedback when failing to connect with Arena Link</span><br />
+                        <span>- Added message warning of server shutdown</span><br /><br />
+                        
+                        <span>17 March 2017</span><br />
+                        <span>- Fixed score bug when dying in the Danger Zone</span><br />
+                        <span>- Fixed some visual bugs</span><br /><br />
+                        
+                        <span>16 March 2017</span><br />
+                        <span>- Fixed some bugs from previous updates</span><br /><br />
+                        
+                        <span>14 March 2017</span><br />
+                        <span>- Bandwitdh optimisations</span><br />
+                        <span>- New Split and Dash Mechanic ('S' key)</span><br />
+                        <span>- Arena Links</span><br />
+                        <span>- Check the official subreddit for more info</span><br /><br />
+                        
+                        <span>17 February 2017</span><br />
+                        <span>- Added official Discord server link</span><br />
+                        <span>- Last name used is now saved</span><br /><br />
+                        
+                        <span>14 February 2017</span><br />
+                        <span>- Client upgrade mechanism</span><br />
+                        <span>- Fixed issue with adblock users not being able to play</span><br /><br />
+                        
+                        <span>13 February 2017</span><br />
+                        <span>- Client upgrade mechanism</span><br /><br />
+                        
+                        <span>9 February 2017</span><br />
+                        <span>- Fixed score bug when dying in the Danger Zone</span><br /><br />
+                        
+                        <span>7 February 2017</span><br />
+                        <span>- Improved ship selection</span><br />
+                        <span>- Added high score display</span><br />
+                        <span>- Fixed bugs</span><br /><br />
+                        
+                        <span>7 February 2017</span><br />
+                        <span>- Improved ship selection</span><br />
+                        <span>- Added high score display</span><br />
+                        <span>- Fixed bugs</span><br /><br />
+                        
+                        <span>3 February 2017</span><br />
+                        <span>- Improved mouse deadzone</span><br />
+                        <span>- Changed background</span><br />
+                        <span>- Added high score display</span><br /><br />
+                        
+                        <span>3 February 2017</span><br />
+                        <span>- Improved mouse deadzone</span><br />
+                        <span>- Changed background</span>
+                    </span>
+                </div>
+            </div>
+		</div>
+
+		<div id="button-container" class="visibility">
+			<a class="social-button" id="reddit-button" href="//bit.ly/2l0hdfR" target="_blank"><img src="img/main_menu/reddit.png" alt="reddit logo" /></a>
+			<a class="social-button" id="discord-button" href="//bit.ly/2lpxESN" target="_blank"><img src="img/main_menu/discord_logo.png" alt="discord logo" /></a>
+		</div>
+
+		<img id="gridImg" src="img/BG.jpg" style="display:none;" alt="Background"/>
+
+		<script src="//ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+		<script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+		<script src="//cdnjs.cloudflare.com/ajax/libs/pixi.js/4.4.3/pixi.min.js"></script>
+		<script>
+			var supports_wasm = window.WebAssembly && window.localStorage["no_wasm"] !== true;
+			//var supports_wasm = false; //Currently not working
+			var url = 'spaceone.io' + (supports_wasm ? '_wasm.js' : '.js');
+			var script = document.createElement("script");
+			script.src = url;
+			document.body.appendChild(script);
+		</script>
+		<!-- Miniclip SDK -->
+		<script>
+			function mcReady(sdk)
+			{
+				sdk.init({
+							ads: {
+								displayAds:
+									[
+										['advertisement300x250','/116850162/space1.io_MPU', [300, 250]],
+										['advertisement728x90','/116850162/Space1.io_728x90', [728, 90]]
+									]
+								},
+							analytics: {
+								gameId: 330,
+								apiKey: "86c3700c-0340-11e7-b7a2-0633a732f6c7",
+								checksumKey: "86c4a1e8-0340-11e7-b7a2-0633a732f6c7",
+								environment: "production",
+								gameName: "space1io_web",
+								version: "v1.0",
+								ga_tracking_id: "UA-90558224-1"
+							}
+						},
+							onReady
+						);
+			}
+
+			function onReady(sdk){
+				console.log("== MC.init complete ==");
+				console.log("version="+sdk.version);
+				sdk.ads.showAd('advertisement300x250');
+				sdk.ads.showAd('advertisement728x90');
+				sdk.ads.hub.listen("ads.adblocked", function()
+					{ 
+						var adDiv1 = $('#advertisement300x250');
+						var adDiv2 = $('#advertisement728x90');
+						if(!adDiv1.hasClass('div_add_blocked'))
+						{
+							adDiv1.addClass('div_add_blocked'); 
+						}
+						if(!adDiv2.hasClass('div_add_blocked'))
+						{
+							adDiv2.addClass('div_add_blocked'); 
+						}
+					});
+			}
+
+			(function(d, s, id, modules, namespace){
+				var js, fjs = d.getElementsByTagName(s)[0];
+				if (d.getElementById(id)) {return;}
+				js = d.createElement(s); js.id = id;
+				if (modules) js.setAttribute('data-modules', modules.join(','));
+				if (namespace) js.setAttribute('data-namespace', namespace);
+				js.src = "//static.miniclipcdn.com/js/sdk/v1.5/miniclip.js";
+				fjs.parentNode.insertBefore(js, fjs);
+			}(document, 'script', 'miniclipsdk', ['ads', 'analytics'],'MCSDK'));
+		</script>
+		<script async src="//js-sec.indexww.com/ht/p/185008-210404671557523.js"></script>
+
+		<!-- Game JS -->
+        <script src="js/main.js" charset="utf-8"></script>
+		<script src="js/graphic-settings.js" charset="utf-8"></script>
+		<script src="js/popuputils.js" charset="utf-8"></script>
+		<script src="js/cookieutils.js" charset="utf-8"></script>
+		<script src="js/arenalinkutils.js" charset="utf-8"></script>      
+        <script src="js/carousel.js" charset="utf-8"></script>
+		<!-- <script src="js/flocksio.core.js" async></script> -->
+
+        <script src="ansibleclient/networking.js" charset="utf-8"></script>
+        <script src="ansibleclient/router.js" charset="utf-8"></script>
+        <script src="ansibleclient/grid.js" charset="utf-8"></script>
+        <script src="ansibleclient/leaderspotlight.js" charset="utf-8"></script>
+        <script src="ansibleclient/panel.js" charset="utf-8"></script>
+        <script src="ansibleclient/serverinfo.js" charset="utf-8"></script>
+        <script src="ansibleclient/position.js" charset="utf-8"></script>
+        <script src="ansibleclient/ansible.js" charset="utf-8"></script>
+
+        <div class='ansible'>
+            <div id='panel'>
+                <input type="checkbox" class="pin" />
+                <ul id='ansiblelinks'>
+
+                </ul>
+            </div>
+        </div>
+	</body>
+</html>

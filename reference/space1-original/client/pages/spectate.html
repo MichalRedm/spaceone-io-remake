@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<link rel="stylesheet" type="text/css" href="css/styles.css">
+		<link href="https://fonts.googleapis.com/css?family=Exo+2" rel="stylesheet" type='text/css'>
+	</head>
+	
+	<body class="static_background">
+		<canvas id="canvas" width="800" height="800"></canvas>
+		<div style='display: none;' id='ships'><ul /></div>
+
+		<script src="//ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+		<script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+		<script src="//cdnjs.cloudflare.com/ajax/libs/pixi.js/4.4.3/pixi.min.js"></script>
+		<script>
+			var supports_wasm = window.WebAssembly && window.localStorage["no_wasm"] !== true;
+			//var supports_wasm = false; //Currently not working
+			var url = 'spaceone.io' + (supports_wasm ? '_wasm.js' : '.js');
+			var script = document.createElement("script");
+			script.src = url;
+			document.body.appendChild(script);
+		</script>
+
+		<input type=hidden id='nameInput'/>
+
+		<!-- Game JS -->
+        <script src="js/main.js" charset="utf-8"></script>
+		<script src="js/graphic-settings.js" charset="utf-8"></script>
+		<script src="js/popuputils.js" charset="utf-8"></script>
+		<script src="js/cookieutils.js" charset="utf-8"></script>
+		<script src="js/arenalinkutils.js" charset="utf-8"></script>      
+        <!--<script src="js/carousel.js" charset="utf-8"></script>-->
+		<!-- <script src="js/flocksio.core.js" async></script> -->
+
+		<script type='text/javascript'>
+			// let's not screw up the analytics
+			MCSDK = {
+				analytics: {
+					sendInitEvent: function() {}
+				}
+			};
+
+			window.IO.onPlayerDeath = function() {
+			};
+
+		</script>
+        <script src="inject.spectate.js" charset="utf-8"></script>
+		
+	</body>
+</html>

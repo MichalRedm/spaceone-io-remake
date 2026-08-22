@@ -1,0 +1,22 @@
+{
+  "name": "ansible",
+  "version": "1.0.0",
+  "description": "websocket interception for spaceone",
+  "author": "_ai_overlord",
+  "maintainers": [
+    "/u/_ai_overlord"
+  ],
+  "main": "index.js",
+  "dependencies": {
+    "eventemitter3": "2.0.x",
+    "http-proxy": "1.16.2",
+    "ws": "3.2.0",
+    "hexdump-nodejs": "0.1.0",
+    "extend": "3.0.1",
+    "fastintcompression": "0.0.2",
+    "restify": "6.0.1"
+  },
+  "engines": {
+    "node": ">=0.10.0"
+  }
+}

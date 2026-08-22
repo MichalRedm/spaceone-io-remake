@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<link rel="stylesheet" type="text/css" href="css/styles.css">
+		<link href="https://fonts.googleapis.com/css?family=Exo+2" rel="stylesheet" type='text/css'>
+		<style type='text/css'>
+			a, a:visited
+			{
+				color: #fff;
+			}
+			li { font-size: small; }
+		</style>
+	</head>
+	
+	<body style='height:100%;'>
+		<div id='leftnav' style='position: absolute; width: 200px; padding: 10px; z-index: 10;'>
+			<h1>
+				Ansible
+			</h1>
+			<!--<h2>Uplink</h2>
+			<ul>
+				<li><a href="ansible.html">Enter Arena</a></li>
+			</ul>
+			
+			<h1>Who's on?</h1>
+			<div id='spectate'>
+			</div>-->
+			<h1>Intercepts</h1>
+			<ul id='intercepts'>
+			</ul>
+		</div>
+		
+		<iframe style='margin-left: 280px; height: 100%;' id='playback' name='playback' src='blank.html'>
+		</iframe>
+     <script
+       src="https://code.jquery.com/jquery-2.2.4.min.js"
+       integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44="
+       crossorigin="anonymous"></script>
+     <script type='text/javascript'>
+	var refresh = function()
+	{
+		$.get('/api/', function(data) {
+			$('#intercepts').empty();
+			$('#spectate').empty();
+			for(var i=0; i<data.index.length; i++)
+			{
+				var index = data.index[i];
+				$('#intercepts').append('<li><a target="playback" href="playback.html#' + index.id + '" data-url="' + index.id + '">' + index.display + '</a></li>');
+			}
+			for(var region in data.spectate)
+			{
+				$('#spectate').append($('<h4>' + region + '</h4>'));
+				var connections = data.spectate[region];
+				for(var i=0; i<connections.length; i++)
+				{
+					var connection = connections[i];
+					if (connection && connection.size)
+						$('#spectate').append($(`<div><a target="playback" href="spectate.html?${connection.idConnection}#${connection.idConnection}" data-url="${connection.idConnection}">${connection.nick} #${connection.position} s:${connection.score}</div>`));
+				}
+
+			}
+			for(var i=0; i<data.spectate.length; i++)
+			{
+				var spectate = data.spectate[i];
+				$('#spectate').append('<li><a target="playback" href="spectate.html#' + spectate.id + '" data-url="' + spectate.id + '">' + spectate.id + ' - ' + spectate.name + '</a></li>');
+			}
+		});
+	};
+
+	$(function() {
+		refresh();
+		setInterval(refresh, 3000);
+
+		$(document).on('click', 'li a', function(e) {
+			var iframe = $('#playback')[0];
+			
+			iframe.src='blank.html';
+			url = 'playback.html#' + $(this).data('url');
+			setTimeout(function() {
+				iframe.src=url;
+			}, 100);
+//			iframe.contentWindow.location.reload(true)
+
+//			e.preventDefault();
+		});
+	});
+
+     </script>
+
+	</body>
+</html>
