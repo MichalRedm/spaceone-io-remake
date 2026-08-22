@@ -10,7 +10,9 @@ This rule document governs all version control, branching, committing, issue tra
 
 ## 1. Branching Strategy & GitHub Issues Protocol
 
-Never commit directly to the `main` branch. Always create a feature, fix, or refactor branch before writing code:
+Never commit directly to the `main` branch. The `main` branch is protected by a GitHub Ruleset that strictly blocks direct pushes and force pushes, requiring all changes to pass CI checks and be merged via a Pull Request. Merged feature branches are automatically deleted upon merge (`delete_branch_on_merge`).
+
+Always create a feature, fix, or refactor branch before writing code:
 
 ```bash
 git checkout main
