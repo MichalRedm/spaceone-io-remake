@@ -1,5 +1,6 @@
 # 🚀 Spaceone.io Remake
 
+[![CI Pipeline](https://github.com/MichalRedm/spaceone-io-remake/actions/workflows/ci.yml/badge.svg)](https://github.com/MichalRedm/spaceone-io-remake/actions/workflows/ci.yml)
 [![C# .NET Core](https://img.shields.io/badge/.NET-Core-512BD4?logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
 [![Pixi.js](https://img.shields.io/badge/Pixi.js-WebGL-E72264?logo=pixiv&logoColor=white)](https://pixijs.com/)
 [![WebSockets](https://img.shields.io/badge/Protocol-FlatBuffers%20%2B%20WebSockets-009688)](https://flatbuffers.dev/)
