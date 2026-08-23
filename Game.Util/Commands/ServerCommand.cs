@@ -5,10 +5,8 @@ namespace Game.Util.Commands
     using System.Linq;
     using System.Threading.Tasks;
 
-    [Subcommand("get", typeof(Get))]
-    [Subcommand("reset", typeof(Reset))]
-    [Subcommand("announce", typeof(Announce))]
-    [Subcommand("connections", typeof(Connections))]
+    [Command("server")]
+    [Subcommand(typeof(Get), typeof(Reset), typeof(Announce), typeof(Connections))]
     class ServerCommand : CommandBase
     {
         private static string[] Worlds = new[]
@@ -27,6 +25,7 @@ namespace Game.Util.Commands
                 return new[] { world };
         }
 
+        [Command("get")]
         class Get : CommandBase
         {
             protected async override Task ExecuteAsync()
@@ -44,6 +43,7 @@ namespace Game.Util.Commands
             }
         }
 
+        [Command("reset")]
         class Reset : CommandBase
         {
             protected async override Task ExecuteAsync()
@@ -52,6 +52,7 @@ namespace Game.Util.Commands
             }
         }
 
+        [Command("announce")]
         class Announce : CommandBase
         {
             [Argument(0)]
@@ -70,6 +71,7 @@ namespace Game.Util.Commands
             }
         }
 
+        [Command("connections")]
         class Connections : CommandBase
         {
             [Option]

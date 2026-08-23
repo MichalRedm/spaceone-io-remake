@@ -7,11 +7,7 @@ namespace Game.Util.Commands
     using System.Threading.Tasks;
 
     [Command]
-    [Subcommand("context", typeof(ContextCommand))]
-    [Subcommand("server", typeof(ServerCommand))]
-    [Subcommand("player", typeof(PlayerCommand))]
-    [Subcommand("world", typeof(WorldCommand))]
-    [Subcommand("registry", typeof(RegistryCommand))]
+    [Subcommand(typeof(ContextCommand), typeof(ServerCommand), typeof(PlayerCommand), typeof(WorldCommand), typeof(RegistryCommand))]
     public class RootCommand : CommandBase
     {
         [Option("--context", Description = "override the default, saved context and use the mentioned one")]

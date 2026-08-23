@@ -110,11 +110,6 @@ namespace Game.Util
                 Console.WriteLine($"==== {name} ====");
                 ConsoleTableBuilder
                    .From(dt)
-                   .WithOptions(new ConsoleTableBuilderOption
-                   {
-                       Delimiter = " ",
-                       TrimColumn = true
-                   })
                    .WithFormat(ConsoleTableBuilderFormat.Minimal)
                    .ExportAndWriteLine();
             }

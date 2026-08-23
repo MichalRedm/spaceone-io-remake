@@ -11,14 +11,11 @@ namespace Game.Util.Commands
     using System.Threading.Tasks;
     using TiledSharp;
 
-    [Subcommand("shrink", typeof(Shrink))]
-    [Subcommand("hook", typeof(Hook))]
-    [Subcommand("create", typeof(Create))]
-    [Subcommand("parse", typeof(Parse))]
-    [Subcommand("delete", typeof(Delete))]
-    [Subcommand("reset", typeof(Reset))]
+    [Command("world")]
+    [Subcommand(typeof(Shrink), typeof(Hook), typeof(Create), typeof(Parse), typeof(Delete), typeof(Reset))]
     class WorldCommand : CommandBase
     {
+        [Command("create")]
         class Create : CommandBase
         {
             [Argument(0)]
@@ -39,6 +36,7 @@ namespace Game.Util.Commands
             }
         }
 
+        [Command("delete")]
         class Delete : CommandBase
         {
             [Argument(0)]
@@ -50,6 +48,7 @@ namespace Game.Util.Commands
             }
         }
 
+        [Command("reset")]
         class Reset : CommandBase
         {
             [Argument(0)]
@@ -61,6 +60,7 @@ namespace Game.Util.Commands
             }
         }
 
+        [Command("hook")]
         class Hook : CommandBase
         {
             [Argument(0)]
@@ -88,7 +88,7 @@ namespace Game.Util.Commands
             }
         }
 
-
+        [Command("parse")]
         class Parse : CommandBase
         {
             [Argument(0)]
@@ -103,10 +103,8 @@ namespace Game.Util.Commands
             [Option]
             public bool Clear { get; set; } = false;
 
-
             protected async override Task ExecuteAsync()
             {
-
                 if (Clear)
                 {
                     await API.World.SetMap(WorldKey, new MapModel
@@ -160,12 +158,10 @@ namespace Game.Util.Commands
 
                             if (tile != null)
                             {
-
                                 if (tile.TerrainEdges.All(e => e?.Name == "Water"))
                                 {
                                     mapTileModel.Type = "turret";
                                 }
-
 
                                 if (tile.TerrainEdges.All(e => e?.Name == "Obstacle"))
                                     mapTileModel.Type = "obstacle";
@@ -186,7 +182,7 @@ namespace Game.Util.Commands
             }
         }
 
-
+        [Command("shrink")]
         class Shrink : CommandBase
         {
             [Option]

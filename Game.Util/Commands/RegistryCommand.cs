@@ -8,10 +8,11 @@ namespace Game.Util.Commands
     using System.Collections.Generic;
     using System.Threading.Tasks;
 
-    [Subcommand("list", typeof(List))]
-    [Subcommand("migrate", typeof(MigrateDatabase))]
+    [Command("registry")]
+    [Subcommand(typeof(List), typeof(MigrateDatabase))]
     class RegistryCommand : CommandBase
     {
+        [Command("list")]
         class List : CommandBase
         {
             protected async override Task ExecuteAsync()
@@ -22,6 +23,7 @@ namespace Game.Util.Commands
             }
         }
 
+        [Command("migrate")]
         class MigrateDatabase : CommandBase
         {
             private Dictionary<string, object> fields = null;
