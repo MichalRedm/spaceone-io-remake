@@ -1,6 +1,6 @@
 import { Bullet } from "./models/bullet";
 import { Ship } from "./models/ship";
-import { RenderedObject } from "./models/renderedObject";
+import { RenderedObject, spawnFoodPickup } from "./models/renderedObject";
 import { Fleet } from "./models/fleet";
 import { Tile } from "./models/tile";
 import { Container } from "pixi.js";
@@ -50,7 +50,19 @@ export class Cache {
       if (key in this.bodies) Cache.count--;
 
       const body = this.bodies[key];
-      if (body && body.renderer) body.renderer.destroy();
+      if (body) {
+        const spriteStr = String(body.Sprite || "");
+        if (spriteStr.startsWith("fish")) {
+          const color = spriteStr.split("_")[1] || "cyan";
+          spawnFoodPickup(
+            this.container,
+            color,
+            body.originalPosition_X || 0,
+            body.originalPosition_Y || 0,
+          );
+        }
+        if (body.renderer) body.renderer.destroy();
+      }
       delete this.bodies[key];
     }
 

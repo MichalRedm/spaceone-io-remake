@@ -69,7 +69,7 @@ container.tiles = new (
 container.tiles.parentGroup = tileGroup;
 container.addChild(container.tiles);
 
-container.emitterContainer = new PIXI.ParticleContainer();
+container.emitterContainer = new PIXI.Container();
 container.emitterContainer.parentGroup = bodyGroup;
 container.zOrder = 128;
 container.addChild(container.emitterContainer);

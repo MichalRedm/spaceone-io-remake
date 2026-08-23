@@ -265,8 +265,8 @@
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
-			"start": "#2025ff",
-			"end": "#2025ff"
+			"start": "#ffffff",
+			"end": "#ffffff"
 		},
 		"speed": {
 			"start": 30,
@@ -313,8 +313,8 @@
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
-			"start": "#00ffff",
-			"end": "#00ffff"
+			"start": "#ffffff",
+			"end": "#ffffff"
 		},
 		"speed": {
 			"start": 30,
@@ -361,8 +361,8 @@
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
-			"start": "#65e600",
-			"end": "#65e600"
+			"start": "#ffffff",
+			"end": "#ffffff"
 		},
 		"speed": {
 			"start": 30,
@@ -409,8 +409,8 @@
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
-			"start": "#fc7700",
-			"end": "#fc7700"
+			"start": "#ffffff",
+			"end": "#ffffff"
 		},
 		"speed": {
 			"start": 30,
@@ -457,8 +457,8 @@
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
-			"start": "#eb008c",
-			"end": "#eb008c"
+			"start": "#ffffff",
+			"end": "#ffffff"
 		},
 		"speed": {
 			"start": 30,
@@ -505,8 +505,8 @@
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
-			"start": "#ff0000",
-			"end": "#ff0000"
+			"start": "#ffffff",
+			"end": "#ffffff"
 		},
 		"speed": {
 			"start": 30,
@@ -553,8 +553,8 @@
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
-			"start": "#f7d500",
-			"end": "#f7d500"
+			"start": "#ffffff",
+			"end": "#ffffff"
 		},
 		"speed": {
 			"start": 30,

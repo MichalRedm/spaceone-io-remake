@@ -195,13 +195,8 @@ export class RenderedObject {
 
     if (!textures && textureDefinition?.file) {
       const fileKey = String(textureDefinition.file);
-      if (
-        textureCache[fileKey] ||
-        textureCache[fileKey.toLowerCase()]
-      ) {
-        textures =
-          textureCache[fileKey] ||
-          textureCache[fileKey.toLowerCase()];
+      if (textureCache[fileKey] || textureCache[fileKey.toLowerCase()]) {
+        textures = textureCache[fileKey] || textureCache[fileKey.toLowerCase()];
         textureCache[cleanName] = textures;
         return textures;
       }
@@ -768,23 +763,38 @@ export class RenderedObject {
 
       layer.rotation = angle + rotationOffset;
 
-      if (
-        layer.textureDefinition?.file &&
-        String(layer.textureDefinition.file).startsWith("dash_trail")
-      ) {
+      const fileStr = String(layer.textureDefinition?.file || "");
+      if (fileStr.startsWith("dash_trail")) {
         const flicker =
           0.92 +
           0.12 *
-            Math.sin(
-              Date.now() * 0.035 + ((this.body?.ID || 0) % 10) * 1.5,
-            );
+            Math.sin(Date.now() * 0.035 + ((this.body?.ID || 0) % 10) * 1.5);
         layer.scale.set(scale, scale * flicker);
         layer.alpha =
           0.85 +
           0.15 *
-            Math.cos(
-              Date.now() * 0.05 + ((this.body?.ID || 0) % 10) * 1.5,
-            );
+            Math.cos(Date.now() * 0.05 + ((this.body?.ID || 0) % 10) * 1.5);
+      } else if (fileStr.startsWith("ship")) {
+        const isBoost =
+          (this.currentMode & 1) !== 0 || (this.body?.Mode & 1) !== 0;
+        if (isBoost) {
+          const pulse = 0.9 + 0.1 * Math.sin(Date.now() * 0.04);
+          layer.alpha = Math.min(1.0, 0.95 + 0.05 * pulse);
+          layer.tint = 0xffffff;
+        } else {
+          layer.alpha =
+            layer.textureDefinition?.alpha !== undefined
+              ? layer.textureDefinition.alpha
+              : 1.0;
+          if (layer.textureDefinition?.tint) {
+            layer.tint =
+              typeof layer.textureDefinition.tint === "string"
+                ? parseInt(layer.textureDefinition.tint)
+                : layer.textureDefinition.tint;
+          } else {
+            layer.tint = 0xffffff;
+          }
+        }
       }
     });
 
@@ -814,4 +824,50 @@ export class RenderedObject {
         action.apply(this, [layer, i]);
       });
   }
+}
+
+export function spawnFoodPickup(
+  container: CustomContainer,
+  color: string,
+  x: number,
+  y: number,
+) {
+  const textureName = `food_pickup_${color}`;
+  const textureDefinition = RenderedObject.getTextureDefinition(textureName);
+  if (!textureDefinition || !textureDefinition.emitter) return;
+  const particleTextures = RenderedObject.loadTexture(
+    RenderedObject.getTextureDefinition(textureDefinition.particle),
+    textureDefinition.particle,
+  );
+  if (!particleTextures || !particleTextures.length) return;
+  let emitterConfig = textureDefinition.emitter;
+  if (typeof emitterConfig === "string") {
+    emitterConfig = (emitters as any)[emitterConfig];
+  }
+  if (!emitterConfig) return;
+
+  const emitter = new particles.Emitter(
+    container.emitterContainer,
+    particleTextures,
+    emitterConfig,
+  );
+  emitter.updateOwnerPos(x, y);
+  emitter.emit = true;
+
+  let lastTime = performance.now();
+  const ticker = () => {
+    const now = performance.now();
+    const dt = (now - lastTime) * 0.001;
+    lastTime = now;
+    emitter.update(dt);
+    if (!emitter.particleCount && !emitter.emit) {
+      PIXI.Ticker.shared.remove(ticker);
+      emitter.destroy();
+    }
+  };
+  PIXI.Ticker.shared.add(ticker);
+
+  setTimeout(() => {
+    emitter.emit = false;
+  }, 60);
 }
