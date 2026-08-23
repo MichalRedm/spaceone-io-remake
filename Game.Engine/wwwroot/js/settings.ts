@@ -98,7 +98,7 @@ Array.from(document.getElementById("settings-text").children).forEach(
   (elem) => {
     elem.addEventListener("click", () => {
       Settings.graphics = elem.id.split("-")[1];
-      Cookies.set("settings", Settings, { expires: 300 });
+      Cookies.set("settings", JSON.stringify(Settings), { expires: 300 });
       window.location.reload();
     });
   },
@@ -141,7 +141,7 @@ function save() {
   // Settings.nameSize = Number(nameSize.value);
   Settings.background = background.value;
 
-  Cookies.set("settings", Settings, cookieOptions);
+  Cookies.set("settings", JSON.stringify(Settings), cookieOptions);
 
   keyboardHints();
   shipBlue();
@@ -154,7 +154,15 @@ function reset() {
 }
 
 function load() {
-  const savedSettings = Cookies.getJSON("settings");
+  let savedSettings: any = null;
+  const cookie = Cookies.get("settings");
+  if (cookie) {
+    try {
+      savedSettings = JSON.parse(cookie);
+    } catch (e) {
+      console.error("Failed to parse settings cookie:", e);
+    }
+  }
 
   if (savedSettings) {
     // copying value by value because cookies can be old versions
