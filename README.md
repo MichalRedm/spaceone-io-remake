@@ -1,12 +1,13 @@
 # 🚀 Spaceone.io Remake
 
 [![CI Pipeline](https://github.com/MichalRedm/spaceone-io-remake/actions/workflows/ci.yml/badge.svg)](https://github.com/MichalRedm/spaceone-io-remake/actions/workflows/ci.yml)
-[![C# .NET Core](https://img.shields.io/badge/.NET-Core-512BD4?logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
+[![C# .NET 7.0](https://img.shields.io/badge/.NET-7.0-512BD4?logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
 [![Pixi.js](https://img.shields.io/badge/Pixi.js-WebGL-E72264?logo=pixiv&logoColor=white)](https://pixijs.com/)
+[![Vite](https://img.shields.io/badge/Bundler-Vite%205-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
 [![WebSockets](https://img.shields.io/badge/Protocol-FlatBuffers%20%2B%20WebSockets-009688)](https://flatbuffers.dev/)
 [![GitHub](https://img.shields.io/badge/GitHub-MichalRedm%2Fspaceone--io--remake-blue?logo=github)](https://github.com/MichalRedm/spaceone-io-remake)
 
-A high-performance remake of the classic multiplayer 2D fleet combat game **[Spaceone.io](https://web.archive.org/web/20180424075135/http://spaceone.io/)**, built on an authoritative C# ASP.NET Core game server engine (based on [Daud.io](https://github.com/daud-io/daud)), a hardware-accelerated Pixi.js WebGL client, and empirical ML-assisted physics calibration.
+A high-performance remake of the classic multiplayer 2D fleet combat game **[Spaceone.io](https://web.archive.org/web/20180424075135/http://spaceone.io/)**, built on an authoritative C# ASP.NET Core game server engine (based on [Daud.io](https://github.com/daud-io/daud)), a hardware-accelerated Pixi.js WebGL client (bundled with Vite), and empirical ML-assisted physics calibration.
 
 ---
 
@@ -27,7 +28,7 @@ spaceone-io-remake/
 ├── Game.Engine/                  # Authoritative C# ASP.NET Core game server
 │   ├── Core/                     # Fixed-rate tick loop, world rooms, spatial index (RBush)
 │   ├── Physics/                  # Ship kinematics, drag, collision detection, and fleet cohesion
-│   └── wwwroot/                  # Modern 2D WebGL web client (Pixi.js, SCSS, WebSockets)
+│   └── wwwroot/                  # Modern 2D WebGL web client (Pixi.js, Vite 5, SCSS, WebSockets)
 │
 ├── Game.API.Common/              # Shared data contracts, constants, and FlatBuffers schemas
 ├── Game.API.Client/              # C# API and WebSocket client library
@@ -63,8 +64,9 @@ spaceone-io-remake/
 ## 🚀 Quick Start
 
 ### Prerequisites
-- [.NET SDK](https://dotnet.microsoft.com/download) (supports building `Game.Engine.sln`)
+- [.NET 7.0 SDK or newer](https://dotnet.microsoft.com/download) (supports building `Game.Engine.sln`)
 - [Node.js](https://nodejs.org/) (v18, v20, v22+) & npm
+- *(Optional)* [Python 3.10+](https://www.python.org/) (for kinematics analysis scripts in `analysis/`)
 
 ### 1. Build the Web Client
 ```bash
@@ -72,6 +74,7 @@ cd Game.Engine/wwwroot
 npm install
 npm run build
 ```
+> **Tip**: During frontend development, you can run `npm run dev` for instant Vite hot-module replacement (HMR).
 
 ### 2. Run the Game Server
 From the repository root:
