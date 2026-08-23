@@ -1,0 +1,236 @@
+import { Settings } from "./settings";
+import { RenderedObject } from "./models/renderedObject";
+import arrow from "../img/arrow.png";
+import { Vector2 } from "./Vector2";
+
+const record = document.getElementById("record");
+const recordScore = document.getElementById("record-score");
+const recordFleet = document.getElementById("record-fleet");
+const leaderboard = document.getElementById("leaderboard");
+const leaderboardLeft = document.getElementById("leaderboard-left");
+const leaderboardCenter = document.getElementById("leaderboard-center");
+const leaderArrow = document.getElementById("leader-arrow") as HTMLImageElement | null;
+const leaderArrowFadeZoneDist = 600;
+const leaderArrowFadeZoneWidth = 200;
+const leaderArrowTranslate = 50;
+const leaderArrowDefaultOpacity = 0.7;
+
+export function clear(): void {
+  if (leaderboard) leaderboard.innerHTML = "";
+  if (leaderboardLeft) leaderboardLeft.innerHTML = "";
+  if (leaderboardCenter) {
+    leaderboardCenter.innerHTML = "";
+    leaderboardCenter.style.width = "";
+    leaderboardCenter.style.height = "";
+  }
+}
+
+export function escapeHtml(str?: string): string {
+  if (!str) return "";
+  const div = document.createElement("div");
+  div.appendChild(document.createTextNode(str));
+  return div.innerHTML;
+}
+
+function getOut(entry: any, position: Vector2, rank?: number, entryIsSelf?: boolean): string {
+  if (rank === 1 && entry.Position) {
+    drawLeaderArrow(entry.Position, position);
+  }
+
+  const rankStr = rank === undefined ? "" : `${rank}.`;
+
+  let color: string;
+  if (entry.Color === "pink") {
+    color = "fuchsia";
+  } else if (entry.Color === "green") {
+    color = "lime";
+  } else if (entry.Color === "blue") {
+    color = "#2255ff";
+  } else {
+    color = entry.Color ?? "#ffffff";
+  }
+
+  const begin = !entryIsSelf ? `<tr>` : `<tr style="color:${color}">`;
+
+  return (
+    begin +
+    `<td class="name">${rankStr} ${escapeHtml(entry.Name) || "Unknown Squadron"}</td>` +
+    `<td class="score">${entry.Score}</td>` +
+    `</tr>`
+  );
+}
+
+export class Leaderboard {
+  public update(data: any, position: Vector2, fleetID: any): void {
+    if (Settings.leaderboardEnabled) {
+      if (record) record.style.visibility = "visible";
+      if (leaderboard) leaderboard.style.visibility = "visible";
+      if (leaderboardLeft) leaderboardLeft.style.visibility = "visible";
+      if (leaderboardCenter) leaderboardCenter.style.visibility = "visible";
+    } else {
+      if (record) record.style.visibility = "hidden";
+      if (leaderboard) leaderboard.style.visibility = "hidden";
+      if (leaderboardLeft) leaderboardLeft.style.visibility = "hidden";
+      if (leaderboardCenter) leaderboardCenter.style.visibility = "hidden";
+      return;
+    }
+
+    if (data.Record && record && recordScore && recordFleet) {
+      record.style.fontFamily = Settings.font;
+      recordScore.innerHTML = `${data.Record.Score}`;
+      recordFleet.innerHTML = `${escapeHtml(data.Record.Name) || "Unknown Squadron"}`;
+    }
+
+    const ctfArena = document.getElementById("ctf_arena");
+    if (ctfArena) {
+      if (data.Type === "CTF") {
+        ctfArena.classList.remove("hide");
+      } else {
+        ctfArena.classList.add("hide");
+      }
+    }
+
+    if (data.Type === "FFA" && leaderboard) {
+      let out = "";
+      for (let i = 0; i < data.Entries.length; i++) {
+        const entryIsSelf = data.Entries[i].FleetID == fleetID;
+        if (i < 10 || entryIsSelf) {
+          out += getOut(data.Entries[i], position, i + 1, entryIsSelf);
+        }
+      }
+      leaderboard.innerHTML = `<tbody>${out}</tbody>`;
+    } else if (data.Type === "Team") {
+      let outL = "";
+      let outR = "";
+      let outC = "";
+
+      data.Entries.forEach((entry: any, i: number) => {
+        const str = getOut(entry, position, i + 1);
+        if (i === 0 || i === 1) {
+          outC += str;
+        } else if (entry.Color === "cyan") {
+          outL += str;
+        } else {
+          outR += str;
+        }
+      });
+
+      if (leaderboard) leaderboard.innerHTML = `<tbody>${outR}</tbody>`;
+      if (leaderboardLeft) leaderboardLeft.innerHTML = `<tbody>${outL}</tbody>`;
+      if (leaderboardCenter) leaderboardCenter.innerHTML = `<tbody>${outC}</tbody>`;
+    } else if (data.Type === "CTF") {
+      let outL = "";
+      let outR = "";
+      let redFlag: any = null;
+      let cyanFlag: any = null;
+
+      data.Entries.forEach((entry: any, i: number) => {
+        const str = getOut(entry, position, i + 1);
+        if (i === 0) {
+          cyanFlag = entry;
+        } else if (i === 1) {
+          redFlag = entry;
+        } else if (entry.Color === "cyan") {
+          outL += str;
+        } else {
+          outR += str;
+        }
+      });
+
+      if (cyanFlag && redFlag) {
+        blurText(
+          document.getElementById("ctf_score_left"),
+          document.getElementById("ctf_score_left_blur"),
+          `${cyanFlag.Score}`,
+        );
+        blurText(
+          document.getElementById("ctf_score_right"),
+          document.getElementById("ctf_score_right_blur"),
+          `${redFlag.Score}`,
+        );
+      }
+
+      if (leaderboard) leaderboard.innerHTML = `<tbody>${outR}</tbody>`;
+      if (leaderboardLeft) leaderboardLeft.innerHTML = `<tbody>${outL}</tbody>`;
+    }
+  }
+}
+
+function blurText(elem: HTMLElement | null, blurElem: HTMLElement | null, text: string): void {
+  if (elem && blurElem) {
+    elem.innerText = text;
+    blurElem.innerText = text;
+  }
+}
+
+function drawLeaderArrow(selfPosition: { x: number; y: number }, position: Vector2): void {
+  if (!leaderArrow) return;
+  let angle = Math.atan2(selfPosition.y - position.y, selfPosition.x - position.x);
+  const dist = Math.sqrt(
+    Math.pow(selfPosition.y - position.y, 2) + Math.pow(selfPosition.x - position.x, 2),
+  );
+  const arrowHeight = leaderArrow.height || 40;
+  const arrowWidth = leaderArrow.width || 40;
+
+  if (dist > leaderArrowFadeZoneDist + leaderArrowFadeZoneWidth) {
+    leaderArrow.style.opacity = `${leaderArrowDefaultOpacity}`;
+  } else if (
+    dist >= leaderArrowFadeZoneDist &&
+    dist <= leaderArrowFadeZoneDist + leaderArrowFadeZoneWidth
+  ) {
+    leaderArrow.style.opacity = `${
+      ((dist - leaderArrowFadeZoneDist) / leaderArrowFadeZoneWidth) * leaderArrowDefaultOpacity
+    }`;
+  } else {
+    leaderArrow.style.opacity = "0";
+  }
+  const criticalAngle = Math.atan2(window.innerHeight, window.innerWidth);
+  if (angle < 0) {
+    angle += 2 * Math.PI;
+  }
+  if (angle > 2 * Math.PI - criticalAngle || angle <= criticalAngle) {
+    // right
+    leaderArrow.style.top =
+      (window.innerHeight - arrowHeight) / 2 +
+      (window.innerWidth / 2) *
+        Math.tan(angle) *
+        (1 - (arrowHeight - 2 * leaderArrowTranslate) / window.innerHeight) +
+      "px";
+    leaderArrow.style.right = -leaderArrowTranslate + "px";
+    leaderArrow.style.bottom = "";
+    leaderArrow.style.left = "";
+  } else if (angle > criticalAngle && angle <= Math.PI - criticalAngle) {
+    // bottom
+    leaderArrow.style.top = "";
+    leaderArrow.style.right = "";
+    leaderArrow.style.bottom = -leaderArrowTranslate + "px";
+    leaderArrow.style.left =
+      (window.innerWidth - arrowWidth) / 2 +
+      ((window.innerHeight / 2) / Math.tan(angle)) *
+        (1 - (arrowWidth - 2 * leaderArrowTranslate) / window.innerWidth) +
+      "px";
+  } else if (angle > Math.PI - criticalAngle && angle <= Math.PI + criticalAngle) {
+    // left
+    leaderArrow.style.top =
+      (window.innerHeight - arrowHeight) / 2 -
+      (window.innerWidth / 2) *
+        Math.tan(angle) *
+        (1 - (arrowHeight - 2 * leaderArrowTranslate) / window.innerHeight) +
+      "px";
+    leaderArrow.style.right = "";
+    leaderArrow.style.bottom = "";
+    leaderArrow.style.left = -leaderArrowTranslate + "px";
+  } else {
+    // top
+    leaderArrow.style.top = -leaderArrowTranslate + "px";
+    leaderArrow.style.right = "";
+    leaderArrow.style.bottom = "";
+    leaderArrow.style.left =
+      (window.innerWidth - arrowWidth) / 2 -
+      ((window.innerHeight / 2) / Math.tan(angle)) *
+        (1 - (arrowWidth - 2 * leaderArrowTranslate) / window.innerWidth) +
+      "px";
+  }
+  angle += Math.PI / 2;
+  leaderArrow.style.transform = "rotate(" + angle + "rad)";
+}

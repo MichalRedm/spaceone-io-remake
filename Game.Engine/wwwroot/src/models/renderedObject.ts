@@ -12,7 +12,7 @@ import {
   parseScssIntoRules,
   parseCssIntoRules,
   queryProperties,
-} from "../parser/parseTheme.js";
+} from "../parser/parseTheme";
 import { Sprite } from "pixi.js";
 
 const rawImages = import.meta.glob("../../img/*.png", {
@@ -116,7 +116,9 @@ export class RenderedObject {
 
       const baseTexture = PIXI.BaseTexture.from(img);
 
-      baseTexture.mipmap = Settings.mipmapping;
+      baseTexture.mipmap = Settings.mipmapping
+        ? PIXI.MIPMAP_MODES.ON
+        : PIXI.MIPMAP_MODES.OFF;
 
       if (textureDefinition.animated) {
         const tileSize = textureDefinition["tile-size"] || 32;

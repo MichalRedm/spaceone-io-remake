@@ -353,8 +353,7 @@ async function theme(v) {
                         .css.toString("utf8");
                       var imagePromises = [];
                       var cleansed = ab;
-                      var images = ab.match(/url\("\.\/?(.*?\.png)"\)/g);
-                      images = images ? images : [];
+                      var images: string[] = ab.match(/url\("\.\/?(.*?\.png)"\)/g) ?? [];
                       var fixed = [];
                       var fixedMap = [];
                       var replacePairs = [];

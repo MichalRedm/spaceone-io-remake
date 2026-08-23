@@ -3,9 +3,9 @@ import * as dat from "dat.gui";
 
 export const gui = new dat.GUI({ width: 500 });
 
-const hooks = {};
+const hooks: Record<string, any> = {};
 
-const token = fetch("/api/v1/user/authenticate", {
+const token: Promise<string> = fetch("/api/v1/user/authenticate", {
   method: "POST",
   headers: {
     "Content-Type": "application/json; charset=utf-8",
@@ -19,7 +19,7 @@ const token = fetch("/api/v1/user/authenticate", {
 })
   .then((r) => r.json())
   .then(({ response }) => response.token)
-  .then((r) => {
+  .then((r: string) => {
     fetch("/api/v1/server/hook", {
       method: "POST",
       headers: {
@@ -28,19 +28,19 @@ const token = fetch("/api/v1/user/authenticate", {
       },
       body: "{}",
     })
-      .then((r) => r.json())
+      .then((res) => res.json())
       .then(({ response }) => {
         const obj = JSON.parse(response);
         for (const key in obj) {
           hooks[key] = obj[key] === 0 ? obj[key] + 0.01 : obj[key];
         }
         for (const key in hooks) {
-          if (typeof hooks[key] == "boolean") {
-            gui.add(hooks, key).onChange(bind_param(key));
-          } else if (typeof hooks[key] != "function") {
-            let min;
-            let max;
-            let step;
+          if (typeof hooks[key] === "boolean") {
+            gui.add(hooks, key).onChange(bindParam(key));
+          } else if (typeof hooks[key] !== "function") {
+            let min: number;
+            let max: number;
+            let step: number | undefined;
             if (hooks[key] < 0) {
               min = -1;
               max = 0;
@@ -55,10 +55,10 @@ const token = fetch("/api/v1/user/authenticate", {
               step = 1;
             }
 
-            if (step) {
-              gui.add(hooks, key, min, max, step).onChange(bind_param(key));
+            if (step !== undefined) {
+              gui.add(hooks, key, min, max, step).onChange(bindParam(key));
             } else {
-              gui.add(hooks, key, min, max).onChange(bind_param(key));
+              gui.add(hooks, key, min, max).onChange(bindParam(key));
             }
           }
         }
@@ -67,10 +67,10 @@ const token = fetch("/api/v1/user/authenticate", {
     return r;
   });
 
-async function send_hook(attr) {
-  const changer = {};
+export async function sendHook(attr: string): Promise<void> {
+  const changer: Record<string, any> = {};
   changer[attr] = hooks[attr];
-  fetch("/api/v1/server/hook", {
+  await fetch("/api/v1/server/hook", {
     method: "POST",
     headers: {
       "Content-Type": "application/json; charset=utf-8",
@@ -80,6 +80,6 @@ async function send_hook(attr) {
   });
 }
 
-function bind_param(a) {
-  return () => send_hook(a);
+export function bindParam(a: string): () => Promise<void> {
+  return () => sendHook(a);
 }
