@@ -3,8 +3,7 @@ import { Fleet } from "./fleet";
 import { CustomContainer } from "../CustomContainer";
 
 export class Ship extends RenderedObject {
-  fleet?: Fleet;
-  body: any;
+  fleet?: Fleet | null;
   constructor(container: CustomContainer) {
     super(container);
     this.fleet = null;

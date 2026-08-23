@@ -7,7 +7,7 @@ import { CustomContainer } from "./CustomContainer";
 export class Background extends RenderedObject {
   focus: Vector2;
   speeds: number[];
-  backgroundSprites: TilingSprite[];
+  backgroundSprites: PIXI.TilingSprite[];
   constructor(container: CustomContainer) {
     super(container);
     this.focus = new Vector2(0, 0);

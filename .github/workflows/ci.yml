@@ -45,6 +45,10 @@ jobs:
         working-directory: Game.Engine/wwwroot
         run: npm install
 
+      - name: Type check client
+        working-directory: Game.Engine/wwwroot
+        run: npm run typecheck
+
       - name: Build client bundle
         working-directory: Game.Engine/wwwroot
         run: npm run build

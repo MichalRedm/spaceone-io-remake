@@ -28,7 +28,7 @@ export class Router {
     return this.bestServer;
   }
 
-  private save(server) {
+  public save(server: string) {
     //Stores a cookie of the best found server.
     //Set to expire every 7 days.
     Cookies.set("router", JSON.stringify({ bestServer: server }), {

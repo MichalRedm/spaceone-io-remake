@@ -346,15 +346,15 @@ export class Connection {
       case this.fb.AllMessages.NetEvent:
         message = quantum.message(new this.fb.NetEvent());
 
-        var event = {
+        const netEvent = {
           type: message.type(),
           data: JSON.parse(message.data()),
         };
 
-        if (event.data.roles !== undefined) {
-          window.discordData = event;
+        if (netEvent.data.roles !== undefined) {
+          window.discordData = netEvent;
         }
-        Controls.addSecretShips(event);
+        Controls.addSecretShips(netEvent);
 
         break;
       case this.fb.AllMessages.NetLeaderboard:

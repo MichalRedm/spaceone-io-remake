@@ -14,7 +14,7 @@ ReactDOM.render(
       native: true,
       title: "",
       emoji: "rocket",
-      onClick: (e) => {
+      onClick: (e: any) => {
         console.log(e);
         Cookies.set("emoji", e.native);
         var x = e.native;

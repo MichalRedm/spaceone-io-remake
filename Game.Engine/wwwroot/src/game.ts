@@ -43,7 +43,7 @@ const cameraDrag = 0.8;
 //PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
 PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.LINEAR;
 //PIXI.settings.RESOLUTION = window.devicePixelRatio || 1;
-const app = new PIXI.Application(<PIXI.ApplicationOptions>{
+const app = new PIXI.Application(<any>{
   view: canvas,
   transparent: true,
 });
