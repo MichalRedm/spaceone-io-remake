@@ -69,7 +69,17 @@ ship {
     }
 
     &.boost {
-      textures: "ship_cyan_boost", "thruster_cyan", "dash_trail_cyan";
+      textures: "dash_trail_cyan", "ship_cyan";
+
+      &.upgrade1 {
+        textures: "dash_trail_cyan", "ship_cyan_upgrade_1";
+      }
+      &.upgrade2 {
+        textures: "dash_trail_cyan", "ship_cyan_upgrade_2";
+      }
+      &.upgrade3 {
+        textures: "dash_trail_cyan", "ship_cyan_upgrade_3";
+      }
     }
   }
 
@@ -88,7 +98,17 @@ ship {
     }
 
     &.boost {
-      textures: "ship_blue_boost", "thruster_blue", "dash_trail_blue";
+      textures: "dash_trail_blue", "ship_blue";
+
+      &.upgrade1 {
+        textures: "dash_trail_blue", "ship_blue_upgrade_1";
+      }
+      &.upgrade2 {
+        textures: "dash_trail_blue", "ship_blue_upgrade_2";
+      }
+      &.upgrade3 {
+        textures: "dash_trail_blue", "ship_blue_upgrade_3";
+      }
     }
   }
 
@@ -107,7 +127,17 @@ ship {
     }
 
     &.boost {
-      textures: "ship_green_boost", "thruster_green", "dash_trail_green";
+      textures: "dash_trail_green", "ship_green";
+
+      &.upgrade1 {
+        textures: "dash_trail_green", "ship_green_upgrade_1";
+      }
+      &.upgrade2 {
+        textures: "dash_trail_green", "ship_green_upgrade_2";
+      }
+      &.upgrade3 {
+        textures: "dash_trail_green", "ship_green_upgrade_3";
+      }
     }
   }
 
@@ -126,7 +156,17 @@ ship {
     }
 
     &.boost {
-      textures: "ship_orange_boost", "thruster_orange", "dash_trail_orange";
+      textures: "dash_trail_orange", "ship_orange";
+
+      &.upgrade1 {
+        textures: "dash_trail_orange", "ship_orange_upgrade_1";
+      }
+      &.upgrade2 {
+        textures: "dash_trail_orange", "ship_orange_upgrade_2";
+      }
+      &.upgrade3 {
+        textures: "dash_trail_orange", "ship_orange_upgrade_3";
+      }
     }
   }
 
@@ -145,7 +185,17 @@ ship {
     }
 
     &.boost {
-      textures: "ship_pink_boost", "thruster_pink", "dash_trail_pink";
+      textures: "dash_trail_pink", "ship_pink";
+
+      &.upgrade1 {
+        textures: "dash_trail_pink", "ship_pink_upgrade_1";
+      }
+      &.upgrade2 {
+        textures: "dash_trail_pink", "ship_pink_upgrade_2";
+      }
+      &.upgrade3 {
+        textures: "dash_trail_pink", "ship_pink_upgrade_3";
+      }
     }
   }
 
@@ -164,7 +214,17 @@ ship {
     }
 
     &.boost {
-      textures: "ship_red_boost", "thruster_red", "dash_trail_red";
+      textures: "dash_trail_red", "ship_red";
+
+      &.upgrade1 {
+        textures: "dash_trail_red", "ship_red_upgrade_1";
+      }
+      &.upgrade2 {
+        textures: "dash_trail_red", "ship_red_upgrade_2";
+      }
+      &.upgrade3 {
+        textures: "dash_trail_red", "ship_red_upgrade_3";
+      }
     }
   }
 
@@ -183,7 +243,17 @@ ship {
     }
 
     &.boost {
-      textures: "ship_yellow_boost", "thruster_yellow", "dash_trail_yellow";
+      textures: "dash_trail_yellow", "ship_yellow";
+
+      &.upgrade1 {
+        textures: "dash_trail_yellow", "ship_yellow_upgrade_1";
+      }
+      &.upgrade2 {
+        textures: "dash_trail_yellow", "ship_yellow_upgrade_2";
+      }
+      &.upgrade3 {
+        textures: "dash_trail_yellow", "ship_yellow_upgrade_3";
+      }
     }
   }
 

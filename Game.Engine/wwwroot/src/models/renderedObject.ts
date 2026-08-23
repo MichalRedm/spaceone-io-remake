@@ -113,7 +113,11 @@ class GroupParticle extends particles.Particle {
   update(delta: number): number {
     var ret = super.update(delta);
 
-    if (this.body) this.scaleMultiplier = this.body.Size;
+    if (this.body && this.body.Size) {
+      this.scaleMultiplier = Math.max(0.5, this.body.Size / 50.0);
+    } else {
+      this.scaleMultiplier = 1.0;
+    }
 
     return ret;
   }
@@ -730,15 +734,19 @@ export class RenderedObject {
       layer.pivot.x = layer.texture.width / 2;
       layer.pivot.y = layer.texture.height / 2;
 
+      const scale = size * layer.baseScale;
+      layer.scale.set(scale, scale);
+
+      const offX = (layer.baseOffset?.x || 0) * scale;
+      const offY = (layer.baseOffset?.y || 0) * scale;
+
       layer.position.x =
         interpolatedPosition.x +
-        (layer.baseOffset.x * Math.cos(angle) -
-          layer.baseOffset.y * Math.sin(angle));
+        (offX * Math.cos(angle) - offY * Math.sin(angle));
 
       layer.position.y =
         interpolatedPosition.y +
-        (layer.baseOffset.y * Math.cos(angle) +
-          layer.baseOffset.x * Math.sin(angle));
+        (offY * Math.cos(angle) + offX * Math.sin(angle));
 
       const rotationOffset =
         layer.baseRotation !== undefined
@@ -748,8 +756,6 @@ export class RenderedObject {
             : Math.PI / 2;
 
       layer.rotation = angle + rotationOffset;
-
-      layer.scale.set(size * layer.baseScale, size * layer.baseScale);
     });
 
     this.foreachEmitter(function (emitter) {
