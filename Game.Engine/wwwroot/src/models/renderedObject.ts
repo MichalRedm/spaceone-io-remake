@@ -184,23 +184,32 @@ export class RenderedObject {
   }
 
   static loadTexture(textureDefinition, textureName) {
+    if (!textureName) return null;
+    const cleanName = String(textureName);
     let textures =
-      textureCache[textureName] || textureCache[textureName.toLowerCase()];
+      textureCache[cleanName] || textureCache[cleanName.toLowerCase()];
 
     if (!textures && textureDefinition?.file) {
-      const fileKey = textureDefinition.file;
-      if (textureCache[fileKey] || textureCache[fileKey.toLowerCase()]) {
-        textures = textureCache[fileKey] || textureCache[fileKey.toLowerCase()];
-        textureCache[textureName] = textures;
+      const fileKey = String(textureDefinition.file);
+      if (
+        textureCache[fileKey] ||
+        textureCache[fileKey.toLowerCase()]
+      ) {
+        textures =
+          textureCache[fileKey] ||
+          textureCache[fileKey.toLowerCase()];
+        textureCache[cleanName] = textures;
         return textures;
       }
     }
 
     if (!textures) {
+      if (!textureDefinition) return null;
       textures = [];
 
       const img =
         RenderedObject.getImageFromTextureDefinition(textureDefinition);
+      if (!img || !img.src) return null;
 
       const baseTexture = PIXI.BaseTexture.from(img);
 
@@ -319,8 +328,11 @@ export class RenderedObject {
   }
 
   buildSprite(textureName, spriteName): Sprite {
+    if (!textureName) return null;
     const textureDefinition = RenderedObject.getTextureDefinition(textureName);
+    if (!textureDefinition) return null;
     const textures = RenderedObject.loadTexture(textureDefinition, textureName);
+    if (!textures || !textures.length) return null;
     var pixiSprite = null;
 
     if (textureDefinition.animated) {
@@ -345,7 +357,8 @@ export class RenderedObject {
       else pixiSprite.tint = textureDefinition.tint;
     }
 
-    if (textureDefinition.blendMode) pixiSprite.alpha = textureDefinition.alpha;
+    if (textureDefinition.alpha !== undefined)
+      pixiSprite.alpha = textureDefinition.alpha;
 
     if (textureDefinition.blendMode)
       pixiSprite.blendMode = textureDefinition.blendMode;
@@ -360,40 +373,61 @@ export class RenderedObject {
       (textureName.includes("bullet") || textureName.includes("laser")) &&
       Settings.graphics !== "low"
     ) {
-      let m = this.body.Momentum;
-      let bulletLife =
-        25 *
-          shotThrust.indexOf(
-            Math.round((Math.sqrt(m.x * m.x + m.y * m.y) / 0.012) * 100) / 100,
-          ) +
-        1900;
-      pixiSprite.alpha = 1 / 3;
-      let fadeInInterval = setInterval(() => {
-        pixiSprite.alpha = Math.min(1, pixiSprite.alpha + 1 / 3);
-        if (pixiSprite.alpha === 1) {
-          clearInterval(fadeInInterval);
-        }
-      }, 70);
-      setTimeout(
-        () => {
-          let fadeOutInterval = setInterval(() => {
-            pixiSprite.alpha = Math.min(1, pixiSprite.alpha - 0.2);
-            if (pixiSprite.alpha === 0) {
-              clearInterval(fadeOutInterval);
-            }
-          }, 70);
-        },
-        bulletLife - 70 * 5,
-      );
+      let m = this.body?.Momentum;
+      if (m) {
+        let bulletLife =
+          25 *
+            shotThrust.indexOf(
+              Math.round((Math.sqrt(m.x * m.x + m.y * m.y) / 0.012) * 100) /
+                100,
+            ) +
+          1900;
+        pixiSprite.alpha = 1 / 3;
+        let fadeInInterval = setInterval(() => {
+          pixiSprite.alpha = Math.min(1, pixiSprite.alpha + 1 / 3);
+          if (pixiSprite.alpha === 1) {
+            clearInterval(fadeInInterval);
+          }
+        }, 70);
+        setTimeout(
+          () => {
+            let fadeOutInterval = setInterval(() => {
+              pixiSprite.alpha = Math.max(0, pixiSprite.alpha - 0.2);
+              if (pixiSprite.alpha === 0) {
+                clearInterval(fadeOutInterval);
+              }
+            }, 70);
+          },
+          Math.max(100, bulletLife - 70 * 5),
+        );
+      }
     }
 
-    pixiSprite.baseScale = (<any>textures[0]).daudScale;
-    pixiSprite.scale = (<any>textures[0]).daudScale;
+    pixiSprite.baseScale = RenderedObject.getScaleWithHeight(
+      textureDefinition,
+      textures[0].height,
+    );
+    pixiSprite.scale = pixiSprite.baseScale;
     (<any>pixiSprite).textureDefinition = textureDefinition;
 
-    pixiSprite.baseOffset = textureDefinition["offset-x"]
-      ? { x: textureDefinition["offset-x"], y: textureDefinition["offset-y"] }
-      : { x: 0, y: 0 };
+    pixiSprite.baseRotation =
+      textureDefinition.rotate !== undefined
+        ? Number(textureDefinition.rotate)
+        : Math.PI / 2;
+
+    const offsetX =
+      textureDefinition["offset-x"] !== undefined
+        ? Number(textureDefinition["offset-x"])
+        : textureDefinition.offset?.x !== undefined
+          ? Number(textureDefinition.offset.x)
+          : 0;
+    const offsetY =
+      textureDefinition["offset-y"] !== undefined
+        ? Number(textureDefinition["offset-y"])
+        : textureDefinition.offset?.y !== undefined
+          ? Number(textureDefinition.offset.y)
+          : 0;
+    pixiSprite.baseOffset = { x: offsetX, y: offsetY };
 
     if (textureDefinition.animated && pixiSprite instanceof PIXI.AnimatedSprite)
       pixiSprite.play();
@@ -543,6 +577,7 @@ export class RenderedObject {
       for (let i = 0; i < layers.length; i++) {
         let emitterLayer = null;
         var textureName = layers[i];
+        if (!textureName) continue;
 
         if (this.activeEmitters[textureName])
           emitterLayer = this.activeEmitters[textureName];
@@ -550,33 +585,39 @@ export class RenderedObject {
           const textureDefinition =
             RenderedObject.getTextureDefinition(textureName);
 
-          if (textureDefinition.emitter) {
-            let particleTextureName = textureDefinition.particle;
+          if (textureDefinition && textureDefinition.emitter) {
+            let particleTextureName =
+              textureDefinition.particle || "particle_cyan";
+            const particleDef =
+              RenderedObject.getTextureDefinition(particleTextureName);
             const particleTextures = RenderedObject.loadTexture(
-              RenderedObject.getTextureDefinition(particleTextureName),
+              particleDef,
               particleTextureName,
             );
 
-            if (typeof textureDefinition.emitter == "string")
-              textureDefinition.emitter = emitters[textureDefinition.emitter];
+            if (particleTextures && particleTextures.length) {
+              let emitterConfig = textureDefinition.emitter;
+              if (typeof emitterConfig === "string")
+                emitterConfig = (emitters as any)[emitterConfig];
 
-            emitterLayer = new particles.Emitter(
-              this.container.emitterContainer,
-              particleTextures,
-              textureDefinition.emitter,
-            );
-            emitterLayer.emit = true;
-            emitterLayer.renderedObject = this;
-
-            let self = this;
-            emitterLayer.particleConstructor = GroupParticle;
+              if (emitterConfig) {
+                emitterLayer = new particles.Emitter(
+                  this.container.emitterContainer,
+                  particleTextures,
+                  emitterConfig,
+                );
+                emitterLayer.emit = true;
+                emitterLayer.renderedObject = this;
+                emitterLayer.particleConstructor = GroupParticle;
+              }
+            }
           }
         }
 
         if (emitterLayer != null) {
           if (zIndex == 0) zIndex = 250;
 
-          emitterLayer.zOrder = zIndex - i + this.body.ID / 100000;
+          emitterLayer.zOrder = zIndex - i + (this.body?.ID || 0) / 100000;
 
           emitterLayers.push(emitterLayer);
           this.activeEmitters[textureName] = emitterLayer;
@@ -699,7 +740,14 @@ export class RenderedObject {
         (layer.baseOffset.y * Math.cos(angle) +
           layer.baseOffset.x * Math.sin(angle));
 
-      layer.rotation = angle;
+      const rotationOffset =
+        layer.baseRotation !== undefined
+          ? layer.baseRotation
+          : layer.textureDefinition?.rotate !== undefined
+            ? Number(layer.textureDefinition.rotate)
+            : Math.PI / 2;
+
+      layer.rotation = angle + rotationOffset;
 
       layer.scale.set(size * layer.baseScale, size * layer.baseScale);
     });
