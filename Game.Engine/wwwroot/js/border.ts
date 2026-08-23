@@ -1,4 +1,4 @@
-import { Container } from "pixi.js";
+import * as PIXI from "pixi.js";
 import { CustomContainer } from "./CustomContainer";
 import { RenderedObject } from "./models/renderedObject";
 import { hexToRGB } from "./hexColor";

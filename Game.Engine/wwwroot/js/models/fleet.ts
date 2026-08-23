@@ -1,6 +1,6 @@
 import Plotly from "../plotly-subset";
 import { Settings } from "../settings";
-import "pixi.js";
+import * as PIXI from "pixi.js";
 import { CustomContainer } from "../CustomContainer";
 
 export class Fleet {
