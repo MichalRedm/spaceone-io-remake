@@ -260,8 +260,8 @@
 			"end": 0.0
 		},
 		"scale": {
-			"start": 0.25,
-			"end": 0.02,
+			"start": 0.8,
+			"end": 0.1,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
@@ -269,8 +269,8 @@
 			"end": "#ffffff"
 		},
 		"speed": {
-			"start": 30,
-			"end": 5,
+			"start": 80,
+			"end": 20,
 			"minimumSpeedMultiplier": 0.5
 		},
 		"acceleration": {
@@ -308,8 +308,8 @@
 			"end": 0.0
 		},
 		"scale": {
-			"start": 0.25,
-			"end": 0.02,
+			"start": 0.8,
+			"end": 0.1,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
@@ -317,8 +317,8 @@
 			"end": "#ffffff"
 		},
 		"speed": {
-			"start": 30,
-			"end": 5,
+			"start": 80,
+			"end": 20,
 			"minimumSpeedMultiplier": 0.5
 		},
 		"acceleration": {
@@ -356,8 +356,8 @@
 			"end": 0.0
 		},
 		"scale": {
-			"start": 0.25,
-			"end": 0.02,
+			"start": 0.8,
+			"end": 0.1,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
@@ -365,8 +365,8 @@
 			"end": "#ffffff"
 		},
 		"speed": {
-			"start": 30,
-			"end": 5,
+			"start": 80,
+			"end": 20,
 			"minimumSpeedMultiplier": 0.5
 		},
 		"acceleration": {
@@ -404,8 +404,8 @@
 			"end": 0.0
 		},
 		"scale": {
-			"start": 0.25,
-			"end": 0.02,
+			"start": 0.8,
+			"end": 0.1,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
@@ -413,8 +413,8 @@
 			"end": "#ffffff"
 		},
 		"speed": {
-			"start": 30,
-			"end": 5,
+			"start": 80,
+			"end": 20,
 			"minimumSpeedMultiplier": 0.5
 		},
 		"acceleration": {
@@ -452,8 +452,8 @@
 			"end": 0.0
 		},
 		"scale": {
-			"start": 0.25,
-			"end": 0.02,
+			"start": 0.8,
+			"end": 0.1,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
@@ -461,8 +461,8 @@
 			"end": "#ffffff"
 		},
 		"speed": {
-			"start": 30,
-			"end": 5,
+			"start": 80,
+			"end": 20,
 			"minimumSpeedMultiplier": 0.5
 		},
 		"acceleration": {
@@ -500,8 +500,8 @@
 			"end": 0.0
 		},
 		"scale": {
-			"start": 0.25,
-			"end": 0.02,
+			"start": 0.8,
+			"end": 0.1,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
@@ -509,8 +509,8 @@
 			"end": "#ffffff"
 		},
 		"speed": {
-			"start": 30,
-			"end": 5,
+			"start": 80,
+			"end": 20,
 			"minimumSpeedMultiplier": 0.5
 		},
 		"acceleration": {
@@ -548,8 +548,8 @@
 			"end": 0.0
 		},
 		"scale": {
-			"start": 0.25,
-			"end": 0.02,
+			"start": 0.8,
+			"end": 0.1,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
@@ -557,8 +557,8 @@
 			"end": "#ffffff"
 		},
 		"speed": {
-			"start": 30,
-			"end": 5,
+			"start": 80,
+			"end": 20,
 			"minimumSpeedMultiplier": 0.5
 		},
 		"acceleration": {
@@ -589,5 +589,56 @@
 		},
 		"addAtBack": true,
 		"spawnType": "point"
+	},
+	"bullet_impact": {
+		"alpha": {
+			"start": 1,
+			"end": 0
+		},
+		"scale": {
+			"start": 0.4,
+			"end": 0.02,
+			"minimumScaleMultiplier": 1
+		},
+		"color": {
+			"start": "#ffffff",
+			"end": "#ffffff"
+		},
+		"speed": {
+			"start": 100,
+			"end": 10,
+			"minimumSpeedMultiplier": 0.5
+		},
+		"acceleration": {
+			"x": 0,
+			"y": 0
+		},
+		"maxSpeed": 0,
+		"startRotation": {
+			"min": 0,
+			"max": 360
+		},
+		"noRotation": false,
+		"rotationSpeed": {
+			"min": 0,
+			"max": 0
+		},
+		"lifetime": {
+			"min": 0.15,
+			"max": 0.30
+		},
+		"blendMode": "screen",
+		"frequency": 0.001,
+		"emitterLifetime": 0.05,
+		"maxParticles": 12,
+		"pos": {
+			"x": 0,
+			"y": 0
+		},
+		"addAtBack": false,
+		"spawnType": "burst",
+		"particlesPerWave": 8,
+		"particleSpacing": 0,
+		"angleStart": 0
 	}
 }

@@ -106,8 +106,10 @@ class GroupParticle extends particles.Particle {
 
   constructor(emitter: particles.Emitter) {
     super(emitter);
-    this.parentGroup = emitter.parent.parentGroup;
-    this.body = (<any>emitter).renderedObject.body;
+    this.parentGroup =
+      emitter.parent?.parentGroup ||
+      (<any>emitter).renderedObject?.container?.bodyGroup;
+    this.body = (<any>emitter).renderedObject?.body;
   }
 
   update(delta: number): number {
@@ -774,27 +776,6 @@ export class RenderedObject {
           0.85 +
           0.15 *
             Math.cos(Date.now() * 0.05 + ((this.body?.ID || 0) % 10) * 1.5);
-      } else if (fileStr.startsWith("ship")) {
-        const isBoost =
-          (this.currentMode & 1) !== 0 || (this.body?.Mode & 1) !== 0;
-        if (isBoost) {
-          const pulse = 0.9 + 0.1 * Math.sin(Date.now() * 0.04);
-          layer.alpha = Math.min(1.0, 0.95 + 0.05 * pulse);
-          layer.tint = 0xffffff;
-        } else {
-          layer.alpha =
-            layer.textureDefinition?.alpha !== undefined
-              ? layer.textureDefinition.alpha
-              : 1.0;
-          if (layer.textureDefinition?.tint) {
-            layer.tint =
-              typeof layer.textureDefinition.tint === "string"
-                ? parseInt(layer.textureDefinition.tint)
-                : layer.textureDefinition.tint;
-          } else {
-            layer.tint = 0xffffff;
-          }
-        }
       }
     });
 
@@ -844,6 +825,49 @@ export function spawnFoodPickup(
   if (typeof emitterConfig === "string") {
     emitterConfig = (emitters as any)[emitterConfig];
   }
+  if (!emitterConfig) return;
+
+  const emitter = new particles.Emitter(
+    container.emitterContainer,
+    particleTextures,
+    emitterConfig,
+  );
+  emitter.updateOwnerPos(x, y);
+  emitter.emit = true;
+
+  let lastTime = performance.now();
+  const ticker = () => {
+    const now = performance.now();
+    const dt = (now - lastTime) * 0.001;
+    lastTime = now;
+    emitter.update(dt);
+    if (!emitter.particleCount && !emitter.emit) {
+      PIXI.Ticker.shared.remove(ticker);
+      emitter.destroy();
+    }
+  };
+  PIXI.Ticker.shared.add(ticker);
+
+  setTimeout(() => {
+    emitter.emit = false;
+  }, 60);
+}
+
+export function spawnBulletImpact(
+  container: CustomContainer,
+  color: string,
+  x: number,
+  y: number,
+) {
+  const particleTextureName = `particle_${color}`;
+  const particleDef = RenderedObject.getTextureDefinition(particleTextureName);
+  const particleTextures = RenderedObject.loadTexture(
+    particleDef,
+    particleTextureName,
+  );
+  if (!particleTextures || !particleTextures.length) return;
+  const emitterConfig =
+    (emitters as any)["bullet_impact"] || (emitters as any)["boom_sparkles"];
   if (!emitterConfig) return;
 
   const emitter = new particles.Emitter(

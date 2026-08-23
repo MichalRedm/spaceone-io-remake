@@ -140,6 +140,15 @@ shipColors.forEach(color => {
     console.log(`  ✓ Boost trail mapped for ship_${color}`);
   }
 
+  // Check boost animated sprite mapped
+  const boostSpritePattern = new RegExp(`ship_${color}_boost`);
+  if (!boostSpritePattern.test(highModeContent)) {
+    console.error(`  [Missing Boost Animation] Ship "${color}" does not reference ship_${color}_boost in spriteModeMap_high!`);
+    hasErrors = true;
+  } else {
+    console.log(`  ✓ Boost animated sprite mapped for ship_${color}`);
+  }
+
   // Check bullet emitter mapped
   const bulletEmitterPattern = new RegExp(`bullet_emitter_${color}`);
   if (!bulletEmitterPattern.test(highModeContent)) {
@@ -151,7 +160,7 @@ shipColors.forEach(color => {
 });
 
 // 6. Geometry & Offset Sanity
-console.log('\n[Geometry] Verifying Trail Offset & Rotation Invariants...');
+console.log('\n[Geometry] Verifying Trail Offset, Food Sizes & Invariants...');
 const highTexContent = fs.readFileSync(highTextureMap, 'utf8');
 
 if (!highTexContent.includes('rotate: -1.5707963')) {
@@ -159,6 +168,20 @@ if (!highTexContent.includes('rotate: -1.5707963')) {
   hasErrors = true;
 } else {
   console.log('  ✓ Trail rotation -pi/2 (-1.5707963) present');
+}
+
+if (!highTexContent.includes('x: -124;')) {
+  console.error('  [Offset Warning] dash_trail offset -124 missing in textureMap_high.scss!');
+  hasErrors = true;
+} else {
+  console.log('  ✓ Dash trail offset -124 calibrated');
+}
+
+if (!highTexContent.includes('x: -127;')) {
+  console.error('  [Offset Warning] laser_trail offset -127 missing in textureMap_high.scss!');
+  hasErrors = true;
+} else {
+  console.log('  ✓ Laser trail offset -127 calibrated');
 }
 
 console.log('\n======================================================');

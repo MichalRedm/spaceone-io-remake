@@ -35,7 +35,7 @@ fish_orange,
 fish_pink,
 fish_red,
 fish_yellow {
-  size: 2;
+  size: 0.24;
 }
 fish_cyan {
   file: "food_cyan";
@@ -65,7 +65,7 @@ food_orange_glow,
 food_pink_glow,
 food_red_glow,
 food_yellow_glow {
-  size: 4;
+  size: 0.8;
   animated: true;
   loop: true;
   animation-speed: 0.4;
@@ -318,7 +318,7 @@ dash_trail_yellow {
   size: 3.25;
   rotate: -1.5707963;
   offset: {
-    x: -99;
+    x: -124;
     y: 0;
   }
 }
@@ -711,7 +711,7 @@ laser_yellow_trail {
   size: 12.5;
   rotate: -1.5707963;
   offset: {
-    x: -105;
+    x: -127;
     y: 0;
   }
 }
