@@ -11,7 +11,15 @@ export class Router {
   }
 
   private load() {
-    const savedRouterConfig = Cookies.getJSON("router");
+    let savedRouterConfig: any = null;
+    const cookie = Cookies.get("router");
+    if (cookie) {
+      try {
+        savedRouterConfig = JSON.parse(cookie);
+      } catch (e) {
+        console.error("Failed to parse router cookie:", e);
+      }
+    }
 
     if (savedRouterConfig) {
       this.bestServer = savedRouterConfig.bestServer;
@@ -23,7 +31,9 @@ export class Router {
   private save(server) {
     //Stores a cookie of the best found server.
     //Set to expire every 7 days.
-    Cookies.set("router", { bestServer: server }, { expires: 7 });
+    Cookies.set("router", JSON.stringify({ bestServer: server }), {
+      expires: 7,
+    });
   }
 
   public findBestServer(servers: string[], next: (bestServer: any) => void) {
