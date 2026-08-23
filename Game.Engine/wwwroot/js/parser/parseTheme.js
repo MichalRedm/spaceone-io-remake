@@ -1,7 +1,4 @@
-import antlr4 from "antlr4";
-import CSSselect from "css-select";
-import { ScssLexer } from "./ScssLexer.js";
-import { ScssParser } from "./ScssParser.js";
+import { is } from "css-select";
 import * as sass from "sass";
 import { Buffer } from "buffer";
 
@@ -24,55 +21,42 @@ function parseScssIntoRules(scss) {
 }
 
 function parseCssIntoRules(css) {
-  var chars = new antlr4.InputStream(css);
-  var lexer = new ScssLexer(chars);
-  var tokens = new antlr4.CommonTokenStream(lexer);
-  var parser = new ScssParser(tokens);
-  var tree = parser.stylesheet();
-
-  var ruleList = [];
-  function addRulesFromStatement(statement, rules) {
-    var selectors = statement.ruleset().selectors();
-    var block = statement.ruleset().block();
-
-    var blockProps = block.property().map((x, i) => {
-      return [
-        block.property(i).identifier().getText(),
-        block
-          .property(i)
-          .values()
-          .children.map((x) =>
-            x.children
-              ? x.children.map((y) => y.getText()).join(" ")
-              : x.getText(),
-          )
-          .filter((y) => y !== ","),
-      ];
-    });
-
-    var blockOBJ = {};
-
-    for (var i = 0; i < blockProps.length; i++) {
-      blockOBJ[blockProps[i][0]] = blockProps[i][1];
-    }
-    for (var i = 0; i < selectors.children.length; i++) {
-      if (selectors.selector(i)) {
-        rules.push({
-          selector: selectors.selector(i).getText(),
-          obj: blockOBJ,
-        });
+  const cleanCss = (css || "").replace(/\/\*[\s\S]*?\*\//g, "");
+  const ruleList = [];
+  const ruleRegex = /([^{}]+)\{([^{}]+)\}/g;
+  let match;
+  while ((match = ruleRegex.exec(cleanCss)) !== null) {
+    const selectorGroup = match[1].trim();
+    const body = match[2].trim();
+    const blockOBJ = {};
+    const decls = body.split(";");
+    for (const decl of decls) {
+      const colonIdx = decl.indexOf(":");
+      if (colonIdx === -1) continue;
+      const prop = decl.substring(0, colonIdx).trim();
+      const valStr = decl.substring(colonIdx + 1).trim();
+      if (!prop || !valStr) continue;
+      const values = [];
+      const tokenRegex = /(?:"[^"]*"|'[^']*'|rgba?\([^)]+\)|[^\s,]+)/g;
+      let valMatch;
+      while ((valMatch = tokenRegex.exec(valStr)) !== null) {
+        values.push(valMatch[0]);
+      }
+      if (values.length > 0) {
+        blockOBJ[prop] = values;
       }
     }
-  }
-
-  //nested select is still broken but should be an easy fix ( or could just compile to css)
-  for (var i = 0; i < tree.children.length; i++) {
-    addRulesFromStatement(tree.children[i], ruleList);
+    const selectors = selectorGroup
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    for (const sel of selectors) {
+      ruleList.push({ selector: sel, obj: blockOBJ });
+    }
   }
   return ruleList;
 }
 
-// var ruleList = parseCssIntoRules(input);
 function selectorMatches(selector, selectProps) {
   var thing = {
     type: "tag",
@@ -82,11 +66,12 @@ function selectorMatches(selector, selectProps) {
       class: selectProps.class,
     },
   };
-  return CSSselect.is(thing, selector);
+  return is(thing, selector);
 }
 
 function queryProperties(element, ruleList) {
   var res = {};
+  if (!ruleList) return res;
   for (var i = 0; i < ruleList.length; i++) {
     if (selectorMatches(ruleList[i].selector, element)) {
       for (var p in ruleList[i].obj) {

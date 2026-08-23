@@ -12,7 +12,6 @@
   "license": "ISC",
   "dependencies": {
     "@types/flatbuffers": "^1.10.0",
-    "antlr4": "^4.8.0",
     "buffer": "^6.0.3",
     "css-select": "^5.1.0",
     "dat.gui": "^0.7.9",
