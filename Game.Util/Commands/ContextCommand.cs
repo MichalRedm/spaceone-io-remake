@@ -5,14 +5,13 @@ namespace Game.Util.Commands
     using System.ComponentModel.DataAnnotations;
     using System.Linq;
 
-    [Subcommand("get", typeof(Get))]
-    [Subcommand("list", typeof(List))]
-    [Subcommand("set", typeof(Set))]
+    [Command("context")]
+    [Subcommand(typeof(Get), typeof(List), typeof(Set))]
     class ContextCommand : CommandBase
     {
+        [Command("get")]
         class Get : CommandBase
         {
-
             protected override void Execute()
             {
                 (var all, var context) = Configuration.Load(this.Root);
@@ -23,6 +22,7 @@ namespace Game.Util.Commands
             }
         }
 
+        [Command("list")]
         class List : CommandBase
         {
             protected override void Execute()
@@ -37,6 +37,7 @@ namespace Game.Util.Commands
             }
         }
 
+        [Command("set")]
         class Set : CommandBase
         {
             [Required, Argument(0, Description = "contextName")]

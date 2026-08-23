@@ -33,8 +33,8 @@ namespace Game.Engine
 
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddScoped<ISecurityContext, TokenSecurityContext>();
-            services.AddMvc().
-                AddJsonOptions(options =>
+            services.AddControllers(options => options.EnableEndpointRouting = false)
+                .AddNewtonsoftJson(options =>
                 {
                     options.SerializerSettings.Formatting = Newtonsoft.Json.Formatting.Indented;
                     options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Serialize;
@@ -44,7 +44,7 @@ namespace Game.Engine
             services.AddCors(options =>
             {
                 options.AddPolicy("AllowAllOrigins",
-                    builder => builder.AllowAnyOrigin()
+                    builder => builder.SetIsOriginAllowed(_ => true)
                         .AllowAnyMethod()
                         .AllowAnyHeader()
                         .AllowCredentials()
@@ -75,7 +75,7 @@ namespace Game.Engine
 
         public void Configure(
             IApplicationBuilder app,
-            IHostingEnvironment env,
+            IWebHostEnvironment env,
             IServiceProvider provider,
             GameConfiguration config,
             RegistryClient registryClient
@@ -110,8 +110,8 @@ namespace Game.Engine
                 {
                     if (context.File.Name == "index.html")
                     {
-                        context.Context.Response.Headers.Add("Cache-Control", "no-cache, no-store");
-                        context.Context.Response.Headers.Add("Expires", "-1");
+                        context.Context.Response.Headers.Append("Cache-Control", "no-cache, no-store");
+                        context.Context.Response.Headers.Append("Expires", "-1");
                     }
                 }
             });

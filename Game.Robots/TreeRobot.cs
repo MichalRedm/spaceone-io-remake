@@ -236,7 +236,7 @@ namespace Game.Robots
             public string type { get; set; } = "scatter";
         }
 
-        protected void RingDebugExecute()
+        protected new void RingDebugExecute()
         {
             List<Vector2> st = new List<Vector2>();
             if (this.PathV != null)

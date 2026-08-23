@@ -14,9 +14,11 @@ namespace Game.Util.Commands
     using System.Numerics;
     using System.Threading.Tasks;
 
-    [Subcommand("robots", typeof(Robots))]
+    [Command("player")]
+    [Subcommand(typeof(Robots))]
     class PlayerCommand : CommandBase
     {
+        [Command("robots")]
         class Robots : CommandBase
         {
             [Option]

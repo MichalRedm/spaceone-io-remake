@@ -8,7 +8,7 @@ Rebuild and launch a high-fidelity remake of the multiplayer 2D fleet shooter **
 
 ## Implementation Details
 - **Architecture**: Authoritative Server Monorepo. High-frequency tick loop simulation in C# ASP.NET Core with WebSockets, binary FlatBuffers serialization, and an optimized 2D WebGL/Pixi.js client.
-- **Backend Stack**: C# / .NET Core, `Microsoft.AspNetCore.WebSockets`, `KdSoft.FlatBuffers`, `RBush` (2D spatial R-Tree index), `System.Numerics.Vectors`.
+- **Backend Stack**: C# .NET 7.0, ASP.NET Core, `Microsoft.AspNetCore.WebSockets`, `KdSoft.FlatBuffers`, `RBush` (2D spatial R-Tree index), `System.Numerics.Vectors`.
 - **Frontend Stack**: JavaScript / TypeScript, Pixi.js (`pixi.js`, `pixi-layers`, `pixi-particles`), WebGL Canvas, HTML5 WebSockets, SCSS, Vite bundler.
 - **AI & Automation Stack**: Context steering behaviors (`Game.Robots`), genetic algorithm chromosome controllers, tournament harness.
 - **Research & Physics Tuning Stack**: Python / NumPy / SciPy in `analysis/` executing kinematic regressions and trajectory loss minimization against `reference/space1-original/recordings/complete.csv`.
@@ -19,6 +19,7 @@ Rebuild and launch a high-fidelity remake of the multiplayer 2D fleet shooter **
 - [x] Reference assets, original wasm client, decoders, and gameplay recordings imported into `reference/space1-original/`.
 - [x] Agentic context framework and rule routing matrices initialized in `.agents/` and `AGENTS.md`.
 - [x] Upgrade/modernize client build toolchain to Vite with Node 20/22+ support.
+- [x] Upgrade/modernize backend solution to .NET 7.0 with 0 build warnings/errors.
 - [ ] Implement telemetry extraction scripts in `analysis/experiments/` to profile original velocity and drag curves.
 - [ ] Integrate original sprite atlases from `reference/space1-original/assets/atlas/` into `Game.Engine/wwwroot`.
 - [ ] Calibrate C# server physics hooks (`Hook.cs` / fleet kinematics) using empirical telemetry benchmarks.

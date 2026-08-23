@@ -25,8 +25,8 @@ namespace Game.Registry
 
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddScoped<ISecurityContext, TokenSecurityContext>();
-            services.AddMvc().
-                AddJsonOptions(options =>
+            services.AddControllers(options => options.EnableEndpointRouting = false)
+                .AddNewtonsoftJson(options =>
                 {
                     options.SerializerSettings.Formatting = Newtonsoft.Json.Formatting.Indented;
                     options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Serialize;
@@ -36,7 +36,7 @@ namespace Game.Registry
             services.AddCors(options =>
             {
                 options.AddPolicy("AllowAllOrigins",
-                    builder => builder.AllowAnyOrigin()
+                    builder => builder.SetIsOriginAllowed(_ => true)
                         .AllowAnyMethod()
                         .AllowAnyHeader()
                         .AllowCredentials()
@@ -48,7 +48,6 @@ namespace Game.Registry
 
             if (config.ElasticSearchURI != null)
             {
-
                 // choose the appropriate IConnectionPool for your use case
                 var pool = new SingleNodeConnectionPool(new Uri(config.ElasticSearchURI));
                 var connectionSettings =
@@ -71,7 +70,7 @@ namespace Game.Registry
 
         public void Configure(
             IApplicationBuilder app,
-            IHostingEnvironment env,
+            IWebHostEnvironment env,
             IServiceProvider provider,
             GameConfiguration config
         )
@@ -99,8 +98,8 @@ namespace Game.Registry
                 {
                     if (context.File.Name == "index.html")
                     {
-                        context.Context.Response.Headers.Add("Cache-Control", "no-cache, no-store");
-                        context.Context.Response.Headers.Add("Expires", "-1");
+                        context.Context.Response.Headers.Append("Cache-Control", "no-cache, no-store");
+                        context.Context.Response.Headers.Append("Expires", "-1");
                     }
                 }
             });
