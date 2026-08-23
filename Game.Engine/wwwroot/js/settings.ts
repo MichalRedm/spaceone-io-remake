@@ -5,9 +5,8 @@ import { textureCache } from "./models/textureCache";
 import { getDefaultTextureMapRules } from "./models/textureMap";
 import { getDefaultSpriteModeMapRules } from "./models/spriteModeMap";
 import { Controls } from "./controls";
-import { Connection } from "./connection";
-var sass = require("sass");
-var Buffer = require("buffer").Buffer;
+import * as sass from "sass";
+import { Buffer } from "buffer";
 
 // in case your code is isomorphic
 if (typeof window !== "undefined") (<any>window).Buffer = Buffer;

@@ -1,6 +1,6 @@
-"use strict";
+import process from "process";
 
-window.process = require("process");
+window.process = process;
 window.global = window as any;
 
 import { CustomContainer } from "./CustomContainer";

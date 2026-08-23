@@ -1,7 +1,7 @@
 // Generated from ScssParser.g4 by ANTLR 4.5.3
 // jshint ignore: start
-var antlr4 = require("antlr4/index");
-var ScssParserListener = require("./ScssParserListener").ScssParserListener;
+import antlr4 from "antlr4";
+import { ScssParserListener } from "./ScssParserListener.js";
 var grammarFileName = "ScssParser.g4";
 
 var serializedATN = [
@@ -5418,4 +5418,4 @@ ScssParser.prototype.functionCall = function () {
   return localctx;
 };
 
-exports.ScssParser = ScssParser;
+export { ScssParser };
