@@ -69,7 +69,10 @@ export function parseCssIntoRules(css?: string): ThemeRule[] {
   return ruleList;
 }
 
-export function selectorMatches(selector: string, selectProps: ElementQueryProps): boolean {
+export function selectorMatches(
+  selector: string,
+  selectProps: ElementQueryProps,
+): boolean {
   const thing: any = {
     type: "tag",
     name: selectProps.element ?? "",

@@ -20,8 +20,8 @@ Rebuild and launch a high-fidelity remake of the multiplayer 2D fleet shooter **
 - [x] Agentic context framework and rule routing matrices initialized in `.agents/` and `AGENTS.md`.
 - [x] Upgrade/modernize client build toolchain to Vite with Node 20/22+ support.
 - [x] Upgrade/modernize backend solution to .NET 7.0 with 0 build warnings/errors.
+- [x] Integrate original sprite atlases from `reference/space1-original/assets/atlas/` into `Game.Engine/wwwroot`.
 - [ ] Implement telemetry extraction scripts in `analysis/experiments/` to profile original velocity and drag curves.
-- [ ] Integrate original sprite atlases from `reference/space1-original/assets/atlas/` into `Game.Engine/wwwroot`.
 - [ ] Calibrate C# server physics hooks (`Hook.cs` / fleet kinematics) using empirical telemetry benchmarks.
 
 ## Critical Requirements & Developer Guidelines

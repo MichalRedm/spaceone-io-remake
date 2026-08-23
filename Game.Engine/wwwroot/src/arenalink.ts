@@ -1,4 +1,6 @@
-const arenaLinkInput = document.getElementById("arena-link-input") as HTMLInputElement | null;
+const arenaLinkInput = document.getElementById(
+  "arena-link-input",
+) as HTMLInputElement | null;
 const getUrl = window.location;
 const baseUrl = `${getUrl.protocol}//${getUrl.host}/${getUrl.pathname.split("/")[1] ?? ""}`;
 const chars = "0123456789abcdefghijklmnopqrstuwvxyzABCDEFGHIJKLMNOPQRSTUWVXYZ";

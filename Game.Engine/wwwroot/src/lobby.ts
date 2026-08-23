@@ -60,7 +60,8 @@ function buildList(response) {
     worldRow.addEventListener("click", function (e) {
       const worldKey = this.getAttribute("world");
 
-      if ((e.target as HTMLElement | null)?.tagName === "BUTTON") joinWorld(worldKey);
+      if ((e.target as HTMLElement | null)?.tagName === "BUTTON")
+        joinWorld(worldKey);
       else selectRow(worldKey);
     }),
   );

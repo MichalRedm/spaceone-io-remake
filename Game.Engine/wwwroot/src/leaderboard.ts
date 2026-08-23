@@ -9,7 +9,9 @@ const recordFleet = document.getElementById("record-fleet");
 const leaderboard = document.getElementById("leaderboard");
 const leaderboardLeft = document.getElementById("leaderboard-left");
 const leaderboardCenter = document.getElementById("leaderboard-center");
-const leaderArrow = document.getElementById("leader-arrow") as HTMLImageElement | null;
+const leaderArrow = document.getElementById(
+  "leader-arrow",
+) as HTMLImageElement | null;
 const leaderArrowFadeZoneDist = 600;
 const leaderArrowFadeZoneWidth = 200;
 const leaderArrowTranslate = 50;
@@ -32,7 +34,12 @@ export function escapeHtml(str?: string): string {
   return div.innerHTML;
 }
 
-function getOut(entry: any, position: Vector2, rank?: number, entryIsSelf?: boolean): string {
+function getOut(
+  entry: any,
+  position: Vector2,
+  rank?: number,
+  entryIsSelf?: boolean,
+): string {
   if (rank === 1 && entry.Position) {
     drawLeaderArrow(entry.Position, position);
   }
@@ -117,7 +124,8 @@ export class Leaderboard {
 
       if (leaderboard) leaderboard.innerHTML = `<tbody>${outR}</tbody>`;
       if (leaderboardLeft) leaderboardLeft.innerHTML = `<tbody>${outL}</tbody>`;
-      if (leaderboardCenter) leaderboardCenter.innerHTML = `<tbody>${outC}</tbody>`;
+      if (leaderboardCenter)
+        leaderboardCenter.innerHTML = `<tbody>${outC}</tbody>`;
     } else if (data.Type === "CTF") {
       let outL = "";
       let outR = "";
@@ -156,18 +164,29 @@ export class Leaderboard {
   }
 }
 
-function blurText(elem: HTMLElement | null, blurElem: HTMLElement | null, text: string): void {
+function blurText(
+  elem: HTMLElement | null,
+  blurElem: HTMLElement | null,
+  text: string,
+): void {
   if (elem && blurElem) {
     elem.innerText = text;
     blurElem.innerText = text;
   }
 }
 
-function drawLeaderArrow(selfPosition: { x: number; y: number }, position: Vector2): void {
+function drawLeaderArrow(
+  selfPosition: { x: number; y: number },
+  position: Vector2,
+): void {
   if (!leaderArrow) return;
-  let angle = Math.atan2(selfPosition.y - position.y, selfPosition.x - position.x);
+  let angle = Math.atan2(
+    selfPosition.y - position.y,
+    selfPosition.x - position.x,
+  );
   const dist = Math.sqrt(
-    Math.pow(selfPosition.y - position.y, 2) + Math.pow(selfPosition.x - position.x, 2),
+    Math.pow(selfPosition.y - position.y, 2) +
+      Math.pow(selfPosition.x - position.x, 2),
   );
   const arrowHeight = leaderArrow.height || 40;
   const arrowWidth = leaderArrow.width || 40;
@@ -179,7 +198,8 @@ function drawLeaderArrow(selfPosition: { x: number; y: number }, position: Vecto
     dist <= leaderArrowFadeZoneDist + leaderArrowFadeZoneWidth
   ) {
     leaderArrow.style.opacity = `${
-      ((dist - leaderArrowFadeZoneDist) / leaderArrowFadeZoneWidth) * leaderArrowDefaultOpacity
+      ((dist - leaderArrowFadeZoneDist) / leaderArrowFadeZoneWidth) *
+      leaderArrowDefaultOpacity
     }`;
   } else {
     leaderArrow.style.opacity = "0";
@@ -206,10 +226,13 @@ function drawLeaderArrow(selfPosition: { x: number; y: number }, position: Vecto
     leaderArrow.style.bottom = -leaderArrowTranslate + "px";
     leaderArrow.style.left =
       (window.innerWidth - arrowWidth) / 2 +
-      ((window.innerHeight / 2) / Math.tan(angle)) *
+      (window.innerHeight / 2 / Math.tan(angle)) *
         (1 - (arrowWidth - 2 * leaderArrowTranslate) / window.innerWidth) +
       "px";
-  } else if (angle > Math.PI - criticalAngle && angle <= Math.PI + criticalAngle) {
+  } else if (
+    angle > Math.PI - criticalAngle &&
+    angle <= Math.PI + criticalAngle
+  ) {
     // left
     leaderArrow.style.top =
       (window.innerHeight - arrowHeight) / 2 -
@@ -227,7 +250,7 @@ function drawLeaderArrow(selfPosition: { x: number; y: number }, position: Vecto
     leaderArrow.style.bottom = "";
     leaderArrow.style.left =
       (window.innerWidth - arrowWidth) / 2 -
-      ((window.innerHeight / 2) / Math.tan(angle)) *
+      (window.innerHeight / 2 / Math.tan(angle)) *
         (1 - (arrowWidth - 2 * leaderArrowTranslate) / window.innerWidth) +
       "px";
   }
