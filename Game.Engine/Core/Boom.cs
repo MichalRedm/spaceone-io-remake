@@ -25,6 +25,18 @@ namespace Game.Engine.Core
                 boom.Size = ship.Size;
                 boom.Position = ship.Position;
                 boom.Momentum = ship.Momentum;
+                boom.Color = ship.Color;
+                boom.Mode = ship.Sprite switch
+                {
+                    Sprites.ship_blue or Sprites.ship_ab_blue => 1,
+                    Sprites.ship_cyan or Sprites.ship_ab_cyan => 2,
+                    Sprites.ship_green or Sprites.ship_ab_green => 3,
+                    Sprites.ship_orange or Sprites.ship_ab_orange => 4,
+                    Sprites.ship_pink or Sprites.ship_ab_pink => 5,
+                    Sprites.ship_red or Sprites.ship_ab_red or Sprites.ship_zed => 6,
+                    Sprites.ship_yellow or Sprites.ship_ab_yellow or Sprites.ship_secret => 7,
+                    _ => 2 // default to cyan
+                };
 
                 return boom;
             }

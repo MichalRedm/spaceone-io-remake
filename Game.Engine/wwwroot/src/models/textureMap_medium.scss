@@ -96,11 +96,355 @@ food_yellow_glow {
   file: "food_yellow_glow_ani";
 }
 
-// boom emitter
+// boom emitters
 boom {
-  emitter: "boom";
-  particle: "ship_cyan_boost";
+  emitter: "boom_sparkles";
+  particle: "particle_cyan";
   size: 0.01;
+}
+
+boom_sparkles_cyan {
+  emitter: "boom_sparkles";
+  particle: "particle_cyan";
+  size: 0.01;
+}
+boom_debris_cyan {
+  emitter: "boom_debris";
+  particle: "particle_ship_cyan";
+  size: 0.01;
+}
+boom_sparkles_blue {
+  emitter: "boom_sparkles";
+  particle: "particle_blue";
+  size: 0.01;
+}
+boom_debris_blue {
+  emitter: "boom_debris";
+  particle: "particle_ship_blue";
+  size: 0.01;
+}
+boom_sparkles_green {
+  emitter: "boom_sparkles";
+  particle: "particle_green";
+  size: 0.01;
+}
+boom_debris_green {
+  emitter: "boom_debris";
+  particle: "particle_ship_green";
+  size: 0.01;
+}
+boom_sparkles_orange {
+  emitter: "boom_sparkles";
+  particle: "particle_orange";
+  size: 0.01;
+}
+boom_debris_orange {
+  emitter: "boom_debris";
+  particle: "particle_ship_orange";
+  size: 0.01;
+}
+boom_sparkles_pink {
+  emitter: "boom_sparkles";
+  particle: "particle_pink";
+  size: 0.01;
+}
+boom_debris_pink {
+  emitter: "boom_debris";
+  particle: "particle_ship_pink";
+  size: 0.01;
+}
+boom_sparkles_red {
+  emitter: "boom_sparkles";
+  particle: "particle_red";
+  size: 0.01;
+}
+boom_debris_red {
+  emitter: "boom_debris";
+  particle: "particle_ship_red";
+  size: 0.01;
+}
+boom_sparkles_yellow {
+  emitter: "boom_sparkles";
+  particle: "particle_yellow";
+  size: 0.01;
+}
+boom_debris_yellow {
+  emitter: "boom_debris";
+  particle: "particle_ship_yellow";
+  size: 0.01;
+}
+
+// sparkle particles
+particle_blue,
+particle_cyan,
+particle_green,
+particle_orange,
+particle_pink,
+particle_red,
+particle_yellow {
+  size: 1;
+}
+particle_blue {
+  file: "particle_blue";
+}
+particle_cyan {
+  file: "particle_cyan";
+}
+particle_green {
+  file: "particle_green";
+}
+particle_orange {
+  file: "particle_orange";
+}
+particle_pink {
+  file: "particle_pink";
+}
+particle_red {
+  file: "particle_red";
+}
+particle_yellow {
+  file: "particle_yellow";
+}
+
+// ship explosion debris particles
+particle_ship_blue,
+particle_ship_cyan,
+particle_ship_green,
+particle_ship_orange,
+particle_ship_pink,
+particle_ship_red,
+particle_ship_yellow {
+  size: 2.2;
+}
+particle_ship_blue {
+  file: "particle_ship_blue";
+}
+particle_ship_cyan {
+  file: "particle_ship_cyan";
+}
+particle_ship_green {
+  file: "particle_ship_green";
+}
+particle_ship_orange {
+  file: "particle_ship_orange";
+}
+particle_ship_pink {
+  file: "particle_ship_pink";
+}
+particle_ship_red {
+  file: "particle_ship_red";
+}
+particle_ship_yellow {
+  file: "particle_ship_yellow";
+}
+
+// food pickup particles
+particle_food_blue,
+particle_food_cyan,
+particle_food_green,
+particle_food_orange,
+particle_food_pink,
+particle_food_red,
+particle_food_yellow {
+  size: 1;
+}
+particle_food_blue {
+  file: "particle_food_blue";
+}
+particle_food_cyan {
+  file: "particle_food_cyan";
+}
+particle_food_green {
+  file: "particle_food_green";
+}
+particle_food_orange {
+  file: "particle_food_orange";
+}
+particle_food_pink {
+  file: "particle_food_pink";
+}
+particle_food_red {
+  file: "particle_food_red";
+}
+particle_food_yellow {
+  file: "particle_food_yellow";
+}
+
+// dash trails
+dash_trail_blue,
+dash_trail_cyan,
+dash_trail_green,
+dash_trail_orange,
+dash_trail_pink,
+dash_trail_red,
+dash_trail_yellow {
+  size: 3.2;
+  offset: {
+    x: -35;
+    y: 0;
+  }
+}
+dash_trail_blue {
+  file: "dash_trail_blue";
+}
+dash_trail_cyan {
+  file: "dash_trail_cyan";
+}
+dash_trail_green {
+  file: "dash_trail_green";
+}
+dash_trail_orange {
+  file: "dash_trail_orange";
+}
+dash_trail_pink {
+  file: "dash_trail_pink";
+}
+dash_trail_red {
+  file: "dash_trail_red";
+}
+dash_trail_yellow {
+  file: "dash_trail_yellow";
+}
+
+// dead ships
+dead_ship_blue,
+dead_ship_cyan,
+dead_ship_green,
+dead_ship_orange,
+dead_ship_pink,
+dead_ship_red,
+dead_ship_yellow {
+  size: 3.1;
+}
+dead_ship_blue {
+  file: "dead_ship_blue";
+}
+dead_ship_cyan {
+  file: "dead_ship_cyan";
+}
+dead_ship_green {
+  file: "dead_ship_green";
+}
+dead_ship_orange {
+  file: "dead_ship_orange";
+}
+dead_ship_pink {
+  file: "dead_ship_pink";
+}
+dead_ship_red {
+  file: "dead_ship_red";
+}
+dead_ship_yellow {
+  file: "dead_ship_yellow";
+}
+
+// ship upgrades
+ship_blue_upgrade_1,
+ship_blue_upgrade_2,
+ship_blue_upgrade_3,
+ship_cyan_upgrade_1,
+ship_cyan_upgrade_2,
+ship_cyan_upgrade_3,
+ship_green_upgrade_1,
+ship_green_upgrade_2,
+ship_green_upgrade_3,
+ship_orange_upgrade_1,
+ship_orange_upgrade_2,
+ship_orange_upgrade_3,
+ship_pink_upgrade_1,
+ship_pink_upgrade_2,
+ship_pink_upgrade_3,
+ship_red_upgrade_1,
+ship_red_upgrade_2,
+ship_red_upgrade_3,
+ship_yellow_upgrade_1,
+ship_yellow_upgrade_2,
+ship_yellow_upgrade_3,
+ship_grey_upgrade_1,
+ship_grey_upgrade_2,
+ship_grey_upgrade_3 {
+  size: 3.1;
+}
+ship_blue_upgrade_1 {
+  file: "ship_blue_upgrade_1";
+}
+ship_blue_upgrade_2 {
+  file: "ship_blue_upgrade_2";
+}
+ship_blue_upgrade_3 {
+  file: "ship_blue_upgrade_3";
+}
+ship_cyan_upgrade_1 {
+  file: "ship_cyan_upgrade_1";
+}
+ship_cyan_upgrade_2 {
+  file: "ship_cyan_upgrade_2";
+}
+ship_cyan_upgrade_3 {
+  file: "ship_cyan_upgrade_3";
+}
+ship_green_upgrade_1 {
+  file: "ship_green_upgrade_1";
+}
+ship_green_upgrade_2 {
+  file: "ship_green_upgrade_2";
+}
+ship_green_upgrade_3 {
+  file: "ship_green_upgrade_3";
+}
+ship_orange_upgrade_1 {
+  file: "ship_orange_upgrade_1";
+}
+ship_orange_upgrade_2 {
+  file: "ship_orange_upgrade_2";
+}
+ship_orange_upgrade_3 {
+  file: "ship_orange_upgrade_3";
+}
+ship_pink_upgrade_1 {
+  file: "ship_pink_upgrade_1";
+}
+ship_pink_upgrade_2 {
+  file: "ship_pink_upgrade_2";
+}
+ship_pink_upgrade_3 {
+  file: "ship_pink_upgrade_3";
+}
+ship_red_upgrade_1 {
+  file: "ship_red_upgrade_1";
+}
+ship_red_upgrade_2 {
+  file: "ship_red_upgrade_2";
+}
+ship_red_upgrade_3 {
+  file: "ship_red_upgrade_3";
+}
+ship_yellow_upgrade_1 {
+  file: "ship_yellow_upgrade_1";
+}
+ship_yellow_upgrade_2 {
+  file: "ship_yellow_upgrade_2";
+}
+ship_yellow_upgrade_3 {
+  file: "ship_yellow_upgrade_3";
+}
+ship_grey_upgrade_1 {
+  file: "ship_grey_upgrade_1";
+}
+ship_grey_upgrade_2 {
+  file: "ship_grey_upgrade_2";
+}
+ship_grey_upgrade_3 {
+  file: "ship_grey_upgrade_3";
+}
+
+ship_grey {
+  file: "ship_grey";
+  size: 3.1;
+}
+ship_purple {
+  file: "ship_purple";
+  size: 3.1;
 }
 
 bullet_emitter_blue {

@@ -53,11 +53,11 @@
 	"boom": {
 		"alpha": {
 			"start": 1,
-			"end": 1
+			"end": 0
 		},
 		"scale": {
-			"start": 0.01,
-			"end": 0.00,
+			"start": 0.015,
+			"end": 0.002,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
@@ -65,9 +65,9 @@
 			"end": "#ffffff"
 		},
 		"speed": {
-			"start": 100,
-			"end": 100,
-			"minimumSpeedMultiplier": 1
+			"start": 350,
+			"end": 40,
+			"minimumSpeedMultiplier": 0.5
 		},
 		"acceleration": {
 			"x": 0,
@@ -80,28 +80,179 @@
 		},
 		"noRotation": false,
 		"rotationSpeed": {
-			"min": -180,
-			"max": 180
+			"min": 0,
+			"max": 0
 		},
 		"lifetime": {
-			"min": 0.2,
-			"max": 0.2
+			"min": 0.35,
+			"max": 0.55
 		},
-		"blendMode": "normal",
-		"frequency": 0.2,
-		"emitterLifetime": -0.31,
-		"maxParticles": 1000,
+		"blendMode": "screen",
+		"frequency": 0.001,
+		"emitterLifetime": 0.05,
+		"maxParticles": 30,
 		"pos": {
 			"x": 0,
 			"y": 0
 		},
 		"addAtBack": false,
-		"spawnType": "circle",
-		"spawnCircle": {
+		"spawnType": "burst",
+		"particlesPerWave": 18,
+		"particleSpacing": 0,
+		"angleStart": 0
+	},
+	"boom_sparkles": {
+		"alpha": {
+			"start": 1,
+			"end": 0
+		},
+		"scale": {
+			"start": 0.016,
+			"end": 0.002,
+			"minimumScaleMultiplier": 1
+		},
+		"color": {
+			"start": "#ffffff",
+			"end": "#ffffff"
+		},
+		"speed": {
+			"start": 380,
+			"end": 40,
+			"minimumSpeedMultiplier": 0.5
+		},
+		"acceleration": {
 			"x": 0,
-			"y": 0,
-			"r": 1
-		}
+			"y": 0
+		},
+		"maxSpeed": 0,
+		"startRotation": {
+			"min": 0,
+			"max": 360
+		},
+		"noRotation": false,
+		"rotationSpeed": {
+			"min": 0,
+			"max": 0
+		},
+		"lifetime": {
+			"min": 0.35,
+			"max": 0.55
+		},
+		"blendMode": "screen",
+		"frequency": 0.001,
+		"emitterLifetime": 0.05,
+		"maxParticles": 35,
+		"pos": {
+			"x": 0,
+			"y": 0
+		},
+		"addAtBack": false,
+		"spawnType": "burst",
+		"particlesPerWave": 20,
+		"particleSpacing": 0,
+		"angleStart": 0
+	},
+	"boom_debris": {
+		"alpha": {
+			"start": 1,
+			"end": 0
+		},
+		"scale": {
+			"start": 0.014,
+			"end": 0.004,
+			"minimumScaleMultiplier": 1
+		},
+		"color": {
+			"start": "#ffffff",
+			"end": "#ffffff"
+		},
+		"speed": {
+			"start": 240,
+			"end": 20,
+			"minimumSpeedMultiplier": 0.5
+		},
+		"acceleration": {
+			"x": 0,
+			"y": 0
+		},
+		"maxSpeed": 0,
+		"startRotation": {
+			"min": 0,
+			"max": 360
+		},
+		"noRotation": false,
+		"rotationSpeed": {
+			"min": -360,
+			"max": 360
+		},
+		"lifetime": {
+			"min": 0.4,
+			"max": 0.65
+		},
+		"blendMode": "normal",
+		"frequency": 0.001,
+		"emitterLifetime": 0.05,
+		"maxParticles": 10,
+		"pos": {
+			"x": 0,
+			"y": 0
+		},
+		"addAtBack": false,
+		"spawnType": "burst",
+		"particlesPerWave": 5,
+		"particleSpacing": 0,
+		"angleStart": 0
+	},
+	"food_pickup": {
+		"alpha": {
+			"start": 1,
+			"end": 0
+		},
+		"scale": {
+			"start": 0.01,
+			"end": 0.002,
+			"minimumScaleMultiplier": 1
+		},
+		"color": {
+			"start": "#ffffff",
+			"end": "#ffffff"
+		},
+		"speed": {
+			"start": 120,
+			"end": 10,
+			"minimumSpeedMultiplier": 0.5
+		},
+		"acceleration": {
+			"x": 0,
+			"y": 0
+		},
+		"maxSpeed": 0,
+		"startRotation": {
+			"min": 0,
+			"max": 360
+		},
+		"noRotation": false,
+		"rotationSpeed": {
+			"min": 0,
+			"max": 0
+		},
+		"lifetime": {
+			"min": 0.25,
+			"max": 0.4
+		},
+		"blendMode": "screen",
+		"frequency": 0.001,
+		"emitterLifetime": 0.05,
+		"maxParticles": 15,
+		"pos": {
+			"x": 0,
+			"y": 0
+		},
+		"addAtBack": false,
+		"spawnType": "burst",
+		"particlesPerWave": 8,
+		"particleSpacing": 0,
+		"angleStart": 0
 	},
 	"bullet_blue": {
 		"alpha": {

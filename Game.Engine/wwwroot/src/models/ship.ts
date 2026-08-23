@@ -9,20 +9,20 @@ export class Ship extends RenderedObject {
     this.fleet = null;
   }
 
-  decodeModes(mode) {
-    var modes = [];
+  decodeModes(mode: number): string[] {
+    const modes: string[] = [];
 
-    if ((mode & 4) != 0) modes.push("defenseupgrade");
-
-    if ((mode & 8) != 0) modes.push("offenseupgrade");
+    if ((mode & 4) !== 0) modes.push("defenseupgrade");
+    if ((mode & 8) !== 0) modes.push("offenseupgrade");
+    if ((mode & 32) !== 0) modes.push("upgrade1");
+    if ((mode & 64) !== 0) modes.push("upgrade2");
+    if ((mode & 128) !== 0) modes.push("upgrade3");
 
     modes.push("default");
 
-    if ((mode & 1) != 0) modes.push("boost");
-
-    if ((mode & 2) != 0) modes.push("invulnerable");
-
-    if ((mode & 16) != 0) modes.push("shield");
+    if ((mode & 1) !== 0) modes.push("boost");
+    if ((mode & 2) !== 0) modes.push("invulnerable");
+    if ((mode & 16) !== 0) modes.push("shield");
 
     return modes;
   }
