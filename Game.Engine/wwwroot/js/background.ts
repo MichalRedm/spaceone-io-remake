@@ -1,6 +1,6 @@
 import { Settings } from "./settings";
 import { RenderedObject } from "./models/renderedObject";
-import { Container, TilingSprite } from "pixi.js";
+import * as PIXI from "pixi.js";
 import { Vector2 } from "./Vector2";
 import { CustomContainer } from "./CustomContainer";
 

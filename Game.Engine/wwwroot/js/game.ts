@@ -1,5 +1,5 @@
+import "./bootstrap";
 import * as PIXI from "pixi.js";
-window.PIXI = PIXI;
 
 import { Renderer } from "./renderer";
 import { Background } from "./background";
@@ -23,7 +23,7 @@ import { Events } from "./events";
 import { ArenaLink } from "./arenalink";
 import { LobbyCallbacks, toggleLobby } from "./lobby";
 import "pixi-layers";
-import "pixi-tilemap";
+import * as pixi_tilemap from "pixi-tilemap";
 import "pixi-particles";
 import "./changelog";
 
@@ -32,6 +32,8 @@ import { Vector2 } from "./Vector2";
 import { CustomContainer } from "./CustomContainer";
 
 window.Game = window.Game || {};
+const pixiAny = (window as any).PIXI;
+pixiAny.tilemap = pixiAny.tilemap || pixi_tilemap;
 
 const size = { width: 1000, height: 500 };
 const canvas = document.getElementById("gameCanvas") as HTMLCanvasElement;
@@ -45,9 +47,8 @@ const app = new PIXI.Application(<PIXI.ApplicationOptions>{
   view: canvas,
   transparent: true,
 });
-const pixiAny = PIXI as any;
 app.stage = new pixiAny.display.Stage();
-(app.stage as any).group.enableSort = true;
+(<any>app.stage).group.enableSort = true;
 const container = new CustomContainer();
 app.stage.addChild(container);
 
@@ -62,7 +63,9 @@ app.stage.addChild(new pixiAny.display.Layer(bodyGroup));
 container.backgroundGroup = backgroundGroup;
 container.bodyGroup = bodyGroup;
 
-container.tiles = new pixiAny.tilemap.CompositeRectTileLayer(0);
+container.tiles = new (
+  pixiAny.tilemap.CompositeRectTileLayer || pixi_tilemap.CompositeRectTileLayer
+)(0);
 container.tiles.parentGroup = tileGroup;
 container.addChild(container.tiles);
 

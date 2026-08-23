@@ -3,7 +3,7 @@ import { Settings } from "../settings";
 import { textureCache } from "./textureCache";
 import { getDefaultTextureMapRules } from "./textureMap";
 import { getDefaultSpriteModeMapRules } from "./spriteModeMap";
-import "pixi.js";
+import * as PIXI from "pixi.js";
 import "pixi-layers";
 import * as particles from "pixi-particles";
 import { compressionOptions } from "jszip/lib/defaults";
