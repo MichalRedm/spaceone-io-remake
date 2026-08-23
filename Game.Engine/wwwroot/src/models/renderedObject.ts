@@ -414,10 +414,21 @@ export class RenderedObject {
     pixiSprite.scale = pixiSprite.baseScale;
     (<any>pixiSprite).textureDefinition = textureDefinition;
 
-    pixiSprite.baseRotation =
-      textureDefinition.rotate !== undefined
-        ? Number(textureDefinition.rotate)
-        : Math.PI / 2;
+    let rot = Math.PI / 2;
+    if (textureDefinition.rotate !== undefined) {
+      const rotVal = String(textureDefinition.rotate);
+      if (rotVal.endsWith("deg")) {
+        rot = (parseFloat(rotVal) * Math.PI) / 180;
+      } else {
+        const num = parseFloat(rotVal);
+        if (Math.abs(num) > 6.283185) {
+          rot = (num * Math.PI) / 180;
+        } else {
+          rot = num;
+        }
+      }
+    }
+    pixiSprite.baseRotation = rot;
 
     const offsetX =
       textureDefinition["offset-x"] !== undefined
@@ -756,6 +767,25 @@ export class RenderedObject {
             : Math.PI / 2;
 
       layer.rotation = angle + rotationOffset;
+
+      if (
+        layer.textureDefinition?.file &&
+        String(layer.textureDefinition.file).startsWith("dash_trail")
+      ) {
+        const flicker =
+          0.92 +
+          0.12 *
+            Math.sin(
+              Date.now() * 0.035 + ((this.body?.ID || 0) % 10) * 1.5,
+            );
+        layer.scale.set(scale, scale * flicker);
+        layer.alpha =
+          0.85 +
+          0.15 *
+            Math.cos(
+              Date.now() * 0.05 + ((this.body?.ID || 0) % 10) * 1.5,
+            );
+      }
     });
 
     this.foreachEmitter(function (emitter) {
