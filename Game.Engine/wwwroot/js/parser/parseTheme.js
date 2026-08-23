@@ -1,17 +1,26 @@
-const antlr4 = require("antlr4");
-const CSSselect = require("css-select");
-var ScssLexer = require("./ScssLexer").ScssLexer;
-var ScssParser = require("./ScssParser").ScssParser;
-var sass = require("sass");
-var Buffer = require("buffer").Buffer;
+import antlr4 from "antlr4";
+import CSSselect from "css-select";
+import { ScssLexer } from "./ScssLexer.js";
+import { ScssParser } from "./ScssParser.js";
+import * as sass from "sass";
+import { Buffer } from "buffer";
 
 // in case your code is isomorphic
 if (typeof window !== "undefined") window.Buffer = Buffer;
 
 function parseScssIntoRules(scss) {
-  return parseCssIntoRules(
-    sass.renderSync({ data: scss }).css.toString("utf8"),
-  );
+  try {
+    if (sass && typeof sass.compileString === "function") {
+      return parseCssIntoRules(sass.compileString(scss).css);
+    } else if (sass && typeof sass.renderSync === "function") {
+      return parseCssIntoRules(
+        sass.renderSync({ data: scss }).css.toString("utf8"),
+      );
+    }
+  } catch (e) {
+    console.warn("Failed to compile SCSS, parsing directly:", e);
+  }
+  return parseCssIntoRules(scss);
 }
 
 function parseCssIntoRules(css) {
@@ -93,6 +102,4 @@ function queryProperties(element, ruleList) {
   return res;
 }
 
-// console.log(getShipProperties("cyan", ["boost", "defenseupgrade"], ruleList))
-// console.log(queryProperties({ element: "bg" }, ruleList))
 export { parseCssIntoRules, queryProperties, parseScssIntoRules };

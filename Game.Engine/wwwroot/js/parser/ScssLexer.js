@@ -1,6 +1,6 @@
 // Generated from ScssLexer.g4 by ANTLR 4.5.3
 // jshint ignore: start
-var antlr4 = require("antlr4/index");
+import antlr4 from "antlr4";
 
 var serializedATN = [
   "\u0003\u0430\ud6d1\u8206\uad2d\u4417\uaef1\u8d80\uaadd",
@@ -647,4 +647,4 @@ ScssLexer.ruleNames = [
 
 ScssLexer.grammarFileName = "ScssLexer.g4";
 
-exports.ScssLexer = ScssLexer;
+export { ScssLexer };

@@ -1,6 +1,6 @@
 // Generated from ScssParser.g4 by ANTLR 4.5.3
 // jshint ignore: start
-var antlr4 = require("antlr4/index");
+import antlr4 from "antlr4";
 
 // This class defines a complete listener for a parse tree produced by ScssParser.
 function ScssParserListener() {
@@ -325,4 +325,4 @@ ScssParserListener.prototype.enterFunctionCall = function (ctx) {};
 // Exit a parse tree produced by ScssParser#functionCall.
 ScssParserListener.prototype.exitFunctionCall = function (ctx) {};
 
-exports.ScssParserListener = ScssParserListener;
+export { ScssParserListener };

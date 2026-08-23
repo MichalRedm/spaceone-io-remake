@@ -1,4 +1,4 @@
-import PIXI = require("pixi.js");
+import * as PIXI from "pixi.js";
 export class Dimension2 {
   width: number;
   height: number;

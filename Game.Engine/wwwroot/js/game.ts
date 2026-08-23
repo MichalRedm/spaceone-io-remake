@@ -1,4 +1,4 @@
-import PIXI = require("pixi.js");
+import * as PIXI from "pixi.js";
 window.PIXI = PIXI;
 
 import { Renderer } from "./renderer";
@@ -22,7 +22,9 @@ import { Settings } from "./settings";
 import { Events } from "./events";
 import { ArenaLink } from "./arenalink";
 import { LobbyCallbacks, toggleLobby } from "./lobby";
+import "pixi-layers";
 import "pixi-tilemap";
+import "pixi-particles";
 import "./changelog";
 
 import "./hintbox";
@@ -43,23 +45,24 @@ const app = new PIXI.Application(<PIXI.ApplicationOptions>{
   view: canvas,
   transparent: true,
 });
-app.stage = new PIXI.display.Stage();
-(<PIXI.display.Stage>app.stage).group.enableSort = true;
+const pixiAny = PIXI as any;
+app.stage = new pixiAny.display.Stage();
+(app.stage as any).group.enableSort = true;
 const container = new CustomContainer();
 app.stage.addChild(container);
 
-var backgroundGroup = new PIXI.display.Group(0, true);
-var tileGroup = new PIXI.display.Group(1, true);
-var bodyGroup = new PIXI.display.Group(2, true);
+var backgroundGroup = new pixiAny.display.Group(0, true);
+var tileGroup = new pixiAny.display.Group(1, true);
+var bodyGroup = new pixiAny.display.Group(2, true);
 
-app.stage.addChild(new PIXI.display.Layer(backgroundGroup));
-app.stage.addChild(new PIXI.display.Layer(tileGroup));
-app.stage.addChild(new PIXI.display.Layer(bodyGroup));
+app.stage.addChild(new pixiAny.display.Layer(backgroundGroup));
+app.stage.addChild(new pixiAny.display.Layer(tileGroup));
+app.stage.addChild(new pixiAny.display.Layer(bodyGroup));
 
 container.backgroundGroup = backgroundGroup;
 container.bodyGroup = bodyGroup;
 
-container.tiles = new PIXI.tilemap.CompositeRectTileLayer(0);
+container.tiles = new pixiAny.tilemap.CompositeRectTileLayer(0);
 container.tiles.parentGroup = tileGroup;
 container.addChild(container.tiles);
 
