@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Spaceone.io — Live Visual Calibration Studio</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        user-select: none;
+      }
+      body {
+        background-color: #0b0c10;
+        color: #c5c6c7;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        display: flex;
+        height: 100vh;
+        overflow: hidden;
+      }
+      #canvas-container {
+        flex: 1;
+        position: relative;
+        background: radial-gradient(circle at center, #141724 0%, #06070a 100%);
+        overflow: hidden;
+      }
+      #tuner-canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+      #sidebar {
+        width: 440px;
+        background: rgba(18, 22, 34, 0.95);
+        border-left: 1px solid #1f2833;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        backdrop-filter: blur(10px);
+        box-shadow: -5px 0 25px rgba(0,0,0,0.5);
+      }
+      .header {
+        padding: 16px 20px;
+        border-bottom: 1px solid #1f2833;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .header h1 {
+        font-size: 16px;
+        font-weight: 700;
+        color: #66fcf1;
+        letter-spacing: 0.5px;
+      }
+      .tabs {
+        display: flex;
+        border-bottom: 1px solid #1f2833;
+        background: #101420;
+      }
+      .tab-btn {
+        flex: 1;
+        padding: 10px;
+        background: none;
+        border: none;
+        color: #8892b0;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        border-bottom: 2px solid transparent;
+      }
+      .tab-btn.active {
+        color: #66fcf1;
+        border-bottom: 2px solid #66fcf1;
+        background: #181d2c;
+      }
+      .tab-btn:hover:not(.active) {
+        color: #ccd6f6;
+        background: #141824;
+      }
+      .tab-content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px 20px;
+        display: none;
+      }
+      .tab-content.active {
+        display: block;
+      }
+      .control-group {
+        margin-bottom: 16px;
+        background: #161b28;
+        padding: 12px 14px;
+        border-radius: 8px;
+        border: 1px solid #232a3b;
+      }
+      .control-group-title {
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #45a29e;
+        margin-bottom: 10px;
+        letter-spacing: 0.8px;
+      }
+      .control-row {
+        margin-bottom: 10px;
+      }
+      .control-row:last-child {
+        margin-bottom: 0;
+      }
+      .label-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+        margin-bottom: 4px;
+      }
+      .val-badge {
+        color: #66fcf1;
+        font-family: monospace;
+        font-size: 12px;
+        font-weight: bold;
+      }
+      input[type="range"] {
+        width: 100%;
+        accent-color: #66fcf1;
+        cursor: pointer;
+      }
+      select, button {
+        background: #1f2833;
+        color: #66fcf1;
+        border: 1px solid #45a29e;
+        padding: 7px 12px;
+        border-radius: 6px;
+        font-size: 13px;
+        cursor: pointer;
+        width: 100%;
+        outline: none;
+        transition: background 0.2s;
+      }
+      button:hover {
+        background: #45a29e;
+        color: #0b0c10;
+        font-weight: 600;
+      }
+      .btn-row {
+        display: flex;
+        gap: 8px;
+      }
+      .btn-row button {
+        flex: 1;
+      }
+      .export-box {
+        background: #090b10;
+        border: 1px solid #232a3b;
+        border-radius: 6px;
+        padding: 10px;
+        font-family: 'Consolas', 'Courier New', monospace;
+        font-size: 11px;
+        color: #a8b2d1;
+        max-height: 160px;
+        overflow-y: auto;
+        white-space: pre;
+        margin-top: 10px;
+      }
+      .instructions {
+        font-size: 11px;
+        color: #8892b0;
+        line-height: 1.4;
+        margin-top: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="canvas-container">
+      <canvas id="tuner-canvas"></canvas>
+    </div>
+    <div id="sidebar">
+      <div class="header">
+        <h1>Calibration Studio</h1>
+        <button id="reset-all-btn" style="width: auto; padding: 4px 10px; font-size: 11px;">Reset Defaults</button>
+      </div>
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="ship-tab">Ship & Boost</button>
+        <button class="tab-btn" data-tab="bullet-tab">Bullet & Trail</button>
+        <button class="tab-btn" data-tab="food-tab">Food & Halo</button>
+        <button class="tab-btn" data-tab="export-tab">Export</button>
+      </div>
+
+      <!-- TAB 1: SHIP & BOOST -->
+      <div class="tab-content active" id="ship-tab">
+        <div class="control-group">
+          <div class="control-group-title">Ship Appearance</div>
+          <div class="control-row">
+            <div class="label-row">
+              <span>Ship Color</span>
+            </div>
+            <select id="ship-color">
+              <option value="cyan">Cyan</option>
+              <option value="blue">Blue</option>
+              <option value="green">Green</option>
+              <option value="orange">Orange</option>
+              <option value="pink">Pink</option>
+              <option value="red">Red</option>
+              <option value="yellow">Yellow</option>
+            </select>
+          </div>
+          <div class="control-row">
+            <div class="label-row">
+              <span>Base Ship Size</span>
+              <span class="val-badge" id="ship-size-val">3.10</span>
+            </div>
+            <input type="range" id="ship-size" min="1.0" max="6.0" step="0.05" value="3.1" />
+          </div>
+          <div class="control-row">
+            <div class="label-row">
+              <span>Ship Angle (Degrees)</span>
+              <span class="val-badge" id="ship-angle-val">0°</span>
+            </div>
+            <input type="range" id="ship-angle" min="-180" max="180" step="1" value="0" />
+          </div>
+        </div>
+
+        <div class="control-group">
+          <div class="control-group-title">Boost Hull Overlay</div>
+          <div class="control-row">
+            <div class="label-row">
+              <span>Boost Hull Size Ratio</span>
+              <span class="val-badge" id="boost-hull-size-val">3.41</span>
+            </div>
+            <input type="range" id="boost-hull-size" min="2.0" max="5.0" step="0.01" value="3.41" />
+          </div>
+          <div class="control-row">
+            <div class="label-row">
+              <span>Overlay Opacity (Manual Preview)</span>
+              <span class="val-badge" id="boost-hull-alpha-val">1.00</span>
+            </div>
+            <input type="range" id="boost-hull-alpha" min="0.0" max="1.0" step="0.02" value="1.0" />
+          </div>
+        </div>
+
+        <div class="control-group">
+          <div class="control-group-title">Dash Trail Attachment</div>
+          <div class="control-row">
+            <div class="label-row">
+              <span>Trail Offset X</span>
+              <span class="val-badge" id="dash-offset-x-val">-80</span>
+            </div>
+            <input type="range" id="dash-offset-x" min="-150" max="-30" step="1" value="-80" />
+          </div>
+          <div class="control-row">
+            <div class="label-row">
+              <span>Trail Offset Y</span>
+              <span class="val-badge" id="dash-offset-y-val">0</span>
+            </div>
+            <input type="range" id="dash-offset-y" min="-40" max="40" step="1" value="0" />
+          </div>
+          <div class="control-row">
+            <div class="label-row">
+              <span>Dash Trail Size</span>
+              <span class="val-badge" id="dash-size-val">3.25</span>
+            </div>
+            <input type="range" id="dash-size" min="1.0" max="6.0" step="0.05" value="3.25" />
+          </div>
+          <div class="control-row" style="margin-top: 8px;">
+            <div class="btn-row">
+              <button id="trigger-boost-btn">Trigger Boost Animation (0.5s)</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: BULLET & TRAIL -->
+      <div class="tab-content" id="bullet-tab">
+        <div class="control-group">
+          <div class="control-group-title">Laser Bullet Tip & Trail</div>
+          <div class="control-row">
+            <div class="label-row">
+              <span>Bullet Color</span>
+            </div>
+            <select id="bullet-color">
+              <option value="cyan">Cyan</option>
+              <option value="blue">Blue</option>
+              <option value="green">Green</option>
+              <option value="orange">Orange</option>
+              <option value="pink">Pink</option>
+              <option value="red">Red</option>
+              <option value="yellow">Yellow</option>
+            </select>
+          </div>
+          <div class="control-row">
+            <div class="label-row">
+              <span>Bullet Tip Size</span>
+              <span class="val-badge" id="bullet-tip-size-val">2.50</span>
+            </div>
+            <input type="range" id="bullet-tip-size" min="1.0" max="5.0" step="0.05" value="2.5" />
+          </div>
+          <div class="control-row">
+            <div class="label-row">
+              <span>Laser Trail Offset X</span>
+              <span class="val-badge" id="laser-offset-x-val">-80</span>
+            </div>
+            <input type="range" id="laser-offset-x" min="-150" max="-30" step="1" value="-80" />
+          </div>
+          <div class="control-row">
+            <div class="label-row">
+              <span>Laser Trail Offset Y</span>
+              <span class="val-badge" id="laser-offset-y-val">0</span>
+            </div>
+            <input type="range" id="laser-offset-y" min="-30" max="30" step="1" value="0" />
+          </div>
+          <div class="control-row">
+            <div class="label-row">
+              <span>Laser Trail Length/Size</span>
+              <span class="val-badge" id="laser-trail-size-val">12.50</span>
+            </div>
+            <input type="range" id="laser-trail-size" min="5.0" max="25.0" step="0.25" value="12.5" />
+          </div>
+        </div>
+
+        <div class="control-group">
+          <div class="control-group-title">Flying Sparkles Emitter</div>
+          <div class="control-row">
+            <div class="label-row">
+              <span>Particle Start Scale</span>
+              <span class="val-badge" id="sparkle-scale-start-val">0.38</span>
+            </div>
+            <input type="range" id="sparkle-scale-start" min="0.1" max="1.0" step="0.01" value="0.38" />
+          </div>
+          <div class="control-row">
+            <div class="label-row">
+              <span>Emission Frequency (Interval)</span>
+              <span class="val-badge" id="sparkle-freq-val">0.025s</span>
+            </div>
+            <input type="range" id="sparkle-freq" min="0.005" max="0.1" step="0.005" value="0.025" />
+          </div>
+          <div class="control-row">
+            <div class="label-row">
+              <span>Particle Lifetime</span>
+              <span class="val-badge" id="sparkle-life-val">0.20s</span>
+            </div>
+            <input type="range" id="sparkle-life" min="0.05" max="0.6" step="0.01" value="0.20" />
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: FOOD & HALO -->
+      <div class="tab-content" id="food-tab">
+        <div class="control-group">
+          <div class="control-group-title">Food (Fish) Dimensions</div>
+          <div class="control-row">
+            <div class="label-row">
+              <span>Food Color</span>
+            </div>
+            <select id="food-color">
+              <option value="cyan">Cyan</option>
+              <option value="blue">Blue</option>
+              <option value="green">Green</option>
+              <option value="orange">Orange</option>
+              <option value="pink">Pink</option>
+              <option value="red">Red</option>
+              <option value="yellow">Yellow</option>
+            </select>
+          </div>
+          <div class="control-row">
+            <div class="label-row">
+              <span>Core Food Size</span>
+              <span class="val-badge" id="food-core-size-val">1.20</span>
+            </div>
+            <input type="range" id="food-core-size" min="0.4" max="3.0" step="0.05" value="1.2" />
+          </div>
+          <div class="control-row">
+            <div class="label-row">
+              <span>Glow Halo Size</span>
+              <span class="val-badge" id="food-glow-size-val">6.00</span>
+            </div>
+            <input type="range" id="food-glow-size" min="2.0" max="10.0" step="0.1" value="6.0" />
+          </div>
+          <div class="control-row">
+            <div class="label-row">
+              <span>Glow Min/Max Alpha</span>
+              <span class="val-badge" id="food-glow-alpha-val">0.4 - 1.0</span>
+            </div>
+            <input type="range" id="food-glow-min-alpha" min="0.1" max="0.8" step="0.05" value="0.4" />
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 4: EXPORT -->
+      <div class="tab-content" id="export-tab">
+        <div class="control-group">
+          <div class="control-group-title">Generated Config Snippet</div>
+          <div class="instructions">
+            Adjust the sliders on any tab. Your calibrated values are reflected in real time in the box below.
+          </div>
+          <div class="export-box" id="export-code"></div>
+          <button id="copy-btn" style="margin-top: 10px;">Copy Config</button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/src/tuner.ts"></script>
+  </body>
+</html>
