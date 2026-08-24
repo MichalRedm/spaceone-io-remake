@@ -119,6 +119,8 @@ export class RenderedObject {
   bulletLifetime: number;
   isAbandoned: boolean;
   abandonedStartTime: number;
+  isInvulnerable: boolean;
+  invulnerableStartTime: number;
 
   constructor(container: CustomContainer) {
     this.container = container;
