@@ -320,7 +320,11 @@ connection.onView = (newView) => {
     border.updateWorldSize(newView.worldSize());
   }
 
-  cooldown.setCooldown(newView.cooldownShoot());
+  if (view.isAlive) {
+    cooldown.setCooldown(newView.cooldownShoot());
+  } else {
+    cooldown.hide();
+  }
   /*console.log({
         playerCount: Game.Stats.playerCount,
         cooldownBoost: newView.cooldownBoost(),
@@ -431,7 +435,7 @@ function startSpectate(hideButton = false) {
   canvas.style.visibility = "initial";
   $(".visibility").hide();
   $(".visibility2").show();
-  $(".visibility3").show();
+  $(".visibility3").hide();
   $(".visibility4").hide();
 
   if (hideButton) {
