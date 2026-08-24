@@ -42,7 +42,7 @@ food_orange,
 food_pink,
 food_red,
 food_yellow {
-  size: 2;
+  size: 3;
 }
 food_cyan,
 fish_cyan {
@@ -81,7 +81,7 @@ food_orange_glow,
 food_pink_glow,
 food_red_glow,
 food_yellow_glow {
-  size: 6;
+  size: 9;
   blend-mode: "screen";
 }
 food_blue_glow {
@@ -325,7 +325,7 @@ dash_trail_orange,
 dash_trail_pink,
 dash_trail_red,
 dash_trail_yellow {
-  size: 2.66;
+  size: 3.99;
   rotate: -1.5707963;
   offset: {
     x: -80;
@@ -362,7 +362,7 @@ dead_ship_orange,
 dead_ship_pink,
 dead_ship_red,
 dead_ship_yellow {
-  size: 1.92;
+  size: 2.88;
 }
 dead_ship_blue {
   file: "dead_ship_blue";
@@ -411,7 +411,7 @@ ship_yellow_upgrade_3,
 ship_grey_upgrade_1,
 ship_grey_upgrade_2,
 ship_grey_upgrade_3 {
-  size: 1.92;
+  size: 2.88;
 }
 ship_blue_upgrade_1 {
   file: "ship_blue_upgrade_1";
@@ -488,11 +488,11 @@ ship_grey_upgrade_3 {
 
 ship_grey {
   file: "ship_grey";
-  size: 1.92;
+  size: 2.88;
 }
 ship_purple {
   file: "ship_purple";
-  size: 1.92;
+  size: 2.88;
 }
 
 bullet_emitter_blue {
@@ -557,7 +557,7 @@ ship_red_boost,
 ship_yellow_boost,
 ship_secret,
 ship_zed {
-  size: 1.92;
+  size: 2.88;
 }
 
 // daudelins
@@ -611,7 +611,7 @@ ship_orange_boost,
 ship_pink_boost,
 ship_red_boost,
 ship_yellow_boost {
-  size: 1.92;
+  size: 2.88;
 }
 particle_ship_cyan,
 ship_cyan_boost {
@@ -649,7 +649,7 @@ dead_ship_orange,
 dead_ship_pink,
 dead_ship_red,
 dead_ship_yellow {
-  size: 3.1;
+  size: 2.88;
 }
 dead_ship_cyan {
   file: "dead_ship_cyan";
@@ -680,6 +680,7 @@ ship_ab_orange,
 ship_ab_pink,
 ship_ab_red,
 ship_ab_yellow {
+  size: 2.88;
   animated: true;
   loop: false;
   animation-speed: 0.3;
@@ -726,7 +727,7 @@ bullet_orange,
 bullet_pink,
 bullet_red,
 bullet_yellow {
-  size: 0.52;
+  size: 0.78;
 }
 bullet {
   file: "bullet";
@@ -760,7 +761,7 @@ laser_orange_trail,
 laser_pink_trail,
 laser_red_trail,
 laser_yellow_trail {
-  size: 2.58;
+  size: 3.87;
   rotate: -1.5707963;
   offset: {
     x: -105.5;

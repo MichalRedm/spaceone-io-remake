@@ -201,8 +201,8 @@ class FXManager {
       cfg.minParticles;
     const now = performance.now();
 
-    // Max particle size is ~75% of ship sprite (ship render scale is ~ (shipSize / 121) * 1.92)
-    const baseShipScale = (shipSize / 121.0) * 1.92;
+    // Max particle size is ~75% of ship sprite (ship render scale is ~ (shipSize / 121) * 2.88)
+    const baseShipScale = (shipSize / 121.0) * 2.88;
     const particleMaxScale = baseShipScale * cfg.maxScaleRatio;
 
     for (let i = 0; i < count; i++) {
