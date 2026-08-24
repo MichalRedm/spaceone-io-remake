@@ -81,6 +81,25 @@ class GroupParticle extends particles.Particle {
 }
 
 export class RenderedObject {
+  static groupBoostTimes: Record<number, number> = {};
+  static groupBulletData: Record<
+    number,
+    { spawnTime: number; lifetime: number }
+  > = {};
+
+  static getShipCountFromSpeed(speed: number): number {
+    let bestIdx = 1;
+    let bestDiff = Math.abs(speed - shotThrust[1]);
+    for (let i = 2; i < shotThrust.length; i++) {
+      const diff = Math.abs(speed - shotThrust[i]);
+      if (diff < bestDiff) {
+        bestDiff = diff;
+        bestIdx = i;
+      }
+    }
+    return bestIdx;
+  }
+
   container: CustomContainer;
   currentSpriteName: boolean;
   currentMode: number;
@@ -688,11 +707,23 @@ export class RenderedObject {
 
     const isBoostNow =
       (this.body?.Mode & 1) !== 0 || (this.currentMode & 1) !== 0;
-    if (isBoostNow && !this.isBoosting) {
-      this.isBoosting = true;
-      this.boostStartTime = now;
-    } else if (!isBoostNow && this.isBoosting) {
+    const groupID = this.body?.Group || 0;
+
+    if (isBoostNow) {
+      if (!this.isBoosting) {
+        this.isBoosting = true;
+        if (groupID && RenderedObject.groupBoostTimes[groupID]) {
+          this.boostStartTime = RenderedObject.groupBoostTimes[groupID];
+        } else {
+          this.boostStartTime = now;
+          if (groupID) RenderedObject.groupBoostTimes[groupID] = now;
+        }
+      }
+    } else if (this.isBoosting) {
       this.isBoosting = false;
+      if (groupID && RenderedObject.groupBoostTimes[groupID]) {
+        delete RenderedObject.groupBoostTimes[groupID];
+      }
     }
 
     const self = this;
@@ -819,12 +850,29 @@ export class RenderedObject {
   update(updateData) {
     this.body = updateData;
 
-    const m = updateData.Momentum;
-    if (m) {
-      const speed =
-        Math.round((Math.sqrt(m.x * m.x + m.y * m.y) / 0.012) * 100) / 100;
-      const idx = shotThrust.indexOf(speed);
-      this.bulletLifetime = (idx >= 0 ? 25 * idx : 0) + 1900;
+    const spriteStr = String(this.body?.Sprite || this.currentSpriteName || "");
+    if (spriteStr.startsWith("bullet") || spriteStr.startsWith("laser")) {
+      const m = updateData.Momentum;
+      if (m) {
+        const speed = Math.sqrt(m.x * m.x + m.y * m.y) / 0.0012;
+        const shipCount = RenderedObject.getShipCountFromSpeed(speed);
+        this.bulletLifetime = 1900 + 25 * shipCount;
+      }
+
+      const groupID = updateData.Group || 0;
+      if (groupID) {
+        const now = performance.now();
+        const existing = RenderedObject.groupBulletData[groupID];
+        if (existing && now - existing.spawnTime < 500) {
+          this.spawnTime = existing.spawnTime;
+          this.bulletLifetime = existing.lifetime;
+        } else {
+          RenderedObject.groupBulletData[groupID] = {
+            spawnTime: this.spawnTime,
+            lifetime: this.bulletLifetime,
+          };
+        }
+      }
     }
 
     this.setSprite(updateData.Sprite, updateData.Mode, updateData.zIndex);
