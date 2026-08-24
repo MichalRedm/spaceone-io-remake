@@ -869,8 +869,12 @@ export class RenderedObject {
       ) {
         if (self.isBoosting) {
           const boostElapsed = now - self.boostStartTime;
-          const boostProgress = Math.min(1.0, boostElapsed / 500);
-          layer.alpha = Math.max(0.0, 1.0 - boostProgress);
+          if (boostElapsed < 150) {
+            layer.alpha = 1.0;
+          } else {
+            const boostProgress = Math.min(1.0, (boostElapsed - 150) / 350);
+            layer.alpha = Math.max(0.0, 1.0 - boostProgress);
+          }
           layer.visible = layer.alpha > 0.01;
         } else if (self.isInvulnerable) {
           const invulnElapsed = now - self.invulnerableStartTime;
