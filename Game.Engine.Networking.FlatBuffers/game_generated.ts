@@ -1023,7 +1023,7 @@ isAlive():boolean {
  */
 updates(index: number, obj?:Game.Engine.Networking.FlatBuffers.NetBody):Game.Engine.Networking.FlatBuffers.NetBody|null {
   var offset = this.bb!.__offset(this.bb_pos, 12);
-  return offset ? (obj || new Game.Engine.Networking.FlatBuffers.NetBody).__init(this.bb!.__vector(this.bb_pos + offset) + index * 28, this.bb!) : null;
+  return offset ? (obj || new Game.Engine.Networking.FlatBuffers.NetBody).__init(this.bb!.__vector(this.bb_pos + offset) + index * 44, this.bb!) : null;
 };
 
 /**
@@ -1223,7 +1223,7 @@ static addUpdates(builder:flatbuffers.Builder, updatesOffset:flatbuffers.Offset)
  * @param number numElems
  */
 static startUpdatesVector(builder:flatbuffers.Builder, numElems:number) {
-  builder.startVector(28, numElems, 4);
+  builder.startVector(44, numElems, 4);
 };
 
 /**

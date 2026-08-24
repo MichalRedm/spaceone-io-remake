@@ -1197,7 +1197,7 @@ export namespace Game.Engine.Networking.FlatBuffers {
       var offset = this.bb!.__offset(this.bb_pos, 12);
       return offset
         ? (obj || new Game.Engine.Networking.FlatBuffers.NetBody()).__init(
-            this.bb!.__vector(this.bb_pos + offset) + index * 28,
+            this.bb!.__vector(this.bb_pos + offset) + index * 44,
             this.bb!,
           )
         : null;
@@ -1454,7 +1454,7 @@ export namespace Game.Engine.Networking.FlatBuffers {
      * @param number numElems
      */
     static startUpdatesVector(builder: flatbuffers.Builder, numElems: number) {
-      builder.startVector(28, numElems, 4);
+      builder.startVector(44, numElems, 4);
     }
 
     /**

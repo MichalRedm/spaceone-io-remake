@@ -321,7 +321,7 @@ public struct NetWorldView : IFlatbufferObject
   public NetBody? Camera { get { int o = __p.__offset(6); return o != 0 ? (NetBody?)(new NetBody()).__assign(o + __p.bb_pos, __p.bb) : null; } }
   public uint FleetID { get { int o = __p.__offset(8); return o != 0 ? __p.bb.GetUint(o + __p.bb_pos) : (uint)0; } }
   public bool IsAlive { get { int o = __p.__offset(10); return o != 0 ? 0!=__p.bb.Get(o + __p.bb_pos) : (bool)true; } }
-  public NetBody? Updates(int j) { int o = __p.__offset(12); return o != 0 ? (NetBody?)(new NetBody()).__assign(__p.__vector(o) + j * 28, __p.bb) : null; }
+  public NetBody? Updates(int j) { int o = __p.__offset(12); return o != 0 ? (NetBody?)(new NetBody()).__assign(__p.__vector(o) + j * 44, __p.bb) : null; }
   public int UpdatesLength { get { int o = __p.__offset(12); return o != 0 ? __p.__vector_len(o) : 0; } }
   public uint Deletes(int j) { int o = __p.__offset(14); return o != 0 ? __p.bb.GetUint(__p.__vector(o) + j * 4) : (uint)0; }
   public int DeletesLength { get { int o = __p.__offset(14); return o != 0 ? __p.__vector_len(o) : 0; } }
@@ -347,7 +347,7 @@ public struct NetWorldView : IFlatbufferObject
   public static void AddFleetID(FlatBufferBuilder builder, uint fleetID) { builder.AddUint(2, fleetID, 0); }
   public static void AddIsAlive(FlatBufferBuilder builder, bool isAlive) { builder.AddBool(3, isAlive, true); }
   public static void AddUpdates(FlatBufferBuilder builder, VectorOffset updatesOffset) { builder.AddOffset(4, updatesOffset.Value, 0); }
-  public static void StartUpdatesVector(FlatBufferBuilder builder, int numElems) { builder.StartVector(28, numElems, 4); }
+  public static void StartUpdatesVector(FlatBufferBuilder builder, int numElems) { builder.StartVector(44, numElems, 4); }
   public static void AddDeletes(FlatBufferBuilder builder, VectorOffset deletesOffset) { builder.AddOffset(5, deletesOffset.Value, 0); }
   public static VectorOffset CreateDeletesVector(FlatBufferBuilder builder, uint[] data) { builder.StartVector(4, data.Length, 4); for (int i = data.Length - 1; i >= 0; i--) builder.AddUint(data[i]); return builder.EndVector(); }
   public static void StartDeletesVector(FlatBufferBuilder builder, int numElems) { builder.StartVector(4, numElems, 4); }
