@@ -137,6 +137,8 @@ export class RenderedObject {
     this.bulletLifetime = 1900;
     this.isAbandoned = false;
     this.abandonedStartTime = 0;
+    this.isInvulnerable = false;
+    this.invulnerableStartTime = 0;
   }
 
   decodeModes(mode: number): string[] {
@@ -753,6 +755,8 @@ export class RenderedObject {
 
     const isBoostNow =
       (this.body?.Mode & 1) !== 0 || (this.currentMode & 1) !== 0;
+    const isInvulnerableNow =
+      (this.body?.Mode & 2) !== 0 || (this.currentMode & 2) !== 0;
     const groupID = this.body?.Group || 0;
 
     if (isBoostNow) {
@@ -770,6 +774,15 @@ export class RenderedObject {
       if (groupID && RenderedObject.groupBoostTimes[groupID]) {
         delete RenderedObject.groupBoostTimes[groupID];
       }
+    }
+
+    if (isInvulnerableNow) {
+      if (!this.isInvulnerable) {
+        this.isInvulnerable = true;
+        this.invulnerableStartTime = now;
+      }
+    } else if (this.isInvulnerable) {
+      this.isInvulnerable = false;
     }
 
     const self = this;
@@ -801,6 +814,20 @@ export class RenderedObject {
       layer.rotation = angle + rotationOffset;
 
       const fileStr = String(layer.textureDefinition?.file || "").toLowerCase();
+
+      // Invulnerability 12-period (0.25s each, 3s total) blink check (odd=visible, even=invisible)
+      if (self.isInvulnerable && !self.isAbandoned) {
+        const invulnElapsed = now - self.invulnerableStartTime;
+        if (invulnElapsed < 3000) {
+          const periodIndex = Math.floor(invulnElapsed / 250) + 1;
+          const isBlinkVisible = periodIndex % 2 === 1;
+          if (!isBlinkVisible) {
+            layer.alpha = 0.0;
+            layer.visible = false;
+            return;
+          }
+        }
+      }
 
       // Dynamic Lifecycle Alphas & Crossfades
       if (fileStr.startsWith("dash_trail")) {
@@ -840,14 +867,19 @@ export class RenderedObject {
         fileStr.startsWith("particle_ship") ||
         fileStr.includes("_boost")
       ) {
-        if (!self.isBoosting) {
-          layer.alpha = 0.0;
-          layer.visible = false;
-        } else {
+        if (self.isBoosting) {
           const boostElapsed = now - self.boostStartTime;
           const boostProgress = Math.min(1.0, boostElapsed / 500);
           layer.alpha = Math.max(0.0, 1.0 - boostProgress);
           layer.visible = layer.alpha > 0.01;
+        } else if (self.isInvulnerable) {
+          const invulnElapsed = now - self.invulnerableStartTime;
+          const invulnProgress = Math.min(1.0, invulnElapsed / 3000);
+          layer.alpha = Math.max(0.0, 1.0 - invulnProgress);
+          layer.visible = layer.alpha > 0.01;
+        } else {
+          layer.alpha = 0.0;
+          layer.visible = false;
         }
       } else if (fileStr.startsWith("ship") && !fileStr.startsWith("ship_ab")) {
         if (self.isAbandoned) {
