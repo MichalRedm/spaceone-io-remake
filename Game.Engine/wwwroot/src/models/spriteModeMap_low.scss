@@ -419,10 +419,6 @@ ship {
     textures: inherit, "defenseupgrade";
   }
 
-  &.invulnerable {
-    textures: inherit, "invulnerable";
-  }
-
   &.shield {
     textures: inherit, "shield";
   }
@@ -442,10 +438,6 @@ ship0 {
 
   &.defenseupgrade {
     textures: inherit, "defenseupgrade";
-  }
-
-  &.invulnerable {
-    textures: inherit, "invulnerable";
   }
 
   &.shield {
