@@ -14,6 +14,7 @@ import { Minimap } from "./minimap";
 import { HUD } from "./hud";
 import { Log } from "./log";
 import { Cooldown } from "./cooldown";
+import { FX } from "./models/fx";
 import { Controls } from "./controls";
 import { message } from "./chat";
 import { Connection } from "./connection";
@@ -73,6 +74,7 @@ container.emitterContainer = new PIXI.Container();
 container.emitterContainer.parentGroup = bodyGroup;
 container.zOrder = 128;
 container.addChild(container.emitterContainer);
+FX.init(container);
 
 const renderer = new Renderer(container);
 const background = new Background(container);

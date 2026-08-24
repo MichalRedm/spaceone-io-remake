@@ -138,6 +138,12 @@ export class RenderedObject {
   lastTime: number;
 
   additionalClasses?: string[];
+  lastPosition: { x: number; y: number };
+  spawnTime: number;
+  isBoosting: boolean;
+  boostStartTime: number;
+  bulletLifetime: number;
+
   constructor(container: CustomContainer) {
     this.container = container;
     this.currentSpriteName = false;
@@ -147,6 +153,12 @@ export class RenderedObject {
     this.lastTime = 0;
     this.activeTextures = {};
     this.activeEmitters = {};
+
+    this.lastPosition = { x: 0, y: 0 };
+    this.spawnTime = performance.now();
+    this.isBoosting = false;
+    this.boostStartTime = 0;
+    this.bulletLifetime = 1900;
   }
 
   decodeModes(mode: number): string[] {
@@ -368,41 +380,6 @@ export class RenderedObject {
     pixiSprite.pivot.y = pixiSprite.height / 2;
     pixiSprite.x = 0;
     pixiSprite.y = 0;
-
-    // bullet fade
-    if (
-      (textureName.includes("bullet") || textureName.includes("laser")) &&
-      Settings.graphics !== "low"
-    ) {
-      let m = this.body?.Momentum;
-      if (m) {
-        let bulletLife =
-          25 *
-            shotThrust.indexOf(
-              Math.round((Math.sqrt(m.x * m.x + m.y * m.y) / 0.012) * 100) /
-                100,
-            ) +
-          1900;
-        pixiSprite.alpha = 1 / 3;
-        let fadeInInterval = setInterval(() => {
-          pixiSprite.alpha = Math.min(1, pixiSprite.alpha + 1 / 3);
-          if (pixiSprite.alpha === 1) {
-            clearInterval(fadeInInterval);
-          }
-        }, 70);
-        setTimeout(
-          () => {
-            let fadeOutInterval = setInterval(() => {
-              pixiSprite.alpha = Math.max(0, pixiSprite.alpha - 0.2);
-              if (pixiSprite.alpha === 0) {
-                clearInterval(fadeOutInterval);
-              }
-            }, 70);
-          },
-          Math.max(100, bulletLife - 70 * 5),
-        );
-      }
-    }
 
     pixiSprite.baseScale = RenderedObject.getScaleWithHeight(
       textureDefinition,
@@ -737,7 +714,20 @@ export class RenderedObject {
 
   moveSprites(interpolatedPosition, size) {
     const angle = interpolatedPosition.Angle;
+    this.lastPosition.x = interpolatedPosition.x;
+    this.lastPosition.y = interpolatedPosition.y;
+    const now = performance.now();
 
+    const isBoostNow =
+      (this.body?.Mode & 1) !== 0 || (this.currentMode & 1) !== 0;
+    if (isBoostNow && !this.isBoosting) {
+      this.isBoosting = true;
+      this.boostStartTime = now;
+    } else if (!isBoostNow && this.isBoosting) {
+      this.isBoosting = false;
+    }
+
+    const self = this;
     this.foreachLayer(function (layer, index) {
       layer.pivot.x = layer.texture.width / 2;
       layer.pivot.y = layer.texture.height / 2;
@@ -765,28 +755,99 @@ export class RenderedObject {
 
       layer.rotation = angle + rotationOffset;
 
-      const fileStr = String(layer.textureDefinition?.file || "");
+      const fileStr = String(layer.textureDefinition?.file || "").toLowerCase();
+
+      // Dynamic Lifecycle Alphas & Crossfades
       if (fileStr.startsWith("dash_trail")) {
-        const flicker =
-          0.92 +
-          0.12 *
-            Math.sin(Date.now() * 0.035 + ((this.body?.ID || 0) % 10) * 1.5);
-        layer.scale.set(scale, scale * flicker);
-        layer.alpha =
-          0.85 +
-          0.15 *
-            Math.cos(Date.now() * 0.05 + ((this.body?.ID || 0) % 10) * 1.5);
+        if (!self.isBoosting) {
+          layer.alpha = 0.0;
+          layer.visible = false;
+        } else {
+          const boostElapsed = now - self.boostStartTime;
+          if (boostElapsed < 50) {
+            layer.alpha = 0.0;
+            layer.visible = false;
+          } else {
+            const trailProgress = Math.min(1.0, (boostElapsed - 50) / 450);
+            const flicker =
+              0.92 +
+              0.12 * Math.sin(now * 0.035 + ((self.body?.ID || 0) % 10) * 1.5);
+            layer.scale.set(scale, scale * flicker);
+            layer.alpha =
+              Math.max(0.0, 1.0 - trailProgress) *
+              (0.85 +
+                0.15 *
+                  Math.cos(now * 0.05 + ((self.body?.ID || 0) % 10) * 1.5));
+            layer.visible = layer.alpha > 0.01;
+          }
+        }
+      } else if (
+        fileStr.startsWith("particle_ship") ||
+        fileStr.includes("_boost")
+      ) {
+        if (!self.isBoosting) {
+          layer.alpha = 0.0;
+          layer.visible = false;
+        } else {
+          const boostElapsed = now - self.boostStartTime;
+          const boostProgress = Math.min(1.0, boostElapsed / 500);
+          layer.alpha = Math.max(0.0, 1.0 - boostProgress);
+          layer.visible = layer.alpha > 0.01;
+        }
+      } else if (fileStr.startsWith("ship") && !fileStr.startsWith("ship_ab")) {
+        if (self.isBoosting) {
+          const boostElapsed = now - self.boostStartTime;
+          const boostProgress = Math.min(1.0, boostElapsed / 500);
+          layer.alpha = boostProgress;
+          layer.visible = true;
+        } else {
+          layer.alpha = 1.0;
+          layer.visible = true;
+        }
+      } else if (fileStr.includes("glow")) {
+        const spawnAge = now - self.spawnTime;
+        const spawnAlpha = Math.min(1.0, spawnAge / 1000);
+        const glowPulse =
+          0.35 + 0.65 * (0.5 + 0.5 * Math.sin((now / 1000) * 2 * Math.PI));
+        layer.alpha = spawnAlpha * glowPulse;
+        layer.visible = true;
+      } else if (fileStr.startsWith("food") || fileStr.startsWith("fish")) {
+        const spawnAge = now - self.spawnTime;
+        layer.alpha = Math.min(1.0, spawnAge / 1000);
+        layer.visible = true;
+      } else if (fileStr.includes("laser") && fileStr.includes("trail")) {
+        const age = now - self.spawnTime;
+        const remaining = self.bulletLifetime - age;
+        const fadeIn = Math.min(1.0, age / 120);
+        const fadeOut = remaining < 150 ? Math.max(0.0, remaining / 150) : 1.0;
+        layer.alpha = fadeIn * fadeOut;
+        layer.visible = layer.alpha > 0.01;
+      } else if (fileStr.startsWith("laser") || fileStr.startsWith("bullet")) {
+        const age = now - self.spawnTime;
+        const remaining = self.bulletLifetime - age;
+        const fadeIn = Math.min(1.0, age / 80);
+        const fadeOut =
+          remaining < 150 ? Math.max(0.0, (remaining - 50) / 100) : 1.0;
+        layer.alpha = fadeIn * fadeOut;
+        layer.visible = layer.alpha > 0.01;
       }
     });
 
     this.foreachEmitter(function (emitter) {
-      //console.log(`updating emitter ${interpolatedPosition.x},${interpolatedPosition.y}`);
       emitter.updateOwnerPos(interpolatedPosition.x, interpolatedPosition.y);
     });
   }
 
   update(updateData) {
     this.body = updateData;
+
+    const m = updateData.Momentum;
+    if (m) {
+      const speed =
+        Math.round((Math.sqrt(m.x * m.x + m.y * m.y) / 0.012) * 100) / 100;
+      const idx = shotThrust.indexOf(speed);
+      this.bulletLifetime = (idx >= 0 ? 25 * idx : 0) + 1900;
+    }
 
     this.setSprite(updateData.Sprite, updateData.Mode, updateData.zIndex);
   }

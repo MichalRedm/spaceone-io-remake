@@ -27,37 +27,53 @@ bg {
   size: 100%;
 }
 
-// fish
+// fish / food core
 fish_blue,
 fish_cyan,
 fish_green,
 fish_orange,
 fish_pink,
 fish_red,
-fish_yellow {
-  size: 0.24;
+fish_yellow,
+food_blue,
+food_cyan,
+food_green,
+food_orange,
+food_pink,
+food_red,
+food_yellow {
+  size: 1.5;
 }
+food_cyan,
 fish_cyan {
   file: "food_cyan";
 }
+food_blue,
 fish_blue {
   file: "food_blue";
 }
+food_green,
 fish_green {
   file: "food_green";
 }
+food_orange,
 fish_orange {
   file: "food_orange";
 }
+food_pink,
 fish_pink {
   file: "food_pink";
 }
+food_red,
 fish_red {
   file: "food_red";
 }
+food_yellow,
 fish_yellow {
   file: "food_yellow";
 }
+
+// food glow halo
 food_blue_glow,
 food_cyan_glow,
 food_green_glow,
@@ -65,35 +81,28 @@ food_orange_glow,
 food_pink_glow,
 food_red_glow,
 food_yellow_glow {
-  size: 0.8;
-  animated: true;
-  loop: true;
-  animation-speed: 0.4;
-  tile: {
-    size: 64;
-    count: 40;
-  }
+  size: 3.1;
 }
 food_blue_glow {
-  file: "food_blue_glow_ani";
+  file: "food_blue_glow";
 }
 food_cyan_glow {
-  file: "food_cyan_glow_ani";
+  file: "food_cyan_glow";
 }
 food_green_glow {
-  file: "food_green_glow_ani";
+  file: "food_green_glow";
 }
 food_orange_glow {
-  file: "food_orange_glow_ani";
+  file: "food_orange_glow";
 }
 food_pink_glow {
-  file: "food_pink_glow_ani";
+  file: "food_pink_glow";
 }
 food_red_glow {
-  file: "food_red_glow_ani";
+  file: "food_red_glow";
 }
 food_yellow_glow {
-  file: "food_yellow_glow_ani";
+  file: "food_yellow_glow";
 }
 
 // boom emitters
@@ -584,7 +593,7 @@ ship_yellow {
   file: "ship_yellow";
 }
 
-// boost
+// boost ship hulls
 ship_blue_boost,
 ship_cyan_boost,
 ship_green_boost,
@@ -592,34 +601,28 @@ ship_orange_boost,
 ship_pink_boost,
 ship_red_boost,
 ship_yellow_boost {
-  animated: true;
-  loop: false;
-  animation-speed: 0.6;
-  tile: {
-    size: 128;
-    count: 40;
-  }
+  size: 3.1;
 }
 ship_cyan_boost {
-  file: "ship_cyan_boost_ani";
+  file: "particle_ship_cyan";
 }
 ship_blue_boost {
-  file: "ship_blue_boost_ani";
+  file: "particle_ship_blue";
 }
 ship_green_boost {
-  file: "ship_green_boost_ani";
+  file: "particle_ship_green";
 }
 ship_orange_boost {
-  file: "ship_orange_boost_ani";
+  file: "particle_ship_orange";
 }
 ship_pink_boost {
-  file: "ship_pink_boost_ani";
+  file: "particle_ship_pink";
 }
 ship_red_boost {
-  file: "ship_red_boost_ani";
+  file: "particle_ship_red";
 }
 ship_yellow_boost {
-  file: "ship_yellow_boost_ani";
+  file: "particle_ship_yellow";
 }
 // abandoned ships
 ship_ab_cyan,

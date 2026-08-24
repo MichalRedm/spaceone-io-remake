@@ -140,13 +140,13 @@ shipColors.forEach(color => {
     console.log(`  ✓ Boost trail mapped for ship_${color}`);
   }
 
-  // Check boost animated sprite mapped
-  const boostSpritePattern = new RegExp(`ship_${color}_boost`);
+  // Check boost hull particle_ship mapped
+  const boostSpritePattern = new RegExp(`particle_ship_${color}`);
   if (!boostSpritePattern.test(highModeContent)) {
-    console.error(`  [Missing Boost Animation] Ship "${color}" does not reference ship_${color}_boost in spriteModeMap_high!`);
+    console.error(`  [Missing Boost Hull] Ship "${color}" does not reference particle_ship_${color} in spriteModeMap_high!`);
     hasErrors = true;
   } else {
-    console.log(`  ✓ Boost animated sprite mapped for ship_${color}`);
+    console.log(`  ✓ Boost hull particle_ship mapped for ship_${color}`);
   }
 
   // Check bullet emitter mapped

@@ -1,14 +1,11 @@
 import { Bullet } from "./models/bullet";
 import { Ship } from "./models/ship";
-import {
-  RenderedObject,
-  spawnFoodPickup,
-  spawnBulletImpact,
-} from "./models/renderedObject";
+import { RenderedObject } from "./models/renderedObject";
 import { Fleet } from "./models/fleet";
 import { Tile } from "./models/tile";
 import { Container } from "pixi.js";
 import { CustomContainer } from "./CustomContainer";
+import { FX } from "./models/fx";
 
 export class Cache {
   container: CustomContainer;
@@ -56,20 +53,37 @@ export class Cache {
       const body = this.bodies[key];
       if (body) {
         const spriteStr = String(body.Sprite || "");
-        const x = body.OriginalPosition?.x ?? 0;
-        const y = body.OriginalPosition?.y ?? 0;
+        const renderer = body.renderer as RenderedObject | undefined;
+        const x = renderer?.lastPosition?.x ?? body.OriginalPosition?.x ?? 0;
+        const y = renderer?.lastPosition?.y ?? body.OriginalPosition?.y ?? 0;
 
         if (spriteStr.startsWith("fish")) {
           const color = spriteStr.split("_")[1] || "cyan";
-          spawnFoodPickup(this.container, color, x, y);
+          FX.spawnFoodExplosion(color, x, y);
         } else if (
           spriteStr.startsWith("bullet") ||
           spriteStr.startsWith("laser")
         ) {
+          const now = performance.now();
+          const spawnTime = renderer?.spawnTime ?? now;
+          const lifetime = renderer?.bulletLifetime ?? 1900;
+          const age = now - spawnTime;
+          // Only explode if destroyed early by collision (before natural fade-out)
+          if (age < lifetime - 200) {
+            const parts = spriteStr.split("_");
+            const color = parts.length > 1 ? parts[1] : "cyan";
+            FX.spawnBulletExplosion(color, x, y);
+          }
+        } else if (
+          spriteStr.startsWith("ship") &&
+          !spriteStr.startsWith("ship_gray") &&
+          !spriteStr.startsWith("ship_base")
+        ) {
           const parts = spriteStr.split("_");
           const color = parts.length > 1 ? parts[1] : "cyan";
-          spawnBulletImpact(this.container, color, x, y);
+          FX.spawnShipExplosion(color, x, y, body.Size || 50);
         }
+
         if (body.renderer) body.renderer.destroy();
       }
       delete this.bodies[key];
