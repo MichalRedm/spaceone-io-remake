@@ -17,7 +17,7 @@ export class Camera {
   };
   aspectRatio: number;
   constructor(size: Dimension2, settings = { fieldOfView: Math.PI / 4.0 }) {
-    this.distance = 1500.0;
+    this.distance = 3600.0;
     this.lookat = [0, 0];
     this.size = size;
     this.fieldOfView = settings.fieldOfView || Math.PI / 4.0;
