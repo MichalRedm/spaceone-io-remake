@@ -595,6 +595,13 @@ ship_yellow {
 }
 
 // boost ship hulls
+particle_ship_blue,
+particle_ship_cyan,
+particle_ship_green,
+particle_ship_orange,
+particle_ship_pink,
+particle_ship_red,
+particle_ship_yellow,
 ship_blue_boost,
 ship_cyan_boost,
 ship_green_boost,
@@ -604,24 +611,31 @@ ship_red_boost,
 ship_yellow_boost {
   size: 2.8;
 }
+particle_ship_cyan,
 ship_cyan_boost {
   file: "particle_ship_cyan";
 }
+particle_ship_blue,
 ship_blue_boost {
   file: "particle_ship_blue";
 }
+particle_ship_green,
 ship_green_boost {
   file: "particle_ship_green";
 }
+particle_ship_orange,
 ship_orange_boost {
   file: "particle_ship_orange";
 }
+particle_ship_pink,
 ship_pink_boost {
   file: "particle_ship_pink";
 }
+particle_ship_red,
 ship_red_boost {
   file: "particle_ship_red";
 }
+particle_ship_yellow,
 ship_yellow_boost {
   file: "particle_ship_yellow";
 }
