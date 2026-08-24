@@ -1,5 +1,13 @@
+import "./bootstrap";
 import * as PIXI from "pixi.js";
+import {
+  initializeAtlasTextures,
+  RenderedObject,
+} from "./models/renderedObject";
 import { textureCache } from "./models/textureCache";
+
+// Ensure all atlas textures are initialized into textureCache
+initializeAtlasTextures();
 
 // State
 const state = {
@@ -48,13 +56,33 @@ app.stage.addChild(mainStage);
 const gridGfx = new PIXI.Graphics();
 mainStage.addChild(gridGfx);
 
+// Station text labels
+const titleStyle = new PIXI.TextStyle({
+  fontFamily: "Segoe UI, sans-serif",
+  fontSize: 13,
+  fontWeight: "bold",
+  fill: "#45a29e",
+  letterSpacing: 1,
+});
+
+const shipTitle = new PIXI.Text("SHIP & BOOST PREVIEW", titleStyle);
+shipTitle.anchor.set(0.5, 0.5);
+
+const bulletTitle = new PIXI.Text("BULLET & TRAIL PREVIEW", titleStyle);
+bulletTitle.anchor.set(0.5, 0.5);
+
+const foodTitle = new PIXI.Text("FOOD & GLOW PREVIEW", titleStyle);
+foodTitle.anchor.set(0.5, 0.5);
+
+mainStage.addChild(shipTitle, bulletTitle, foodTitle);
+
 function drawBackground() {
   gridGfx.clear();
   const w = app.screen.width;
   const h = app.screen.height;
 
-  // Grid
-  gridGfx.lineStyle(1, 0x161c28, 0.6);
+  // Subtle space background grid
+  gridGfx.lineStyle(1, 0x161c28, 0.5);
   for (let x = 0; x < w; x += 50) {
     gridGfx.moveTo(x, 0);
     gridGfx.lineTo(x, h);
@@ -65,18 +93,22 @@ function drawBackground() {
   }
 
   // Crosshairs & divider stations
-  gridGfx.lineStyle(1, 0x222d42, 0.9);
+  gridGfx.lineStyle(1, 0x222d42, 0.8);
   const cx1 = w * 0.25;
   const cx2 = w * 0.58;
   const cx3 = w * 0.85;
   const cy = h * 0.5;
 
   [cx1, cx2, cx3].forEach((cx) => {
-    gridGfx.moveTo(cx - 30, cy);
-    gridGfx.lineTo(cx + 30, cy);
-    gridGfx.moveTo(cx, cy - 30);
-    gridGfx.lineTo(cx, cy + 30);
+    gridGfx.moveTo(cx - 40, cy);
+    gridGfx.lineTo(cx + 40, cy);
+    gridGfx.moveTo(cx, cy - 40);
+    gridGfx.lineTo(cx, cy + 40);
   });
+
+  shipTitle.position.set(cx1, cy - 140);
+  bulletTitle.position.set(cx2, cy - 140);
+  foodTitle.position.set(cx3, cy - 140);
 }
 
 // Station Containers
@@ -101,6 +133,11 @@ function getTex(name: string): PIXI.Texture {
   const clean = name.toLowerCase().replace(/\.[^/.]+$/, "");
   const cached = textureCache[clean] || textureCache[name];
   if (cached && cached.length > 0) return cached[0];
+
+  // Try direct lookup with .png
+  const cachedPng = textureCache[`${clean}.png`] || textureCache[`${name}.png`];
+  if (cachedPng && cachedPng.length > 0) return cachedPng[0];
+
   return PIXI.Texture.WHITE;
 }
 
@@ -343,6 +380,69 @@ function setupUI() {
       if (tabId) getEl(tabId).classList.add("active");
       updateExport();
     });
+  });
+
+  // Reset All Button
+  getEl("reset-all-btn").addEventListener("click", () => {
+    state.shipSize = 3.1;
+    state.shipAngle = 0;
+    state.boostHullSize = 3.41;
+    state.boostHullAlpha = 1.0;
+    state.dashOffsetX = -80;
+    state.dashOffsetY = 0;
+    state.dashSize = 3.25;
+
+    state.bulletTipSize = 2.5;
+    state.laserOffsetX = -80;
+    state.laserOffsetY = 0;
+    state.laserTrailSize = 12.5;
+    state.sparkleScaleStart = 0.38;
+    state.sparkleFreq = 0.025;
+    state.sparkleLife = 0.2;
+
+    state.foodCoreSize = 1.2;
+    state.foodGlowSize = 6.0;
+    state.foodGlowMinAlpha = 0.4;
+
+    // Update inputs
+    getEl<HTMLInputElement>("ship-size").value = "3.1";
+    getEl("ship-size-val").textContent = "3.10";
+    getEl<HTMLInputElement>("ship-angle").value = "0";
+    getEl("ship-angle-val").textContent = "0°";
+    getEl<HTMLInputElement>("boost-hull-size").value = "3.41";
+    getEl("boost-hull-size-val").textContent = "3.41";
+    getEl<HTMLInputElement>("boost-hull-alpha").value = "1.0";
+    getEl("boost-hull-alpha-val").textContent = "1.00";
+    getEl<HTMLInputElement>("dash-offset-x").value = "-80";
+    getEl("dash-offset-x-val").textContent = "-80";
+    getEl<HTMLInputElement>("dash-offset-y").value = "0";
+    getEl("dash-offset-y-val").textContent = "0";
+    getEl<HTMLInputElement>("dash-size").value = "3.25";
+    getEl("dash-size-val").textContent = "3.25";
+
+    getEl<HTMLInputElement>("bullet-tip-size").value = "2.5";
+    getEl("bullet-tip-size-val").textContent = "2.50";
+    getEl<HTMLInputElement>("laser-offset-x").value = "-80";
+    getEl("laser-offset-x-val").textContent = "-80";
+    getEl<HTMLInputElement>("laser-offset-y").value = "0";
+    getEl("laser-offset-y-val").textContent = "0";
+    getEl<HTMLInputElement>("laser-trail-size").value = "12.5";
+    getEl("laser-trail-size-val").textContent = "12.50";
+    getEl<HTMLInputElement>("sparkle-scale-start").value = "0.38";
+    getEl("sparkle-scale-start-val").textContent = "0.38";
+    getEl<HTMLInputElement>("sparkle-freq").value = "0.025";
+    getEl("sparkle-freq-val").textContent = "0.025s";
+    getEl<HTMLInputElement>("sparkle-life").value = "0.20";
+    getEl("sparkle-life-val").textContent = "0.20s";
+
+    getEl<HTMLInputElement>("food-core-size").value = "1.2";
+    getEl("food-core-size-val").textContent = "1.20";
+    getEl<HTMLInputElement>("food-glow-size").value = "6.0";
+    getEl("food-glow-size-val").textContent = "6.00";
+    getEl<HTMLInputElement>("food-glow-min-alpha").value = "0.4";
+    getEl("food-glow-alpha-val").textContent = "0.40 - 1.00";
+
+    updateExport();
   });
 
   // Ship controls
