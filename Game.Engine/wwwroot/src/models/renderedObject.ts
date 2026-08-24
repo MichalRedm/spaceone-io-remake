@@ -15,13 +15,24 @@ import {
 } from "../parser/parseTheme";
 import { Sprite } from "pixi.js";
 
-import { initializeAtlasTextures, images } from "../atlasLoader";
-
-textureCache.initAtlases = () => initializeAtlasTextures(Settings.mipmapping);
-initializeAtlasTextures(Settings.mipmapping);
+import {
+  initializeAtlasTextures,
+  preloadAllGameTextures,
+  createTextureFromDefinition,
+  images,
+} from "../atlasLoader";
 
 var textureMapRules = [getDefaultTextureMapRules(Settings.graphics)];
 var spriteModeMapRules = [getDefaultSpriteModeMapRules(Settings.graphics)];
+
+textureCache.initAtlases = () => {
+  const rules =
+    textureMapRules && textureMapRules.length > 0
+      ? textureMapRules[0]
+      : undefined;
+  preloadAllGameTextures(rules, Settings.mipmapping);
+};
+textureCache.initAtlases();
 
 const shotThrust = [
   0, 41, 34.17, 30.71, 28.47, 26.85, 25.59, 24.58, 23.73, 23.01, 22.38, 21.82,
@@ -199,79 +210,11 @@ export class RenderedObject {
     }
 
     if (!textures) {
-      if (!textureDefinition) return null;
-      textures = [];
-
-      const img =
-        RenderedObject.getImageFromTextureDefinition(textureDefinition);
-      if (!img || !img.src) return null;
-
-      const baseTexture = PIXI.BaseTexture.from(img);
-
-      baseTexture.mipmap = Settings.mipmapping
-        ? PIXI.MIPMAP_MODES.ON
-        : PIXI.MIPMAP_MODES.OFF;
-
-      if (textureDefinition.animated) {
-        const tileSize = textureDefinition["tile-size"] || 32;
-        const totalTiles = textureDefinition["tile-count"] || 1;
-
-        for (let tileIndex = 0; tileIndex < totalTiles; tileIndex++) {
-          const sx = tileSize * (tileIndex % totalTiles);
-          const sy = 0;
-          const sw = tileSize;
-          const sh = tileSize;
-          var tex = new PIXI.Texture(
-            baseTexture,
-            new PIXI.Rectangle(sx, sy, sw, sh),
-            null,
-            null,
-            textureDefinition.rotate || 0,
-          );
-          (<any>tex).daudScale = RenderedObject.getScaleWithHeight(
-            textureDefinition,
-            tileSize,
-          );
-          textures.push(tex);
-        }
-      } else if (textureDefinition.map) {
-        let imageWidth = textureDefinition["image-width"];
-        let imageHeight = textureDefinition["image-height"];
-        let tileWidth = textureDefinition["tile-width"];
-        let tileHeight = textureDefinition["tile-height"];
-
-        let tilesWide = Math.floor(imageWidth / tileWidth);
-        let tilesHigh = Math.floor(imageHeight / tileHeight);
-
-        for (var row = 0; row < tilesHigh; row++)
-          for (var col = 0; col < tilesWide; col++) {
-            let x = Math.floor(col * tileWidth);
-            let y = Math.floor(row * tileHeight);
-
-            var texture = new PIXI.Texture(
-              baseTexture,
-              new PIXI.Rectangle(x, y, tileWidth, tileHeight),
-            );
-
-            texture.baseTexture.scaleMode = PIXI.SCALE_MODES.NEAREST;
-            (<any>texture).daudScale = RenderedObject.getScaleWithHeight(
-              textureDefinition,
-              tileHeight,
-            );
-            //texture.scaleMode = PIXI.SCALE_MODES.LINEAR;
-            textures.push(texture);
-          }
-      } else if (textureDefinition.emitter) {
-      } else {
-        var texture = new PIXI.Texture(baseTexture);
-        (<any>texture).daudScale = RenderedObject.getScaleWithHeight(
-          textureDefinition,
-          baseTexture.realHeight,
-        );
-        textures.push(texture);
-      }
-
-      textureCache[textureName] = textures;
+      textures = createTextureFromDefinition(
+        textureDefinition,
+        textureName,
+        Settings.mipmapping,
+      );
     }
 
     return textures;

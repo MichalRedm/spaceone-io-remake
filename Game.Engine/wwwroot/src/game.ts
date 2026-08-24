@@ -31,6 +31,7 @@ import "./changelog";
 import "./hintbox";
 import { Vector2 } from "./Vector2";
 import { CustomContainer } from "./CustomContainer";
+import { preloadAllAssets } from "./atlasLoader";
 
 window.Game = window.Game || {};
 const pixiAny = (window as any).PIXI;
@@ -52,6 +53,9 @@ app.stage = new pixiAny.display.Stage();
 (<any>app.stage).group.enableSort = true;
 const container = new CustomContainer();
 app.stage.addChild(container);
+
+// Preload all assets and warm up GPU before gameplay
+preloadAllAssets(app, Settings.mipmapping);
 
 var backgroundGroup = new pixiAny.display.Group(0, true);
 var tileGroup = new pixiAny.display.Group(1, true);
