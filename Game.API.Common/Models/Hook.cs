@@ -11,16 +11,16 @@ namespace Game.API.Common.Models
             {
                 return new Hook
                 {
-                    WorldSize = 1500, // smaller arena for testing; default is 5500
+                    WorldSize = 12650, // original Spaceone arena width/height span
                     WorldResizeEnabled = false,
-                    WorldSizeBasic = 5500,
+                    WorldSizeBasic = 12650,
                     WorldSizeDeltaPerPlayer = 400,
                     WorldResizeSpeed = 5,
                     WorldMinPlayersToResize = 4,
                     
                     // sizes
-                    BulletSize = 5,
-                    // ShipSize = 10,
+                    BulletSize = 30,
+                    // ShipSize = 20,
 
                     FollowFirstShip = false,
                     FiringSequenceDelay = 0,
@@ -34,7 +34,7 @@ namespace Game.API.Common.Models
                     ShipAddRadius = 3,
                     ShipAddMomentumMultiplier = 0.9f,
 
-                    MaxMomentumCoefficient = 6.5f,
+                    MaxMomentumCoefficient = 1.0f,
 
                     BaseThrustM = -0.00015f,
                     BaseThrustB = 0.015f,
@@ -52,7 +52,7 @@ namespace Game.API.Common.Models
                         5.525f, 5.511f, 5.497f, 5.484f, 5.470f, 5.457f, 5.444f, 5.432f, 5.419f, 5.407f, // 81 - 90 size
                         5.394f, 5.382f, 5.370f, 5.359f, 5.347f, 5.335f, 5.324f, 5.312f, 5.300f, 5.289f // 91 - 100 size
                     },
-                    BaseThrustConverter = 0.0024f,
+                    BaseThrustConverter = 0.025f,
 
                     Drag = 1f,
                     DragBoost = 1f,
@@ -75,8 +75,8 @@ namespace Game.API.Common.Models
                     AbandonBuffer = 120,
                     AbandonMomentumMultiplier = 0.4f,
 
-                    ShotCooldownTimeM = 45,
-                    ShotCooldownTimeB = 500,
+                    ShotCooldownTimeM = 36,
+                    ShotCooldownTimeB = 450,
 
                     ShotCooldownTimeBotM = 22,
                     ShotCooldownTimeBotB = 1100,
@@ -97,7 +97,7 @@ namespace Game.API.Common.Models
                         12.908f, 12.866f, 12.825f, 12.785f, 12.745f, 12.706f, 12.667f, 12.629f, 12.592f, 12.555f, // 81 - 90 size
                         12.519f, 12.483f, 12.447f, 12.412f, 12.378f, 12.344f, 12.211f, 12.067f, 12.033f, 12.000f // 91 - 100 size
                     },
-                    ShotThrustConverter = 0.0012f,
+                    ShotThrustConverter = 0.025f,
 
                     SeekerThrustMultiplier = 1.35f,
                     SeekerLifeMultiplier = 1.15f,
@@ -107,10 +107,10 @@ namespace Game.API.Common.Models
                     MaxHealth = 100,
 
                     MaxHealthBot = 50,
-                    BulletLife = 1500,
+                    BulletLife = 1800,
                     
-                    BulletLifeB = 1900,
-                    BulletLifeM = 25,
+                    BulletLifeB = 1800,
+                    BulletLifeM = 35,
                     
                     BotPerXPoints = 500,
                     BotBase = 0,
@@ -371,9 +371,9 @@ namespace Game.API.Common.Models
         public bool MapEnabled { get; set; }
 
         public int StepTime { get; set; }
-        public float OutOfBoundsDeathLine { get; set; } = 100;
+        public float OutOfBoundsDeathLine { get; set; } = 750;
         public float OutOfBoundsBorder { get; set; } = 0;
-        public float OutOfBoundsDecayDistance { get; set; } = 100;
+        public float OutOfBoundsDecayDistance { get; set; } = 750;
         public uint OutOufBoundsDecayStart { get; set; }
         public uint OutOufBoundsDecayInterval { get; set; }
         public int BotRespawnDelay { get; set; }

@@ -26,7 +26,7 @@ namespace Game.Engine.Core.Weapons
         {
             base.Think();
 
-            var thrust = new Vector2(MathF.Cos(Angle), MathF.Sin(Angle)) * ThrustAmount * 10;
+            var thrust = new Vector2(MathF.Cos(Angle), MathF.Sin(Angle)) * ThrustAmount;
             Momentum = thrust;
 
             if (OwnedByFleet.PendingDestruction)
