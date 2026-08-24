@@ -642,6 +642,37 @@ ship_yellow_boost {
   file: "particle_ship_yellow";
 }
 // abandoned ships
+dead_ship_cyan,
+dead_ship_blue,
+dead_ship_green,
+dead_ship_orange,
+dead_ship_pink,
+dead_ship_red,
+dead_ship_yellow {
+  size: 3.1;
+}
+dead_ship_cyan {
+  file: "dead_ship_cyan";
+}
+dead_ship_blue {
+  file: "dead_ship_blue";
+}
+dead_ship_green {
+  file: "dead_ship_green";
+}
+dead_ship_orange {
+  file: "dead_ship_orange";
+}
+dead_ship_pink {
+  file: "dead_ship_pink";
+}
+dead_ship_red {
+  file: "dead_ship_red";
+}
+dead_ship_yellow {
+  file: "dead_ship_yellow";
+}
+
 ship_ab_cyan,
 ship_ab_blue,
 ship_ab_green,

@@ -278,37 +278,37 @@ ship {
 
   &.ab {
     &.cyan {
-      textures: "ship_ab_cyan";
+      textures: "ship_cyan", "dead_ship_cyan";
       selector: "ship_ab_cyan";
     }
 
     &.blue {
-      textures: "ship_ab_blue";
+      textures: "ship_blue", "dead_ship_blue";
       selector: "ship_ab_blue";
     }
 
     &.green {
-      textures: "ship_ab_green";
+      textures: "ship_green", "dead_ship_green";
       selector: "ship_ab_green";
     }
 
     &.orange {
-      textures: "ship_ab_orange";
+      textures: "ship_orange", "dead_ship_orange";
       selector: "ship_ab_orange";
     }
 
     &.pink {
-      textures: "ship_ab_pink";
+      textures: "ship_pink", "dead_ship_pink";
       selector: "ship_ab_pink";
     }
 
     &.red {
-      textures: "ship_ab_red";
+      textures: "ship_red", "dead_ship_red";
       selector: "ship_ab_red";
     }
 
     &.yellow {
-      textures: "ship_ab_yellow";
+      textures: "ship_yellow", "dead_ship_yellow";
       selector: "ship_ab_yellow";
     }
   }

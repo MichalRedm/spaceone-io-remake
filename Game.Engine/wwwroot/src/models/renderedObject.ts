@@ -98,6 +98,8 @@ export class RenderedObject {
   isBoosting: boolean;
   boostStartTime: number;
   bulletLifetime: number;
+  isAbandoned: boolean;
+  abandonedStartTime: number;
 
   constructor(container: CustomContainer) {
     this.container = container;
@@ -114,6 +116,8 @@ export class RenderedObject {
     this.isBoosting = false;
     this.boostStartTime = 0;
     this.bulletLifetime = 1900;
+    this.isAbandoned = false;
+    this.abandonedStartTime = 0;
   }
 
   decodeModes(mode: number): string[] {
@@ -623,12 +627,21 @@ export class RenderedObject {
       mode != this.currentMode ||
       zIndex != this.currentZIndex
     ) {
+      const spriteStr = String(spriteName || "");
+      const isAb =
+        spriteStr.startsWith("ship_ab") ||
+        (Array.isArray(mode) && mode.includes("ab"));
+      if (isAb && !this.isAbandoned) {
+        this.isAbandoned = true;
+        this.abandonedStartTime = performance.now();
+      }
+
       this.currentSpriteName = spriteName;
       this.currentMode = mode;
       this.currentZIndex = zIndex;
 
       // if we have any existing sprites, destroy them
-      if (reload) this.destroySprites();
+      this.destroySprites();
 
       this.spriteLayers = this.buildSpriteLayers(spriteName, mode, zIndex);
 
@@ -736,6 +749,16 @@ export class RenderedObject {
             layer.visible = layer.alpha > 0.01;
           }
         }
+      } else if (fileStr.startsWith("dead_ship")) {
+        if (!self.isAbandoned) {
+          layer.alpha = 0.0;
+          layer.visible = false;
+        } else {
+          const abElapsed = now - self.abandonedStartTime;
+          const abProgress = Math.min(1.0, abElapsed / 2000);
+          layer.alpha = abProgress;
+          layer.visible = layer.alpha > 0.01;
+        }
       } else if (
         fileStr.startsWith("particle_ship") ||
         fileStr.includes("_boost")
@@ -750,8 +773,15 @@ export class RenderedObject {
           layer.visible = layer.alpha > 0.01;
         }
       } else if (fileStr.startsWith("ship") && !fileStr.startsWith("ship_ab")) {
-        layer.alpha = 1.0;
-        layer.visible = true;
+        if (self.isAbandoned) {
+          const abElapsed = now - self.abandonedStartTime;
+          const abProgress = Math.min(1.0, abElapsed / 2000);
+          layer.alpha = Math.max(0.0, 1.0 - abProgress);
+          layer.visible = layer.alpha > 0.01;
+        } else {
+          layer.alpha = 1.0;
+          layer.visible = true;
+        }
       } else if (fileStr.includes("glow")) {
         const spawnAge = now - self.spawnTime;
         const spawnAlpha = Math.min(1.0, spawnAge / 1000);
