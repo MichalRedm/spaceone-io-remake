@@ -22,8 +22,20 @@ declare module "*.json" {
 
 declare module "dat.gui" {
   export class GUI {
-    constructor(options?: { width?: number; autoPlace?: boolean; hideable?: boolean; closed?: boolean; closeOnTop?: boolean });
-    add(target: object, propName: string, min?: number, max?: number, step?: number): GUIController;
+    constructor(options?: {
+      width?: number;
+      autoPlace?: boolean;
+      hideable?: boolean;
+      closed?: boolean;
+      closeOnTop?: boolean;
+    });
+    add(
+      target: object,
+      propName: string,
+      min?: number,
+      max?: number,
+      step?: number,
+    ): GUIController;
     addColor(target: object, propName: string): GUIController;
     open(): void;
     close(): void;

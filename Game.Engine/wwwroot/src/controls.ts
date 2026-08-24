@@ -7,28 +7,31 @@ import { Picker } from "emoji-mart";
 import React from "react";
 import ReactDOM from "react-dom";
 
-ReactDOM.render(
-  React.createElement(
-    Picker,
-    {
-      native: true,
-      title: "",
-      emoji: "rocket",
-      onClick: (e: any) => {
-        console.log(e);
-        Cookies.set("emoji", e.native);
-        var x = e.native;
-        emojiTrigger.innerText = e.native;
+const emojiContainer = document.getElementById("emoji-container");
+if (emojiContainer) {
+  ReactDOM.render(
+    React.createElement(
+      Picker,
+      {
+        native: true,
+        title: "",
+        emoji: "rocket",
+        onClick: (e: any) => {
+          console.log(e);
+          Cookies.set("emoji", e.native);
+          var x = e.native;
+          if (emojiTrigger) emojiTrigger.innerText = e.native;
 
-        Controls.emoji = x;
-        console.log(Controls.emoji);
-        document.getElementById("emoji-container").classList.remove("open");
+          Controls.emoji = x;
+          console.log(Controls.emoji);
+          emojiContainer.classList.remove("open");
+        },
       },
-    },
-    null,
-  ),
-  document.getElementById("emoji-container"),
-);
+      null,
+    ),
+    emojiContainer,
+  );
+}
 
 const secretShips = ["ship_secret", "ship_zed"];
 
@@ -46,26 +49,32 @@ var colors = [
   "ship_pink",
 ]; // to fix secret ships bug
 
-emojiTrigger.addEventListener("click", () => {
-  document.getElementById("emoji-container").classList.toggle("open");
-});
+if (emojiTrigger && emojiContainer) {
+  emojiTrigger.addEventListener("click", () => {
+    emojiContainer.classList.toggle("open");
+  });
+}
 
-export const nipple = nipplejs.create({
-  zone: document.getElementById("nipple-zone"),
-  restJoystick: false,
-});
+const nippleZone = document.getElementById("nipple-zone");
+export const nipple = nippleZone
+  ? nipplejs.create({
+      zone: nippleZone,
+      restJoystick: false,
+    })
+  : (null as any);
 const isMobile = "ontouchstart" in document.documentElement;
-if (!isMobile) {
+if (!isMobile && nipple) {
   nipple.destroy();
-  document.getElementById("nipple-controls").style.display = "none";
+  const nc = document.getElementById("nipple-controls");
+  if (nc) nc.style.display = "none";
 }
 
 const shipSelectorSwitch = document.getElementById("shipSelectorSwitch");
 
 const refreshSelectedStyle = function () {
-  const options = Array.from(
-    document.getElementById("shipSelectorSwitch").children,
-  );
+  const switchEl = document.getElementById("shipSelectorSwitch");
+  if (!switchEl) return;
+  const options = Array.from(switchEl.children);
 
   for (const option of options) {
     if (option.getAttribute("data-color") == Controls.ship)
@@ -76,22 +85,30 @@ const refreshSelectedStyle = function () {
   Controls.addSecretShips(window.discordData);
 };
 
-document.getElementById("left-arrow").addEventListener("click", function () {
-  Controls.ship = colors[2];
-  drawColorSelector();
-});
+const leftArrow = document.getElementById("left-arrow");
+if (leftArrow) {
+  leftArrow.addEventListener("click", function () {
+    Controls.ship = colors[2];
+    drawColorSelector();
+  });
+}
 
-document.getElementById("right-arrow").addEventListener("click", function () {
-  Controls.ship = colors[4];
-  drawColorSelector();
-});
+const rightArrow = document.getElementById("right-arrow");
+if (rightArrow) {
+  rightArrow.addEventListener("click", function () {
+    Controls.ship = colors[4];
+    drawColorSelector();
+  });
+}
 
-const nick: HTMLInputElement = document.querySelector("#nick");
-nick.addEventListener("input", (e) => {
-  Controls.nick = nick.value;
-  if (Controls && Controls.canvas) Controls.canvas.focus();
-  save();
-});
+const nick: HTMLInputElement | null = document.querySelector("#nick");
+if (nick) {
+  nick.addEventListener("input", (e) => {
+    Controls.nick = nick.value;
+    if (Controls && Controls.canvas) Controls.canvas.focus();
+    save();
+  });
+}
 
 function unicode(e) {
   return e

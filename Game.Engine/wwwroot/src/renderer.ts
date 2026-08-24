@@ -6,6 +6,7 @@ window.global = window as any;
 import { CustomContainer } from "./CustomContainer";
 import { Interpolator } from "./interpolator";
 import { Cache } from "./cache";
+import { FX } from "./models/fx";
 
 export class Renderer {
   container: CustomContainer;
@@ -19,6 +20,7 @@ export class Renderer {
     currentTime: number,
     fleetID: number,
   ) {
+    FX.update();
     const groupsUsed = [];
 
     // if (this.container.tiles.isDirty) {

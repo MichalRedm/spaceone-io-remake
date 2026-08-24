@@ -32,6 +32,7 @@ export default defineConfig({
         main: resolve(__dirname, "index.html"),
         game: resolve(__dirname, "game.html"),
         admin: resolve(__dirname, "admin.html"),
+        tuner: resolve(__dirname, "tuner.html"),
       },
     },
   },

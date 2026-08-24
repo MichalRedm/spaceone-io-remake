@@ -15,17 +15,10 @@ import {
 } from "../parser/parseTheme";
 import { Sprite } from "pixi.js";
 
-const rawImages = import.meta.glob("../../img/*.png", {
-  eager: true,
-  import: "default",
-}) as Record<string, string>;
-const images: Record<string, string> = {};
-for (const [path, url] of Object.entries(rawImages)) {
-  const filenameWithExt = path.split("/").pop() || "";
-  const filenameWithoutExt = filenameWithExt.replace(/\.[^/.]+$/, "");
-  images[filenameWithExt] = url;
-  images[filenameWithoutExt] = url;
-}
+import { initializeAtlasTextures, images } from "../atlasLoader";
+
+textureCache.initAtlases = () => initializeAtlasTextures(Settings.mipmapping);
+initializeAtlasTextures(Settings.mipmapping);
 
 var textureMapRules = [getDefaultTextureMapRules(Settings.graphics)];
 var spriteModeMapRules = [getDefaultSpriteModeMapRules(Settings.graphics)];
@@ -45,23 +38,68 @@ const shotThrust = [
 
 class GroupParticle extends particles.Particle {
   body: any;
+  renderedObject?: RenderedObject;
 
   constructor(emitter: particles.Emitter) {
     super(emitter);
-    this.parentGroup = emitter.parent.parentGroup;
-    this.body = (<any>emitter).renderedObject.body;
+    this.parentGroup =
+      emitter.parent?.parentGroup ||
+      (<any>emitter).renderedObject?.container?.bodyGroup;
+    this.body = (<any>emitter).renderedObject?.body;
+    this.renderedObject = (<any>emitter).renderedObject;
   }
 
   update(delta: number): number {
     var ret = super.update(delta);
 
-    if (this.body) this.scaleMultiplier = this.body.Size;
+    const spriteStr = String(this.body?.Sprite || "");
+    if (
+      this.body &&
+      this.body.Size &&
+      !spriteStr.startsWith("bullet") &&
+      !spriteStr.startsWith("laser")
+    ) {
+      this.scaleMultiplier = Math.max(0.5, this.body.Size / 50.0);
+    } else {
+      this.scaleMultiplier = 1.0;
+    }
+
+    if (
+      this.renderedObject &&
+      (spriteStr.startsWith("bullet") || spriteStr.startsWith("laser"))
+    ) {
+      const now = performance.now();
+      const age = now - this.renderedObject.spawnTime;
+      const remaining = this.renderedObject.bulletLifetime - age;
+      const fadeIn = Math.min(1.0, age / 180);
+      const fadeOut = remaining < 225 ? Math.max(0.0, remaining / 225) : 1.0;
+      this.alpha *= fadeIn * fadeOut;
+    }
 
     return ret;
   }
 }
 
 export class RenderedObject {
+  static groupBoostTimes: Record<number, number> = {};
+  static groupBulletData: Record<
+    number,
+    { spawnTime: number; lifetime: number }
+  > = {};
+
+  static getShipCountFromSpeed(speed: number): number {
+    let bestIdx = 1;
+    let bestDiff = Math.abs(speed - shotThrust[1]);
+    for (let i = 2; i < shotThrust.length; i++) {
+      const diff = Math.abs(speed - shotThrust[i]);
+      if (diff < bestDiff) {
+        bestDiff = diff;
+        bestIdx = i;
+      }
+    }
+    return bestIdx;
+  }
+
   container: CustomContainer;
   currentSpriteName: boolean;
   currentMode: number;
@@ -74,6 +112,16 @@ export class RenderedObject {
   lastTime: number;
 
   additionalClasses?: string[];
+  lastPosition: { x: number; y: number };
+  spawnTime: number;
+  isBoosting: boolean;
+  boostStartTime: number;
+  bulletLifetime: number;
+  isAbandoned: boolean;
+  abandonedStartTime: number;
+  isInvulnerable: boolean;
+  invulnerableStartTime: number;
+
   constructor(container: CustomContainer) {
     this.container = container;
     this.currentSpriteName = false;
@@ -83,10 +131,40 @@ export class RenderedObject {
     this.lastTime = 0;
     this.activeTextures = {};
     this.activeEmitters = {};
+
+    this.lastPosition = { x: 0, y: 0 };
+    this.spawnTime = performance.now();
+    this.isBoosting = false;
+    this.boostStartTime = 0;
+    this.bulletLifetime = 1900;
+    this.isAbandoned = false;
+    this.abandonedStartTime = 0;
+    this.isInvulnerable = false;
+    this.invulnerableStartTime = 0;
   }
 
-  decodeModes(mode) {
-    return ["default"];
+  decodeModes(mode: number): string[] {
+    const modes: string[] = [];
+    const spriteStr = String(this.body?.Sprite || this.currentSpriteName || "");
+    if (spriteStr.startsWith("boom")) {
+      const colors = [
+        "cyan",
+        "blue",
+        "cyan",
+        "green",
+        "orange",
+        "pink",
+        "red",
+        "yellow",
+      ];
+      if (mode >= 1 && mode < colors.length) {
+        modes.push(colors[mode]);
+      } else {
+        modes.push("cyan");
+      }
+    }
+    modes.push("default");
+    return modes;
   }
 
   static getImageFromTextureDefinition(textureDefinition) {
@@ -106,13 +184,27 @@ export class RenderedObject {
   }
 
   static loadTexture(textureDefinition, textureName) {
-    let textures = textureCache[textureName];
+    if (!textureName) return null;
+    const cleanName = String(textureName);
+    let textures =
+      textureCache[cleanName] || textureCache[cleanName.toLowerCase()];
+
+    if (!textures && textureDefinition?.file) {
+      const fileKey = String(textureDefinition.file);
+      if (textureCache[fileKey] || textureCache[fileKey.toLowerCase()]) {
+        textures = textureCache[fileKey] || textureCache[fileKey.toLowerCase()];
+        textureCache[cleanName] = textures;
+        return textures;
+      }
+    }
 
     if (!textures) {
+      if (!textureDefinition) return null;
       textures = [];
 
       const img =
         RenderedObject.getImageFromTextureDefinition(textureDefinition);
+      if (!img || !img.src) return null;
 
       const baseTexture = PIXI.BaseTexture.from(img);
 
@@ -231,8 +323,11 @@ export class RenderedObject {
   }
 
   buildSprite(textureName, spriteName): Sprite {
+    if (!textureName) return null;
     const textureDefinition = RenderedObject.getTextureDefinition(textureName);
+    if (!textureDefinition) return null;
     const textures = RenderedObject.loadTexture(textureDefinition, textureName);
+    if (!textures || !textures.length) return null;
     var pixiSprite = null;
 
     if (textureDefinition.animated) {
@@ -257,7 +352,8 @@ export class RenderedObject {
       else pixiSprite.tint = textureDefinition.tint;
     }
 
-    if (textureDefinition.blendMode) pixiSprite.alpha = textureDefinition.alpha;
+    if (textureDefinition.alpha !== undefined)
+      pixiSprite.alpha = textureDefinition.alpha;
 
     if (textureDefinition.blendMode)
       pixiSprite.blendMode = textureDefinition.blendMode;
@@ -267,45 +363,42 @@ export class RenderedObject {
     pixiSprite.x = 0;
     pixiSprite.y = 0;
 
-    // bullet fade
-    if (
-      (textureName.includes("bullet") || textureName.includes("laser")) &&
-      Settings.graphics !== "low"
-    ) {
-      let m = this.body.Momentum;
-      let bulletLife =
-        25 *
-          shotThrust.indexOf(
-            Math.round((Math.sqrt(m.x * m.x + m.y * m.y) / 0.012) * 100) / 100,
-          ) +
-        1900;
-      pixiSprite.alpha = 1 / 3;
-      let fadeInInterval = setInterval(() => {
-        pixiSprite.alpha = Math.min(1, pixiSprite.alpha + 1 / 3);
-        if (pixiSprite.alpha === 1) {
-          clearInterval(fadeInInterval);
-        }
-      }, 70);
-      setTimeout(
-        () => {
-          let fadeOutInterval = setInterval(() => {
-            pixiSprite.alpha = Math.min(1, pixiSprite.alpha - 0.2);
-            if (pixiSprite.alpha === 0) {
-              clearInterval(fadeOutInterval);
-            }
-          }, 70);
-        },
-        bulletLife - 70 * 5,
-      );
-    }
-
-    pixiSprite.baseScale = (<any>textures[0]).daudScale;
-    pixiSprite.scale = (<any>textures[0]).daudScale;
+    pixiSprite.baseScale = RenderedObject.getScaleWithHeight(
+      textureDefinition,
+      textures[0].height,
+    );
+    pixiSprite.scale = pixiSprite.baseScale;
     (<any>pixiSprite).textureDefinition = textureDefinition;
 
-    pixiSprite.baseOffset = textureDefinition["offset-x"]
-      ? { x: textureDefinition["offset-x"], y: textureDefinition["offset-y"] }
-      : { x: 0, y: 0 };
+    let rot = Math.PI / 2;
+    if (textureDefinition.rotate !== undefined) {
+      const rotVal = String(textureDefinition.rotate);
+      if (rotVal.endsWith("deg")) {
+        rot = (parseFloat(rotVal) * Math.PI) / 180;
+      } else {
+        const num = parseFloat(rotVal);
+        if (Math.abs(num) > 6.283185) {
+          rot = (num * Math.PI) / 180;
+        } else {
+          rot = num;
+        }
+      }
+    }
+    pixiSprite.baseRotation = rot;
+
+    const offsetX =
+      textureDefinition["offset-x"] !== undefined
+        ? Number(textureDefinition["offset-x"])
+        : textureDefinition.offset?.x !== undefined
+          ? Number(textureDefinition.offset.x)
+          : 0;
+    const offsetY =
+      textureDefinition["offset-y"] !== undefined
+        ? Number(textureDefinition["offset-y"])
+        : textureDefinition.offset?.y !== undefined
+          ? Number(textureDefinition.offset.y)
+          : 0;
+    pixiSprite.baseOffset = { x: offsetX, y: offsetY };
 
     if (textureDefinition.animated && pixiSprite instanceof PIXI.AnimatedSprite)
       pixiSprite.play();
@@ -424,9 +517,32 @@ export class RenderedObject {
         }
 
         if (spriteLayer != null) {
-          if (zIndex == 0) zIndex = 250;
+          let effectiveZ = zIndex;
+          const spriteStr = String(spriteName || "");
+          if (!effectiveZ || effectiveZ === 0) {
+            if (spriteStr.startsWith("ship")) {
+              effectiveZ = 200;
+            } else if (
+              spriteStr.startsWith("bullet") ||
+              spriteStr.startsWith("laser")
+            ) {
+              effectiveZ = 100;
+            } else {
+              effectiveZ = 50;
+            }
+          } else {
+            if (spriteStr.startsWith("ship") && effectiveZ < 200) {
+              effectiveZ = 200;
+            } else if (
+              (spriteStr.startsWith("bullet") ||
+                spriteStr.startsWith("laser")) &&
+              effectiveZ >= 200
+            ) {
+              effectiveZ = 100;
+            }
+          }
 
-          spriteLayer.zOrder = zIndex - i + this.body.ID / 100000;
+          spriteLayer.zOrder = effectiveZ + i + (this.body?.ID || 0) / 100000;
 
           spriteLayers.push(spriteLayer);
           this.activeTextures[textureName] = spriteLayer;
@@ -455,6 +571,7 @@ export class RenderedObject {
       for (let i = 0; i < layers.length; i++) {
         let emitterLayer = null;
         var textureName = layers[i];
+        if (!textureName) continue;
 
         if (this.activeEmitters[textureName])
           emitterLayer = this.activeEmitters[textureName];
@@ -462,33 +579,62 @@ export class RenderedObject {
           const textureDefinition =
             RenderedObject.getTextureDefinition(textureName);
 
-          if (textureDefinition.emitter) {
-            let particleTextureName = textureDefinition.particle;
+          if (textureDefinition && textureDefinition.emitter) {
+            let particleTextureName =
+              textureDefinition.particle || "particle_cyan";
+            const particleDef =
+              RenderedObject.getTextureDefinition(particleTextureName);
             const particleTextures = RenderedObject.loadTexture(
-              RenderedObject.getTextureDefinition(particleTextureName),
+              particleDef,
               particleTextureName,
             );
 
-            if (typeof textureDefinition.emitter == "string")
-              textureDefinition.emitter = emitters[textureDefinition.emitter];
+            if (particleTextures && particleTextures.length) {
+              let emitterConfig = textureDefinition.emitter;
+              if (typeof emitterConfig === "string")
+                emitterConfig = (emitters as any)[emitterConfig];
 
-            emitterLayer = new particles.Emitter(
-              this.container.emitterContainer,
-              particleTextures,
-              textureDefinition.emitter,
-            );
-            emitterLayer.emit = true;
-            emitterLayer.renderedObject = this;
-
-            let self = this;
-            emitterLayer.particleConstructor = GroupParticle;
+              if (emitterConfig) {
+                emitterLayer = new particles.Emitter(
+                  this.container.emitterContainer,
+                  particleTextures,
+                  emitterConfig,
+                );
+                emitterLayer.emit = true;
+                emitterLayer.renderedObject = this;
+                emitterLayer.particleConstructor = GroupParticle;
+              }
+            }
           }
         }
 
         if (emitterLayer != null) {
-          if (zIndex == 0) zIndex = 250;
+          let effectiveZ = zIndex;
+          const spriteStr = String(spriteName || "");
+          if (!effectiveZ || effectiveZ === 0) {
+            if (spriteStr.startsWith("ship")) {
+              effectiveZ = 200;
+            } else if (
+              spriteStr.startsWith("bullet") ||
+              spriteStr.startsWith("laser")
+            ) {
+              effectiveZ = 100;
+            } else {
+              effectiveZ = 50;
+            }
+          } else {
+            if (spriteStr.startsWith("ship") && effectiveZ < 200) {
+              effectiveZ = 200;
+            } else if (
+              (spriteStr.startsWith("bullet") ||
+                spriteStr.startsWith("laser")) &&
+              effectiveZ >= 200
+            ) {
+              effectiveZ = 100;
+            }
+          }
 
-          emitterLayer.zOrder = zIndex - i + this.body.ID / 100000;
+          emitterLayer.zOrder = effectiveZ + i + (this.body?.ID || 0) / 100000;
 
           emitterLayers.push(emitterLayer);
           this.activeEmitters[textureName] = emitterLayer;
@@ -550,12 +696,21 @@ export class RenderedObject {
       mode != this.currentMode ||
       zIndex != this.currentZIndex
     ) {
+      const spriteStr = String(spriteName || "");
+      const isAb =
+        spriteStr.startsWith("ship_ab") ||
+        (Array.isArray(mode) && mode.includes("ab"));
+      if (isAb && !this.isAbandoned) {
+        this.isAbandoned = true;
+        this.abandonedStartTime = performance.now();
+      }
+
       this.currentSpriteName = spriteName;
       this.currentMode = mode;
       this.currentZIndex = zIndex;
 
       // if we have any existing sprites, destroy them
-      if (reload) this.destroySprites();
+      this.destroySprites();
 
       this.spriteLayers = this.buildSpriteLayers(spriteName, mode, zIndex);
 
@@ -596,34 +751,212 @@ export class RenderedObject {
 
   moveSprites(interpolatedPosition, size) {
     const angle = interpolatedPosition.Angle;
+    this.lastPosition.x = interpolatedPosition.x;
+    this.lastPosition.y = interpolatedPosition.y;
+    const now = performance.now();
 
+    const isBoostNow =
+      (this.body?.Mode & 1) !== 0 || (this.currentMode & 1) !== 0;
+    const isInvulnerableNow =
+      (this.body?.Mode & 2) !== 0 || (this.currentMode & 2) !== 0;
+    const groupID = this.body?.Group || 0;
+
+    if (isBoostNow) {
+      if (!this.isBoosting) {
+        this.isBoosting = true;
+        if (groupID && RenderedObject.groupBoostTimes[groupID]) {
+          this.boostStartTime = RenderedObject.groupBoostTimes[groupID];
+        } else {
+          this.boostStartTime = now;
+          if (groupID) RenderedObject.groupBoostTimes[groupID] = now;
+        }
+      }
+    } else if (this.isBoosting) {
+      this.isBoosting = false;
+      if (groupID && RenderedObject.groupBoostTimes[groupID]) {
+        delete RenderedObject.groupBoostTimes[groupID];
+      }
+    }
+
+    if (isInvulnerableNow) {
+      if (!this.isInvulnerable) {
+        this.isInvulnerable = true;
+        this.invulnerableStartTime = now;
+      }
+    } else if (this.isInvulnerable) {
+      this.isInvulnerable = false;
+    }
+
+    const self = this;
     this.foreachLayer(function (layer, index) {
       layer.pivot.x = layer.texture.width / 2;
       layer.pivot.y = layer.texture.height / 2;
 
+      const scale = size * layer.baseScale;
+      layer.scale.set(scale, scale);
+
+      const offX = (layer.baseOffset?.x || 0) * scale;
+      const offY = (layer.baseOffset?.y || 0) * scale;
+
       layer.position.x =
         interpolatedPosition.x +
-        (layer.baseOffset.x * Math.cos(angle) -
-          layer.baseOffset.y * Math.sin(angle));
+        (offX * Math.cos(angle) - offY * Math.sin(angle));
 
       layer.position.y =
         interpolatedPosition.y +
-        (layer.baseOffset.y * Math.cos(angle) +
-          layer.baseOffset.x * Math.sin(angle));
+        (offY * Math.cos(angle) + offX * Math.sin(angle));
 
-      layer.rotation = angle;
+      const rotationOffset =
+        layer.baseRotation !== undefined
+          ? layer.baseRotation
+          : layer.textureDefinition?.rotate !== undefined
+            ? Number(layer.textureDefinition.rotate)
+            : Math.PI / 2;
 
-      layer.scale.set(size * layer.baseScale, size * layer.baseScale);
+      layer.rotation = angle + rotationOffset;
+
+      const fileStr = String(layer.textureDefinition?.file || "").toLowerCase();
+
+      // Invulnerability 12-period (0.25s each, 3s total) blink check (odd=visible, even=invisible)
+      if (self.isInvulnerable && !self.isAbandoned) {
+        const invulnElapsed = now - self.invulnerableStartTime;
+        if (invulnElapsed < 3000) {
+          const periodIndex = Math.floor(invulnElapsed / 250) + 1;
+          const isBlinkVisible = periodIndex % 2 === 1;
+          if (!isBlinkVisible) {
+            layer.alpha = 0.0;
+            layer.visible = false;
+            return;
+          }
+        }
+      }
+
+      // Dynamic Lifecycle Alphas & Crossfades
+      if (fileStr.startsWith("dash_trail")) {
+        if (!self.isBoosting) {
+          layer.alpha = 0.0;
+          layer.visible = false;
+        } else {
+          const boostElapsed = now - self.boostStartTime;
+          if (boostElapsed < 50) {
+            layer.alpha = 0.0;
+            layer.visible = false;
+          } else {
+            const trailProgress = Math.min(1.0, (boostElapsed - 50) / 450);
+            const flicker =
+              0.92 +
+              0.12 * Math.sin(now * 0.035 + ((self.body?.ID || 0) % 10) * 1.5);
+            layer.scale.set(scale, scale * flicker);
+            layer.alpha =
+              Math.max(0.0, 1.0 - trailProgress) *
+              (0.85 +
+                0.15 *
+                  Math.cos(now * 0.05 + ((self.body?.ID || 0) % 10) * 1.5));
+            layer.visible = layer.alpha > 0.01;
+          }
+        }
+      } else if (fileStr.startsWith("dead_ship")) {
+        if (!self.isAbandoned) {
+          layer.alpha = 0.0;
+          layer.visible = false;
+        } else {
+          const abElapsed = now - self.abandonedStartTime;
+          const abProgress = Math.min(1.0, abElapsed / 2000);
+          layer.alpha = abProgress;
+          layer.visible = layer.alpha > 0.01;
+        }
+      } else if (
+        fileStr.startsWith("particle_ship") ||
+        fileStr.includes("_boost")
+      ) {
+        if (self.isBoosting) {
+          const boostElapsed = now - self.boostStartTime;
+          if (boostElapsed < 150) {
+            layer.alpha = 1.0;
+          } else {
+            const boostProgress = Math.min(1.0, (boostElapsed - 150) / 350);
+            layer.alpha = Math.max(0.0, 1.0 - boostProgress);
+          }
+          layer.visible = layer.alpha > 0.01;
+        } else if (self.isInvulnerable) {
+          const invulnElapsed = now - self.invulnerableStartTime;
+          const invulnProgress = Math.min(1.0, invulnElapsed / 3000);
+          layer.alpha = Math.max(0.0, 1.0 - invulnProgress);
+          layer.visible = layer.alpha > 0.01;
+        } else {
+          layer.alpha = 0.0;
+          layer.visible = false;
+        }
+      } else if (fileStr.startsWith("ship") && !fileStr.startsWith("ship_ab")) {
+        if (self.isAbandoned) {
+          const abElapsed = now - self.abandonedStartTime;
+          const abProgress = Math.min(1.0, abElapsed / 2000);
+          layer.alpha = Math.max(0.0, 1.0 - abProgress);
+          layer.visible = layer.alpha > 0.01;
+        } else {
+          layer.alpha = 1.0;
+          layer.visible = true;
+        }
+      } else if (fileStr.includes("glow")) {
+        const spawnAge = now - self.spawnTime;
+        const spawnAlpha = Math.min(1.0, spawnAge / 1000);
+        const glowPulse =
+          0.4 + 0.6 * (0.5 + 0.5 * Math.sin((now / 1000) * 2 * Math.PI));
+        layer.alpha = spawnAlpha * glowPulse;
+        layer.visible = true;
+      } else if (fileStr.startsWith("food") || fileStr.startsWith("fish")) {
+        const spawnAge = now - self.spawnTime;
+        layer.alpha = Math.min(1.0, spawnAge / 1000);
+        layer.visible = true;
+      } else if (fileStr.includes("laser") && fileStr.includes("trail")) {
+        const age = now - self.spawnTime;
+        const remaining = self.bulletLifetime - age;
+        const fadeIn = Math.min(1.0, age / 180);
+        const fadeOut = remaining < 225 ? Math.max(0.0, remaining / 225) : 1.0;
+        layer.alpha = fadeIn * fadeOut;
+        layer.visible = layer.alpha > 0.01;
+      } else if (fileStr.startsWith("laser") || fileStr.startsWith("bullet")) {
+        const age = now - self.spawnTime;
+        const remaining = self.bulletLifetime - age;
+        const fadeIn = Math.min(1.0, age / 120);
+        const fadeOut = remaining < 225 ? Math.max(0.0, remaining / 225) : 1.0;
+        layer.alpha = fadeIn * fadeOut;
+        layer.visible = layer.alpha > 0.01;
+      }
     });
 
     this.foreachEmitter(function (emitter) {
-      //console.log(`updating emitter ${interpolatedPosition.x},${interpolatedPosition.y}`);
       emitter.updateOwnerPos(interpolatedPosition.x, interpolatedPosition.y);
     });
   }
 
   update(updateData) {
     this.body = updateData;
+
+    const spriteStr = String(this.body?.Sprite || this.currentSpriteName || "");
+    if (spriteStr.startsWith("bullet") || spriteStr.startsWith("laser")) {
+      const m = updateData.Momentum;
+      if (m) {
+        const speed = Math.sqrt(m.x * m.x + m.y * m.y) / 0.0012;
+        const shipCount = RenderedObject.getShipCountFromSpeed(speed);
+        this.bulletLifetime = 1900 + 25 * shipCount;
+      }
+
+      const groupID = updateData.Group || 0;
+      if (groupID) {
+        const now = performance.now();
+        const existing = RenderedObject.groupBulletData[groupID];
+        if (existing && now - existing.spawnTime < 500) {
+          this.spawnTime = existing.spawnTime;
+          this.bulletLifetime = existing.lifetime;
+        } else {
+          RenderedObject.groupBulletData[groupID] = {
+            spawnTime: this.spawnTime,
+            lifetime: this.bulletLifetime,
+          };
+        }
+      }
+    }
 
     this.setSprite(updateData.Sprite, updateData.Mode, updateData.zIndex);
   }
@@ -642,4 +975,95 @@ export class RenderedObject {
         action.apply(this, [layer, i]);
       });
   }
+}
+
+export function spawnFoodPickup(
+  container: CustomContainer,
+  color: string,
+  x: number,
+  y: number,
+) {
+  if (Settings.graphics !== "high") return;
+  const textureName = `food_pickup_${color}`;
+  const textureDefinition = RenderedObject.getTextureDefinition(textureName);
+  if (!textureDefinition || !textureDefinition.emitter) return;
+  const particleTextures = RenderedObject.loadTexture(
+    RenderedObject.getTextureDefinition(textureDefinition.particle),
+    textureDefinition.particle,
+  );
+  if (!particleTextures || !particleTextures.length) return;
+  let emitterConfig = textureDefinition.emitter;
+  if (typeof emitterConfig === "string") {
+    emitterConfig = (emitters as any)[emitterConfig];
+  }
+  if (!emitterConfig) return;
+
+  const emitter = new particles.Emitter(
+    container.emitterContainer,
+    particleTextures,
+    emitterConfig,
+  );
+  emitter.updateOwnerPos(x, y);
+  emitter.emit = true;
+
+  let lastTime = performance.now();
+  const ticker = () => {
+    const now = performance.now();
+    const dt = (now - lastTime) * 0.001;
+    lastTime = now;
+    emitter.update(dt);
+    if (!emitter.particleCount && !emitter.emit) {
+      PIXI.Ticker.shared.remove(ticker);
+      emitter.destroy();
+    }
+  };
+  PIXI.Ticker.shared.add(ticker);
+
+  setTimeout(() => {
+    emitter.emit = false;
+  }, 60);
+}
+
+export function spawnBulletImpact(
+  container: CustomContainer,
+  color: string,
+  x: number,
+  y: number,
+) {
+  if (Settings.graphics !== "high") return;
+  const particleTextureName = `particle_${color}`;
+  const particleDef = RenderedObject.getTextureDefinition(particleTextureName);
+  const particleTextures = RenderedObject.loadTexture(
+    particleDef,
+    particleTextureName,
+  );
+  if (!particleTextures || !particleTextures.length) return;
+  const emitterConfig =
+    (emitters as any)["bullet_impact"] || (emitters as any)["boom_sparkles"];
+  if (!emitterConfig) return;
+
+  const emitter = new particles.Emitter(
+    container.emitterContainer,
+    particleTextures,
+    emitterConfig,
+  );
+  emitter.updateOwnerPos(x, y);
+  emitter.emit = true;
+
+  let lastTime = performance.now();
+  const ticker = () => {
+    const now = performance.now();
+    const dt = (now - lastTime) * 0.001;
+    lastTime = now;
+    emitter.update(dt);
+    if (!emitter.particleCount && !emitter.emit) {
+      PIXI.Ticker.shared.remove(ticker);
+      emitter.destroy();
+    }
+  };
+  PIXI.Ticker.shared.add(ticker);
+
+  setTimeout(() => {
+    emitter.emit = false;
+  }, 60);
 }

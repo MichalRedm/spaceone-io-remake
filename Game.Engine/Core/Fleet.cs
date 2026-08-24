@@ -206,7 +206,7 @@ namespace Game.Engine.Core
         {
             base.Init(world);
             this.GroupType = GroupTypes.Fleet;
-            this.ZIndex = 100;
+            this.ZIndex = 200;
 
             this.BaseWeapon = new FleetWeaponGeneric<ShipWeaponBullet>();
 

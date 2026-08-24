@@ -56,8 +56,110 @@
 			"end": 1
 		},
 		"scale": {
-			"start": 0.01,
-			"end": 0.00,
+			"start": 0.33,
+			"end": 0.03,
+			"minimumScaleMultiplier": 1
+		},
+		"color": {
+			"start": "#ffffff",
+			"end": "#ffffff"
+		},
+		"speed": {
+			"start": 140,
+			"end": 15,
+			"minimumSpeedMultiplier": 0.5
+		},
+		"acceleration": {
+			"x": 0,
+			"y": 0
+		},
+		"maxSpeed": 0,
+		"startRotation": {
+			"min": 0,
+			"max": 360
+		},
+		"noRotation": false,
+		"rotationSpeed": {
+			"min": 0,
+			"max": 0
+		},
+		"lifetime": {
+			"min": 0.25,
+			"max": 0.40
+		},
+		"blendMode": "screen",
+		"frequency": 0.001,
+		"emitterLifetime": 0.05,
+		"maxParticles": 25,
+		"pos": {
+			"x": 0,
+			"y": 0
+		},
+		"addAtBack": false,
+		"spawnType": "burst",
+		"particlesPerWave": 15,
+		"particleSpacing": 0,
+		"angleStart": 0
+	},
+	"boom_sparkles": {
+		"alpha": {
+			"start": 1,
+			"end": 1
+		},
+		"scale": {
+			"start": 0.33,
+			"end": 0.03,
+			"minimumScaleMultiplier": 1
+		},
+		"color": {
+			"start": "#ffffff",
+			"end": "#ffffff"
+		},
+		"speed": {
+			"start": 140,
+			"end": 15,
+			"minimumSpeedMultiplier": 0.5
+		},
+		"acceleration": {
+			"x": 0,
+			"y": 0
+		},
+		"maxSpeed": 0,
+		"startRotation": {
+			"min": 0,
+			"max": 360
+		},
+		"noRotation": false,
+		"rotationSpeed": {
+			"min": 0,
+			"max": 0
+		},
+		"lifetime": {
+			"min": 0.25,
+			"max": 0.40
+		},
+		"blendMode": "screen",
+		"frequency": 0.001,
+		"emitterLifetime": 0.05,
+		"maxParticles": 25,
+		"pos": {
+			"x": 0,
+			"y": 0
+		},
+		"addAtBack": false,
+		"spawnType": "burst",
+		"particlesPerWave": 15,
+		"particleSpacing": 0,
+		"angleStart": 0
+	},
+	"boom_debris": {
+		"alpha": {
+			"start": 1,
+			"end": 1
+		},
+		"scale": {
+			"start": 0.18,
+			"end": 0.06,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
@@ -66,8 +168,8 @@
 		},
 		"speed": {
 			"start": 100,
-			"end": 100,
-			"minimumSpeedMultiplier": 1
+			"end": 10,
+			"minimumSpeedMultiplier": 0.5
 		},
 		"acceleration": {
 			"x": 0,
@@ -80,47 +182,96 @@
 		},
 		"noRotation": false,
 		"rotationSpeed": {
-			"min": -180,
-			"max": 180
+			"min": -360,
+			"max": 360
 		},
 		"lifetime": {
-			"min": 0.2,
-			"max": 0.2
+			"min": 0.30,
+			"max": 0.45
 		},
 		"blendMode": "normal",
-		"frequency": 0.2,
-		"emitterLifetime": -0.31,
-		"maxParticles": 1000,
+		"frequency": 0.001,
+		"emitterLifetime": 0.05,
+		"maxParticles": 8,
 		"pos": {
 			"x": 0,
 			"y": 0
 		},
 		"addAtBack": false,
-		"spawnType": "circle",
-		"spawnCircle": {
+		"spawnType": "burst",
+		"particlesPerWave": 5,
+		"particleSpacing": 0,
+		"angleStart": 0
+	},
+	"food_pickup": {
+		"alpha": {
+			"start": 1,
+			"end": 0
+		},
+		"scale": {
+			"start": 0.27,
+			"end": 0.03,
+			"minimumScaleMultiplier": 1
+		},
+		"color": {
+			"start": "#ffffff",
+			"end": "#ffffff"
+		},
+		"speed": {
+			"start": 60,
+			"end": 5,
+			"minimumSpeedMultiplier": 0.5
+		},
+		"acceleration": {
 			"x": 0,
-			"y": 0,
-			"r": 1
-		}
+			"y": 0
+		},
+		"maxSpeed": 0,
+		"startRotation": {
+			"min": 0,
+			"max": 360
+		},
+		"noRotation": false,
+		"rotationSpeed": {
+			"min": 0,
+			"max": 0
+		},
+		"lifetime": {
+			"min": 0.20,
+			"max": 0.30
+		},
+		"blendMode": "screen",
+		"frequency": 0.001,
+		"emitterLifetime": 0.05,
+		"maxParticles": 10,
+		"pos": {
+			"x": 0,
+			"y": 0
+		},
+		"addAtBack": false,
+		"spawnType": "burst",
+		"particlesPerWave": 6,
+		"particleSpacing": 0,
+		"angleStart": 0
 	},
 	"bullet_blue": {
 		"alpha": {
-			"start": 1,
-			"end": 0
+			"start": 1.0,
+			"end": 0.0
 		},
 		"scale": {
-			"start": 3,
-			"end": 3,
+			"start": 0.38,
+			"end": 0.05,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
-			"start": "#2025ff",
-			"end": "#2025ff"
+			"start": "#ffffff",
+			"end": "#ffffff"
 		},
 		"speed": {
-			"start": 0,
-			"end": 0,
-			"minimumSpeedMultiplier": 1
+			"start": 40,
+			"end": 10,
+			"minimumSpeedMultiplier": 0.5
 		},
 		"acceleration": {
 			"x": 0,
@@ -138,42 +289,37 @@
 		},
 		"lifetime": {
 			"min": 0.15,
-			"max": 0.15
+			"max": 0.25
 		},
-		"blendMode": "normal",
-		"frequency": 0.1,
-		"emitterLifetime": -0.2,
-		"maxParticles": 1000,
+		"blendMode": "screen",
+		"frequency": 0.025,
+		"emitterLifetime": -1,
+		"maxParticles": 80,
 		"pos": {
 			"x": 0,
 			"y": 0
 		},
-		"addAtBack": false,
-		"spawnType": "circle",
-		"spawnCircle": {
-			"x": 0,
-			"y": 0,
-			"r": 2
-		}
+		"addAtBack": true,
+		"spawnType": "point"
 	},
 	"bullet_cyan": {
 		"alpha": {
-			"start": 1,
-			"end": 0
+			"start": 1.0,
+			"end": 0.0
 		},
 		"scale": {
-			"start": 3,
-			"end": 3,
+			"start": 0.38,
+			"end": 0.05,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
-			"start": "#00ffff",
-			"end": "#00ffff"
+			"start": "#ffffff",
+			"end": "#ffffff"
 		},
 		"speed": {
-			"start": 0,
-			"end": 0,
-			"minimumSpeedMultiplier": 1
+			"start": 40,
+			"end": 10,
+			"minimumSpeedMultiplier": 0.5
 		},
 		"acceleration": {
 			"x": 0,
@@ -191,42 +337,37 @@
 		},
 		"lifetime": {
 			"min": 0.15,
-			"max": 0.15
+			"max": 0.25
 		},
-		"blendMode": "normal",
-		"frequency": 0.1,
-		"emitterLifetime": -0.2,
-		"maxParticles": 1000,
+		"blendMode": "screen",
+		"frequency": 0.025,
+		"emitterLifetime": -1,
+		"maxParticles": 80,
 		"pos": {
 			"x": 0,
 			"y": 0
 		},
-		"addAtBack": false,
-		"spawnType": "circle",
-		"spawnCircle": {
-			"x": 0,
-			"y": 0,
-			"r": 2
-		}
+		"addAtBack": true,
+		"spawnType": "point"
 	},
 	"bullet_green": {
 		"alpha": {
-			"start": 1,
-			"end": 0
+			"start": 1.0,
+			"end": 0.0
 		},
 		"scale": {
-			"start": 3,
-			"end": 3,
+			"start": 0.38,
+			"end": 0.05,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
-			"start": "#65e600",
-			"end": "#65e600"
+			"start": "#ffffff",
+			"end": "#ffffff"
 		},
 		"speed": {
-			"start": 0,
-			"end": 0,
-			"minimumSpeedMultiplier": 1
+			"start": 40,
+			"end": 10,
+			"minimumSpeedMultiplier": 0.5
 		},
 		"acceleration": {
 			"x": 0,
@@ -244,42 +385,37 @@
 		},
 		"lifetime": {
 			"min": 0.15,
-			"max": 0.15
+			"max": 0.25
 		},
-		"blendMode": "normal",
-		"frequency": 0.1,
-		"emitterLifetime": -0.2,
-		"maxParticles": 1000,
+		"blendMode": "screen",
+		"frequency": 0.025,
+		"emitterLifetime": -1,
+		"maxParticles": 80,
 		"pos": {
 			"x": 0,
 			"y": 0
 		},
-		"addAtBack": false,
-		"spawnType": "circle",
-		"spawnCircle": {
-			"x": 0,
-			"y": 0,
-			"r": 2
-		}
+		"addAtBack": true,
+		"spawnType": "point"
 	},
 	"bullet_orange": {
 		"alpha": {
-			"start": 1,
-			"end": 0
+			"start": 1.0,
+			"end": 0.0
 		},
 		"scale": {
-			"start": 3,
-			"end": 3,
+			"start": 0.38,
+			"end": 0.05,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
-			"start": "#fc7700",
-			"end": "#fc7700"
+			"start": "#ffffff",
+			"end": "#ffffff"
 		},
 		"speed": {
-			"start": 0,
-			"end": 0,
-			"minimumSpeedMultiplier": 1
+			"start": 40,
+			"end": 10,
+			"minimumSpeedMultiplier": 0.5
 		},
 		"acceleration": {
 			"x": 0,
@@ -297,42 +433,37 @@
 		},
 		"lifetime": {
 			"min": 0.15,
-			"max": 0.15
+			"max": 0.25
 		},
-		"blendMode": "normal",
-		"frequency": 0.1,
-		"emitterLifetime": -0.2,
-		"maxParticles": 1000,
+		"blendMode": "screen",
+		"frequency": 0.025,
+		"emitterLifetime": -1,
+		"maxParticles": 80,
 		"pos": {
 			"x": 0,
 			"y": 0
 		},
-		"addAtBack": false,
-		"spawnType": "circle",
-		"spawnCircle": {
-			"x": 0,
-			"y": 0,
-			"r": 2
-		}
+		"addAtBack": true,
+		"spawnType": "point"
 	},
 	"bullet_pink": {
 		"alpha": {
-			"start": 1,
-			"end": 0
+			"start": 1.0,
+			"end": 0.0
 		},
 		"scale": {
-			"start": 3,
-			"end": 3,
+			"start": 0.38,
+			"end": 0.05,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
-			"start": "#eb008c",
-			"end": "#eb008c"
+			"start": "#ffffff",
+			"end": "#ffffff"
 		},
 		"speed": {
-			"start": 0,
-			"end": 0,
-			"minimumSpeedMultiplier": 1
+			"start": 40,
+			"end": 10,
+			"minimumSpeedMultiplier": 0.5
 		},
 		"acceleration": {
 			"x": 0,
@@ -350,42 +481,37 @@
 		},
 		"lifetime": {
 			"min": 0.15,
-			"max": 0.15
+			"max": 0.25
 		},
-		"blendMode": "normal",
-		"frequency": 0.1,
-		"emitterLifetime": -0.2,
-		"maxParticles": 1000,
+		"blendMode": "screen",
+		"frequency": 0.025,
+		"emitterLifetime": -1,
+		"maxParticles": 80,
 		"pos": {
 			"x": 0,
 			"y": 0
 		},
-		"addAtBack": false,
-		"spawnType": "circle",
-		"spawnCircle": {
-			"x": 0,
-			"y": 0,
-			"r": 2
-		}
+		"addAtBack": true,
+		"spawnType": "point"
 	},
 	"bullet_red": {
 		"alpha": {
-			"start": 1,
-			"end": 0
+			"start": 1.0,
+			"end": 0.0
 		},
 		"scale": {
-			"start": 3,
-			"end": 3,
+			"start": 0.38,
+			"end": 0.05,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
-			"start": "#ff0000",
-			"end": "#ff0000"
+			"start": "#ffffff",
+			"end": "#ffffff"
 		},
 		"speed": {
-			"start": 0,
-			"end": 0,
-			"minimumSpeedMultiplier": 1
+			"start": 40,
+			"end": 10,
+			"minimumSpeedMultiplier": 0.5
 		},
 		"acceleration": {
 			"x": 0,
@@ -403,42 +529,85 @@
 		},
 		"lifetime": {
 			"min": 0.15,
-			"max": 0.15
+			"max": 0.25
 		},
-		"blendMode": "normal",
-		"frequency": 0.1,
-		"emitterLifetime": -0.2,
-		"maxParticles": 1000,
+		"blendMode": "screen",
+		"frequency": 0.025,
+		"emitterLifetime": -1,
+		"maxParticles": 80,
 		"pos": {
 			"x": 0,
 			"y": 0
 		},
-		"addAtBack": false,
-		"spawnType": "circle",
-		"spawnCircle": {
-			"x": 0,
-			"y": 0,
-			"r": 2
-		}
+		"addAtBack": true,
+		"spawnType": "point"
 	},
 	"bullet_yellow": {
+		"alpha": {
+			"start": 1.0,
+			"end": 0.0
+		},
+		"scale": {
+			"start": 0.38,
+			"end": 0.05,
+			"minimumScaleMultiplier": 1
+		},
+		"color": {
+			"start": "#ffffff",
+			"end": "#ffffff"
+		},
+		"speed": {
+			"start": 40,
+			"end": 10,
+			"minimumSpeedMultiplier": 0.5
+		},
+		"acceleration": {
+			"x": 0,
+			"y": 0
+		},
+		"maxSpeed": 0,
+		"startRotation": {
+			"min": 0,
+			"max": 360
+		},
+		"noRotation": false,
+		"rotationSpeed": {
+			"min": 0,
+			"max": 0
+		},
+		"lifetime": {
+			"min": 0.15,
+			"max": 0.25
+		},
+		"blendMode": "screen",
+		"frequency": 0.025,
+		"emitterLifetime": -1,
+		"maxParticles": 80,
+		"pos": {
+			"x": 0,
+			"y": 0
+		},
+		"addAtBack": true,
+		"spawnType": "point"
+	},
+	"bullet_impact": {
 		"alpha": {
 			"start": 1,
 			"end": 0
 		},
 		"scale": {
-			"start": 3,
-			"end": 3,
+			"start": 0.60,
+			"end": 0.03,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
-			"start": "#f7d500",
-			"end": "#f7d500"
+			"start": "#ffffff",
+			"end": "#ffffff"
 		},
 		"speed": {
-			"start": 0,
-			"end": 0,
-			"minimumSpeedMultiplier": 1
+			"start": 100,
+			"end": 10,
+			"minimumSpeedMultiplier": 0.5
 		},
 		"acceleration": {
 			"x": 0,
@@ -456,22 +625,20 @@
 		},
 		"lifetime": {
 			"min": 0.15,
-			"max": 0.15
+			"max": 0.30
 		},
-		"blendMode": "normal",
-		"frequency": 0.1,
-		"emitterLifetime": -0.2,
-		"maxParticles": 1000,
+		"blendMode": "screen",
+		"frequency": 0.001,
+		"emitterLifetime": 0.05,
+		"maxParticles": 12,
 		"pos": {
 			"x": 0,
 			"y": 0
 		},
 		"addAtBack": false,
-		"spawnType": "circle",
-		"spawnCircle": {
-			"x": 0,
-			"y": 0,
-			"r": 2
-		}
+		"spawnType": "burst",
+		"particlesPerWave": 8,
+		"particleSpacing": 0,
+		"angleStart": 0
 	}
 }

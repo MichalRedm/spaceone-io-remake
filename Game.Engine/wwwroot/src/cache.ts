@@ -5,6 +5,7 @@ import { Fleet } from "./models/fleet";
 import { Tile } from "./models/tile";
 import { Container } from "pixi.js";
 import { CustomContainer } from "./CustomContainer";
+import { FX } from "./models/fx";
 
 export class Cache {
   container: CustomContainer;
@@ -50,7 +51,33 @@ export class Cache {
       if (key in this.bodies) Cache.count--;
 
       const body = this.bodies[key];
-      if (body && body.renderer) body.renderer.destroy();
+      if (body) {
+        const spriteStr = String(body.Sprite || "");
+        const renderer = body.renderer as RenderedObject | undefined;
+        const x = renderer?.lastPosition?.x ?? body.OriginalPosition?.x ?? 0;
+        const y = renderer?.lastPosition?.y ?? body.OriginalPosition?.y ?? 0;
+
+        if (spriteStr.startsWith("fish")) {
+          const color = spriteStr.split("_")[1] || "cyan";
+          FX.spawnFoodExplosion(color, x, y);
+        } else if (
+          spriteStr.startsWith("bullet") ||
+          spriteStr.startsWith("laser")
+        ) {
+          const now = performance.now();
+          const spawnTime = renderer?.spawnTime ?? now;
+          const lifetime = renderer?.bulletLifetime ?? 1900;
+          const age = now - spawnTime;
+          // Only explode if destroyed early by collision (before natural fade-out)
+          if (age < lifetime - 200) {
+            const parts = spriteStr.split("_");
+            const color = parts.length > 1 ? parts[1] : "cyan";
+            FX.spawnBulletExplosion(color, x, y);
+          }
+        }
+
+        if (body.renderer) body.renderer.destroy();
+      }
       delete this.bodies[key];
     }
 
@@ -155,14 +182,35 @@ export class Cache {
             }
           }
         }
-        if (!update.renderer)
-          update.renderer = new RenderedObject(this.container);
 
-        update.group = group;
-        update.zIndex = 0;
-        if (group) update.zIndex = group.ZIndex || 0;
+        if (update.Sprite === "boom") {
+          const colors = [
+            "cyan",
+            "blue",
+            "cyan",
+            "green",
+            "orange",
+            "pink",
+            "red",
+            "yellow",
+          ];
+          const color = colors[update.Mode] || "cyan";
+          FX.spawnShipExplosion(
+            color,
+            update.OriginalPosition?.x ?? 0,
+            update.OriginalPosition?.y ?? 0,
+            update.Size || 50,
+          );
+        } else {
+          if (!update.renderer)
+            update.renderer = new RenderedObject(this.container);
 
-        if (update.renderer) update.renderer.update(update, myFleetID);
+          update.group = group;
+          update.zIndex = 0;
+          if (group) update.zIndex = group.ZIndex || 0;
+
+          if (update.renderer) update.renderer.update(update, myFleetID);
+        }
 
         Cache.count++;
       }

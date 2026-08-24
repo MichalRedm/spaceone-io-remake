@@ -22,7 +22,7 @@ namespace Game.Engine.Core.Weapons
                 FiredFrom = fleet,
                 GroupType = GroupTypes.VolleyBullet,
                 OwnerID = fleet.ID,
-                ZIndex = 150,
+                ZIndex = 100,
                 Color = fleet.Color
             };
 

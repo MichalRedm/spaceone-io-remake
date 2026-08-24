@@ -122,7 +122,7 @@ namespace Game.Engine.Core
                         ship.Momentum = SpawnMomentum.Value;
 
                 if (!DisableSpawnInvulnerability)
-                    SetInvulnerability(SpawnInvulnerableTime, true);
+                    SetInvulnerability(SpawnInvulnerableTime, false);
 
                 SpawnTime = World.Time;
             }
@@ -265,9 +265,6 @@ namespace Game.Engine.Core
 
             if (IsInvulnerable)
             {
-                if (!this.Fleet.FiringWeapon && CummulativeShootRequested && this.Fleet.ShootCooldownStatus == 1)
-                    IsInvulnerable = false;
-
                 if (World.Time > InvulnerableUntil)
                     IsInvulnerable = false;
 

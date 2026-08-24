@@ -321,7 +321,7 @@ public struct NetWorldView : IFlatbufferObject
   public NetBody? Camera { get { int o = __p.__offset(6); return o != 0 ? (NetBody?)(new NetBody()).__assign(o + __p.bb_pos, __p.bb) : null; } }
   public uint FleetID { get { int o = __p.__offset(8); return o != 0 ? __p.bb.GetUint(o + __p.bb_pos) : (uint)0; } }
   public bool IsAlive { get { int o = __p.__offset(10); return o != 0 ? 0!=__p.bb.Get(o + __p.bb_pos) : (bool)true; } }
-  public NetBody? Updates(int j) { int o = __p.__offset(12); return o != 0 ? (NetBody?)(new NetBody()).__assign(__p.__vector(o) + j * 28, __p.bb) : null; }
+  public NetBody? Updates(int j) { int o = __p.__offset(12); return o != 0 ? (NetBody?)(new NetBody()).__assign(__p.__vector(o) + j * 44, __p.bb) : null; }
   public int UpdatesLength { get { int o = __p.__offset(12); return o != 0 ? __p.__vector_len(o) : 0; } }
   public uint Deletes(int j) { int o = __p.__offset(14); return o != 0 ? __p.bb.GetUint(__p.__vector(o) + j * 4) : (uint)0; }
   public int DeletesLength { get { int o = __p.__offset(14); return o != 0 ? __p.__vector_len(o) : 0; } }
@@ -347,7 +347,7 @@ public struct NetWorldView : IFlatbufferObject
   public static void AddFleetID(FlatBufferBuilder builder, uint fleetID) { builder.AddUint(2, fleetID, 0); }
   public static void AddIsAlive(FlatBufferBuilder builder, bool isAlive) { builder.AddBool(3, isAlive, true); }
   public static void AddUpdates(FlatBufferBuilder builder, VectorOffset updatesOffset) { builder.AddOffset(4, updatesOffset.Value, 0); }
-  public static void StartUpdatesVector(FlatBufferBuilder builder, int numElems) { builder.StartVector(28, numElems, 4); }
+  public static void StartUpdatesVector(FlatBufferBuilder builder, int numElems) { builder.StartVector(44, numElems, 4); }
   public static void AddDeletes(FlatBufferBuilder builder, VectorOffset deletesOffset) { builder.AddOffset(5, deletesOffset.Value, 0); }
   public static VectorOffset CreateDeletesVector(FlatBufferBuilder builder, uint[] data) { builder.StartVector(4, data.Length, 4); for (int i = data.Length - 1; i >= 0; i--) builder.AddUint(data[i]); return builder.EndVector(); }
   public static void StartDeletesVector(FlatBufferBuilder builder, int numElems) { builder.StartVector(4, numElems, 4); }
@@ -432,13 +432,13 @@ public struct Vec2 : IFlatbufferObject
   public void __init(int _i, ByteBuffer _bb) { __p.bb_pos = _i; __p.bb = _bb; }
   public Vec2 __assign(int _i, ByteBuffer _bb) { __init(_i, _bb); return this; }
 
-  public short X { get { return __p.bb.GetShort(__p.bb_pos + 0); } }
-  public short Y { get { return __p.bb.GetShort(__p.bb_pos + 2); } }
+  public float X { get { return __p.bb.GetFloat(__p.bb_pos + 0); } }
+  public float Y { get { return __p.bb.GetFloat(__p.bb_pos + 4); } }
 
-  public static Offset<Vec2> CreateVec2(FlatBufferBuilder builder, short X, short Y) {
-    builder.Prep(2, 4);
-    builder.PutShort(Y);
-    builder.PutShort(X);
+  public static Offset<Vec2> CreateVec2(FlatBufferBuilder builder, float X, float Y) {
+    builder.Prep(4, 8);
+    builder.PutFloat(Y);
+    builder.PutFloat(X);
     return new Offset<Vec2>(builder.Offset);
   }
 };
@@ -453,30 +453,30 @@ public struct NetBody : IFlatbufferObject
   public uint Id { get { return __p.bb.GetUint(__p.bb_pos + 0); } }
   public uint DefinitionTime { get { return __p.bb.GetUint(__p.bb_pos + 4); } }
   public Vec2 OriginalPosition { get { return (new Vec2()).__assign(__p.bb_pos + 8, __p.bb); } }
-  public Vec2 Velocity { get { return (new Vec2()).__assign(__p.bb_pos + 12, __p.bb); } }
-  public sbyte OriginalAngle { get { return __p.bb.GetSbyte(__p.bb_pos + 16); } }
-  public sbyte AngularVelocity { get { return __p.bb.GetSbyte(__p.bb_pos + 17); } }
-  public byte Size { get { return __p.bb.Get(__p.bb_pos + 18); } }
-  public ushort Sprite { get { return __p.bb.GetUshort(__p.bb_pos + 20); } }
-  public byte Mode { get { return __p.bb.Get(__p.bb_pos + 22); } }
-  public uint Group { get { return __p.bb.GetUint(__p.bb_pos + 24); } }
+  public Vec2 Velocity { get { return (new Vec2()).__assign(__p.bb_pos + 16, __p.bb); } }
+  public float OriginalAngle { get { return __p.bb.GetFloat(__p.bb_pos + 24); } }
+  public float AngularVelocity { get { return __p.bb.GetFloat(__p.bb_pos + 28); } }
+  public byte Size { get { return __p.bb.Get(__p.bb_pos + 32); } }
+  public ushort Sprite { get { return __p.bb.GetUshort(__p.bb_pos + 34); } }
+  public byte Mode { get { return __p.bb.Get(__p.bb_pos + 36); } }
+  public uint Group { get { return __p.bb.GetUint(__p.bb_pos + 40); } }
 
-  public static Offset<NetBody> CreateNetBody(FlatBufferBuilder builder, uint Id, uint DefinitionTime, short originalPosition_X, short originalPosition_Y, short velocity_X, short velocity_Y, sbyte OriginalAngle, sbyte AngularVelocity, byte Size, ushort Sprite, byte Mode, uint Group) {
-    builder.Prep(4, 28);
+  public static Offset<NetBody> CreateNetBody(FlatBufferBuilder builder, uint Id, uint DefinitionTime, float originalPosition_X, float originalPosition_Y, float velocity_X, float velocity_Y, float OriginalAngle, float AngularVelocity, byte Size, ushort Sprite, byte Mode, uint Group) {
+    builder.Prep(4, 44);
     builder.PutUint(Group);
-    builder.Pad(1);
+    builder.Pad(3);
     builder.PutByte(Mode);
     builder.PutUshort(Sprite);
     builder.Pad(1);
     builder.PutByte(Size);
-    builder.PutSbyte(AngularVelocity);
-    builder.PutSbyte(OriginalAngle);
-    builder.Prep(2, 4);
-    builder.PutShort(velocity_Y);
-    builder.PutShort(velocity_X);
-    builder.Prep(2, 4);
-    builder.PutShort(originalPosition_Y);
-    builder.PutShort(originalPosition_X);
+    builder.PutFloat(AngularVelocity);
+    builder.PutFloat(OriginalAngle);
+    builder.Prep(4, 8);
+    builder.PutFloat(velocity_Y);
+    builder.PutFloat(velocity_X);
+    builder.Prep(4, 8);
+    builder.PutFloat(originalPosition_Y);
+    builder.PutFloat(originalPosition_X);
     builder.PutUint(DefinitionTime);
     builder.PutUint(Id);
     return new Offset<NetBody>(builder.Offset);

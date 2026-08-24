@@ -14,6 +14,7 @@ import { Minimap } from "./minimap";
 import { HUD } from "./hud";
 import { Log } from "./log";
 import { Cooldown } from "./cooldown";
+import { FX } from "./models/fx";
 import { Controls } from "./controls";
 import { message } from "./chat";
 import { Connection } from "./connection";
@@ -69,10 +70,11 @@ container.tiles = new (
 container.tiles.parentGroup = tileGroup;
 container.addChild(container.tiles);
 
-container.emitterContainer = new PIXI.ParticleContainer();
+container.emitterContainer = new PIXI.Container();
 container.emitterContainer.parentGroup = bodyGroup;
 container.zOrder = 128;
 container.addChild(container.emitterContainer);
+FX.init(container);
 
 const renderer = new Renderer(container);
 const background = new Background(container);
@@ -141,7 +143,6 @@ const bodyFromServer = (cache: Cache, body) => {
   const originalPosition = body.originalPosition();
   const momentum = body.velocity();
   const groupID = body.group();
-  const VELOCITY_SCALE_FACTOR = 50000.0;
 
   var spriteIndex = body.sprite();
   var spriteName = null;
@@ -156,12 +157,9 @@ const bodyFromServer = (cache: Cache, body) => {
     Mode: body.mode(),
     Color: "red",
     Group: groupID,
-    OriginalAngle: (body.originalAngle() / 127) * Math.PI,
-    AngularVelocity: body.angularVelocity() / 10000,
-    Momentum: new Vector2(
-      momentum.x() / VELOCITY_SCALE_FACTOR,
-      momentum.y() / VELOCITY_SCALE_FACTOR,
-    ),
+    OriginalAngle: body.originalAngle(),
+    AngularVelocity: body.angularVelocity(),
+    Momentum: new Vector2(momentum.x(), momentum.y()),
     OriginalPosition: new Vector2(originalPosition.x(), originalPosition.y()),
   };
 

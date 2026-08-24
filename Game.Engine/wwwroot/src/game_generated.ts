@@ -1197,7 +1197,7 @@ export namespace Game.Engine.Networking.FlatBuffers {
       var offset = this.bb!.__offset(this.bb_pos, 12);
       return offset
         ? (obj || new Game.Engine.Networking.FlatBuffers.NetBody()).__init(
-            this.bb!.__vector(this.bb_pos + offset) + index * 28,
+            this.bb!.__vector(this.bb_pos + offset) + index * 44,
             this.bb!,
           )
         : null;
@@ -1454,7 +1454,7 @@ export namespace Game.Engine.Networking.FlatBuffers {
      * @param number numElems
      */
     static startUpdatesVector(builder: flatbuffers.Builder, numElems: number) {
-      builder.startVector(28, numElems, 4);
+      builder.startVector(44, numElems, 4);
     }
 
     /**
@@ -1885,14 +1885,14 @@ export namespace Game.Engine.Networking.FlatBuffers {
      * @returns number
      */
     x(): number {
-      return this.bb!.readInt16(this.bb_pos);
+      return this.bb!.readFloat32(this.bb_pos);
     }
 
     /**
      * @returns number
      */
     y(): number {
-      return this.bb!.readInt16(this.bb_pos + 2);
+      return this.bb!.readFloat32(this.bb_pos + 4);
     }
 
     /**
@@ -1906,9 +1906,9 @@ export namespace Game.Engine.Networking.FlatBuffers {
       x: number,
       y: number,
     ): flatbuffers.Offset {
-      builder.prep(2, 4);
-      builder.writeInt16(y);
-      builder.writeInt16(x);
+      builder.prep(4, 8);
+      builder.writeFloat32(y);
+      builder.writeFloat32(x);
       return builder.offset();
     }
   }
@@ -1967,7 +1967,7 @@ export namespace Game.Engine.Networking.FlatBuffers {
       obj?: Game.Engine.Networking.FlatBuffers.Vec2,
     ): Game.Engine.Networking.FlatBuffers.Vec2 | null {
       return (obj || new Game.Engine.Networking.FlatBuffers.Vec2()).__init(
-        this.bb_pos + 12,
+        this.bb_pos + 16,
         this.bb!,
       );
     }
@@ -1976,42 +1976,42 @@ export namespace Game.Engine.Networking.FlatBuffers {
      * @returns number
      */
     originalAngle(): number {
-      return this.bb!.readInt8(this.bb_pos + 16);
+      return this.bb!.readFloat32(this.bb_pos + 24);
     }
 
     /**
      * @returns number
      */
     angularVelocity(): number {
-      return this.bb!.readInt8(this.bb_pos + 17);
+      return this.bb!.readFloat32(this.bb_pos + 28);
     }
 
     /**
      * @returns number
      */
     size(): number {
-      return this.bb!.readUint8(this.bb_pos + 18);
+      return this.bb!.readUint8(this.bb_pos + 32);
     }
 
     /**
      * @returns number
      */
     sprite(): number {
-      return this.bb!.readUint16(this.bb_pos + 20);
+      return this.bb!.readUint16(this.bb_pos + 34);
     }
 
     /**
      * @returns number
      */
     mode(): number {
-      return this.bb!.readUint8(this.bb_pos + 22);
+      return this.bb!.readUint8(this.bb_pos + 36);
     }
 
     /**
      * @returns number
      */
     group(): number {
-      return this.bb!.readUint32(this.bb_pos + 24);
+      return this.bb!.readUint32(this.bb_pos + 40);
     }
 
     /**
@@ -2045,21 +2045,21 @@ export namespace Game.Engine.Networking.FlatBuffers {
       mode: number,
       group: number,
     ): flatbuffers.Offset {
-      builder.prep(4, 28);
+      builder.prep(4, 44);
       builder.writeInt32(group);
-      builder.pad(1);
+      builder.pad(3);
       builder.writeInt8(mode);
       builder.writeInt16(sprite);
       builder.pad(1);
       builder.writeInt8(size);
-      builder.writeInt8(angularVelocity);
-      builder.writeInt8(originalAngle);
-      builder.prep(2, 4);
-      builder.writeInt16(velocity_y);
-      builder.writeInt16(velocity_x);
-      builder.prep(2, 4);
-      builder.writeInt16(originalPosition_y);
-      builder.writeInt16(originalPosition_x);
+      builder.writeFloat32(angularVelocity);
+      builder.writeFloat32(originalAngle);
+      builder.prep(4, 8);
+      builder.writeFloat32(velocity_y);
+      builder.writeFloat32(velocity_x);
+      builder.prep(4, 8);
+      builder.writeFloat32(originalPosition_y);
+      builder.writeFloat32(originalPosition_x);
       builder.writeInt32(definitionTime);
       builder.writeInt32(id);
       return builder.offset();
