@@ -260,8 +260,8 @@
 			"end": 0.0
 		},
 		"scale": {
-			"start": 0.75,
-			"end": 0.1,
+			"start": 0.38,
+			"end": 0.05,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
@@ -288,13 +288,13 @@
 			"max": 0
 		},
 		"lifetime": {
-			"min": 0.18,
-			"max": 0.28
+			"min": 0.15,
+			"max": 0.25
 		},
 		"blendMode": "screen",
-		"frequency": 0.015,
+		"frequency": 0.025,
 		"emitterLifetime": -1,
-		"maxParticles": 100,
+		"maxParticles": 80,
 		"pos": {
 			"x": 0,
 			"y": 0
@@ -308,8 +308,8 @@
 			"end": 0.0
 		},
 		"scale": {
-			"start": 0.75,
-			"end": 0.1,
+			"start": 0.38,
+			"end": 0.05,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
@@ -336,13 +336,13 @@
 			"max": 0
 		},
 		"lifetime": {
-			"min": 0.18,
-			"max": 0.28
+			"min": 0.15,
+			"max": 0.25
 		},
 		"blendMode": "screen",
-		"frequency": 0.015,
+		"frequency": 0.025,
 		"emitterLifetime": -1,
-		"maxParticles": 100,
+		"maxParticles": 80,
 		"pos": {
 			"x": 0,
 			"y": 0
@@ -356,8 +356,8 @@
 			"end": 0.0
 		},
 		"scale": {
-			"start": 0.75,
-			"end": 0.1,
+			"start": 0.38,
+			"end": 0.05,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
@@ -384,13 +384,13 @@
 			"max": 0
 		},
 		"lifetime": {
-			"min": 0.18,
-			"max": 0.28
+			"min": 0.15,
+			"max": 0.25
 		},
 		"blendMode": "screen",
-		"frequency": 0.015,
+		"frequency": 0.025,
 		"emitterLifetime": -1,
-		"maxParticles": 100,
+		"maxParticles": 80,
 		"pos": {
 			"x": 0,
 			"y": 0
@@ -404,8 +404,8 @@
 			"end": 0.0
 		},
 		"scale": {
-			"start": 0.75,
-			"end": 0.1,
+			"start": 0.38,
+			"end": 0.05,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
@@ -432,13 +432,13 @@
 			"max": 0
 		},
 		"lifetime": {
-			"min": 0.18,
-			"max": 0.28
+			"min": 0.15,
+			"max": 0.25
 		},
 		"blendMode": "screen",
-		"frequency": 0.015,
+		"frequency": 0.025,
 		"emitterLifetime": -1,
-		"maxParticles": 100,
+		"maxParticles": 80,
 		"pos": {
 			"x": 0,
 			"y": 0
@@ -452,8 +452,8 @@
 			"end": 0.0
 		},
 		"scale": {
-			"start": 0.75,
-			"end": 0.1,
+			"start": 0.38,
+			"end": 0.05,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
@@ -480,13 +480,13 @@
 			"max": 0
 		},
 		"lifetime": {
-			"min": 0.18,
-			"max": 0.28
+			"min": 0.15,
+			"max": 0.25
 		},
 		"blendMode": "screen",
-		"frequency": 0.015,
+		"frequency": 0.025,
 		"emitterLifetime": -1,
-		"maxParticles": 100,
+		"maxParticles": 80,
 		"pos": {
 			"x": 0,
 			"y": 0
@@ -500,8 +500,8 @@
 			"end": 0.0
 		},
 		"scale": {
-			"start": 0.75,
-			"end": 0.1,
+			"start": 0.38,
+			"end": 0.05,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
@@ -528,13 +528,13 @@
 			"max": 0
 		},
 		"lifetime": {
-			"min": 0.18,
-			"max": 0.28
+			"min": 0.15,
+			"max": 0.25
 		},
 		"blendMode": "screen",
-		"frequency": 0.015,
+		"frequency": 0.025,
 		"emitterLifetime": -1,
-		"maxParticles": 100,
+		"maxParticles": 80,
 		"pos": {
 			"x": 0,
 			"y": 0
@@ -548,8 +548,8 @@
 			"end": 0.0
 		},
 		"scale": {
-			"start": 0.75,
-			"end": 0.1,
+			"start": 0.38,
+			"end": 0.05,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
@@ -576,13 +576,13 @@
 			"max": 0
 		},
 		"lifetime": {
-			"min": 0.18,
-			"max": 0.28
+			"min": 0.15,
+			"max": 0.25
 		},
 		"blendMode": "screen",
-		"frequency": 0.015,
+		"frequency": 0.025,
 		"emitterLifetime": -1,
-		"maxParticles": 100,
+		"maxParticles": 80,
 		"pos": {
 			"x": 0,
 			"y": 0

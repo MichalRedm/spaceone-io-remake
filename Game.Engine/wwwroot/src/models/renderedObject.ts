@@ -103,6 +103,7 @@ const shotThrust = [
 
 class GroupParticle extends particles.Particle {
   body: any;
+  renderedObject?: RenderedObject;
 
   constructor(emitter: particles.Emitter) {
     super(emitter);
@@ -110,6 +111,7 @@ class GroupParticle extends particles.Particle {
       emitter.parent?.parentGroup ||
       (<any>emitter).renderedObject?.container?.bodyGroup;
     this.body = (<any>emitter).renderedObject?.body;
+    this.renderedObject = (<any>emitter).renderedObject;
   }
 
   update(delta: number): number {
@@ -125,6 +127,18 @@ class GroupParticle extends particles.Particle {
       this.scaleMultiplier = Math.max(0.5, this.body.Size / 50.0);
     } else {
       this.scaleMultiplier = 1.0;
+    }
+
+    if (
+      this.renderedObject &&
+      (spriteStr.startsWith("bullet") || spriteStr.startsWith("laser"))
+    ) {
+      const now = performance.now();
+      const age = now - this.renderedObject.spawnTime;
+      const remaining = this.renderedObject.bulletLifetime - age;
+      const fadeIn = Math.min(1.0, age / 120);
+      const fadeOut = remaining < 150 ? Math.max(0.0, remaining / 150) : 1.0;
+      this.alpha *= fadeIn * fadeOut;
     }
 
     return ret;

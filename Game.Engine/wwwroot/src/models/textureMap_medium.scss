@@ -42,7 +42,7 @@ food_orange,
 food_pink,
 food_red,
 food_yellow {
-  size: 0.8;
+  size: 1.2;
 }
 food_cyan,
 fish_cyan {
@@ -81,7 +81,7 @@ food_orange_glow,
 food_pink_glow,
 food_red_glow,
 food_yellow_glow {
-  size: 4;
+  size: 6;
   blend-mode: "screen";
 }
 food_blue_glow {
@@ -328,7 +328,7 @@ dash_trail_yellow {
   size: 3.25;
   rotate: -1.5707963;
   offset: {
-    x: -75;
+    x: -95;
     y: 0;
   }
 }
