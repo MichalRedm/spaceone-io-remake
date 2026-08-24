@@ -140,7 +140,7 @@ class FXManager {
   }
 
   public spawnFoodExplosion(color: string, x: number, y: number): void {
-    if (Settings.graphics === "low") return;
+    if (Settings.graphics !== "high") return;
     const texName = `particle_food_${color.toLowerCase()}`;
     const tex =
       this.getTexture(texName) ||
