@@ -15,7 +15,7 @@ import {
 } from "../parser/parseTheme";
 import { Sprite } from "pixi.js";
 
-import { initializeAtlasTextures } from "../atlasLoader";
+import { initializeAtlasTextures, images } from "../atlasLoader";
 
 textureCache.initAtlases = () => initializeAtlasTextures(Settings.mipmapping);
 initializeAtlasTextures(Settings.mipmapping);

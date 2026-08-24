@@ -11,7 +11,7 @@ const rawAtlases = import.meta.glob("../img/atlas/*.json", {
   import: "default",
 }) as Record<string, any>;
 
-const images: Record<string, string> = {};
+export const images: Record<string, string> = {};
 for (const [path, url] of Object.entries(rawImages)) {
   const filenameWithExt = path.split("/").pop() || "";
   const filenameWithoutExt = filenameWithExt.replace(/\.[^/.]+$/, "");
