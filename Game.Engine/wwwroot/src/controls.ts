@@ -410,11 +410,12 @@ function save() {
   const cookieOptions = { expires: 300 };
 
   if (Controls.nick) Cookies.set("nick", Controls.nick, cookieOptions);
-  Cookies.set("color", Controls.color, cookieOptions);
+  if (Controls.ship) Cookies.set("ship", Controls.ship, cookieOptions);
+  if (Controls.color) Cookies.set("color", Controls.color, cookieOptions);
 }
 
 const savedNick = Cookies.get("nick");
-const savedColor = Cookies.get("color");
+const savedColor = Cookies.get("ship") || Cookies.get("color");
 const savedEmoji = Cookies.get("emoji");
 
 if (savedNick != undefined) {
@@ -422,8 +423,9 @@ if (savedNick != undefined) {
   nick.value = savedNick;
 }
 
-if (savedColor != undefined) {
+if (savedColor != undefined && colors.includes(savedColor)) {
   Controls.color = savedColor;
+  Controls.ship = savedColor;
   refreshSelectedStyle();
 }
 
@@ -452,21 +454,63 @@ function shuffle(array) {
   return array;
 }
 
+export function waitForShipSelectorImages(): Promise<void> {
+  const switchEl = document.getElementById("shipSelectorSwitch");
+  if (!switchEl) return Promise.resolve();
+  const imgElements = Array.from(switchEl.querySelectorAll("img"));
+  if (imgElements.length === 0) return Promise.resolve();
+
+  return Promise.all(
+    imgElements.map((img) => {
+      if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+      return new Promise<void>((resolve) => {
+        if ("decode" in img && typeof img.decode === "function") {
+          img
+            .decode()
+            .then(() => resolve())
+            .catch(() => resolve());
+        } else {
+          img.onload = () => resolve();
+          img.onerror = () => resolve();
+        }
+      });
+    }),
+  ).then(() => {});
+}
+
+let uiFadedIn = false;
+export function fadeInUI(duration = 500): void {
+  if (uiFadedIn) return;
+  uiFadedIn = true;
+  if (typeof $ !== "undefined") {
+    $(".visibility").fadeIn(duration);
+    $(".visibility4").fadeIn(duration);
+  }
+}
+
 function drawColorSelector() {
-  while (colors[3] !== Controls.ship) {
-    colors.push(colors[0]);
-    colors.shift();
+  if (!colors.includes(Controls.ship)) {
+    Controls.ship = colors[3] ?? "ship_green";
   }
 
-  while (selector.firstChild) selector.removeChild(selector.firstChild);
+  let safety = 0;
+  while (colors[3] !== Controls.ship && safety < colors.length) {
+    colors.push(colors[0]);
+    colors.shift();
+    safety++;
+  }
+
+  const switchEl = document.getElementById("shipSelectorSwitch") || selector;
+  if (!switchEl) return;
+
+  while (switchEl.firstChild) switchEl.removeChild(switchEl.firstChild);
 
   for (let i = 0; i < colors.length; i++) {
     const selectorImage = Ship.getSelectorImage(colors[i]);
 
     if (selectorImage) {
-      selector.appendChild(selectorImage);
+      switchEl.appendChild(selectorImage);
       selectorImage.setAttribute("data-color", colors[i]);
-      //selectorImage.classList.add("circle");
       if (secretShips.includes(colors[i])) {
         selectorImage.style.display = "none";
       }
@@ -480,6 +524,25 @@ function drawColorSelector() {
 
   save();
   refreshSelectedStyle();
+}
+
+function initShipSelectorAndFadeIn(): void {
+  drawColorSelector();
+  waitForShipSelectorImages()
+    .then(() => fadeInUI(500))
+    .catch(() => fadeInUI(500));
+
+  setTimeout(() => {
+    fadeInUI(500);
+  }, 250);
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", () => {
+    initShipSelectorAndFadeIn();
+  });
+} else {
+  initShipSelectorAndFadeIn();
 }
 
 document
