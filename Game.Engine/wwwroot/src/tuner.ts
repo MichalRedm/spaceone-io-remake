@@ -15,9 +15,9 @@ const state = {
   shipAngle: 0,
   boostHullSize: 2.8,
   boostHullAlpha: 1.0,
-  dashOffsetX: -80,
+  dashOffsetX: -75,
   dashOffsetY: 0,
-  dashSize: 3.25,
+  dashSize: 4.3,
   isBoosting: false,
   boostStartTime: 0,
 
