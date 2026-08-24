@@ -36,6 +36,13 @@ const state = {
   foodCoreSize: 1.2,
   foodGlowSize: 6.0,
   foodGlowMinAlpha: 0.4,
+
+  // Boom (Explosion)
+  boomColor: "cyan",
+  boomAlphaStart: 1.0,
+  boomAlphaEnd: 0.5,
+  boomSparklesCount: 15,
+  boomDebrisCount: 5,
 };
 
 // Pixi Setup on container with proper pixel density and aspect ratio
@@ -60,22 +67,25 @@ mainStage.addChild(gridGfx);
 // Station text labels
 const titleStyle = new PIXI.TextStyle({
   fontFamily: "Segoe UI, sans-serif",
-  fontSize: 13,
+  fontSize: 12,
   fontWeight: "bold",
   fill: "#45a29e",
   letterSpacing: 1,
 });
 
-const shipTitle = new PIXI.Text("SHIP & BOOST PREVIEW", titleStyle);
+const shipTitle = new PIXI.Text("SHIP & BOOST", titleStyle);
 shipTitle.anchor.set(0.5, 0.5);
 
-const bulletTitle = new PIXI.Text("BULLET & TRAIL PREVIEW", titleStyle);
+const bulletTitle = new PIXI.Text("BULLET & TRAIL", titleStyle);
 bulletTitle.anchor.set(0.5, 0.5);
 
-const foodTitle = new PIXI.Text("FOOD & GLOW PREVIEW", titleStyle);
+const foodTitle = new PIXI.Text("FOOD & GLOW", titleStyle);
 foodTitle.anchor.set(0.5, 0.5);
 
-mainStage.addChild(shipTitle, bulletTitle, foodTitle);
+const boomTitle = new PIXI.Text("BOOM & SPARKLES", titleStyle);
+boomTitle.anchor.set(0.5, 0.5);
+
+mainStage.addChild(shipTitle, bulletTitle, foodTitle, boomTitle);
 
 function drawBackground() {
   gridGfx.clear();
@@ -95,28 +105,31 @@ function drawBackground() {
 
   // Crosshairs & divider stations
   gridGfx.lineStyle(1, 0x222d42, 0.8);
-  const cx1 = w * 0.25;
-  const cx2 = w * 0.58;
-  const cx3 = w * 0.85;
+  const cx1 = w * 0.16;
+  const cx2 = w * 0.4;
+  const cx3 = w * 0.64;
+  const cx4 = w * 0.86;
   const cy = h * 0.5;
 
-  [cx1, cx2, cx3].forEach((cx) => {
-    gridGfx.moveTo(cx - 40, cy);
-    gridGfx.lineTo(cx + 40, cy);
-    gridGfx.moveTo(cx, cy - 40);
-    gridGfx.lineTo(cx, cy + 40);
+  [cx1, cx2, cx3, cx4].forEach((cx) => {
+    gridGfx.moveTo(cx - 30, cy);
+    gridGfx.lineTo(cx + 30, cy);
+    gridGfx.moveTo(cx, cy - 30);
+    gridGfx.lineTo(cx, cy + 30);
   });
 
   shipTitle.position.set(cx1, cy - 110 * state.zoom);
   bulletTitle.position.set(cx2, cy - 110 * state.zoom);
   foodTitle.position.set(cx3, cy - 110 * state.zoom);
+  boomTitle.position.set(cx4, cy - 110 * state.zoom);
 }
 
 // Station Containers
 const shipStation = new PIXI.Container();
 const bulletStation = new PIXI.Container();
 const foodStation = new PIXI.Container();
-mainStage.addChild(shipStation, bulletStation, foodStation);
+const boomStation = new PIXI.Container();
+mainStage.addChild(shipStation, bulletStation, foodStation, boomStation);
 
 // Sprites
 let shipSprite: PIXI.Sprite | null = null;
@@ -258,6 +271,102 @@ function updateSparkles(now: number) {
   }
 }
 
+// Boom particle pool
+interface BoomParticle {
+  sprite: PIXI.Sprite;
+  vx: number;
+  vy: number;
+  rotSpeed: number;
+  scaleStart: number;
+  scaleEnd: number;
+  alphaStart: number;
+  alphaEnd: number;
+  spawnTime: number;
+  life: number;
+}
+const boomParticles: BoomParticle[] = [];
+const boomContainer = new PIXI.Container();
+boomStation.addChild(boomContainer);
+
+function triggerBoom() {
+  const now = performance.now();
+  const col = state.boomColor;
+  const texSparkles = getTex(`particle_${col}`);
+  const texDebris = getTex(`particle_ship_${col}`);
+
+  // Sparkles
+  for (let i = 0; i < state.boomSparklesCount; i++) {
+    const sp = new PIXI.Sprite(texSparkles);
+    sp.anchor.set(0.5, 0.5);
+    sp.blendMode = PIXI.BLEND_MODES.SCREEN;
+    boomContainer.addChild(sp);
+
+    const angle = Math.random() * Math.PI * 2;
+    const speed = (60 + Math.random() * 80) * state.zoom;
+    boomParticles.push({
+      sprite: sp,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      rotSpeed: 0,
+      scaleStart: 0.22 * state.zoom,
+      scaleEnd: 0.02 * state.zoom,
+      alphaStart: state.boomAlphaStart,
+      alphaEnd: state.boomAlphaEnd,
+      spawnTime: now,
+      life: (0.25 + Math.random() * 0.15) * 1000,
+    });
+  }
+
+  // Debris
+  for (let i = 0; i < state.boomDebrisCount; i++) {
+    const sp = new PIXI.Sprite(texDebris);
+    sp.anchor.set(0.5, 0.5);
+    boomContainer.addChild(sp);
+
+    const angle = Math.random() * Math.PI * 2;
+    const speed = (40 + Math.random() * 60) * state.zoom;
+    boomParticles.push({
+      sprite: sp,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      rotSpeed: (Math.random() - 0.5) * 10,
+      scaleStart: 0.12 * state.zoom,
+      scaleEnd: 0.04 * state.zoom,
+      alphaStart: state.boomAlphaStart,
+      alphaEnd: state.boomAlphaEnd,
+      spawnTime: now,
+      life: (0.3 + Math.random() * 0.15) * 1000,
+    });
+  }
+}
+
+function updateBoomParticles(now: number) {
+  for (let i = boomParticles.length - 1; i >= 0; i--) {
+    const p = boomParticles[i];
+    const age = now - p.spawnTime;
+    const progress = age / p.life;
+    if (progress >= 1.0) {
+      boomContainer.removeChild(p.sprite);
+      p.sprite.destroy();
+      boomParticles.splice(i, 1);
+      continue;
+    }
+
+    const dt = age * 0.001;
+    p.sprite.x = p.vx * dt;
+    p.sprite.y = p.vy * dt;
+    p.sprite.rotation += p.rotSpeed * 0.016;
+
+    const scale = p.scaleStart + (p.scaleEnd - p.scaleStart) * progress;
+    p.sprite.scale.set(scale, scale);
+
+    const alpha = p.alphaStart + (p.alphaEnd - p.alphaStart) * progress;
+    p.sprite.alpha = alpha;
+  }
+}
+
+let lastAutoBoomTime = 0;
+
 // Render Tick Loop
 app.ticker.add(() => {
   const now = performance.now();
@@ -267,14 +376,16 @@ app.ticker.add(() => {
   drawBackground();
 
   // Position Stations
-  const cx1 = w * 0.25;
-  const cx2 = w * 0.58;
-  const cx3 = w * 0.85;
+  const cx1 = w * 0.16;
+  const cx2 = w * 0.4;
+  const cx3 = w * 0.64;
+  const cx4 = w * 0.86;
   const cy = h * 0.5;
 
   shipStation.position.set(cx1, cy);
   bulletStation.position.set(cx2, cy);
   foodStation.position.set(cx3, cy);
+  boomStation.position.set(cx4, cy);
 
   const baseObjectSize = 50 * state.zoom;
 
@@ -364,6 +475,13 @@ app.ticker.add(() => {
       state.foodGlowMinAlpha + (1.0 - state.foodGlowMinAlpha) * pulse;
     foodGlowSprite.alpha = glowAlpha;
   }
+
+  // --- 4. BOOM STATION ---
+  if (now - lastAutoBoomTime > 1600) {
+    lastAutoBoomTime = now;
+    triggerBoom();
+  }
+  updateBoomParticles(now);
 });
 
 // DOM Binding
@@ -422,6 +540,11 @@ function setupUI() {
     state.foodGlowSize = 6.0;
     state.foodGlowMinAlpha = 0.4;
 
+    state.boomAlphaStart = 1.0;
+    state.boomAlphaEnd = 0.5;
+    state.boomSparklesCount = 15;
+    state.boomDebrisCount = 5;
+
     // Update inputs
     getEl<HTMLInputElement>("ship-size").value = "3.1";
     getEl("ship-size-val").textContent = "3.10";
@@ -459,6 +582,15 @@ function setupUI() {
     getEl("food-glow-size-val").textContent = "6.00";
     getEl<HTMLInputElement>("food-glow-min-alpha").value = "0.4";
     getEl("food-glow-alpha-val").textContent = "0.40 - 1.00";
+
+    getEl<HTMLInputElement>("boom-alpha-start").value = "1.0";
+    getEl("boom-alpha-start-val").textContent = "1.00";
+    getEl<HTMLInputElement>("boom-alpha-end").value = "0.50";
+    getEl("boom-alpha-end-val").textContent = "0.50";
+    getEl<HTMLInputElement>("boom-sparkles-count").value = "15";
+    getEl("boom-sparkles-count-val").textContent = "15";
+    getEl<HTMLInputElement>("boom-debris-count").value = "5";
+    getEl("boom-debris-count-val").textContent = "5";
 
     updateExport();
   });
@@ -580,6 +712,54 @@ function setupUI() {
     },
   );
 
+  // Boom controls
+  getEl<HTMLSelectElement>("boom-color").addEventListener("change", (e) => {
+    state.boomColor = (e.target as HTMLSelectElement).value;
+    triggerBoom();
+    updateExport();
+  });
+  getEl<HTMLInputElement>("boom-alpha-start").addEventListener("input", (e) => {
+    state.boomAlphaStart = parseFloat((e.target as HTMLInputElement).value);
+    getEl("boom-alpha-start-val").textContent = state.boomAlphaStart.toFixed(2);
+    triggerBoom();
+    updateExport();
+  });
+  getEl<HTMLInputElement>("boom-alpha-end").addEventListener("input", (e) => {
+    state.boomAlphaEnd = parseFloat((e.target as HTMLInputElement).value);
+    getEl("boom-alpha-end-val").textContent = state.boomAlphaEnd.toFixed(2);
+    triggerBoom();
+    updateExport();
+  });
+  getEl<HTMLInputElement>("boom-sparkles-count").addEventListener(
+    "input",
+    (e) => {
+      state.boomSparklesCount = parseInt(
+        (e.target as HTMLInputElement).value,
+        10,
+      );
+      getEl("boom-sparkles-count-val").textContent =
+        state.boomSparklesCount.toString();
+      triggerBoom();
+      updateExport();
+    },
+  );
+  getEl<HTMLInputElement>("boom-debris-count").addEventListener(
+    "input",
+    (e) => {
+      state.boomDebrisCount = parseInt(
+        (e.target as HTMLInputElement).value,
+        10,
+      );
+      getEl("boom-debris-count-val").textContent =
+        state.boomDebrisCount.toString();
+      triggerBoom();
+      updateExport();
+    },
+  );
+  getEl("trigger-boom-btn").addEventListener("click", () => {
+    triggerBoom();
+  });
+
   // Copy button
   getEl("copy-btn").addEventListener("click", () => {
     const text = getEl("export-code").textContent || "";
@@ -619,6 +799,14 @@ laser_trail {
 }
 
 // --- Emitter Settings (emitters.json) ---
+boom / boom_sparkles {
+  alpha: { start: ${state.boomAlphaStart.toFixed(2)}, end: ${state.boomAlphaEnd.toFixed(2)} },
+  particlesPerWave: ${state.boomSparklesCount}
+}
+boom_debris {
+  alpha: { start: ${state.boomAlphaStart.toFixed(2)}, end: ${state.boomAlphaEnd.toFixed(2)} },
+  particlesPerWave: ${state.boomDebrisCount}
+}
 bullet_emitter {
   scale: { start: ${state.sparkleScaleStart.toFixed(2)}, end: 0.05 },
   frequency: ${state.sparkleFreq.toFixed(3)},

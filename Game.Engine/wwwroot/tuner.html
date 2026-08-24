@@ -189,6 +189,7 @@
         <button class="tab-btn active" data-tab="ship-tab">Ship & Boost</button>
         <button class="tab-btn" data-tab="bullet-tab">Bullet & Trail</button>
         <button class="tab-btn" data-tab="food-tab">Food & Halo</button>
+        <button class="tab-btn" data-tab="boom-tab">Boom & Sparkles</button>
         <button class="tab-btn" data-tab="export-tab">Export</button>
       </div>
 
@@ -391,7 +392,61 @@
         </div>
       </div>
 
-      <!-- TAB 4: EXPORT -->
+      <!-- TAB 4: BOOM & SPARKLES -->
+      <div class="tab-content" id="boom-tab">
+        <div class="control-group">
+          <div class="control-group-title">Explosion Particle Dynamics</div>
+          <div class="control-row">
+            <div class="label-row">
+              <span>Explosion Color</span>
+            </div>
+            <select id="boom-color">
+              <option value="cyan">Cyan</option>
+              <option value="blue">Blue</option>
+              <option value="green">Green</option>
+              <option value="orange">Orange</option>
+              <option value="pink">Pink</option>
+              <option value="red">Red</option>
+              <option value="yellow">Yellow</option>
+            </select>
+          </div>
+          <div class="control-row">
+            <div class="label-row">
+              <span>Initial Opacity (Start)</span>
+              <span class="val-badge" id="boom-alpha-start-val">1.00</span>
+            </div>
+            <input type="range" id="boom-alpha-start" min="0.1" max="1.0" step="0.05" value="1.0" />
+          </div>
+          <div class="control-row">
+            <div class="label-row">
+              <span>Final Opacity (End Keyframe)</span>
+              <span class="val-badge" id="boom-alpha-end-val">0.50</span>
+            </div>
+            <input type="range" id="boom-alpha-end" min="0.0" max="1.0" step="0.05" value="0.50" />
+          </div>
+          <div class="control-row">
+            <div class="label-row">
+              <span>Sparkle Particles Count</span>
+              <span class="val-badge" id="boom-sparkles-count-val">15</span>
+            </div>
+            <input type="range" id="boom-sparkles-count" min="5" max="50" step="1" value="15" />
+          </div>
+          <div class="control-row">
+            <div class="label-row">
+              <span>Debris Particles Count</span>
+              <span class="val-badge" id="boom-debris-count-val">5</span>
+            </div>
+            <input type="range" id="boom-debris-count" min="1" max="20" step="1" value="5" />
+          </div>
+          <div class="control-row" style="margin-top: 10px;">
+            <div class="btn-row">
+              <button id="trigger-boom-btn">Trigger Explosion (Boom)</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 5: EXPORT -->
       <div class="tab-content" id="export-tab">
         <div class="control-group">
           <div class="control-group-title">Generated Config Snippet</div>
