@@ -270,14 +270,11 @@ namespace Game.API.Client
 
         private Vector2 FromNetVectorVelocity(Vec2 vec2)
         {
-            var VELOCITY_SCALE_FACTOR = 5000.0f;
-
             return new Vector2
             {
-                X = vec2.X / VELOCITY_SCALE_FACTOR,
-                Y = vec2.Y / VELOCITY_SCALE_FACTOR
+                X = vec2.X,
+                Y = vec2.Y
             };
-
         }
 
         private Vector2 FromNetVector(Vec2 vec2)

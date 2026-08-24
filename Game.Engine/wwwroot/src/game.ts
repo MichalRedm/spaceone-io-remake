@@ -143,7 +143,6 @@ const bodyFromServer = (cache: Cache, body) => {
   const originalPosition = body.originalPosition();
   const momentum = body.velocity();
   const groupID = body.group();
-  const VELOCITY_SCALE_FACTOR = 50000.0;
 
   var spriteIndex = body.sprite();
   var spriteName = null;
@@ -158,12 +157,9 @@ const bodyFromServer = (cache: Cache, body) => {
     Mode: body.mode(),
     Color: "red",
     Group: groupID,
-    OriginalAngle: (body.originalAngle() / 127) * Math.PI,
-    AngularVelocity: body.angularVelocity() / 10000,
-    Momentum: new Vector2(
-      momentum.x() / VELOCITY_SCALE_FACTOR,
-      momentum.y() / VELOCITY_SCALE_FACTOR,
-    ),
+    OriginalAngle: body.originalAngle(),
+    AngularVelocity: body.angularVelocity(),
+    Momentum: new Vector2(momentum.x(), momentum.y()),
     OriginalPosition: new Vector2(originalPosition.x(), originalPosition.y()),
   };
 

@@ -106,8 +106,8 @@ table NetGroup
 
 struct Vec2
 {
-	x:short;
-	y:short;
+	x:float;
+	y:float;
 }
 
 // note: this is a struct not table
@@ -120,8 +120,8 @@ struct NetBody
 	definitionTime:uint;
 	originalPosition:Vec2;
 	velocity:Vec2;
-	originalAngle:byte;
-	angularVelocity:byte;
+	originalAngle:float;
+	angularVelocity:float;
 	size:ubyte;
 	sprite:ushort;
 	mode:ubyte;

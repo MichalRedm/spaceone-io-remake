@@ -72,7 +72,7 @@ namespace Game.Engine.Networking
 
         private Offset<Vec2> FromPositionVector(FlatBufferBuilder builder, Vector2 vector)
         {
-            return Vec2.CreateVec2(builder, (short)vector.X, (short)vector.Y);
+            return Vec2.CreateVec2(builder, vector.X, vector.Y);
         }
 
         public async Task StepAsync(CancellationToken cancellationToken)
@@ -203,12 +203,12 @@ namespace Game.Engine.Networking
                                 var body = NetBody.CreateNetBody(builder,
                                     Id: serverBody.ID,
                                     DefinitionTime: serverBody.DefinitionTime,
-                                    originalPosition_X: (short)serverBody.OriginalPosition.X,
-                                    originalPosition_Y: (short)serverBody.OriginalPosition.Y,
-                                    velocity_X: (short)(serverBody.Momentum.X * VELOCITY_SCALE_FACTOR),
-                                    velocity_Y: (short)(serverBody.Momentum.Y * VELOCITY_SCALE_FACTOR),
-                                    OriginalAngle: (sbyte)(serverBody.OriginalAngle / MathF.PI * 127),
-                                    AngularVelocity: (sbyte)(serverBody.AngularVelocity * 10000),
+                                    originalPosition_X: serverBody.OriginalPosition.X,
+                                    originalPosition_Y: serverBody.OriginalPosition.Y,
+                                    velocity_X: serverBody.Momentum.X,
+                                    velocity_Y: serverBody.Momentum.Y,
+                                    OriginalAngle: serverBody.OriginalAngle,
+                                    AngularVelocity: serverBody.AngularVelocity,
                                     Size: (byte)(serverBody.Size / 5),
                                     Sprite: (ushort)serverBody.Sprite,
                                     Mode: serverBody.Mode,
@@ -260,11 +260,11 @@ namespace Game.Engine.Networking
                                 builder,
                                 Id: 0,
                                 DefinitionTime: followBody?.DefinitionTime ?? 0,
-                                originalPosition_X: (short)(followBody?.OriginalPosition.X ?? 0),
-                                originalPosition_Y: (short)(followBody?.OriginalPosition.Y ?? 0),
-                                velocity_X: (short)(followBody?.Momentum.X * VELOCITY_SCALE_FACTOR ?? 0),
-                                velocity_Y: (short)(followBody?.Momentum.Y * VELOCITY_SCALE_FACTOR ?? 0),
-                                OriginalAngle: (sbyte)(followBody?.OriginalAngle / MathF.PI / 127 ?? 0),
+                                originalPosition_X: followBody?.OriginalPosition.X ?? 0,
+                                originalPosition_Y: followBody?.OriginalPosition.Y ?? 0,
+                                velocity_X: followBody?.Momentum.X ?? 0,
+                                velocity_Y: followBody?.Momentum.Y ?? 0,
+                                OriginalAngle: followBody?.OriginalAngle ?? 0,
                                 AngularVelocity: 0,
                                 Size: 0,
                                 Sprite: 0,
