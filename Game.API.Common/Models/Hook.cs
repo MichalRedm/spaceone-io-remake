@@ -97,7 +97,7 @@ namespace Game.API.Common.Models
                         12.908f, 12.866f, 12.825f, 12.785f, 12.745f, 12.706f, 12.667f, 12.629f, 12.592f, 12.555f, // 81 - 90 size
                         12.519f, 12.483f, 12.447f, 12.412f, 12.378f, 12.344f, 12.211f, 12.067f, 12.033f, 12.000f // 91 - 100 size
                     },
-                    ShotThrustConverter = 0.026f,
+                    ShotThrustConverter = 0.055f,
 
                     SeekerThrustMultiplier = 1.35f,
                     SeekerLifeMultiplier = 1.15f,
@@ -107,10 +107,10 @@ namespace Game.API.Common.Models
                     MaxHealth = 100,
 
                     MaxHealthBot = 50,
-                    BulletLife = 1800,
+                    BulletLife = 1000,
                     
-                    BulletLifeB = 1800,
-                    BulletLifeM = 35,
+                    BulletLifeB = 900,
+                    BulletLifeM = 15,
                     
                     BotPerXPoints = 500,
                     BotBase = 0,
