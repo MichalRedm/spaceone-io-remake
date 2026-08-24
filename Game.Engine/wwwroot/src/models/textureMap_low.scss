@@ -205,10 +205,10 @@ dash_trail_orange,
 dash_trail_pink,
 dash_trail_red,
 dash_trail_yellow {
-  size: 4.3;
+  size: 2.5;
   rotate: -1.5707963;
   offset: {
-    x: -75;
+    x: -45;
     y: 0;
   }
 }
@@ -479,7 +479,7 @@ bullet_orange,
 bullet_pink,
 bullet_red,
 bullet_yellow {
-  size: 2.5;
+  size: 1;
 }
 bullet {
   file: "bullet";
@@ -513,10 +513,10 @@ laser_orange_trail,
 laser_pink_trail,
 laser_red_trail,
 laser_yellow_trail {
-  size: 12.5;
+  size: 4;
   rotate: -1.5707963;
   offset: {
-    x: -93;
+    x: -40;
     y: 0;
   }
 }
