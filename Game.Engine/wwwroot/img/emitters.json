@@ -53,7 +53,7 @@
 	"boom": {
 		"alpha": {
 			"start": 1,
-			"end": 0.5
+			"end": 1
 		},
 		"scale": {
 			"start": 0.22,
@@ -104,7 +104,7 @@
 	"boom_sparkles": {
 		"alpha": {
 			"start": 1,
-			"end": 0.5
+			"end": 1
 		},
 		"scale": {
 			"start": 0.22,
@@ -155,7 +155,7 @@
 	"boom_debris": {
 		"alpha": {
 			"start": 1,
-			"end": 0.5
+			"end": 1
 		},
 		"scale": {
 			"start": 0.12,
