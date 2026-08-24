@@ -140,8 +140,8 @@ namespace Game.API.Common.Models
                     SpawnShipCount = 3,
                     SpawnInvulnerabilityTime = 3000,
 
-                    Fishes = 50, // smaller for test arena; default is 350; ignored if WorldResizeEnabled = true 
-                    FishesMultiplier = 0.01, // used when WorldResizeEnabled = true
+                    Fishes = 1850, // scaled proportionally to 5.29x arena surface area (was 350 for 5500 arena)
+                    FishesMultiplier = 0.023, // used when WorldResizeEnabled = true
                     FishThrust = 0.0005f,
                     FishFlockAlignment = 10f,
                     FishFlockCohesion = 0.001f,
