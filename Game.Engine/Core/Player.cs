@@ -47,6 +47,8 @@ namespace Game.Engine.Core
         public long DeadSince { get; set; } = 0;
         public long TimeDeath { get; set; } = 0;
 
+        public Vector2? DeathPosition { get; set; } = null;
+
         public bool IsInvulnerable { get; set; } = false;
         public bool Backgrounded { get; internal set; }
         public bool IsShielded { get; set; } = false;
@@ -310,6 +312,7 @@ namespace Game.Engine.Core
             Token = token;
 
             AliveSince = World.Time;
+            DeathPosition = null;
 
             IsSpawning = true;
         }
@@ -332,9 +335,6 @@ namespace Game.Engine.Core
 
         protected virtual void OnDeath(Player player = null)
         {
-            if (Connection != null && player?.Fleet != null)
-                Connection.SpectatingFleet = player.Fleet;
-
             if (!string.IsNullOrEmpty(this.Token) && !string.IsNullOrEmpty(player?.Token))
                 RemoteEventLog.SendEvent(new OnDeath
                 {
@@ -349,15 +349,15 @@ namespace Game.Engine.Core
             if (IsAlive)
             {
                 DeadSince = World.Time;
-                OnDeath();
-
                 if (Fleet != null)
                 {
+                    DeathPosition = Fleet.FleetCenter;
                     Fleet.Abandon();
 
                     Fleet.Ships.Clear();
                     Fleet.PendingDestruction = true;
                 }
+                OnDeath();
 
                 Fleet = null;
                 IsAlive = false;
@@ -369,10 +369,12 @@ namespace Game.Engine.Core
             if (IsAlive)
             {
                 DeadSince = World.Time;
-                OnDeath(player);
-
                 if (Fleet != null)
+                {
+                    DeathPosition = Fleet.FleetCenter;
                     Fleet.PendingDestruction = true;
+                }
+                OnDeath(player);
 
                 Fleet = null;
                 IsAlive = false;

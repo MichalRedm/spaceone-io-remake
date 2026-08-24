@@ -79,33 +79,38 @@ namespace Game.Engine.Networking
         {
             try
             {
-
                 if (player != null)
                 {
                     var builder = new FlatBufferBuilder(1);
 
                     lock (world.Bodies) // wrong kind of lock but might do for now
                     {
-                        // First try to focus camera on the player if they have
-                        // a fleet alive;
-                        var followFleet = player?.Fleet;
+                        Fleet followFleet = null;
+                        Body followBody = null;
 
-                        // if the player doesn't have a fleet alive
-                        if (followFleet == null)
-                            // check to see if they are spectating a fleet that's alive
+                        // 1. If player has an alive fleet, follow their fleet
+                        if (player?.Fleet != null)
+                        {
+                            followFleet = player.Fleet;
+                        }
+                        // 2. If player is actively spectating, follow spectated fleet or find an alive player
+                        else if (IsSpectating)
+                        {
                             if (SpectatingFleet != null && SpectatingFleet.Exists)
                                 followFleet = SpectatingFleet;
 
-                        if (followFleet == null)
-                            // find someone else to watch
-                            followFleet = Player.GetWorldPlayers(world)
-                                .ToList()
-                                .Where(p => p.IsAlive)
-                                .OrderByDescending(p => p.Score * 10000 + (10000 - p.Fleet?.ID ?? 0))
-                                .FirstOrDefault()
-                                ?.Fleet;
+                            if (followFleet == null)
+                            {
+                                followFleet = Player.GetWorldPlayers(world)
+                                    .ToList()
+                                    .Where(p => p.IsAlive)
+                                    .OrderByDescending(p => p.Score * 10000 + (10000 - p.Fleet?.ID ?? 0))
+                                    .FirstOrDefault()
+                                    ?.Fleet;
 
-                        Body followBody = null;
+                                SpectatingFleet = followFleet;
+                            }
+                        }
 
                         // if we're watching a fleet, watch the center of their fleet
                         if (followFleet != null)
@@ -125,17 +130,35 @@ namespace Game.Engine.Networking
                             }
                         }
 
-                        // we've found someone to spectate, record it
-                        if (followFleet != player?.Fleet && followFleet != SpectatingFleet)
-                            SpectatingFleet = followFleet;
-
-                        // if we haven't found anything to watch yet, watch the first ship we find
+                        // if no fleet is being followed:
                         if (followBody == null)
-                            followBody = player?.World.Bodies.OfType<Ship>().FirstOrDefault();
-
-                        // if we haven't found anything to watch yet, watch anything
-                        if (followBody == null)
-                            followBody = player?.World.Bodies.FirstOrDefault();
+                        {
+                            if (!IsSpectating)
+                            {
+                                // When dead (or not yet spawned) and not spectating, stay at death location
+                                var deathPos = player?.DeathPosition ?? Vector2.Zero;
+                                followBody = new Body
+                                {
+                                    DefinitionTime = world.Time,
+                                    OriginalPosition = deathPos,
+                                    Position = deathPos,
+                                    Momentum = Vector2.Zero
+                                };
+                            }
+                            else
+                            {
+                                // Spectating fallback when no players are alive in the world
+                                followBody = player?.World.Bodies.OfType<Ship>().FirstOrDefault()
+                                    ?? player?.World.Bodies.FirstOrDefault()
+                                    ?? new Body
+                                    {
+                                        DefinitionTime = world.Time,
+                                        OriginalPosition = Vector2.Zero,
+                                        Position = Vector2.Zero,
+                                        Momentum = Vector2.Zero
+                                    };
+                            }
+                        }
 
                         if (followBody != null)
                         {
@@ -468,6 +491,9 @@ namespace Game.Engine.Networking
                     var color = "red";
 
                     Sprites shipSprite = Sprites.ship_red;
+
+                    IsSpectating = false;
+                    SpectatingFleet = null;
 
                     player.Connection = this;
                     Logger.LogInformation($"Spawn: Name:\"{spawn.Name}\" Ship: {spawn.Ship} Score: {player.Score} Roles: {player.Roles}");
