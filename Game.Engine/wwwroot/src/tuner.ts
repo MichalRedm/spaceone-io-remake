@@ -1,9 +1,5 @@
-import "./bootstrap";
 import * as PIXI from "pixi.js";
-import {
-  initializeAtlasTextures,
-  RenderedObject,
-} from "./models/renderedObject";
+import { initializeAtlasTextures } from "./atlasLoader";
 import { textureCache } from "./models/textureCache";
 
 // Ensure all atlas textures are initialized into textureCache
