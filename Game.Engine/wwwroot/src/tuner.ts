@@ -13,7 +13,7 @@ const state = {
   shipColor: "cyan",
   shipSize: 3.1,
   shipAngle: 0,
-  boostHullSize: 3.41,
+  boostHullSize: 2.8,
   boostHullAlpha: 1.0,
   dashOffsetX: -80,
   dashOffsetY: 0,
@@ -24,7 +24,7 @@ const state = {
   // Bullet
   bulletColor: "cyan",
   bulletTipSize: 2.5,
-  laserOffsetX: -80,
+  laserOffsetX: -93,
   laserOffsetY: 0,
   laserTrailSize: 12.5,
   sparkleScaleStart: 0.38,
@@ -404,14 +404,14 @@ function setupUI() {
 
     state.shipSize = 3.1;
     state.shipAngle = 0;
-    state.boostHullSize = 3.41;
+    state.boostHullSize = 2.8;
     state.boostHullAlpha = 1.0;
     state.dashOffsetX = -80;
     state.dashOffsetY = 0;
     state.dashSize = 3.25;
 
     state.bulletTipSize = 2.5;
-    state.laserOffsetX = -80;
+    state.laserOffsetX = -93;
     state.laserOffsetY = 0;
     state.laserTrailSize = 12.5;
     state.sparkleScaleStart = 0.38;
@@ -427,8 +427,8 @@ function setupUI() {
     getEl("ship-size-val").textContent = "3.10";
     getEl<HTMLInputElement>("ship-angle").value = "0";
     getEl("ship-angle-val").textContent = "0°";
-    getEl<HTMLInputElement>("boost-hull-size").value = "3.41";
-    getEl("boost-hull-size-val").textContent = "3.41";
+    getEl<HTMLInputElement>("boost-hull-size").value = "2.80";
+    getEl("boost-hull-size-val").textContent = "2.80";
     getEl<HTMLInputElement>("boost-hull-alpha").value = "1.0";
     getEl("boost-hull-alpha-val").textContent = "1.00";
     getEl<HTMLInputElement>("dash-offset-x").value = "-80";
@@ -440,8 +440,8 @@ function setupUI() {
 
     getEl<HTMLInputElement>("bullet-tip-size").value = "2.5";
     getEl("bullet-tip-size-val").textContent = "2.50";
-    getEl<HTMLInputElement>("laser-offset-x").value = "-80";
-    getEl("laser-offset-x-val").textContent = "-80";
+    getEl<HTMLInputElement>("laser-offset-x").value = "-93";
+    getEl("laser-offset-x-val").textContent = "-93";
     getEl<HTMLInputElement>("laser-offset-y").value = "0";
     getEl("laser-offset-y-val").textContent = "0";
     getEl<HTMLInputElement>("laser-trail-size").value = "12.5";

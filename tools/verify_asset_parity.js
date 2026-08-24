@@ -170,11 +170,11 @@ if (!highTexContent.includes('rotate: -1.5707963')) {
   console.log('  ✓ Trail rotation -pi/2 (-1.5707963) present');
 }
 
-if (!highTexContent.includes('x: -80;')) {
-  console.error('  [Offset Warning] dash_trail or laser_trail offset -80 missing in textureMap_high.scss!');
+if (!highTexContent.includes('x: -80;') || !highTexContent.includes('x: -93;')) {
+  console.error('  [Offset Warning] dash_trail (-80) or laser_trail (-93) offset missing in textureMap_high.scss!');
   hasErrors = true;
 } else {
-  console.log('  ✓ Dash trail and laser trail offsets (-80) calibrated');
+  console.log('  ✓ Dash trail (-80) and laser trail (-93) offsets calibrated');
 }
 
 console.log('\n======================================================');
