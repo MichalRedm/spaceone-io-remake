@@ -981,6 +981,7 @@ export function spawnFoodPickup(
   x: number,
   y: number,
 ) {
+  if (Settings.graphics === "low") return;
   const textureName = `food_pickup_${color}`;
   const textureDefinition = RenderedObject.getTextureDefinition(textureName);
   if (!textureDefinition || !textureDefinition.emitter) return;
@@ -1027,6 +1028,7 @@ export function spawnBulletImpact(
   x: number,
   y: number,
 ) {
+  if (Settings.graphics !== "high") return;
   const particleTextureName = `particle_${color}`;
   const particleDef = RenderedObject.getTextureDefinition(particleTextureName);
   const particleTextures = RenderedObject.loadTexture(

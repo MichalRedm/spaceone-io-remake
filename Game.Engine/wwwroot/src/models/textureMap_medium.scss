@@ -107,25 +107,9 @@ food_yellow_glow {
 }
 
 // boom emitters
-boom {
-  emitter: "boom_sparkles";
-  particle: "particle_cyan";
-  size: 0.01;
-}
-
-boom_sparkles_cyan {
-  emitter: "boom_sparkles";
-  particle: "particle_cyan";
-  size: 0.01;
-}
 boom_debris_cyan {
   emitter: "boom_debris";
   particle: "particle_ship_cyan";
-  size: 0.01;
-}
-boom_sparkles_blue {
-  emitter: "boom_sparkles";
-  particle: "particle_blue";
   size: 0.01;
 }
 boom_debris_blue {
@@ -133,19 +117,9 @@ boom_debris_blue {
   particle: "particle_ship_blue";
   size: 0.01;
 }
-boom_sparkles_green {
-  emitter: "boom_sparkles";
-  particle: "particle_green";
-  size: 0.01;
-}
 boom_debris_green {
   emitter: "boom_debris";
   particle: "particle_ship_green";
-  size: 0.01;
-}
-boom_sparkles_orange {
-  emitter: "boom_sparkles";
-  particle: "particle_orange";
   size: 0.01;
 }
 boom_debris_orange {
@@ -153,29 +127,14 @@ boom_debris_orange {
   particle: "particle_ship_orange";
   size: 0.01;
 }
-boom_sparkles_pink {
-  emitter: "boom_sparkles";
-  particle: "particle_pink";
-  size: 0.01;
-}
 boom_debris_pink {
   emitter: "boom_debris";
   particle: "particle_ship_pink";
   size: 0.01;
 }
-boom_sparkles_red {
-  emitter: "boom_sparkles";
-  particle: "particle_red";
-  size: 0.01;
-}
 boom_debris_red {
   emitter: "boom_debris";
   particle: "particle_ship_red";
-  size: 0.01;
-}
-boom_sparkles_yellow {
-  emitter: "boom_sparkles";
-  particle: "particle_yellow";
   size: 0.01;
 }
 boom_debris_yellow {

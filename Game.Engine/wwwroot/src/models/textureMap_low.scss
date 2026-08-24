@@ -27,33 +27,50 @@ bg {
   size: 100%;
 }
 
-// fish
+// fish / food core
 fish_blue,
 fish_cyan,
 fish_green,
 fish_orange,
 fish_pink,
 fish_red,
-fish_yellow {
-  size: 2;
+fish_yellow,
+food_blue,
+food_cyan,
+food_green,
+food_orange,
+food_pink,
+food_red,
+food_yellow {
+  size: 1.2;
 }
+food_cyan,
 fish_cyan {
   file: "food_cyan";
 }
+food_blue,
 fish_blue {
   file: "food_blue";
 }
+food_green,
 fish_green {
   file: "food_green";
 }
+food_orange,
 fish_orange {
   file: "food_orange";
 }
+food_pink,
 fish_pink {
   file: "food_pink";
 }
+food_red,
 fish_red {
   file: "food_red";
+}
+food_yellow,
+fish_yellow {
+  file: "food_yellow";
 }
 // dead ships (used in low graphics mode for ship death)
 dead_ship_blue,

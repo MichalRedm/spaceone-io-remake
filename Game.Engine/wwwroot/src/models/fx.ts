@@ -1,6 +1,7 @@
 import * as PIXI from "pixi.js";
 import { textureCache } from "./textureCache";
 import type { CustomContainer } from "../CustomContainer";
+import { Settings } from "../settings";
 
 /**
  * Global FX Configuration Parameters
@@ -100,6 +101,7 @@ class FXManager {
   }
 
   public spawnBulletExplosion(color: string, x: number, y: number): void {
+    if (Settings.graphics !== "high") return;
     const texName = `particle_${color.toLowerCase()}`;
     const tex = this.getTexture(texName) || this.getTexture("particle_cyan");
     if (!tex) return;
