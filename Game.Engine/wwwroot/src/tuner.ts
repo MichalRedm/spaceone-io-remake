@@ -27,7 +27,7 @@ const state = {
   laserOffsetX: -93,
   laserOffsetY: 0,
   laserTrailSize: 12.5,
-  sparkleScaleStart: 0.38,
+  sparkleScaleStart: 0.57,
   sparkleFreq: 0.025,
   sparkleLife: 0.2,
 
