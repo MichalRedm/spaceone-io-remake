@@ -981,7 +981,7 @@ export function spawnFoodPickup(
   x: number,
   y: number,
 ) {
-  if (Settings.graphics === "low") return;
+  if (Settings.graphics !== "high") return;
   const textureName = `food_pickup_${color}`;
   const textureDefinition = RenderedObject.getTextureDefinition(textureName);
   if (!textureDefinition || !textureDefinition.emitter) return;

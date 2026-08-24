@@ -106,42 +106,7 @@ food_yellow_glow {
   file: "food_yellow_glow";
 }
 
-// boom emitters
-boom_debris_cyan {
-  emitter: "boom_debris";
-  particle: "particle_ship_cyan";
-  size: 0.01;
-}
-boom_debris_blue {
-  emitter: "boom_debris";
-  particle: "particle_ship_blue";
-  size: 0.01;
-}
-boom_debris_green {
-  emitter: "boom_debris";
-  particle: "particle_ship_green";
-  size: 0.01;
-}
-boom_debris_orange {
-  emitter: "boom_debris";
-  particle: "particle_ship_orange";
-  size: 0.01;
-}
-boom_debris_pink {
-  emitter: "boom_debris";
-  particle: "particle_ship_pink";
-  size: 0.01;
-}
-boom_debris_red {
-  emitter: "boom_debris";
-  particle: "particle_ship_red";
-  size: 0.01;
-}
-boom_debris_yellow {
-  emitter: "boom_debris";
-  particle: "particle_ship_yellow";
-  size: 0.01;
-}
+// boom emitters (handled by fx.ts for high quality only)
 
 // sparkle particles
 particle_blue,
