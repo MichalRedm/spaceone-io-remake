@@ -52,17 +52,17 @@ namespace Game.API.Common.Models
                         5.525f, 5.511f, 5.497f, 5.484f, 5.470f, 5.457f, 5.444f, 5.432f, 5.419f, 5.407f, // 81 - 90 size
                         5.394f, 5.382f, 5.370f, 5.359f, 5.347f, 5.335f, 5.324f, 5.312f, 5.300f, 5.289f // 91 - 100 size
                     },
-                    BaseThrustConverter = 0.00586f,
+                    BaseThrustConverter = 0.0038f,
 
                     Drag = 0.88f,
-                    DragBoost = 0.92f,
+                    DragBoost = 0.94f,
                     DragAbandoned = 0.96f,
 
                     BoomDrag = 0.92f,
                     BoomLife = 500,
 
-                    BoostThrust = 0.18f,
-                    BoostThrust2 = 0.18f,
+                    BoostThrust = 0.12f,
+                    BoostThrust2 = 0.12f,
 
                     BoostCooldownTimeM = 14.0f,
                     BoostCooldownTimeB = 1080.0f,
@@ -97,7 +97,7 @@ namespace Game.API.Common.Models
                         12.908f, 12.866f, 12.825f, 12.785f, 12.745f, 12.706f, 12.667f, 12.629f, 12.592f, 12.555f, // 81 - 90 size
                         12.519f, 12.483f, 12.447f, 12.412f, 12.378f, 12.344f, 12.211f, 12.067f, 12.033f, 12.000f // 91 - 100 size
                     },
-                    ShotThrustConverter = 0.055f,
+                    ShotThrustConverter = 0.020f,
 
                     SeekerThrustMultiplier = 1.35f,
                     SeekerLifeMultiplier = 1.15f,
@@ -107,10 +107,10 @@ namespace Game.API.Common.Models
                     MaxHealth = 100,
 
                     MaxHealthBot = 50,
-                    BulletLife = 1000,
+                    BulletLife = 1800,
                     
-                    BulletLifeB = 900,
-                    BulletLifeM = 15,
+                    BulletLifeB = 1800,
+                    BulletLifeM = 35,
                     
                     BotPerXPoints = 500,
                     BotBase = 0,
