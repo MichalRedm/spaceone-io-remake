@@ -206,6 +206,7 @@ connection.onView = (newView) => {
   fleetID = newView.fleetID();
   if (view.isAlive && !lastAliveState) {
     lastAliveState = true;
+    isSpectating = false;
     document.body.classList.remove("dead");
     document.body.classList.remove("spectating");
     document.body.classList.add("alive");
@@ -404,6 +405,7 @@ LobbyCallbacks.onWorldJoin = function (worldKey, world) {
 };
 
 function doSpawn() {
+  isSpectating = false;
   Events.Spawn();
   aliveSince = gameTime;
   connection.sendSpawn(

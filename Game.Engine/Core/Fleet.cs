@@ -123,7 +123,11 @@ namespace Game.Engine.Core
             this.Owner.LastShipDeathTime = World.Time;
 
             if (!Ships.Where(s => !s.PendingDestruction).Any())
+            {
+                if (ship != null)
+                    this.FleetCenter = ship.Position;
                 Die(player);
+            }
         }
 
         public void KilledShip(Ship killedShip)
