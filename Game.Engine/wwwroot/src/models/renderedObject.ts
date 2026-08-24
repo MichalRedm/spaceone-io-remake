@@ -513,9 +513,32 @@ export class RenderedObject {
         }
 
         if (spriteLayer != null) {
-          if (zIndex == 0) zIndex = 250;
+          let effectiveZ = zIndex;
+          const spriteStr = String(spriteName || "");
+          if (!effectiveZ || effectiveZ === 0) {
+            if (spriteStr.startsWith("ship")) {
+              effectiveZ = 200;
+            } else if (
+              spriteStr.startsWith("bullet") ||
+              spriteStr.startsWith("laser")
+            ) {
+              effectiveZ = 100;
+            } else {
+              effectiveZ = 50;
+            }
+          } else {
+            if (spriteStr.startsWith("ship") && effectiveZ < 200) {
+              effectiveZ = 200;
+            } else if (
+              (spriteStr.startsWith("bullet") ||
+                spriteStr.startsWith("laser")) &&
+              effectiveZ >= 200
+            ) {
+              effectiveZ = 100;
+            }
+          }
 
-          spriteLayer.zOrder = zIndex - i + this.body.ID / 100000;
+          spriteLayer.zOrder = effectiveZ + i + (this.body?.ID || 0) / 100000;
 
           spriteLayers.push(spriteLayer);
           this.activeTextures[textureName] = spriteLayer;
@@ -582,9 +605,32 @@ export class RenderedObject {
         }
 
         if (emitterLayer != null) {
-          if (zIndex == 0) zIndex = 250;
+          let effectiveZ = zIndex;
+          const spriteStr = String(spriteName || "");
+          if (!effectiveZ || effectiveZ === 0) {
+            if (spriteStr.startsWith("ship")) {
+              effectiveZ = 200;
+            } else if (
+              spriteStr.startsWith("bullet") ||
+              spriteStr.startsWith("laser")
+            ) {
+              effectiveZ = 100;
+            } else {
+              effectiveZ = 50;
+            }
+          } else {
+            if (spriteStr.startsWith("ship") && effectiveZ < 200) {
+              effectiveZ = 200;
+            } else if (
+              (spriteStr.startsWith("bullet") ||
+                spriteStr.startsWith("laser")) &&
+              effectiveZ >= 200
+            ) {
+              effectiveZ = 100;
+            }
+          }
 
-          emitterLayer.zOrder = zIndex - i + (this.body?.ID || 0) / 100000;
+          emitterLayer.zOrder = effectiveZ + i + (this.body?.ID || 0) / 100000;
 
           emitterLayers.push(emitterLayer);
           this.activeEmitters[textureName] = emitterLayer;
