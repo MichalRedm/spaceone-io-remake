@@ -442,27 +442,5 @@ map {
 }
 
 boom {
-  textures: "boom_sparkles_cyan";
-
-  &.cyan {
-    textures: "boom_sparkles_cyan";
-  }
-  &.blue {
-    textures: "boom_sparkles_blue";
-  }
-  &.green {
-    textures: "boom_sparkles_green";
-  }
-  &.orange {
-    textures: "boom_sparkles_orange";
-  }
-  &.pink {
-    textures: "boom_sparkles_pink";
-  }
-  &.red {
-    textures: "boom_sparkles_red";
-  }
-  &.yellow {
-    textures: "boom_sparkles_yellow";
-  }
+  textures: "";
 }

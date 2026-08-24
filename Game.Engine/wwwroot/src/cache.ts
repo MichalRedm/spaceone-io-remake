@@ -74,14 +74,6 @@ export class Cache {
             const color = parts.length > 1 ? parts[1] : "cyan";
             FX.spawnBulletExplosion(color, x, y);
           }
-        } else if (
-          spriteStr.startsWith("ship") &&
-          !spriteStr.startsWith("ship_gray") &&
-          !spriteStr.startsWith("ship_base")
-        ) {
-          const parts = spriteStr.split("_");
-          const color = parts.length > 1 ? parts[1] : "cyan";
-          FX.spawnShipExplosion(color, x, y, body.Size || 50);
         }
 
         if (body.renderer) body.renderer.destroy();
@@ -190,14 +182,35 @@ export class Cache {
             }
           }
         }
-        if (!update.renderer)
-          update.renderer = new RenderedObject(this.container);
 
-        update.group = group;
-        update.zIndex = 0;
-        if (group) update.zIndex = group.ZIndex || 0;
+        if (update.Sprite === "boom") {
+          const colors = [
+            "cyan",
+            "blue",
+            "cyan",
+            "green",
+            "orange",
+            "pink",
+            "red",
+            "yellow",
+          ];
+          const color = colors[update.Mode] || "cyan";
+          FX.spawnShipExplosion(
+            color,
+            update.OriginalPosition?.x ?? 0,
+            update.OriginalPosition?.y ?? 0,
+            update.Size || 50,
+          );
+        } else {
+          if (!update.renderer)
+            update.renderer = new RenderedObject(this.container);
 
-        if (update.renderer) update.renderer.update(update, myFleetID);
+          update.group = group;
+          update.zIndex = 0;
+          if (group) update.zIndex = group.ZIndex || 0;
+
+          if (update.renderer) update.renderer.update(update, myFleetID);
+        }
 
         Cache.count++;
       }

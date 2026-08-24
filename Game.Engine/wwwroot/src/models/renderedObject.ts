@@ -115,7 +115,13 @@ class GroupParticle extends particles.Particle {
   update(delta: number): number {
     var ret = super.update(delta);
 
-    if (this.body && this.body.Size) {
+    const spriteStr = String(this.body?.Sprite || "");
+    if (
+      this.body &&
+      this.body.Size &&
+      !spriteStr.startsWith("bullet") &&
+      !spriteStr.startsWith("laser")
+    ) {
       this.scaleMultiplier = Math.max(0.5, this.body.Size / 50.0);
     } else {
       this.scaleMultiplier = 1.0;
@@ -795,20 +801,13 @@ export class RenderedObject {
           layer.visible = layer.alpha > 0.01;
         }
       } else if (fileStr.startsWith("ship") && !fileStr.startsWith("ship_ab")) {
-        if (self.isBoosting) {
-          const boostElapsed = now - self.boostStartTime;
-          const boostProgress = Math.min(1.0, boostElapsed / 500);
-          layer.alpha = boostProgress;
-          layer.visible = true;
-        } else {
-          layer.alpha = 1.0;
-          layer.visible = true;
-        }
+        layer.alpha = 1.0;
+        layer.visible = true;
       } else if (fileStr.includes("glow")) {
         const spawnAge = now - self.spawnTime;
         const spawnAlpha = Math.min(1.0, spawnAge / 1000);
         const glowPulse =
-          0.35 + 0.65 * (0.5 + 0.5 * Math.sin((now / 1000) * 2 * Math.PI));
+          0.4 + 0.6 * (0.5 + 0.5 * Math.sin((now / 1000) * 2 * Math.PI));
         layer.alpha = spawnAlpha * glowPulse;
         layer.visible = true;
       } else if (fileStr.startsWith("food") || fileStr.startsWith("fish")) {

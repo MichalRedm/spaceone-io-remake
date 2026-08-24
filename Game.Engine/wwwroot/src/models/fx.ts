@@ -27,8 +27,8 @@ export const FX_CONFIG = {
     minParticles: 1,
     maxParticles: 2,
     durationMs: 500,
-    maxScaleRatio: 0.75, // Up to 75% of ship sprite size
-    scaleVariation: 0.2,
+    maxScaleRatio: 1.0, // Up to 100% of ship sprite size
+    scaleVariation: 0.15,
     rotationDeltaRad: Math.PI / 6, // +30 degrees clockwise
     driftSpeedMin: 15,
     driftSpeedMax: 35,

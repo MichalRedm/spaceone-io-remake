@@ -256,12 +256,12 @@
 	},
 	"bullet_blue": {
 		"alpha": {
-			"start": 0.85,
+			"start": 1.0,
 			"end": 0.0
 		},
 		"scale": {
-			"start": 0.35,
-			"end": 0.05,
+			"start": 0.75,
+			"end": 0.1,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
@@ -269,8 +269,8 @@
 			"end": "#ffffff"
 		},
 		"speed": {
-			"start": 30,
-			"end": 5,
+			"start": 40,
+			"end": 10,
 			"minimumSpeedMultiplier": 0.5
 		},
 		"acceleration": {
@@ -288,13 +288,13 @@
 			"max": 0
 		},
 		"lifetime": {
-			"min": 0.15,
-			"max": 0.20
+			"min": 0.18,
+			"max": 0.28
 		},
 		"blendMode": "screen",
-		"frequency": 0.1,
+		"frequency": 0.015,
 		"emitterLifetime": -1,
-		"maxParticles": 30,
+		"maxParticles": 100,
 		"pos": {
 			"x": 0,
 			"y": 0
@@ -304,12 +304,12 @@
 	},
 	"bullet_cyan": {
 		"alpha": {
-			"start": 0.85,
+			"start": 1.0,
 			"end": 0.0
 		},
 		"scale": {
-			"start": 0.35,
-			"end": 0.05,
+			"start": 0.75,
+			"end": 0.1,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
@@ -317,8 +317,8 @@
 			"end": "#ffffff"
 		},
 		"speed": {
-			"start": 30,
-			"end": 5,
+			"start": 40,
+			"end": 10,
 			"minimumSpeedMultiplier": 0.5
 		},
 		"acceleration": {
@@ -336,13 +336,13 @@
 			"max": 0
 		},
 		"lifetime": {
-			"min": 0.15,
-			"max": 0.20
+			"min": 0.18,
+			"max": 0.28
 		},
 		"blendMode": "screen",
-		"frequency": 0.1,
+		"frequency": 0.015,
 		"emitterLifetime": -1,
-		"maxParticles": 30,
+		"maxParticles": 100,
 		"pos": {
 			"x": 0,
 			"y": 0
@@ -352,12 +352,12 @@
 	},
 	"bullet_green": {
 		"alpha": {
-			"start": 0.85,
+			"start": 1.0,
 			"end": 0.0
 		},
 		"scale": {
-			"start": 0.35,
-			"end": 0.05,
+			"start": 0.75,
+			"end": 0.1,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
@@ -365,8 +365,8 @@
 			"end": "#ffffff"
 		},
 		"speed": {
-			"start": 30,
-			"end": 5,
+			"start": 40,
+			"end": 10,
 			"minimumSpeedMultiplier": 0.5
 		},
 		"acceleration": {
@@ -384,13 +384,13 @@
 			"max": 0
 		},
 		"lifetime": {
-			"min": 0.15,
-			"max": 0.20
+			"min": 0.18,
+			"max": 0.28
 		},
 		"blendMode": "screen",
-		"frequency": 0.1,
+		"frequency": 0.015,
 		"emitterLifetime": -1,
-		"maxParticles": 30,
+		"maxParticles": 100,
 		"pos": {
 			"x": 0,
 			"y": 0
@@ -400,12 +400,12 @@
 	},
 	"bullet_orange": {
 		"alpha": {
-			"start": 0.85,
+			"start": 1.0,
 			"end": 0.0
 		},
 		"scale": {
-			"start": 0.35,
-			"end": 0.05,
+			"start": 0.75,
+			"end": 0.1,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
@@ -413,8 +413,8 @@
 			"end": "#ffffff"
 		},
 		"speed": {
-			"start": 30,
-			"end": 5,
+			"start": 40,
+			"end": 10,
 			"minimumSpeedMultiplier": 0.5
 		},
 		"acceleration": {
@@ -432,13 +432,13 @@
 			"max": 0
 		},
 		"lifetime": {
-			"min": 0.15,
-			"max": 0.20
+			"min": 0.18,
+			"max": 0.28
 		},
 		"blendMode": "screen",
-		"frequency": 0.1,
+		"frequency": 0.015,
 		"emitterLifetime": -1,
-		"maxParticles": 30,
+		"maxParticles": 100,
 		"pos": {
 			"x": 0,
 			"y": 0
@@ -448,12 +448,12 @@
 	},
 	"bullet_pink": {
 		"alpha": {
-			"start": 0.85,
+			"start": 1.0,
 			"end": 0.0
 		},
 		"scale": {
-			"start": 0.35,
-			"end": 0.05,
+			"start": 0.75,
+			"end": 0.1,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
@@ -461,8 +461,8 @@
 			"end": "#ffffff"
 		},
 		"speed": {
-			"start": 30,
-			"end": 5,
+			"start": 40,
+			"end": 10,
 			"minimumSpeedMultiplier": 0.5
 		},
 		"acceleration": {
@@ -480,13 +480,13 @@
 			"max": 0
 		},
 		"lifetime": {
-			"min": 0.15,
-			"max": 0.20
+			"min": 0.18,
+			"max": 0.28
 		},
 		"blendMode": "screen",
-		"frequency": 0.1,
+		"frequency": 0.015,
 		"emitterLifetime": -1,
-		"maxParticles": 30,
+		"maxParticles": 100,
 		"pos": {
 			"x": 0,
 			"y": 0
@@ -496,12 +496,12 @@
 	},
 	"bullet_red": {
 		"alpha": {
-			"start": 0.85,
+			"start": 1.0,
 			"end": 0.0
 		},
 		"scale": {
-			"start": 0.35,
-			"end": 0.05,
+			"start": 0.75,
+			"end": 0.1,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
@@ -509,8 +509,8 @@
 			"end": "#ffffff"
 		},
 		"speed": {
-			"start": 30,
-			"end": 5,
+			"start": 40,
+			"end": 10,
 			"minimumSpeedMultiplier": 0.5
 		},
 		"acceleration": {
@@ -528,13 +528,13 @@
 			"max": 0
 		},
 		"lifetime": {
-			"min": 0.15,
-			"max": 0.20
+			"min": 0.18,
+			"max": 0.28
 		},
 		"blendMode": "screen",
-		"frequency": 0.1,
+		"frequency": 0.015,
 		"emitterLifetime": -1,
-		"maxParticles": 30,
+		"maxParticles": 100,
 		"pos": {
 			"x": 0,
 			"y": 0
@@ -544,12 +544,12 @@
 	},
 	"bullet_yellow": {
 		"alpha": {
-			"start": 0.85,
+			"start": 1.0,
 			"end": 0.0
 		},
 		"scale": {
-			"start": 0.35,
-			"end": 0.05,
+			"start": 0.75,
+			"end": 0.1,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
@@ -557,8 +557,8 @@
 			"end": "#ffffff"
 		},
 		"speed": {
-			"start": 30,
-			"end": 5,
+			"start": 40,
+			"end": 10,
 			"minimumSpeedMultiplier": 0.5
 		},
 		"acceleration": {
@@ -576,13 +576,13 @@
 			"max": 0
 		},
 		"lifetime": {
-			"min": 0.15,
-			"max": 0.20
+			"min": 0.18,
+			"max": 0.28
 		},
 		"blendMode": "screen",
-		"frequency": 0.1,
+		"frequency": 0.015,
 		"emitterLifetime": -1,
-		"maxParticles": 30,
+		"maxParticles": 100,
 		"pos": {
 			"x": 0,
 			"y": 0

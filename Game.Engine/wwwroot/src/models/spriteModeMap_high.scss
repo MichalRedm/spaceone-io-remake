@@ -442,27 +442,5 @@ map {
 }
 
 boom {
-  textures: "boom_sparkles_cyan", "boom_debris_cyan";
-
-  &.cyan {
-    textures: "boom_sparkles_cyan", "boom_debris_cyan";
-  }
-  &.blue {
-    textures: "boom_sparkles_blue", "boom_debris_blue";
-  }
-  &.green {
-    textures: "boom_sparkles_green", "boom_debris_green";
-  }
-  &.orange {
-    textures: "boom_sparkles_orange", "boom_debris_orange";
-  }
-  &.pink {
-    textures: "boom_sparkles_pink", "boom_debris_pink";
-  }
-  &.red {
-    textures: "boom_sparkles_red", "boom_debris_red";
-  }
-  &.yellow {
-    textures: "boom_sparkles_yellow", "boom_debris_yellow";
-  }
+  textures: "";
 }
