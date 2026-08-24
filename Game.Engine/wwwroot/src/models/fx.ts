@@ -9,7 +9,7 @@ import { Settings } from "../settings";
  */
 export const FX_CONFIG = {
   bulletExplosion: {
-    particleCount: 4,
+    particleCount: 2,
     durationMs: 500,
     baseScale: 0.85,
     scaleVariation: 0.25,
@@ -17,7 +17,7 @@ export const FX_CONFIG = {
     driftSpeedMax: 100,
   },
   foodExplosion: {
-    particleCount: 4,
+    particleCount: 2,
     durationMs: 500,
     baseScale: 0.95,
     scaleVariation: 0.25,
@@ -25,12 +25,12 @@ export const FX_CONFIG = {
     driftSpeedMax: 80,
   },
   shipExplosion: {
-    minParticles: 3,
-    maxParticles: 6,
-    durationMs: 600,
+    minParticles: 1,
+    maxParticles: 2,
+    durationMs: 500,
     maxScaleRatio: 1.0, // Up to 100% of ship sprite size
-    scaleVariation: 0.2,
-    rotationDeltaRad: Math.PI / 4, // +45 degrees clockwise
+    scaleVariation: 0.15,
+    rotationDeltaRad: Math.PI / 6, // +30 degrees clockwise
     driftSpeedMin: 60,
     driftSpeedMax: 180,
   },
