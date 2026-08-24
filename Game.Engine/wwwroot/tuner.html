@@ -26,8 +26,6 @@
         overflow: hidden;
       }
       #tuner-canvas {
-        width: 100%;
-        height: 100%;
         display: block;
       }
       #sidebar {
@@ -41,14 +39,14 @@
         box-shadow: -5px 0 25px rgba(0,0,0,0.5);
       }
       .header {
-        padding: 16px 20px;
+        padding: 14px 20px;
         border-bottom: 1px solid #1f2833;
         display: flex;
         justify-content: space-between;
         align-items: center;
       }
       .header h1 {
-        font-size: 16px;
+        font-size: 15px;
         font-weight: 700;
         color: #66fcf1;
         letter-spacing: 0.5px;
@@ -177,8 +175,15 @@
     </div>
     <div id="sidebar">
       <div class="header">
-        <h1>Calibration Studio</h1>
-        <button id="reset-all-btn" style="width: auto; padding: 4px 10px; font-size: 11px;">Reset Defaults</button>
+        <div>
+          <h1>Calibration Studio</h1>
+          <div style="font-size: 11px; color: #8892b0; margin-top: 4px; display: flex; align-items: center; gap: 6px;">
+            <span>Zoom:</span>
+            <span id="zoom-val" style="color: #66fcf1; font-family: monospace; font-weight: bold; width: 30px;">1.5x</span>
+            <input type="range" id="zoom-slider" min="0.5" max="3.0" step="0.1" value="1.5" style="width: 80px;" />
+          </div>
+        </div>
+        <button id="reset-all-btn" style="width: auto; padding: 5px 10px; font-size: 11px;">Reset Defaults</button>
       </div>
       <div class="tabs">
         <button class="tab-btn active" data-tab="ship-tab">Ship & Boost</button>

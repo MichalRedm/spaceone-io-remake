@@ -7,6 +7,8 @@ initializeAtlasTextures();
 
 // State
 const state = {
+  zoom: 1.5,
+
   // Ship
   shipColor: "cyan",
   shipSize: 3.1,
@@ -36,11 +38,14 @@ const state = {
   foodGlowMinAlpha: 0.4,
 };
 
-// Pixi Setup
+// Pixi Setup on container with proper pixel density and aspect ratio
+const container = document.getElementById("canvas-container") as HTMLElement;
 const canvas = document.getElementById("tuner-canvas") as HTMLCanvasElement;
 const app = new PIXI.Application({
   view: canvas,
-  resizeTo: window,
+  resizeTo: container,
+  autoDensity: true,
+  resolution: window.devicePixelRatio || 1,
   backgroundColor: 0x07090e,
   antialias: true,
 });
@@ -102,9 +107,9 @@ function drawBackground() {
     gridGfx.lineTo(cx, cy + 40);
   });
 
-  shipTitle.position.set(cx1, cy - 140);
-  bulletTitle.position.set(cx2, cy - 140);
-  foodTitle.position.set(cx3, cy - 140);
+  shipTitle.position.set(cx1, cy - 110 * state.zoom);
+  bulletTitle.position.set(cx2, cy - 110 * state.zoom);
+  foodTitle.position.set(cx3, cy - 110 * state.zoom);
 }
 
 // Station Containers
@@ -130,7 +135,6 @@ function getTex(name: string): PIXI.Texture {
   const cached = textureCache[clean] || textureCache[name];
   if (cached && cached.length > 0) return cached[0];
 
-  // Try direct lookup with .png
   const cachedPng = textureCache[`${clean}.png`] || textureCache[`${name}.png`];
   if (cachedPng && cachedPng.length > 0) return cachedPng[0];
 
@@ -227,8 +231,8 @@ function updateSparkles(now: number) {
       sprite: sp,
       startX: bulletTipSprite?.position.x || 0,
       startY: bulletTipSprite?.position.y || 0,
-      vx: -(30 + Math.random() * 20),
-      vy: (Math.random() - 0.5) * 15,
+      vx: -(30 + Math.random() * 20) * state.zoom,
+      vy: (Math.random() - 0.5) * 15 * state.zoom,
       spawnTime: now,
       life: state.sparkleLife * 1000,
     });
@@ -245,7 +249,7 @@ function updateSparkles(now: number) {
       continue;
     }
 
-    const currentScale = state.sparkleScaleStart * (1.0 - p * 0.8);
+    const currentScale = state.sparkleScaleStart * state.zoom * (1.0 - p * 0.8);
     s.sprite.scale.set(currentScale, currentScale);
     s.sprite.alpha = 1.0 - p;
     const dt = age * 0.001;
@@ -263,11 +267,16 @@ app.ticker.add(() => {
   drawBackground();
 
   // Position Stations
-  shipStation.position.set(w * 0.25, h * 0.5);
-  bulletStation.position.set(w * 0.58, h * 0.5);
-  foodStation.position.set(w * 0.85, h * 0.5);
+  const cx1 = w * 0.25;
+  const cx2 = w * 0.58;
+  const cx3 = w * 0.85;
+  const cy = h * 0.5;
 
-  const baseObjectSize = 50; // standard body size
+  shipStation.position.set(cx1, cy);
+  bulletStation.position.set(cx2, cy);
+  foodStation.position.set(cx3, cy);
+
+  const baseObjectSize = 50 * state.zoom;
 
   // --- 1. SHIP STATION ---
   if (shipSprite && boostHullSprite && dashTrailSprite) {
@@ -324,7 +333,7 @@ app.ticker.add(() => {
 
   // --- 2. BULLET STATION ---
   if (bulletTipSprite && laserTrailSprite) {
-    const bulletSize = 10;
+    const bulletSize = 10 * state.zoom;
     const tipScale = (bulletSize * state.bulletTipSize) / 42;
     bulletTipSprite.scale.set(tipScale, tipScale);
     bulletTipSprite.rotation = Math.PI / 2;
@@ -343,7 +352,7 @@ app.ticker.add(() => {
 
   // --- 3. FOOD STATION ---
   if (foodCoreSprite && foodGlowSprite) {
-    const foodSize = 50;
+    const foodSize = 50 * state.zoom;
     const coreScale = (foodSize * state.foodCoreSize) / 19;
     foodCoreSprite.scale.set(coreScale, coreScale);
 
@@ -361,6 +370,15 @@ app.ticker.add(() => {
 function setupUI() {
   const getEl = <T extends HTMLElement>(id: string) =>
     document.getElementById(id) as T;
+
+  // Zoom slider
+  const zoomSlider = getEl<HTMLInputElement>("zoom-slider");
+  if (zoomSlider) {
+    zoomSlider.addEventListener("input", (e) => {
+      state.zoom = parseFloat((e.target as HTMLInputElement).value);
+      getEl("zoom-val").textContent = `${state.zoom.toFixed(1)}x`;
+    });
+  }
 
   // Tabs
   document.querySelectorAll(".tab-btn").forEach((btn) => {
@@ -380,6 +398,10 @@ function setupUI() {
 
   // Reset All Button
   getEl("reset-all-btn").addEventListener("click", () => {
+    state.zoom = 1.5;
+    if (zoomSlider) zoomSlider.value = "1.5";
+    getEl("zoom-val").textContent = "1.5x";
+
     state.shipSize = 3.1;
     state.shipAngle = 0;
     state.boostHullSize = 3.41;
