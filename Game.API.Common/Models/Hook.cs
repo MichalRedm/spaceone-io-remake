@@ -31,10 +31,10 @@ namespace Game.API.Common.Models
                     Quantization = false,
                     QuantizationCount = 16,
 
-                    ShipAddRadius = 3,
+                    ShipAddRadius = 12,
                     ShipAddMomentumMultiplier = 0.9f,
 
-                    MaxMomentumCoefficient = 1.0f,
+                    MaxMomentumCoefficient = 1.4f,
 
                     BaseThrustM = -0.00015f,
                     BaseThrustB = 0.015f,
@@ -54,8 +54,8 @@ namespace Game.API.Common.Models
                     },
                     BaseThrustConverter = 0.025f,
 
-                    Drag = 1f,
-                    DragBoost = 1f,
+                    Drag = 0.88f,
+                    DragBoost = 0.92f,
                     DragAbandoned = 0.98f,
 
                     BoomDrag = 0.92f,
@@ -140,8 +140,8 @@ namespace Game.API.Common.Models
                     SpawnShipCount = 3,
                     SpawnInvulnerabilityTime = 3000,
 
-                    Fishes = 1850, // scaled proportionally to 5.29x arena surface area (was 350 for 5500 arena)
-                    FishesMultiplier = 0.023, // used when WorldResizeEnabled = true
+                    Fishes = 925, // scaled proportionally to 5.29x arena surface area (-50% tuning)
+                    FishesMultiplier = 0.0115, // used when WorldResizeEnabled = true
                     FishThrust = 0.0005f,
                     FishFlockAlignment = 10f,
                     FishFlockCohesion = 0.001f,
@@ -155,9 +155,9 @@ namespace Game.API.Common.Models
                     FlockAlignment = 30f,
                     FlockCohesion = 0f,
                     FlockCohesionMaximumDistance = 0,
-                    FlockSeparation = 1f,
-                    FlockSeparationMinimumDistanceB = 38f,
-                    FlockSeparationMinimumDistanceM = 0.2f,
+                    FlockSeparation = 1.5f,
+                    FlockSeparationMinimumDistanceB = 76f,
+                    FlockSeparationMinimumDistanceM = 0.4f,
                     FlockWeight = 1.8f,
                     SnakeWeight = 0f,
                     BossMode = false,
@@ -210,10 +210,10 @@ namespace Game.API.Common.Models
                     PrecisionBullets = true,
                     PrecisionBulletsMinimumRange = 16384f,
 
-                    MinPointerDistanceB = 15f,
-                    MinPointerDistanceM = 0.55f,
-                    MaxPointerDistanceB = 50f,
-                    MaxPointerDistanceM = 1.9f,
+                    MinPointerDistanceB = 30f,
+                    MinPointerDistanceM = 1.1f,
+                    MaxPointerDistanceB = 100f,
+                    MaxPointerDistanceM = 3.8f,
                 };
             }
         }

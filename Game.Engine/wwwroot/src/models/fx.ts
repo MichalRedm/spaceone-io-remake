@@ -9,30 +9,30 @@ import { Settings } from "../settings";
  */
 export const FX_CONFIG = {
   bulletExplosion: {
-    particleCount: 2,
+    particleCount: 4,
     durationMs: 500,
-    baseScale: 0.35,
-    scaleVariation: 0.1,
-    driftSpeedMin: 10,
-    driftSpeedMax: 25,
+    baseScale: 0.85,
+    scaleVariation: 0.25,
+    driftSpeedMin: 40,
+    driftSpeedMax: 100,
   },
   foodExplosion: {
-    particleCount: 2,
+    particleCount: 4,
     durationMs: 500,
-    baseScale: 0.4,
-    scaleVariation: 0.1,
-    driftSpeedMin: 10,
-    driftSpeedMax: 25,
+    baseScale: 0.95,
+    scaleVariation: 0.25,
+    driftSpeedMin: 30,
+    driftSpeedMax: 80,
   },
   shipExplosion: {
-    minParticles: 1,
-    maxParticles: 2,
-    durationMs: 500,
+    minParticles: 3,
+    maxParticles: 6,
+    durationMs: 600,
     maxScaleRatio: 1.0, // Up to 100% of ship sprite size
-    scaleVariation: 0.15,
-    rotationDeltaRad: Math.PI / 6, // +30 degrees clockwise
-    driftSpeedMin: 15,
-    driftSpeedMax: 35,
+    scaleVariation: 0.2,
+    rotationDeltaRad: Math.PI / 4, // +45 degrees clockwise
+    driftSpeedMin: 60,
+    driftSpeedMax: 180,
   },
 };
 
@@ -201,8 +201,8 @@ class FXManager {
       cfg.minParticles;
     const now = performance.now();
 
-    // Max particle size is ~75% of ship sprite (ship render scale is ~ (shipSize / 121) * 3.1)
-    const baseShipScale = (shipSize / 121.0) * 3.1;
+    // Max particle size is ~75% of ship sprite (ship render scale is ~ (shipSize / 121) * 1.92)
+    const baseShipScale = (shipSize / 121.0) * 1.92;
     const particleMaxScale = baseShipScale * cfg.maxScaleRatio;
 
     for (let i = 0; i < count; i++) {
