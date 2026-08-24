@@ -56,8 +56,8 @@
 			"end": 1
 		},
 		"scale": {
-			"start": 0.22,
-			"end": 0.02,
+			"start": 0.33,
+			"end": 0.03,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
@@ -107,8 +107,8 @@
 			"end": 1
 		},
 		"scale": {
-			"start": 0.22,
-			"end": 0.02,
+			"start": 0.33,
+			"end": 0.03,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
@@ -158,8 +158,8 @@
 			"end": 1
 		},
 		"scale": {
-			"start": 0.12,
-			"end": 0.04,
+			"start": 0.18,
+			"end": 0.06,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
@@ -260,8 +260,8 @@
 			"end": 0.0
 		},
 		"scale": {
-			"start": 0.57,
-			"end": 0.075,
+			"start": 0.38,
+			"end": 0.05,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
@@ -308,8 +308,8 @@
 			"end": 0.0
 		},
 		"scale": {
-			"start": 0.57,
-			"end": 0.075,
+			"start": 0.38,
+			"end": 0.05,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
@@ -356,8 +356,8 @@
 			"end": 0.0
 		},
 		"scale": {
-			"start": 0.57,
-			"end": 0.075,
+			"start": 0.38,
+			"end": 0.05,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
@@ -404,8 +404,8 @@
 			"end": 0.0
 		},
 		"scale": {
-			"start": 0.57,
-			"end": 0.075,
+			"start": 0.38,
+			"end": 0.05,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
@@ -452,8 +452,8 @@
 			"end": 0.0
 		},
 		"scale": {
-			"start": 0.57,
-			"end": 0.075,
+			"start": 0.38,
+			"end": 0.05,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
@@ -500,8 +500,8 @@
 			"end": 0.0
 		},
 		"scale": {
-			"start": 0.57,
-			"end": 0.075,
+			"start": 0.38,
+			"end": 0.05,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
@@ -548,8 +548,8 @@
 			"end": 0.0
 		},
 		"scale": {
-			"start": 0.57,
-			"end": 0.075,
+			"start": 0.38,
+			"end": 0.05,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
