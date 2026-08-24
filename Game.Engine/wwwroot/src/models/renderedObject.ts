@@ -71,8 +71,8 @@ class GroupParticle extends particles.Particle {
       const now = performance.now();
       const age = now - this.renderedObject.spawnTime;
       const remaining = this.renderedObject.bulletLifetime - age;
-      const fadeIn = Math.min(1.0, age / 120);
-      const fadeOut = remaining < 150 ? Math.max(0.0, remaining / 150) : 1.0;
+      const fadeIn = Math.min(1.0, age / 180);
+      const fadeOut = remaining < 225 ? Math.max(0.0, remaining / 225) : 1.0;
       this.alpha *= fadeIn * fadeOut;
     }
 
@@ -909,16 +909,15 @@ export class RenderedObject {
       } else if (fileStr.includes("laser") && fileStr.includes("trail")) {
         const age = now - self.spawnTime;
         const remaining = self.bulletLifetime - age;
-        const fadeIn = Math.min(1.0, age / 120);
-        const fadeOut = remaining < 150 ? Math.max(0.0, remaining / 150) : 1.0;
+        const fadeIn = Math.min(1.0, age / 180);
+        const fadeOut = remaining < 225 ? Math.max(0.0, remaining / 225) : 1.0;
         layer.alpha = fadeIn * fadeOut;
         layer.visible = layer.alpha > 0.01;
       } else if (fileStr.startsWith("laser") || fileStr.startsWith("bullet")) {
         const age = now - self.spawnTime;
         const remaining = self.bulletLifetime - age;
-        const fadeIn = Math.min(1.0, age / 80);
-        const fadeOut =
-          remaining < 150 ? Math.max(0.0, (remaining - 50) / 100) : 1.0;
+        const fadeIn = Math.min(1.0, age / 120);
+        const fadeOut = remaining < 225 ? Math.max(0.0, remaining / 225) : 1.0;
         layer.alpha = fadeIn * fadeOut;
         layer.visible = layer.alpha > 0.01;
       }
