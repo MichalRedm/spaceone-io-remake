@@ -567,9 +567,11 @@ ship0 {
 // abandoned ships
 ship_gray {
   file: "ship_gray";
+  rotate: 0;
 }
 ship_flash {
   file: "ship_flash";
+  rotate: 0;
 }
 // default selectable ships
 ship_cyan {
@@ -650,6 +652,7 @@ ship_ab_yellow {
   animated: true;
   loop: false;
   animation-speed: 0.3;
+  rotate: 0;
   tile: {
     size: 128;
     count: 30;

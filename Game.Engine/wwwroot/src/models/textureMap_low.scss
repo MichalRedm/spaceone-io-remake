@@ -362,9 +362,11 @@ ship0 {
 // abandoned ships
 ship_gray {
   file: "ship_gray";
+  rotate: 0;
 }
 ship_flash {
   file: "ship_flash";
+  rotate: 0;
 }
 // default selectable ships
 ship_cyan {
@@ -411,6 +413,15 @@ ship_yellow_boost {
   file: "ship_yellow_boost";
 }
 // abandoned ships
+ship_ab_cyan,
+ship_ab_blue,
+ship_ab_green,
+ship_ab_orange,
+ship_ab_pink,
+ship_ab_red,
+ship_ab_yellow {
+  rotate: 0;
+}
 ship_ab_cyan {
   file: "ship_ab_cyan";
 }
