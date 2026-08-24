@@ -36,27 +36,24 @@ where:
 
 ---
 
-## 4. Empirical Speed Lookup Tables
+## 4. Empirical Kinematic Benchmarks (Extracted from 112,648 Samples)
 
-### Ship Cruise Speed vs. Fleet Size ($N$)
-| Fleet Size $N$ | Table `BaseThrust[N]` | Telemetry Cruise ($px/\text{tick}$) | World Speed ($px/\text{s}$) |
-| :--- | :--- | :--- | :--- |
-| **1** | $13.600$ | $13.42$ | $335.4$ |
-| **2** | $11.799$ | $13.00$ | $325.0$ |
-| **3** | $10.857$ | $12.17$ | $304.1$ |
-| **5** | $9.778$ | $11.18$ | $279.5$ |
-| **10** | $8.483$ | $9.22$ | $230.5$ |
-| **20** | $7.359$ | $8.06$ | $201.6$ |
-| **30** | $6.772$ | $7.21$ | $180.3$ |
+### Ship Cruise & Dash Speed vs. Fleet Size ($N$)
+| Fleet Size $N$ | Table `BaseThrust[N]` | Empirical Cruise ($px/\text{tick}$) | World Cruise Speed ($px/\text{s}$) | Dash Speed ($px/\text{s}$) |
+| :--- | :--- | :--- | :--- | :--- |
+| **1** | $13.600$ | $13.60$ | $340.0$ | $642.7$ |
+| **2** | $11.799$ | $13.04$ | $326.0$ | $549.4$ |
+| **3** | $10.857$ | $12.04$ | $301.0$ | $509.9$ |
+| **4** | $10.236$ | $11.66$ | $291.5$ | $456.2$ |
+| **5** | $9.778$ | $11.31$ | $282.8$ | $500.0$ |
+| **10** | $8.483$ | $10.00$ | $250.0$ | $403.1$ |
+| **20** | $7.359$ | $9.22$ | $230.5$ | $325.0$ |
 
-### Bullet Velocity vs. Fleet Size ($N$)
-| Fleet Size $N$ | Table `ShotThrust[N]` | Telemetry Speed ($px/\text{tick}$) | World Speed ($px/\text{s}$) |
-| :--- | :--- | :--- | :--- |
-| **1** | $41.000$ | $25.94$ | $648.6$ |
-| **2** | $34.167$ | $35.00$ | $875.0$ |
-| **3** | $30.711$ | $31.14$ | $778.6$ |
-| **5** | $26.851$ | $26.25$ | $656.2$ |
-| **10** | $22.376$ | $21.21$ | $530.3$ |
+### Calibrated Physics Parameters (Natural Momentum + Screen Pacing)
+- **$\text{BaseThrustConverter} = 0.00586\text{f}$**: Calibrated for $\text{Drag} = 0.88\text{f}$ so forward thrust generates an acceleration ratio $\frac{a}{v} \approx 13.6\%/\text{tick}$, giving an authentic sweeping turn arc over $\approx 0.45\text{ s}$ without instantaneous angular snapping.
+- **$\text{ShotThrustConverter} = 0.0260\text{f}$**: Generates median bullet velocity $19.31\text{ px/tick}$ ($482.8\text{ px/s}$), producing the authentic $2.0\times$ projectile-to-fleet velocity ratio across the combat viewport.
+- **$\text{BoostThrust} = 0.18\text{f}$**, **$\text{DragBoost} = 0.92\text{f}$**: Replicates the $1.7\times - 2.2\times$ burst velocity during dash maneuvers.
+- **$\text{MaxMomentumCoefficient} = 10.0\text{f}$**: Allows steady-state equilibrium $v_{\text{terminal}} = \frac{T \cdot \text{Drag}}{1 - \text{Drag}}$ to govern velocity naturally without clipping turn arcs.
 
 ---
 
