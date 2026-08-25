@@ -1,13 +1,13 @@
 import Plotly from "../plotly-subset";
 import { Settings } from "../settings";
 import * as PIXI from "pixi.js";
-import { CustomContainer } from "../CustomContainer";
+import type { CustomContainer } from "../CustomContainer";
 
 export class Fleet {
   container: CustomContainer;
   caption?: string;
   ships: any[];
-  ID: boolean;
+  ID: number;
   text: PIXI.Text;
   textChat: PIXI.Text;
   chat?: string;
@@ -18,7 +18,7 @@ export class Fleet {
     //this.container.sortableChildren = true;
     this.caption = null;
     this.ships = [];
-    this.ID = false;
+    this.ID = 0;
     this.text = new PIXI.Text("", {
       fontFamily: [Settings.font, "NotoColorEmoji"],
       fontSize: Settings.nameSize * 4,
@@ -100,10 +100,7 @@ export class Fleet {
 
   preRender(time, interpolator, myFleetID) {
     //console.log(`Group: ${this.ID} ${this.caption} ${this.ships.length}`);
-    if (
-      this.ships.length > 0 &&
-      (this.ID != myFleetID || document.body.classList.contains("spectating"))
-    ) {
+    if (this.ships.length > 0 && this.ID != myFleetID) {
       if (this.text.visible != Settings.namesEnabled)
         this.text.visible = Settings.namesEnabled;
 
