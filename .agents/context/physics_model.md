@@ -84,7 +84,12 @@ Future physics tuning will follow a modular, isolated sequence:
 2. **Phase 2: Single-Ship Motion Model Identification**:
    - Isolate single-ship ($N=1$) turn and straight trajectories from playback data.
    - Benchmark discrete drag vs. kinematic heading velocity models to determine the true underlying motion equation before tuning multi-ship parameters.
-3. **Phase 3: Fleet Swarm & Formation Dynamics**:
-   - Calibrate flocking separation, cohesion springs, and trailing alignment independently.
+3. **Phase 3: Fleet Swarm & Formation Dynamics (Completed)**:
+   - **Model**: Kinematic Target Ray Convergence + Pairwise Solid-Disc Position-Based Dynamics (PBD) Relaxation.
+   - **Solid Diameter ($D_{\text{solid}}$)**: [DONE] $25.0\text{ px}$ ($r \approx 12.5\text{ px}$, matching the core ship sprite bounds), verified across 80k+ multi-ship frames (`analysis/datasets/flocking_experiment_results.json`).
+   - **Push Stiffness ($\alpha_{\text{push}}$)**: $0.60$ with $2$ relaxation iterations per tick.
+   - **Ray Convergence & Elongation**: Each ship steers towards mouse ray $\vec{T}_i = \text{AimTarget} + (\text{FleetCenter} - \vec{p}_i)$, generating inward lateral compression that stretches the fleet longitudinally ($L/W$ ratio $1.1\times - 3.5\times$) while solid discs prevent overlap.
+   - **Straggler Cohesion ($D_{\text{coh}}, w_{\text{coh}}$)**: Soft inward pull for ships separated beyond $D_{\text{coh}} = 80.0\text{ px}$ with $w_{\text{coh}} = 0.0056$.
+   - **Collision Rate**: Reduced from $66.9\%$ (baseline) and $29.0\%$ (angular Boids) down to $3.2\%$ in 25-step turning rollouts (`analysis/datasets/flocking_model_benchmark_results.json`).
 4. **Phase 4: Global Game Pacing & Viewport Alignment**:
    - Harmonize camera FOV and visual rendering scales only after core simulation mechanics achieve minimal trajectory RMSE.
