@@ -191,6 +191,7 @@ connection.onLeaderboard = (lb) => {
 };
 
 var fleetID = 0;
+let ownFleetID = 0;
 let lastAliveState = null;
 let aliveSince = null;
 let joiningWorld = false;
@@ -208,6 +209,9 @@ connection.onView = (newView) => {
   view.isAlive = newView.isAlive();
 
   fleetID = newView.fleetID();
+  if (view.isAlive) {
+    ownFleetID = fleetID;
+  }
   if (view.isAlive && !lastAliveState) {
     lastAliveState = true;
     isSpectating = false;
@@ -432,6 +436,7 @@ document.getElementById("spawnSpectate").addEventListener("click", doSpawn);
 
 function startSpectate(hideButton = false) {
   isSpectating = true;
+  ownFleetID = 0;
   Events.Spectate();
   document.getElementById("overlay").style.opacity = "0";
   document.body.classList.add("spectating");
@@ -453,6 +458,7 @@ document.getElementById("spectate").addEventListener("click", () => {
 
 function stopSpectate() {
   isSpectating = false;
+  ownFleetID = 0;
   document.body.classList.remove("spectating");
   document.body.classList.remove("spectate_only");
 }
@@ -570,7 +576,7 @@ app.ticker.add(() => {
   container.position.x = container.position.x;
   container.position.y = container.position.y;
 
-  renderer.draw(cache, interpolator, gameTime, fleetID);
+  renderer.draw(cache, interpolator, gameTime, ownFleetID);
   background.updateFocus(new Vector2(position.x, position.y));
   background.draw();
   minimap.checkDisplay();
