@@ -88,12 +88,16 @@ namespace Game.Engine.Core.Steering
             if (hook == null)
                 return;
 
-            float solidDiameter = hook.FlockSolidDiameter;
+            float targetLen = fleet.AimTarget.Length();
+            // Linear reduction in inter-ship distance as the mouse gets closer to the fleet (down to 75% at 0px, starts below 200px)
+            float distScale = 0.75f + 0.25f * MathF.Min(1.0f, targetLen / 200.0f);
+
+            float solidDiameter = hook.FlockSolidDiameter * distScale;
             if (solidDiameter <= 0.001f)
                 return;
 
             float pushStiffness = hook.FlockPushStiffness;
-            float cohesionDistance = hook.FlockCohesionDistance;
+            float cohesionDistance = hook.FlockCohesionDistance * distScale;
             float cohesionWeight = hook.FlockCohesionWeight;
             int iterations = Math.Max(1, hook.FlockRelaxationIterations);
 
