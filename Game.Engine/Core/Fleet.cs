@@ -13,6 +13,18 @@ namespace Game.Engine.Core
         public virtual float ShotCooldownTimeM { get => World.Hook.ShotCooldownTimeM; }
         public virtual float ShotCooldownTimeB { get => World.Hook.ShotCooldownTimeB; }
         public virtual int ShotCooldownTimeShark { get => World.Hook.ShotCooldownTimeShark; }
+
+        public virtual int CalculateShotCooldown(int shipCount)
+        {
+            if (Shark)
+                return ShotCooldownTimeShark;
+
+            if (ShotCooldownTimeM > 0 || ShotCooldownTimeB > 0)
+                return (int)(ShotCooldownTimeM * shipCount + ShotCooldownTimeB);
+
+            int n = Math.Max(1, shipCount);
+            return (13 + n - (n + 4) / 10) * World.Hook.StepTime;
+        }
         public virtual float ShotThrustM { get => World.Hook.ShotThrustM; }
         public virtual float ShotThrustB { get => World.Hook.ShotThrustB; }
         public virtual float BaseThrustM { get => World.Hook.BaseThrustM; }
@@ -408,19 +420,19 @@ namespace Game.Engine.Core
 
             if (isShooting)
             {
-                ShootCooldownTime = World.Time + (Shark ? ShotCooldownTimeShark : (int)(ShotCooldownTimeM * Ships.Count + ShotCooldownTimeB));
+                ShootCooldownTime = World.Time + CalculateShotCooldown(Ships.Count);
                 ShootCooldownTimeStart = World.Time;
 
                 FiringWeapon = true;
             }
 
-            if (World.Time > BoostCooldownTime)
+            if (World.Time >= BoostCooldownTime || BoostCooldownTime == BoostCooldownTimeStart)
                 BoostCooldownStatus = 1;
             else
                 BoostCooldownStatus = (float)
                     (World.Time - BoostCooldownTimeStart) / (BoostCooldownTime - BoostCooldownTimeStart);
 
-            if (World.Time > ShootCooldownTime)
+            if (World.Time >= ShootCooldownTime || ShootCooldownTime == ShootCooldownTimeStart)
                 ShootCooldownStatus = 1;
             else
                 ShootCooldownStatus = (float)
