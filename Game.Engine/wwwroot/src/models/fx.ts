@@ -11,16 +11,20 @@ export const FX_CONFIG = {
   bulletExplosion: {
     particleCount: 2,
     durationMs: 500,
-    baseScale: 0.35,
-    scaleVariation: 0.1,
+    baseScale: 0.7,
+    scaleVariation: 0.2,
+    alphaStart: 1.0,
+    alphaEnd: 1.0,
     driftSpeedMin: 10,
     driftSpeedMax: 25,
   },
   foodExplosion: {
     particleCount: 2,
     durationMs: 500,
-    baseScale: 0.4,
-    scaleVariation: 0.1,
+    baseScale: 0.8,
+    scaleVariation: 0.2,
+    alphaStart: 1.0,
+    alphaEnd: 1.0,
     driftSpeedMin: 10,
     driftSpeedMax: 25,
   },
@@ -30,6 +34,8 @@ export const FX_CONFIG = {
     durationMs: 500,
     maxScaleRatio: 1.0, // Up to 100% of ship sprite size
     scaleVariation: 0.15,
+    alphaStart: 1.0,
+    alphaEnd: 1.0,
     rotationDeltaRad: Math.PI / 6, // +30 degrees clockwise
     driftSpeedMin: 15,
     driftSpeedMax: 35,
@@ -43,6 +49,8 @@ interface ActiveParticle {
   vx: number;
   vy: number;
   startScale: number;
+  startAlpha: number;
+  endAlpha: number;
   startRotation: number;
   rotationDelta: number;
   startTime: number;
@@ -120,7 +128,7 @@ class FXManager {
       sprite.x = x;
       sprite.y = y;
       sprite.scale.set(scale, scale);
-      sprite.alpha = 1.0;
+      sprite.alpha = cfg.alphaStart ?? 1.0;
       sprite.rotation = Math.random() * Math.PI * 2;
 
       this.activeParticles.push({
@@ -130,6 +138,8 @@ class FXManager {
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed,
         startScale: scale,
+        startAlpha: cfg.alphaStart ?? 1.0,
+        endAlpha: cfg.alphaEnd ?? 1.0,
         startRotation: sprite.rotation,
         rotationDelta: 0,
         startTime: now,
@@ -162,7 +172,7 @@ class FXManager {
       sprite.x = x;
       sprite.y = y;
       sprite.scale.set(scale, scale);
-      sprite.alpha = 1.0;
+      sprite.alpha = cfg.alphaStart ?? 1.0;
       sprite.rotation = Math.random() * Math.PI * 2;
 
       this.activeParticles.push({
@@ -172,6 +182,8 @@ class FXManager {
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed,
         startScale: scale,
+        startAlpha: cfg.alphaStart ?? 1.0,
+        endAlpha: cfg.alphaEnd ?? 1.0,
         startRotation: sprite.rotation,
         rotationDelta: 0,
         startTime: now,
@@ -218,7 +230,7 @@ class FXManager {
       sprite.x = x;
       sprite.y = y;
       sprite.scale.set(scale, scale);
-      sprite.alpha = 1.0;
+      sprite.alpha = cfg.alphaStart ?? 1.0;
       sprite.rotation = initRotation;
 
       this.activeParticles.push({
@@ -228,6 +240,8 @@ class FXManager {
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed,
         startScale: scale,
+        startAlpha: cfg.alphaStart ?? 1.0,
+        endAlpha: cfg.alphaEnd ?? 1.0,
         startRotation: initRotation,
         rotationDelta: cfg.rotationDeltaRad, // +30 degrees clockwise
         startTime: now,
@@ -252,11 +266,11 @@ class FXManager {
         continue;
       }
 
-      // Linear easing for shrink and fade
+      // Linear easing for shrink and opacity transition
       const invProgress = 1.0 - progress;
       const currentScale = p.startScale * invProgress;
       p.sprite.scale.set(currentScale, currentScale);
-      p.sprite.alpha = invProgress;
+      p.sprite.alpha = p.startAlpha + (p.endAlpha - p.startAlpha) * progress;
       p.sprite.rotation = p.startRotation + p.rotationDelta * progress;
 
       const dtSec = elapsed * 0.001;

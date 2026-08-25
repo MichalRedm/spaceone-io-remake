@@ -798,16 +798,14 @@ laser_trail {
   offset: { x: ${state.laserOffsetX}; y: ${state.laserOffsetY}; }
 }
 
-// --- Emitter Settings (emitters.json) ---
-boom / boom_sparkles {
-  alpha: { start: ${state.boomAlphaStart.toFixed(2)}, end: ${state.boomAlphaEnd.toFixed(2)} },
-  particlesPerWave: ${state.boomSparklesCount}
+// --- FX & Emitter Settings ---
+shipExplosion (fx.ts): {
+  alphaStart: ${state.boomAlphaStart.toFixed(2)},
+  alphaEnd: ${state.boomAlphaEnd.toFixed(2)},
+  sparklesCount: ${state.boomSparklesCount},
+  debrisCount: ${state.boomDebrisCount}
 }
-boom_debris {
-  alpha: { start: ${state.boomAlphaStart.toFixed(2)}, end: ${state.boomAlphaEnd.toFixed(2)} },
-  particlesPerWave: ${state.boomDebrisCount}
-}
-bullet_emitter {
+bullet_emitter (emitters.json): {
   scale: { start: ${state.sparkleScaleStart.toFixed(2)}, end: 0.05 },
   frequency: ${state.sparkleFreq.toFixed(3)},
   lifetime: { min: ${(state.sparkleLife * 0.75).toFixed(2)}, max: ${state.sparkleLife.toFixed(2)} }
