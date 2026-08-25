@@ -38,7 +38,7 @@ Extracted from over **3.8M ship frames**, **413k food orbs**, and **112k laser s
 ### Projectile Velocity & Lifespan
 - **Median Bullet Speed**: $19.31\text{ px/tick}$ ($482.8\text{ px/s}$).
 - **Velocity Differential**: Bullet-to-cruise speed ratio $\approx 2.0\times - 2.5\times$.
-- **Lifespan**: $\tau_{\text{life}} = \text{BulletLifeB} + \text{BulletLifeM} \cdot N = 1800\text{ ms} + 35\text{ ms} \cdot N$.
+- **Lifespan**: Empirical sublinear table `Hook.BulletLifeTable[N]` ($N=1: 1560\text{ ms}, N=3: 1840\text{ ms}, N=10: 2240\text{ ms}, N=20: 2640\text{ ms}, N=45: 3040\text{ ms}$), with linear regression fallback $\tau_{\text{life}} = \text{BulletLifeB} + \text{BulletLifeM} \cdot N = 1985\text{ ms} + 25\text{ ms} \cdot N$.
 - **Cooldown**: $\tau_{\text{cooldown}} = \text{ShotCooldownTimeB} + \text{ShotCooldownTimeM} \cdot N = 450\text{ ms} + 36\text{ ms} \cdot N$.
 
 ---

@@ -53,7 +53,6 @@ namespace Game.Engine.Core.Weapons
                 * Vector2.Distance(ship.Momentum, Vector2.Zero);
 
 
-            this.TimeDeath = World.Time + (long)(World.Hook.BulletLife);
             this.Momentum = momentum;
             this.Position = bulletOrigin;
 
@@ -83,9 +82,18 @@ namespace Game.Engine.Core.Weapons
             this.Sprite = ship.BulletSprite;
             this.Size = World.Hook.BulletSize;
             this.Color = ship.Color;
-            this.ThrustAmount = World.Hook.ShotThrust[ship.Fleet.Ships.Count()] * World.Hook.ShotThrustConverter; // this line causes error
+
+            var shipCount = ship.Fleet.Ships.Count;
+            if (World.Hook.ShotThrust != null && shipCount < World.Hook.ShotThrust.Length)
+                this.ThrustAmount = World.Hook.ShotThrust[shipCount] * World.Hook.ShotThrustConverter;
+            else
+                this.ThrustAmount = (shipCount * World.Hook.ShotThrustM + World.Hook.ShotThrustB) * World.Hook.ShotThrustConverter;
+
             this.TimeBirth = World.Time;
-            this.TimeDeath = World.Time + (long)(World.Hook.BulletLifeB + World.Hook.BulletLifeM * ship.Fleet.Ships.Count());
+            if (World.Hook.BulletLifeTable != null && shipCount < World.Hook.BulletLifeTable.Length)
+                this.TimeDeath = World.Time + World.Hook.BulletLifeTable[shipCount];
+            else
+                this.TimeDeath = World.Time + (long)(World.Hook.BulletLifeB + World.Hook.BulletLifeM * shipCount);
             this.Group = group;
         }
 

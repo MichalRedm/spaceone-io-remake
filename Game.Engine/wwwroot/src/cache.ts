@@ -66,7 +66,7 @@ export class Cache {
         ) {
           const now = performance.now();
           const spawnTime = renderer?.spawnTime ?? now;
-          const lifetime = renderer?.bulletLifetime ?? 1900;
+          const lifetime = renderer?.bulletLifetime ?? 1840;
           const age = now - spawnTime;
           // Only explode if destroyed early by collision (before natural fade-out)
           if (age < lifetime - 200) {

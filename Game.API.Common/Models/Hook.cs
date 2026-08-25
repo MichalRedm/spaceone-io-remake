@@ -107,10 +107,23 @@ namespace Game.API.Common.Models
                     MaxHealth = 100,
 
                     MaxHealthBot = 50,
-                    BulletLife = 1500,
+                    BulletLife = 1560,
                     
-                    BulletLifeB = 1900,
+                    BulletLifeB = 1985,
                     BulletLifeM = 25,
+                    BulletLifeTable = new[] {
+                        0, 1560, 1760, 1840, 1960, 2040, 2160, 2160, 2240, 2280,     // 0 - 9 size
+                        2240, 2320, 2400, 2400, 2480, 2440, 2440, 2560, 2520, 2520,  // 10 - 19 size
+                        2640, 2600, 2600, 2720, 2720, 2680, 2680, 2680, 2840, 2800,  // 20 - 29 size
+                        2800, 2800, 2760, 2760, 2760, 2920, 2920, 2920, 2880, 2880,  // 30 - 39 size
+                        2880, 2880, 2840, 2840, 3040, 3040, 3040, 3040, 3000, 3000,  // 40 - 49 size
+                        3000, 3040, 3040, 3040, 3040, 3080, 3080, 3080, 3080, 3120,  // 50 - 59 size
+                        3120, 3120, 3120, 3120, 3160, 3160, 3160, 3160, 3160, 3200,  // 60 - 69 size
+                        3200, 3200, 3200, 3200, 3240, 3240, 3240, 3240, 3240, 3240,  // 70 - 79 size
+                        3280, 3280, 3280, 3280, 3280, 3280, 3320, 3320, 3320, 3320,  // 80 - 89 size
+                        3320, 3320, 3320, 3360, 3360, 3360, 3360, 3360, 3360, 3400,  // 90 - 99 size
+                        3400                                                         // 100 size
+                    },
                     
                     BotPerXPoints = 500,
                     BotBase = 0,
@@ -304,6 +317,7 @@ namespace Game.API.Common.Models
         public int BulletLife { get; set; }
         public int BulletLifeB { get; set; }
         public int BulletLifeM { get; set; }
+        public int[] BulletLifeTable { get; set; }
         public float SeekerLifeMultiplier { get; set; }
         public int BotBase { get; set; }
         public int BotPerXPoints { get; set; }

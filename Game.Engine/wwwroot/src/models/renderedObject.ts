@@ -47,6 +47,17 @@ const shotThrust = [
   12,
 ];
 
+const bulletLifeTable = [
+  0, 1560, 1760, 1840, 1960, 2040, 2160, 2160, 2240, 2280, 2240, 2320, 2400,
+  2400, 2480, 2440, 2440, 2560, 2520, 2520, 2640, 2600, 2600, 2720, 2720, 2680,
+  2680, 2680, 2840, 2800, 2800, 2800, 2760, 2760, 2760, 2920, 2920, 2920, 2880,
+  2880, 2880, 2880, 2840, 2840, 3040, 3040, 3040, 3040, 3000, 3000, 3000, 3040,
+  3040, 3040, 3040, 3080, 3080, 3080, 3080, 3120, 3120, 3120, 3120, 3120, 3160,
+  3160, 3160, 3160, 3160, 3200, 3200, 3200, 3200, 3200, 3240, 3240, 3240, 3240,
+  3240, 3240, 3280, 3280, 3280, 3280, 3280, 3280, 3320, 3320, 3320, 3320, 3320,
+  3320, 3320, 3360, 3360, 3360, 3360, 3360, 3360, 3400, 3400,
+];
+
 class GroupParticle extends particles.Particle {
   body: any;
   renderedObject?: RenderedObject;
@@ -147,7 +158,7 @@ export class RenderedObject {
     this.spawnTime = performance.now();
     this.isBoosting = false;
     this.boostStartTime = 0;
-    this.bulletLifetime = 1900;
+    this.bulletLifetime = 1840;
     this.isAbandoned = false;
     this.abandonedStartTime = 0;
     this.isInvulnerable = false;
@@ -882,7 +893,8 @@ export class RenderedObject {
       if (m) {
         const speed = Math.sqrt(m.x * m.x + m.y * m.y) / 0.0012;
         const shipCount = RenderedObject.getShipCountFromSpeed(speed);
-        this.bulletLifetime = 1900 + 25 * shipCount;
+        this.bulletLifetime =
+          bulletLifeTable[shipCount] ?? 1985 + 25 * shipCount;
       }
 
       const groupID = updateData.Group || 0;
