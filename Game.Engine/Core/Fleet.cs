@@ -361,8 +361,7 @@ namespace Game.Engine.Core
 
             Flocking.Relaxation(this);
 
-            Vector2 shipTargetVector = new Vector2();
-            float angleMovement = 0f;
+            Vector2 aimUnit = targetLen > 0.001f ? AimTarget / targetLen : Vector2.Zero;
             float angle = MathF.Atan2(AimTarget.Y, AimTarget.X);
             float BoostM = (float)Math.Pow(Ships.Count, -0.205); // 4D Klein Manifold's magical formula
 
@@ -376,17 +375,11 @@ namespace Game.Engine.Core
 
                 if (targetLen > 0.001f)
                 {
-                    // Gentle ray convergence towards mouse cursor when distant, pure heading when close
-                    if (targetLen > 200f)
-                    {
-                        shipTargetVector = (FleetCenter - ship.Position) * (100f / targetLen) + AimTarget2;
-                        angleMovement = MathF.Atan2(shipTargetVector.Y, shipTargetVector.X);
-                        ship.AngleMovement = !float.IsNaN(angleMovement) ? angleMovement : angle;
-                    }
-                    else
-                    {
-                        ship.AngleMovement = angle;
-                    }
+                    // Scale-invariant gentle ray convergence: consistent tightness across all mouse distances
+                    Vector2 rOffset = ship.Position - FleetCenter;
+                    Vector2 shipTargetVector = aimUnit * 1000f - rOffset * 0.20f;
+                    float angleMovement = MathF.Atan2(shipTargetVector.Y, shipTargetVector.X);
+                    ship.AngleMovement = !float.IsNaN(angleMovement) ? angleMovement : angle;
                 }
                 else if (ship.Momentum.Length() > 0.001f)
                 {
