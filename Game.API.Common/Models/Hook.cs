@@ -11,16 +11,16 @@ namespace Game.API.Common.Models
             {
                 return new Hook
                 {
-                    WorldSize = 12650, // original Spaceone arena width/height span
+                    WorldSize = 1500, // smaller arena for testing; default is 5500
                     WorldResizeEnabled = false,
-                    WorldSizeBasic = 12650,
+                    WorldSizeBasic = 5500,
                     WorldSizeDeltaPerPlayer = 400,
                     WorldResizeSpeed = 5,
                     WorldMinPlayersToResize = 4,
                     
                     // sizes
-                    BulletSize = 30,
-                    // ShipSize = 20,
+                    BulletSize = 5,
+                    // ShipSize = 10,
 
                     FollowFirstShip = false,
                     FiringSequenceDelay = 0,
@@ -31,10 +31,10 @@ namespace Game.API.Common.Models
                     Quantization = false,
                     QuantizationCount = 16,
 
-                    ShipAddRadius = 12,
+                    ShipAddRadius = 3,
                     ShipAddMomentumMultiplier = 0.9f,
 
-                    MaxMomentumCoefficient = 10.0f,
+                    MaxMomentumCoefficient = 6.5f,
 
                     BaseThrustM = -0.00015f,
                     BaseThrustB = 0.015f,
@@ -52,17 +52,17 @@ namespace Game.API.Common.Models
                         5.525f, 5.511f, 5.497f, 5.484f, 5.470f, 5.457f, 5.444f, 5.432f, 5.419f, 5.407f, // 81 - 90 size
                         5.394f, 5.382f, 5.370f, 5.359f, 5.347f, 5.335f, 5.324f, 5.312f, 5.300f, 5.289f // 91 - 100 size
                     },
-                    BaseThrustConverter = 0.0038f,
+                    BaseThrustConverter = 0.0024f,
 
-                    Drag = 0.88f,
-                    DragBoost = 0.94f,
-                    DragAbandoned = 0.96f,
+                    Drag = 1f,
+                    DragBoost = 1f,
+                    DragAbandoned = 0.98f,
 
                     BoomDrag = 0.92f,
                     BoomLife = 500,
 
-                    BoostThrust = 0.12f,
-                    BoostThrust2 = 0.12f,
+                    BoostThrust = 0.045f,
+                    BoostThrust2 = 0.045f,
 
                     BoostCooldownTimeM = 14.0f,
                     BoostCooldownTimeB = 1080.0f,
@@ -75,8 +75,8 @@ namespace Game.API.Common.Models
                     AbandonBuffer = 120,
                     AbandonMomentumMultiplier = 0.4f,
 
-                    ShotCooldownTimeM = 36,
-                    ShotCooldownTimeB = 450,
+                    ShotCooldownTimeM = 45,
+                    ShotCooldownTimeB = 500,
 
                     ShotCooldownTimeBotM = 22,
                     ShotCooldownTimeBotB = 1100,
@@ -97,7 +97,7 @@ namespace Game.API.Common.Models
                         12.908f, 12.866f, 12.825f, 12.785f, 12.745f, 12.706f, 12.667f, 12.629f, 12.592f, 12.555f, // 81 - 90 size
                         12.519f, 12.483f, 12.447f, 12.412f, 12.378f, 12.344f, 12.211f, 12.067f, 12.033f, 12.000f // 91 - 100 size
                     },
-                    ShotThrustConverter = 0.020f,
+                    ShotThrustConverter = 0.0012f,
 
                     SeekerThrustMultiplier = 1.35f,
                     SeekerLifeMultiplier = 1.15f,
@@ -107,10 +107,10 @@ namespace Game.API.Common.Models
                     MaxHealth = 100,
 
                     MaxHealthBot = 50,
-                    BulletLife = 1800,
+                    BulletLife = 1500,
                     
-                    BulletLifeB = 1800,
-                    BulletLifeM = 35,
+                    BulletLifeB = 1900,
+                    BulletLifeM = 25,
                     
                     BotPerXPoints = 500,
                     BotBase = 0,
@@ -140,8 +140,8 @@ namespace Game.API.Common.Models
                     SpawnShipCount = 3,
                     SpawnInvulnerabilityTime = 3000,
 
-                    Fishes = 925, // scaled proportionally to 5.29x arena surface area (-50% tuning)
-                    FishesMultiplier = 0.0115, // used when WorldResizeEnabled = true
+                    Fishes = 50, // smaller for test arena; default is 350; ignored if WorldResizeEnabled = true 
+                    FishesMultiplier = 0.01, // used when WorldResizeEnabled = true
                     FishThrust = 0.0005f,
                     FishFlockAlignment = 10f,
                     FishFlockCohesion = 0.001f,
@@ -155,9 +155,9 @@ namespace Game.API.Common.Models
                     FlockAlignment = 30f,
                     FlockCohesion = 0f,
                     FlockCohesionMaximumDistance = 0,
-                    FlockSeparation = 1.5f,
-                    FlockSeparationMinimumDistanceB = 76f,
-                    FlockSeparationMinimumDistanceM = 0.4f,
+                    FlockSeparation = 1f,
+                    FlockSeparationMinimumDistanceB = 38f,
+                    FlockSeparationMinimumDistanceM = 0.2f,
                     FlockWeight = 1.8f,
                     SnakeWeight = 0f,
                     BossMode = false,
@@ -210,10 +210,10 @@ namespace Game.API.Common.Models
                     PrecisionBullets = true,
                     PrecisionBulletsMinimumRange = 16384f,
 
-                    MinPointerDistanceB = 30f,
-                    MinPointerDistanceM = 1.1f,
-                    MaxPointerDistanceB = 100f,
-                    MaxPointerDistanceM = 3.8f,
+                    MinPointerDistanceB = 15f,
+                    MinPointerDistanceM = 0.55f,
+                    MaxPointerDistanceB = 50f,
+                    MaxPointerDistanceM = 1.9f,
                 };
             }
         }
@@ -371,9 +371,9 @@ namespace Game.API.Common.Models
         public bool MapEnabled { get; set; }
 
         public int StepTime { get; set; }
-        public float OutOfBoundsDeathLine { get; set; } = 750;
+        public float OutOfBoundsDeathLine { get; set; } = 100;
         public float OutOfBoundsBorder { get; set; } = 0;
-        public float OutOfBoundsDecayDistance { get; set; } = 750;
+        public float OutOfBoundsDecayDistance { get; set; } = 100;
         public uint OutOufBoundsDecayStart { get; set; }
         public uint OutOufBoundsDecayInterval { get; set; }
         public int BotRespawnDelay { get; set; }

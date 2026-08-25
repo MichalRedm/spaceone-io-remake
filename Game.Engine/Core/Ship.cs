@@ -33,7 +33,7 @@ namespace Game.Engine.Core
 
         public Ship()
         {
-            Size = 20;
+            Size = 10;
         }
 
         public int ShieldStrength { get; set; }

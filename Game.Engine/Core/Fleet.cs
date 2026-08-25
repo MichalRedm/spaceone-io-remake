@@ -65,7 +65,7 @@ namespace Game.Engine.Core
         public uint ShipGainCounter { get; set; } = 0;
 
         public Vector2? SpawnLocation { get; set; } = null;
-        public int ShipSize { get; set; } = 20;
+        public int ShipSize { get; set; } = 10;
 
         public Queue<long> EarnedShips = new Queue<long>();
 
