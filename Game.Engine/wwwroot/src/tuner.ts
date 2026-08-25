@@ -27,7 +27,7 @@ const state = {
   laserOffsetX: -93,
   laserOffsetY: 0,
   laserTrailSize: 12.5,
-  sparkleScaleStart: 0.19,
+  sparkleScaleStart: 0.3,
   sparkleFreq: 0.05,
   sparkleLife: 0.2,
 
@@ -569,8 +569,8 @@ function setupUI() {
     getEl("laser-offset-y-val").textContent = "0";
     getEl<HTMLInputElement>("laser-trail-size").value = "12.5";
     getEl("laser-trail-size-val").textContent = "12.50";
-    getEl<HTMLInputElement>("sparkle-scale-start").value = "0.19";
-    getEl("sparkle-scale-start-val").textContent = "0.19";
+    getEl<HTMLInputElement>("sparkle-scale-start").value = "0.30";
+    getEl("sparkle-scale-start-val").textContent = "0.30";
     getEl<HTMLInputElement>("sparkle-freq").value = "0.05";
     getEl("sparkle-freq-val").textContent = "0.050s";
     getEl<HTMLInputElement>("sparkle-life").value = "0.20";
@@ -806,7 +806,7 @@ shipExplosion (fx.ts): {
   debrisCount: ${state.boomDebrisCount}
 }
 bullet_emitter (emitters.json): {
-  scale: { start: ${state.sparkleScaleStart.toFixed(2)}, end: 0.025 },
+  scale: { start: 0.30, end: 0.04 },
   frequency: ${state.sparkleFreq.toFixed(3)},
   lifetime: { min: ${(state.sparkleLife * 0.75).toFixed(2)}, max: ${state.sparkleLife.toFixed(2)} }
 }`;
