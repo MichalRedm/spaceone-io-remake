@@ -8,19 +8,26 @@ This directory contains research scripts, binary telemetry decoders, simulation 
 
 ```
 analysis/
-├── datasets/                                    # Extracted trajectory features, benchmarks & reports
+├── core/                                        # Reusable telemetry parsers & math library
+│   ├── binary_reader.py                         # Endian & vbyte stream decoder
+│   ├── packet_parser.py                         # WorldUpdate, Fleet, Cell & Borders schema decoders
+│   ├── session_loader.py                        # Multi-file playback session iterators & batch loaders
+│   └── kinematics.py                            # C# step simulation, trajectory RMSE & loss formulation
+├── experiments/                                 # Phase-aligned reverse-engineering experiment suites
+│   ├── 01_invariants/                           # Phase 1: Physical constants & absolute time invariants
+│   │   └── bullet_lifetimes/
+│   │       ├── measure_lifetimes.py             # 41-session empirical bullet lifetime extraction pipeline
+│   │       ├── fit_models.py                    # Regressions (Linear vs Power vs Log) & C# table generator
+│   │       └── validate_viewport.py             # AOI boundary & camera distance validation
+│   └── 02_movement_models/                      # Phase 2: Single-ship motion models & trajectory tracking
+│       ├── kinematic_calibration.py             # Speed profiler across fleet sizes (cruise vs dash)
+│       ├── compare_trajectories.py              # Discrete C# simulation vs ground truth RMSE benchmark
+│       └── generate_comparison_report.py       # Interactive Plotly visualizer (paths & speed curves)
+├── datasets/                                    # Persisted datasets, metrics & HTML reports
 │   ├── bullet_lifetime_experiment_results.json  # 41-session empirical bullet lifetime dataset (27k full shots)
 │   ├── kinematic_calibration_results.json       # Empirical speeds & candidate physics presets
 │   ├── recording_vs_simulation_comparison.json  # 291-track trajectory tracking loss metrics
 │   └── kinematic_comparison_report.html         # Interactive Plotly visualizer (paths & speeds)
-├── experiments/                                 # Reverse-engineering & simulation scripts
-│   ├── measure_all_bullet_lifetimes.py          # Empirical bullet lifetime analysis across 41 sessions
-│   ├── inspect_viewport_aoi.py                  # Viewport, AOI boundary, and camera distance validator
-│   ├── compare_models.py                        # Model fitting benchmarks (Linear vs Power Law vs Log)
-│   ├── extract_telemetry.py                     # Binary playback decoder & statistical kinematic profiler
-│   ├── kinematic_calibration_experiment.py      # Discrete C# tick loop simulator & loss optimizer
-│   ├── compare_simulation_with_recording.py     # Trajectory RMSE benchmark against ground-truth tracks
-│   └── generate_comparison_report.py            # Generates interactive HTML comparison report
 └── README.md                                    # This documentation & reverse-engineering guide
 ```
 
