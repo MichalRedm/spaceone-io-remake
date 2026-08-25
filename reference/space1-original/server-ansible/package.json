@@ -9,10 +9,10 @@
   "main": "index.js",
   "dependencies": {
     "eventemitter3": "2.0.x",
-    "http-proxy": "1.16.2",
-    "ws": "3.2.0",
+    "http-proxy": "^1.18.1",
+    "ws": "^8.21.0",
     "hexdump-nodejs": "0.1.0",
-    "extend": "3.0.1",
+    "extend": "^3.0.2",
     "fastintcompression": "0.0.2",
     "restify": "6.0.1"
   },
