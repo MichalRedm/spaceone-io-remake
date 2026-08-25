@@ -418,6 +418,42 @@ bullet_emitter_yellow {
   size: 0.01;
 }
 
+boost_emitter_blue {
+  emitter: "boost_blue";
+  particle: "particle_blue";
+  size: 0.01;
+}
+boost_emitter_cyan {
+  emitter: "boost_cyan";
+  particle: "particle_cyan";
+  size: 0.01;
+}
+boost_emitter_green {
+  emitter: "boost_green";
+  particle: "particle_green";
+  size: 0.01;
+}
+boost_emitter_orange {
+  emitter: "boost_orange";
+  particle: "particle_orange";
+  size: 0.01;
+}
+boost_emitter_pink {
+  emitter: "boost_pink";
+  particle: "particle_pink";
+  size: 0.01;
+}
+boost_emitter_red {
+  emitter: "boost_red";
+  particle: "particle_red";
+  size: 0.01;
+}
+boost_emitter_yellow {
+  emitter: "boost_yellow";
+  particle: "particle_yellow";
+  size: 0.01;
+}
+
 ship0,
 ship_gray,
 ship_flash,

@@ -104,6 +104,7 @@ class GroupParticle extends particles.Particle {
 
 export class RenderedObject {
   static groupBoostTimes: Record<number, number> = {};
+  static groupBoostEndTimes: Record<number, number> = {};
   static groupBulletData: Record<
     number,
     { spawnTime: number; lifetime: number }
@@ -138,6 +139,7 @@ export class RenderedObject {
   spawnTime: number;
   isBoosting: boolean;
   boostStartTime: number;
+  boostEndTime: number;
   bulletLifetime: number;
   isAbandoned: boolean;
   abandonedStartTime: number;
@@ -158,6 +160,7 @@ export class RenderedObject {
     this.spawnTime = performance.now();
     this.isBoosting = false;
     this.boostStartTime = 0;
+    this.boostEndTime = 0;
     this.bulletLifetime = 1840;
     this.isAbandoned = false;
     this.abandonedStartTime = 0;
@@ -557,6 +560,8 @@ export class RenderedObject {
                 emitterLayer.emit = true;
                 emitterLayer.renderedObject = this;
                 emitterLayer.particleConstructor = GroupParticle;
+                (<any>emitterLayer).textureName = textureName;
+                (<any>emitterLayer).textureDefinition = textureDefinition;
               }
             }
           }
@@ -718,18 +723,36 @@ export class RenderedObject {
     if (isBoostNow) {
       if (!this.isBoosting) {
         this.isBoosting = true;
+        this.boostEndTime = 0;
         if (groupID && RenderedObject.groupBoostTimes[groupID]) {
           this.boostStartTime = RenderedObject.groupBoostTimes[groupID];
         } else {
           this.boostStartTime = now;
           if (groupID) RenderedObject.groupBoostTimes[groupID] = now;
         }
+        if (groupID && RenderedObject.groupBoostEndTimes[groupID]) {
+          delete RenderedObject.groupBoostEndTimes[groupID];
+        }
       }
     } else if (this.isBoosting) {
       this.isBoosting = false;
+      if (groupID && RenderedObject.groupBoostEndTimes[groupID]) {
+        this.boostEndTime = RenderedObject.groupBoostEndTimes[groupID];
+      } else {
+        this.boostEndTime = now;
+        if (groupID) RenderedObject.groupBoostEndTimes[groupID] = now;
+      }
       if (groupID && RenderedObject.groupBoostTimes[groupID]) {
         delete RenderedObject.groupBoostTimes[groupID];
       }
+    }
+
+    if (this.boostEndTime > 0 && now - this.boostEndTime >= 500) {
+      this.boostEndTime = 0;
+      if (groupID && RenderedObject.groupBoostEndTimes[groupID]) {
+        delete RenderedObject.groupBoostEndTimes[groupID];
+      }
+      this.refreshSprite();
     }
 
     if (isInvulnerableNow) {
@@ -787,27 +810,47 @@ export class RenderedObject {
 
       // Dynamic Lifecycle Alphas & Crossfades
       if (fileStr.startsWith("dash_trail")) {
-        if (!self.isBoosting) {
+        const isBoostingOrFading =
+          self.isBoosting ||
+          (self.boostEndTime > 0 && now - self.boostEndTime < 500);
+
+        if (!isBoostingOrFading) {
           layer.alpha = 0.0;
           layer.visible = false;
-        } else {
+        } else if (self.isBoosting) {
           const boostElapsed = now - self.boostStartTime;
-          if (boostElapsed < 50) {
+          if (boostElapsed < 160) {
+            // Phase 1 (0-160ms): Initial surge ramp - no dash trail
             layer.alpha = 0.0;
             layer.visible = false;
           } else {
-            const trailProgress = Math.min(1.0, (boostElapsed - 50) / 450);
+            // Phase 2 & 3 (160-1000ms): Full dash trail with animated flame flicker
             const flicker =
               0.92 +
               0.12 * Math.sin(now * 0.035 + ((self.body?.ID || 0) % 10) * 1.5);
             layer.scale.set(scale, scale * flicker);
             layer.alpha =
-              Math.max(0.0, 1.0 - trailProgress) *
-              (0.85 +
-                0.15 *
-                  Math.cos(now * 0.05 + ((self.body?.ID || 0) % 10) * 1.5));
-            layer.visible = layer.alpha > 0.01;
+              0.85 +
+              0.15 * Math.cos(now * 0.05 + ((self.body?.ID || 0) % 10) * 1.5);
+            layer.visible = true;
           }
+        } else {
+          // Post-boost 0.5s fade-out only after entire boost is finished
+          const postBoostElapsed = now - self.boostEndTime;
+          const fadeProgress = Math.min(
+            1.0,
+            Math.max(0.0, postBoostElapsed / 500),
+          );
+          const fadeAlpha = 1.0 - fadeProgress;
+          const flicker =
+            0.92 +
+            0.12 * Math.sin(now * 0.035 + ((self.body?.ID || 0) % 10) * 1.5);
+          layer.scale.set(scale, scale * flicker);
+          layer.alpha =
+            fadeAlpha *
+            (0.85 +
+              0.15 * Math.cos(now * 0.05 + ((self.body?.ID || 0) % 10) * 1.5));
+          layer.visible = layer.alpha > 0.01;
         }
       } else if (fileStr.startsWith("dead_ship")) {
         if (!self.isAbandoned) {
@@ -824,13 +867,17 @@ export class RenderedObject {
         fileStr.includes("_boost")
       ) {
         if (self.isBoosting) {
-          const boostElapsed = now - self.boostStartTime;
-          if (boostElapsed < 150) {
-            layer.alpha = 1.0;
-          } else {
-            const boostProgress = Math.min(1.0, (boostElapsed - 150) / 350);
-            layer.alpha = Math.max(0.0, 1.0 - boostProgress);
-          }
+          // Full intensity throughout all boost phases (Phase 1, 2, 3)
+          layer.alpha = 1.0;
+          layer.visible = true;
+        } else if (self.boostEndTime > 0 && now - self.boostEndTime < 500) {
+          // Post-boost 0.5s fade-out only after entire boost is finished
+          const postBoostElapsed = now - self.boostEndTime;
+          const fadeProgress = Math.min(
+            1.0,
+            Math.max(0.0, postBoostElapsed / 500),
+          );
+          layer.alpha = Math.max(0.0, 1.0 - fadeProgress);
           layer.visible = layer.alpha > 0.01;
         } else if (self.isInvulnerable) {
           const invulnElapsed = now - self.invulnerableStartTime;
@@ -880,6 +927,21 @@ export class RenderedObject {
     });
 
     this.foreachEmitter(function (emitter) {
+      const texDef = (<any>emitter).textureDefinition;
+      const emitterKey = String(texDef?.emitter || "");
+      const isBoostEmitter = emitterKey.startsWith("boost");
+
+      if (isBoostEmitter) {
+        if (self.isBoosting) {
+          const boostElapsed = now - self.boostStartTime;
+          // Spawn minimal bullet particles starting from Phase 2 (160ms) along the dash trail
+          emitter.emit = boostElapsed >= 160;
+        } else {
+          // Stop emitting when boost finishes; existing particles finish their lifetime naturally
+          emitter.emit = false;
+        }
+      }
+
       emitter.updateOwnerPos(interpolatedPosition.x, interpolatedPosition.y);
     });
   }
