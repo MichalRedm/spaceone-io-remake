@@ -29,6 +29,11 @@ Entity movement is governed by **bounded angular turn-rate kinematics with cruis
    0.77 \cdot V_{\text{peak}}(N) - \left(0.77 \cdot V_{\text{peak}}(N) - 0.5 \cdot V_{\text{cruise}}(N)\right) \cdot \left(\frac{t - 9}{15}\right), & 10 \le t \le 24 \quad (400 - 1000\text{ ms, Deceleration})
    \end{cases}$$
 
+   - **Client Visual Synchronization (`renderedObject.ts`, `ship.ts`, `emitters.json`)**:
+     - *Phase 1 ($0 - 160\text{ ms}$)*: Particle sprite (`particle_ship_*`) displayed at full alpha ($1.0$), dash trail suppressed ($\alpha = 0.0$), bullet emitter idle.
+     - *Phases 2 & 3 ($160 - 1000\text{ ms}$)*: Dash trail activated with flame flicker, particle sprite active ($1.0$), minimal bullet particles streamed along dash trail at lower frequency than bullets ($f = 0.08\text{ s}$ vs $0.05\text{ s}$).
+     - *Post-Boost Fade ($1000 - 1500\text{ ms}$)*: $0.5\text{ s}$ smooth alpha decay after boost finishes; emitters stop spawning new particles while in-flight particles expire.
+
 5. **Velocity Vector & Position Update**:
    $$\vec{v}_{t+1} = s_{t+1} \begin{bmatrix} \cos(\theta_{v, t+1}) \\ \sin(\theta_{v, t+1}) \end{bmatrix}$$
    $$\vec{p}_{t+1} = \vec{p}_t + \vec{v}_{t+1} \cdot \Delta t$$

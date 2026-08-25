@@ -385,5 +385,341 @@
 		},
 		"addAtBack": true,
 		"spawnType": "point"
+	},
+	"boost_blue": {
+		"alpha": {
+			"start": 1.0,
+			"end": 0.0
+		},
+		"scale": {
+			"start": 0.65,
+			"end": 0.10,
+			"minimumScaleMultiplier": 1
+		},
+		"color": {
+			"start": "#ffffff",
+			"end": "#ffffff"
+		},
+		"speed": {
+			"start": 100,
+			"end": 25,
+			"minimumSpeedMultiplier": 0.5
+		},
+		"acceleration": {
+			"x": 0,
+			"y": 0
+		},
+		"maxSpeed": 0,
+		"startRotation": {
+			"min": -10,
+			"max": 10
+		},
+		"noRotation": false,
+		"rotationSpeed": {
+			"min": 0,
+			"max": 0
+		},
+		"lifetime": {
+			"min": 0.30,
+			"max": 0.30
+		},
+		"blendMode": "screen",
+		"frequency": 0.09,
+		"emitterLifetime": -1,
+		"maxParticles": 30,
+		"pos": {
+			"x": 0,
+			"y": 0
+		},
+		"addAtBack": true,
+		"spawnType": "point"
+	},
+	"boost_cyan": {
+		"alpha": {
+			"start": 1.0,
+			"end": 0.0
+		},
+		"scale": {
+			"start": 0.65,
+			"end": 0.10,
+			"minimumScaleMultiplier": 1
+		},
+		"color": {
+			"start": "#ffffff",
+			"end": "#ffffff"
+		},
+		"speed": {
+			"start": 100,
+			"end": 25,
+			"minimumSpeedMultiplier": 0.5
+		},
+		"acceleration": {
+			"x": 0,
+			"y": 0
+		},
+		"maxSpeed": 0,
+		"startRotation": {
+			"min": -10,
+			"max": 10
+		},
+		"noRotation": false,
+		"rotationSpeed": {
+			"min": 0,
+			"max": 0
+		},
+		"lifetime": {
+			"min": 0.30,
+			"max": 0.30
+		},
+		"blendMode": "screen",
+		"frequency": 0.09,
+		"emitterLifetime": -1,
+		"maxParticles": 30,
+		"pos": {
+			"x": 0,
+			"y": 0
+		},
+		"addAtBack": true,
+		"spawnType": "point"
+	},
+	"boost_green": {
+		"alpha": {
+			"start": 1.0,
+			"end": 0.0
+		},
+		"scale": {
+			"start": 0.65,
+			"end": 0.10,
+			"minimumScaleMultiplier": 1
+		},
+		"color": {
+			"start": "#ffffff",
+			"end": "#ffffff"
+		},
+		"speed": {
+			"start": 100,
+			"end": 25,
+			"minimumSpeedMultiplier": 0.5
+		},
+		"acceleration": {
+			"x": 0,
+			"y": 0
+		},
+		"maxSpeed": 0,
+		"startRotation": {
+			"min": -10,
+			"max": 10
+		},
+		"noRotation": false,
+		"rotationSpeed": {
+			"min": 0,
+			"max": 0
+		},
+		"lifetime": {
+			"min": 0.30,
+			"max": 0.30
+		},
+		"blendMode": "screen",
+		"frequency": 0.09,
+		"emitterLifetime": -1,
+		"maxParticles": 30,
+		"pos": {
+			"x": 0,
+			"y": 0
+		},
+		"addAtBack": true,
+		"spawnType": "point"
+	},
+	"boost_orange": {
+		"alpha": {
+			"start": 1.0,
+			"end": 0.0
+		},
+		"scale": {
+			"start": 0.65,
+			"end": 0.10,
+			"minimumScaleMultiplier": 1
+		},
+		"color": {
+			"start": "#ffffff",
+			"end": "#ffffff"
+		},
+		"speed": {
+			"start": 100,
+			"end": 25,
+			"minimumSpeedMultiplier": 0.5
+		},
+		"acceleration": {
+			"x": 0,
+			"y": 0
+		},
+		"maxSpeed": 0,
+		"startRotation": {
+			"min": -10,
+			"max": 10
+		},
+		"noRotation": false,
+		"rotationSpeed": {
+			"min": 0,
+			"max": 0
+		},
+		"lifetime": {
+			"min": 0.30,
+			"max": 0.30
+		},
+		"blendMode": "screen",
+		"frequency": 0.09,
+		"emitterLifetime": -1,
+		"maxParticles": 30,
+		"pos": {
+			"x": 0,
+			"y": 0
+		},
+		"addAtBack": true,
+		"spawnType": "point"
+	},
+	"boost_pink": {
+		"alpha": {
+			"start": 1.0,
+			"end": 0.0
+		},
+		"scale": {
+			"start": 0.65,
+			"end": 0.10,
+			"minimumScaleMultiplier": 1
+		},
+		"color": {
+			"start": "#ffffff",
+			"end": "#ffffff"
+		},
+		"speed": {
+			"start": 100,
+			"end": 25,
+			"minimumSpeedMultiplier": 0.5
+		},
+		"acceleration": {
+			"x": 0,
+			"y": 0
+		},
+		"maxSpeed": 0,
+		"startRotation": {
+			"min": -10,
+			"max": 10
+		},
+		"noRotation": false,
+		"rotationSpeed": {
+			"min": 0,
+			"max": 0
+		},
+		"lifetime": {
+			"min": 0.30,
+			"max": 0.30
+		},
+		"blendMode": "screen",
+		"frequency": 0.09,
+		"emitterLifetime": -1,
+		"maxParticles": 30,
+		"pos": {
+			"x": 0,
+			"y": 0
+		},
+		"addAtBack": true,
+		"spawnType": "point"
+	},
+	"boost_red": {
+		"alpha": {
+			"start": 1.0,
+			"end": 0.0
+		},
+		"scale": {
+			"start": 0.65,
+			"end": 0.10,
+			"minimumScaleMultiplier": 1
+		},
+		"color": {
+			"start": "#ffffff",
+			"end": "#ffffff"
+		},
+		"speed": {
+			"start": 100,
+			"end": 25,
+			"minimumSpeedMultiplier": 0.5
+		},
+		"acceleration": {
+			"x": 0,
+			"y": 0
+		},
+		"maxSpeed": 0,
+		"startRotation": {
+			"min": -10,
+			"max": 10
+		},
+		"noRotation": false,
+		"rotationSpeed": {
+			"min": 0,
+			"max": 0
+		},
+		"lifetime": {
+			"min": 0.30,
+			"max": 0.30
+		},
+		"blendMode": "screen",
+		"frequency": 0.09,
+		"emitterLifetime": -1,
+		"maxParticles": 30,
+		"pos": {
+			"x": 0,
+			"y": 0
+		},
+		"addAtBack": true,
+		"spawnType": "point"
+	},
+	"boost_yellow": {
+		"alpha": {
+			"start": 1.0,
+			"end": 0.0
+		},
+		"scale": {
+			"start": 0.65,
+			"end": 0.10,
+			"minimumScaleMultiplier": 1
+		},
+		"color": {
+			"start": "#ffffff",
+			"end": "#ffffff"
+		},
+		"speed": {
+			"start": 100,
+			"end": 25,
+			"minimumSpeedMultiplier": 0.5
+		},
+		"acceleration": {
+			"x": 0,
+			"y": 0
+		},
+		"maxSpeed": 0,
+		"startRotation": {
+			"min": -10,
+			"max": 10
+		},
+		"noRotation": false,
+		"rotationSpeed": {
+			"min": 0,
+			"max": 0
+		},
+		"lifetime": {
+			"min": 0.30,
+			"max": 0.30
+		},
+		"blendMode": "screen",
+		"frequency": 0.09,
+		"emitterLifetime": -1,
+		"maxParticles": 30,
+		"pos": {
+			"x": 0,
+			"y": 0
+		},
+		"addAtBack": true,
+		"spawnType": "point"
 	}
 }
