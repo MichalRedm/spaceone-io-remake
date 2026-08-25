@@ -93,6 +93,7 @@ Extracted from over **3.8M ship frames**, **413k food orbs**, and **112k laser s
 - **Median Bullet Speed**: $19.31\text{ px/tick}$ ($482.8\text{ px/s}$).
 - **Cruise Ratio**: $v_{\text{bullet}} / v_{\text{ship}} \approx 2.0\times - 2.5\times$.
 - **Bullet Lifespan ($\tau_{\text{life}}$)**: Sublinear table `Hook.BulletLifeTable[N]` ($N=1: 1560\text{ ms}, N=3: 1840\text{ ms}, N=10: 2240\text{ ms}, N=20: 2640\text{ ms}, N=45: 3040\text{ ms}$), with continuous fallback $\tau = 1985 + 25 \cdot N\text{ ms}$.
+- **Shot Cooldown ($\tau_{\text{cooldown}}$)**: Discrete formula $K(N) = 13 + N - \lfloor \frac{N+4}{10} \rfloor\text{ ticks}$ ($\tau = K(N) \cdot 40\text{ ms}$), verified across 4,467 cooldown cycles and 36,389 frames (100.00% exact match). ($N=1: 560\text{ ms}, N=3: 640\text{ ms}, N=5,6: 720\text{ ms}, N=10: 880\text{ ms}, N=20: 1240\text{ ms}, N=50: 2320\text{ ms}$).
 
 ---
 
@@ -122,7 +123,7 @@ To systematically build an authentic remake without compounding errors, future p
 
 ### Phase 1: Absolute Invariants (Easiest, Absolute Units)
 - **Bullet Lifespan & Range**: [DONE] Calibrated to discrete empirical table `Hook.BulletLifeTable[N]` ($1560\text{ ms} - 3040\text{ ms}$) verified across 27,127 full shots (`analysis/datasets/bullet_lifetime_experiment_results.json`).
-- **Cooldown Times**: Measure exact reload intervals per fleet size from binary firing events ($\tau_{\text{cooldown}} = 450\text{ ms} + 36\text{ ms} \cdot N$).
+- **Cooldown Times**: [DONE] Calibrated to exact discrete formula $K(N) = 13 + N - \lfloor \frac{N+4}{10} \rfloor\text{ ticks}$ ($\tau = K(N) \cdot 40\text{ ms}$) verified across 4,467 cooldown events (`analysis/datasets/shot_cooldown_experiment_results.json`).
 - **Tick Frequency**: Fixed 25Hz ($40\text{ ms}$) protocol synchronization.
 
 ### Phase 2: Reverse-Engineering the Core Movement Model
