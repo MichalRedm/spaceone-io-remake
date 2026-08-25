@@ -8,12 +8,18 @@ namespace Game.Robots
 
         public float ShipThrust(int fleetSize)
         {
-            return fleetSize * Hook.BaseThrustM + Hook.BaseThrustB;
+            int size = System.Math.Max(1, fleetSize);
+            if (Hook.BaseThrust != null && size < Hook.BaseThrust.Length)
+                return Hook.BaseThrust[size] * Hook.BaseThrustConverter;
+            return (13.60f * System.MathF.Pow(size, -0.2072f)) * Hook.BaseThrustConverter;
         }
 
         public float ShotThrust(int fleetSize)
         {
-            return fleetSize * Hook.ShotThrustM + Hook.ShotThrustB;
+            int size = System.Math.Max(1, fleetSize);
+            if (Hook.ShotThrust != null && size < Hook.ShotThrust.Length)
+                return Hook.ShotThrust[size] * Hook.ShotThrustConverter;
+            return (41.00f * System.MathF.Pow(size, -0.2633f)) * Hook.ShotThrustConverter;
         }
 
         public int BulletLife(int fleetSize)
