@@ -844,21 +844,17 @@ export class RenderedObject {
 
       // Dynamic Lifecycle Alphas & Crossfades
       if (fileStr.startsWith("dash_trail")) {
-        const isBoostingOrFading =
-          self.isBoosting ||
-          (self.boostEndTime > 0 && now - self.boostEndTime < 500);
-
-        if (!isBoostingOrFading) {
+        if (!self.isBoosting) {
           layer.alpha = 0.0;
           layer.visible = false;
-        } else if (self.isBoosting) {
+        } else {
           const boostElapsed = now - self.boostStartTime;
           if (boostElapsed < 160) {
-            // Phase 1 (0-160ms): Initial surge ramp - no dash trail
+            // Phase 1 (0-160ms): Surge ramp - no dash trail
             layer.alpha = 0.0;
             layer.visible = false;
-          } else {
-            // Phase 2 & 3 (160-1000ms): Full dash trail with animated flame flicker
+          } else if (boostElapsed < 360) {
+            // Phase 2 (160-360ms): Steady dash trail with flame flicker
             const flicker =
               0.92 +
               0.12 * Math.sin(now * 0.035 + ((self.body?.ID || 0) % 10) * 1.5);
@@ -867,24 +863,25 @@ export class RenderedObject {
               0.85 +
               0.15 * Math.cos(now * 0.05 + ((self.body?.ID || 0) % 10) * 1.5);
             layer.visible = true;
+          } else {
+            // Phase 3 (360-1000ms): Fades out smoothly over the 640ms deceleration phase
+            const phase3Elapsed = boostElapsed - 360;
+            const phase3Progress = Math.min(
+              1.0,
+              Math.max(0.0, phase3Elapsed / 640),
+            );
+            const fadeAlpha = 1.0 - phase3Progress;
+            const flicker =
+              0.92 +
+              0.12 * Math.sin(now * 0.035 + ((self.body?.ID || 0) % 10) * 1.5);
+            layer.scale.set(scale, scale * flicker);
+            layer.alpha =
+              fadeAlpha *
+              (0.85 +
+                0.15 *
+                  Math.cos(now * 0.05 + ((self.body?.ID || 0) % 10) * 1.5));
+            layer.visible = layer.alpha > 0.01;
           }
-        } else {
-          // Post-boost 0.5s fade-out only after entire boost is finished
-          const postBoostElapsed = now - self.boostEndTime;
-          const fadeProgress = Math.min(
-            1.0,
-            Math.max(0.0, postBoostElapsed / 500),
-          );
-          const fadeAlpha = 1.0 - fadeProgress;
-          const flicker =
-            0.92 +
-            0.12 * Math.sin(now * 0.035 + ((self.body?.ID || 0) % 10) * 1.5);
-          layer.scale.set(scale, scale * flicker);
-          layer.alpha =
-            fadeAlpha *
-            (0.85 +
-              0.15 * Math.cos(now * 0.05 + ((self.body?.ID || 0) % 10) * 1.5));
-          layer.visible = layer.alpha > 0.01;
         }
       } else if (fileStr.startsWith("dead_ship")) {
         if (!self.isAbandoned) {
