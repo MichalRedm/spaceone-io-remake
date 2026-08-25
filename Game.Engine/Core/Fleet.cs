@@ -361,29 +361,22 @@ namespace Game.Engine.Core
 
             Flocking.Relaxation(this);
 
-            Vector2 aimUnit = targetLen > 0.001f ? AimTarget / targetLen : Vector2.Zero;
             float angle = MathF.Atan2(AimTarget.Y, AimTarget.X);
             float BoostM = (float)Math.Pow(Ships.Count, -0.205); // 4D Klein Manifold's magical formula
 
             foreach (var ship in Ships)
             {
-                // Align ship visual facing angle with aim target or velocity
-                if (targetLen > 0.001f)
-                    ship.Angle = angle;
-                else if (ship.Momentum.Length() > 0.001f)
-                    ship.Angle = MathF.Atan2(ship.Momentum.Y, ship.Momentum.X);
-
+                // Align ship visual facing angle and movement heading with aim target or velocity
                 if (targetLen > 0.001f)
                 {
-                    // Scale-invariant gentle ray convergence: consistent tightness across all mouse distances
-                    Vector2 rOffset = ship.Position - FleetCenter;
-                    Vector2 shipTargetVector = aimUnit * 1000f - rOffset * 0.20f;
-                    float angleMovement = MathF.Atan2(shipTargetVector.Y, shipTargetVector.X);
-                    ship.AngleMovement = !float.IsNaN(angleMovement) ? angleMovement : angle;
+                    ship.Angle = angle;
+                    ship.AngleMovement = angle;
                 }
                 else if (ship.Momentum.Length() > 0.001f)
                 {
-                    ship.AngleMovement = MathF.Atan2(ship.Momentum.Y, ship.Momentum.X);
+                    float velAngle = MathF.Atan2(ship.Momentum.Y, ship.Momentum.X);
+                    ship.Angle = velAngle;
+                    ship.AngleMovement = velAngle;
                 }
 
                 if (World.Hook.FlockWeight > 0.0001f)
