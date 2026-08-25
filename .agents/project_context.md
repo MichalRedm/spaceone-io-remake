@@ -22,7 +22,9 @@ Rebuild and launch a high-fidelity remake of the multiplayer 2D fleet shooter **
 - [x] Upgrade/modernize backend solution to .NET 7.0 with 0 build warnings/errors.
 - [x] Ingest authentic binary playback recordings and build telemetry extraction CLI (`extract_telemetry.py`).
 - [x] Build simulation benchmark harness and interactive trajectory visualizer (`analysis/experiments/`).
-- [ ] **Phase 1 (Reverse-Engineering)**: Measure and calibrate absolute invariants (cooldown times, bullet lifespan, reload rate).
+- [ ] **Phase 1 (Reverse-Engineering)**: Measure and calibrate absolute invariants:
+  - [x] **Bullet Lifetimes**: Calibrated discrete sublinear table `Hook.BulletLifeTable[N]` ($1560\text{ ms} - 3040\text{ ms}$) across 27,127 verified full shots.
+  - [ ] **Firing Cooldowns**: Reload intervals per fleet size ($\tau_{\text{cooldown}} = 450\text{ ms} + 36\text{ ms} \cdot N$).
 - [ ] **Phase 2 (Reverse-Engineering)**: Identify single-ship ($N=1$) core movement equation (discrete drag vs. kinematic heading velocity).
 - [ ] **Phase 3 (Reverse-Engineering)**: Calibrate multi-ship fleet swarm dynamics (follower separation radius and spring cohesion).
 - [ ] **Phase 4 (Visual Calibration)**: Harmonize camera FOV, viewport proportions, and visual scale.

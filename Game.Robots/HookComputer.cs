@@ -15,5 +15,12 @@ namespace Game.Robots
         {
             return fleetSize * Hook.ShotThrustM + Hook.ShotThrustB;
         }
+
+        public int BulletLife(int fleetSize)
+        {
+            if (Hook.BulletLifeTable != null && fleetSize < Hook.BulletLifeTable.Length)
+                return Hook.BulletLifeTable[fleetSize];
+            return (int)(Hook.BulletLifeB + Hook.BulletLifeM * fleetSize);
+        }
     }
 }
