@@ -9,10 +9,14 @@ This directory contains research scripts, binary telemetry decoders, simulation 
 ```
 analysis/
 ├── datasets/                                    # Extracted trajectory features, benchmarks & reports
+│   ├── bullet_lifetime_experiment_results.json  # 41-session empirical bullet lifetime dataset (27k full shots)
 │   ├── kinematic_calibration_results.json       # Empirical speeds & candidate physics presets
 │   ├── recording_vs_simulation_comparison.json  # 291-track trajectory tracking loss metrics
 │   └── kinematic_comparison_report.html         # Interactive Plotly visualizer (paths & speeds)
 ├── experiments/                                 # Reverse-engineering & simulation scripts
+│   ├── measure_all_bullet_lifetimes.py          # Empirical bullet lifetime analysis across 41 sessions
+│   ├── inspect_viewport_aoi.py                  # Viewport, AOI boundary, and camera distance validator
+│   ├── compare_models.py                        # Model fitting benchmarks (Linear vs Power Law vs Log)
 │   ├── extract_telemetry.py                     # Binary playback decoder & statistical kinematic profiler
 │   ├── kinematic_calibration_experiment.py      # Discrete C# tick loop simulator & loss optimizer
 │   ├── compare_simulation_with_recording.py     # Trajectory RMSE benchmark against ground-truth tracks
@@ -78,9 +82,10 @@ Extracted from over **3.8M ship frames**, **413k food orbs**, and **112k laser s
 | **10** | $10.00$ | $250.0$ | $403.1$ | $8.483$ |
 | **20** | $9.22$ | $230.5$ | $325.0$ | $7.359$ |
 
-#### Laser Velocity Benchmarks:
+#### Projectile Lifespan & Velocity Benchmarks:
 - **Median Bullet Speed**: $19.31\text{ px/tick}$ ($482.8\text{ px/s}$).
 - **Cruise Ratio**: $v_{\text{bullet}} / v_{\text{ship}} \approx 2.0\times - 2.5\times$.
+- **Bullet Lifespan ($\tau_{\text{life}}$)**: Sublinear table `Hook.BulletLifeTable[N]` ($N=1: 1560\text{ ms}, N=3: 1840\text{ ms}, N=10: 2240\text{ ms}, N=20: 2640\text{ ms}, N=45: 3040\text{ ms}$), with continuous fallback $\tau = 1985 + 25 \cdot N\text{ ms}$.
 
 ---
 
@@ -109,8 +114,8 @@ To systematically build an authentic remake without compounding errors, future p
 ```
 
 ### Phase 1: Absolute Invariants (Easiest, Absolute Units)
+- **Bullet Lifespan & Range**: [DONE] Calibrated to discrete empirical table `Hook.BulletLifeTable[N]` ($1560\text{ ms} - 3040\text{ ms}$) verified across 27,127 full shots (`analysis/datasets/bullet_lifetime_experiment_results.json`).
 - **Cooldown Times**: Measure exact reload intervals per fleet size from binary firing events ($\tau_{\text{cooldown}} = 450\text{ ms} + 36\text{ ms} \cdot N$).
-- **Bullet Lifespan & Range**: Verify exact tick durations from spawn to deletion ($\tau_{\text{life}} = 1800\text{ ms} + 35\text{ ms} \cdot N$).
 - **Tick Frequency**: Fixed 25Hz ($40\text{ ms}$) protocol synchronization.
 
 ### Phase 2: Reverse-Engineering the Core Movement Model
