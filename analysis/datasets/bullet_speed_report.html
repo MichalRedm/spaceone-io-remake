@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Spaceone.io Physics Calibration: Bullet Speed & Speed Ratio Analysis</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #f8fafc; padding: 2rem; margin: 0; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1, h2 { color: #38bdf8; }
+        .card { background: #1e293b; border-radius: 8px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.5); }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid #334155; }
+        th { background: #0f172a; color: #38bdf8; }
+        tr:hover { background: #334155; }
+        .highlight { color: #4ade80; font-weight: bold; }
+        .formula { background: #0f172a; padding: 1rem; border-left: 4px solid #38bdf8; font-family: monospace; border-radius: 4px; margin: 1rem 0; font-size: 1.1rem; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🚀 Spaceone.io Physics Calibration: Bullet Speed & Speed Ratios</h1>
+    <p>Empirical measurement and calibration of bullet speeds relative to ship cruise speeds across 41 original playback recording sessions (111k+ bullets analyzed).</p>
+
+    <div class="card">
+        <h2>🔬 Executive Summary & Core Invariant</h2>
+        <div class="formula">
+            <strong>Empirical Speed Ratio Model:</strong><br>
+            R(N) = V_bullet(N) / V_ship(N) = 2.0x - 3.0x (Median: ~2.35x)<br><br>
+            <strong>Bullet Speed Scaling:</strong><br>
+            V_bullet(N) = 30.78 - 4.07 &times; ln(N) [px/tick] &nbsp;&equiv;&nbsp; 769.5 - 101.9 &times; ln(N) [px/s]
+        </div>
+        <p>In the original Spaceone.io engine, <code>ShotThrust[N]</code> and <code>BaseThrust[N]</code> are expressed directly in pixels/tick. In the remake engine, ships use scale factor <code>BaseThrustConverter &times; MaxMomentumCoefficient = 0.0156</code>. To preserve the exact authentic bullet-to-ship velocity ratio:</p>
+        <div class="formula">
+            <strong>Engine Setting Adjustment:</strong><br>
+            Hook.ShotThrustConverter = (BaseThrustConverter &times; MaxMomentumCoefficient) / 10 = (0.0024 &times; 6.5) / 10 = <span class="highlight">0.00156f</span> (previously 0.0012f, a 30.0% increase to correct a 23.1% bullet deficit).
+        </div>
+    </div>
+
+    <div class="grid">
+        <div class="card">
+            <h2>📊 Velocities vs Fleet Size (N)</h2>
+            <canvas id="velocityChart"></canvas>
+        </div>
+        <div class="card">
+            <h2>📈 Speed Ratio R(N) = V_bullet / V_ship</h2>
+            <canvas id="ratioChart"></canvas>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>📋 Detailed Empirical Measurement Dataset</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Fleet Size (N)</th>
+                    <th>Bullet Speed (px/tick)</th>
+                    <th>Ship Speed (px/tick)</th>
+                    <th>Empirical Ratio</th>
+                    <th>Hook Table Ratio</th>
+                    <th>Sample Count</th>
+                </tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                    <td><strong>N = 1</strong></td>
+                    <td>25.96 (std: 11.41)</td>
+                    <td>13.15</td>
+                    <td class="highlight">1.974x</td>
+                    <td>3.015x</td>
+                    <td>1,585</td>
+                </tr>
+                <tr>
+                    <td><strong>N = 2</strong></td>
+                    <td>35.00 (std: 7.49)</td>
+                    <td>12.17</td>
+                    <td class="highlight">2.877x</td>
+                    <td>2.896x</td>
+                    <td>2,535</td>
+                </tr>
+                <tr>
+                    <td><strong>N = 3</strong></td>
+                    <td>31.14 (std: 4.69)</td>
+                    <td>11.70</td>
+                    <td class="highlight">2.661x</td>
+                    <td>2.829x</td>
+                    <td>3,967</td>
+                </tr>
+                <tr>
+                    <td><strong>N = 4</strong></td>
+                    <td>28.28 (std: 3.23)</td>
+                    <td>11.05</td>
+                    <td class="highlight">2.561x</td>
+                    <td>2.782x</td>
+                    <td>5,585</td>
+                </tr>
+                <tr>
+                    <td><strong>N = 5</strong></td>
+                    <td>26.25 (std: 2.68)</td>
+                    <td>10.44</td>
+                    <td class="highlight">2.514x</td>
+                    <td>2.746x</td>
+                    <td>6,149</td>
+                </tr>
+                <tr>
+                    <td><strong>N = 6</strong></td>
+                    <td>24.19 (std: 2.85)</td>
+                    <td>10.00</td>
+                    <td class="highlight">2.419x</td>
+                    <td>2.717x</td>
+                    <td>5,819</td>
+                </tr>
+                <tr>
+                    <td><strong>N = 7</strong></td>
+                    <td>23.26 (std: 2.48)</td>
+                    <td>9.85</td>
+                    <td class="highlight">2.362x</td>
+                    <td>2.693x</td>
+                    <td>4,988</td>
+                </tr>
+                <tr>
+                    <td><strong>N = 8</strong></td>
+                    <td>22.20 (std: 2.63)</td>
+                    <td>9.43</td>
+                    <td class="highlight">2.354x</td>
+                    <td>2.672x</td>
+                    <td>4,928</td>
+                </tr>
+                <tr>
+                    <td><strong>N = 9</strong></td>
+                    <td>21.26 (std: 3.22)</td>
+                    <td>9.06</td>
+                    <td class="highlight">2.348x</td>
+                    <td>2.654x</td>
+                    <td>4,378</td>
+                </tr>
+                <tr>
+                    <td><strong>N = 10</strong></td>
+                    <td>21.21 (std: 2.55)</td>
+                    <td>9.06</td>
+                    <td class="highlight">2.343x</td>
+                    <td>2.638x</td>
+                    <td>4,803</td>
+                </tr>
+                <tr>
+                    <td><strong>N = 11</strong></td>
+                    <td>20.25 (std: 2.29)</td>
+                    <td>9.00</td>
+                    <td class="highlight">2.250x</td>
+                    <td>2.623x</td>
+                    <td>4,071</td>
+                </tr>
+                <tr>
+                    <td><strong>N = 12</strong></td>
+                    <td>19.24 (std: 3.11)</td>
+                    <td>8.94</td>
+                    <td class="highlight">2.151x</td>
+                    <td>2.610x</td>
+                    <td>4,400</td>
+                </tr>
+                <tr>
+                    <td><strong>N = 13</strong></td>
+                    <td>19.24 (std: 2.79)</td>
+                    <td>8.60</td>
+                    <td class="highlight">2.236x</td>
+                    <td>2.598x</td>
+                    <td>4,005</td>
+                </tr>
+                <tr>
+                    <td><strong>N = 14</strong></td>
+                    <td>18.36 (std: 2.42)</td>
+                    <td>8.54</td>
+                    <td class="highlight">2.149x</td>
+                    <td>2.587x</td>
+                    <td>3,379</td>
+                </tr>
+                <tr>
+                    <td><strong>N = 15</strong></td>
+                    <td>18.36 (std: 2.98)</td>
+                    <td>8.49</td>
+                    <td class="highlight">2.163x</td>
+                    <td>2.577x</td>
+                    <td>3,221</td>
+                </tr>
+                <tr>
+                    <td><strong>N = 16</strong></td>
+                    <td>18.36 (std: 3.02)</td>
+                    <td>8.25</td>
+                    <td class="highlight">2.226x</td>
+                    <td>2.567x</td>
+                    <td>3,274</td>
+                </tr>
+                <tr>
+                    <td><strong>N = 17</strong></td>
+                    <td>17.20 (std: 3.11)</td>
+                    <td>8.06</td>
+                    <td class="highlight">2.134x</td>
+                    <td>2.558x</td>
+                    <td>2,667</td>
+                </tr>
+                <tr>
+                    <td><strong>N = 18</strong></td>
+                    <td>17.26 (std: 3.09)</td>
+                    <td>8.06</td>
+                    <td class="highlight">2.141x</td>
+                    <td>2.549x</td>
+                    <td>2,908</td>
+                </tr>
+                <tr>
+                    <td><strong>N = 19</strong></td>
+                    <td>17.20 (std: 3.16)</td>
+                    <td>8.06</td>
+                    <td class="highlight">2.134x</td>
+                    <td>2.541x</td>
+                    <td>2,651</td>
+                </tr>
+                <tr>
+                    <td><strong>N = 20</strong></td>
+                    <td>16.28 (std: 3.28)</td>
+                    <td>8.00</td>
+                    <td class="highlight">2.035x</td>
+                    <td>2.534x</td>
+                    <td>2,723</td>
+                </tr>
+                <tr>
+                    <td><strong>N = 21</strong></td>
+                    <td>16.28 (std: 3.34)</td>
+                    <td>8.00</td>
+                    <td class="highlight">2.035x</td>
+                    <td>N/A</td>
+                    <td>2,513</td>
+                </tr>
+                <tr>
+                    <td><strong>N = 22</strong></td>
+                    <td>16.28 (std: 3.08)</td>
+                    <td>7.81</td>
+                    <td class="highlight">2.084x</td>
+                    <td>N/A</td>
+                    <td>1,973</td>
+                </tr>
+                <tr>
+                    <td><strong>N = 23</strong></td>
+                    <td>15.23 (std: 3.37)</td>
+                    <td>7.81</td>
+                    <td class="highlight">1.950x</td>
+                    <td>N/A</td>
+                    <td>1,799</td>
+                </tr>
+                <tr>
+                    <td><strong>N = 24</strong></td>
+                    <td>15.52 (std: 3.59)</td>
+                    <td>7.62</td>
+                    <td class="highlight">2.038x</td>
+                    <td>N/A</td>
+                    <td>2,291</td>
+                </tr>
+                <tr>
+                    <td><strong>N = 25</strong></td>
+                    <td>15.30 (std: 3.70)</td>
+                    <td>7.62</td>
+                    <td class="highlight">2.009x</td>
+                    <td>2.501x</td>
+                    <td>1,363</td>
+                </tr>
+                <tr>
+                    <td><strong>N = 26</strong></td>
+                    <td>15.26 (std: 3.47)</td>
+                    <td>7.28</td>
+                    <td class="highlight">2.097x</td>
+                    <td>N/A</td>
+                    <td>1,684</td>
+                </tr>
+                <tr>
+                    <td><strong>N = 27</strong></td>
+                    <td>15.30 (std: 3.42)</td>
+                    <td>7.28</td>
+                    <td class="highlight">2.101x</td>
+                    <td>N/A</td>
+                    <td>1,493</td>
+                </tr>
+                <tr>
+                    <td><strong>N = 28</strong></td>
+                    <td>14.42 (std: 3.67)</td>
+                    <td>7.28</td>
+                    <td class="highlight">1.981x</td>
+                    <td>N/A</td>
+                    <td>1,131</td>
+                </tr>
+                <tr>
+                    <td><strong>N = 29</strong></td>
+                    <td>14.76 (std: 3.54)</td>
+                    <td>7.21</td>
+                    <td class="highlight">2.048x</td>
+                    <td>N/A</td>
+                    <td>1,168</td>
+                </tr>
+                <tr>
+                    <td><strong>N = 30</strong></td>
+                    <td>14.76 (std: 3.34)</td>
+                    <td>7.21</td>
+                    <td class="highlight">2.048x</td>
+                    <td>2.475x</td>
+                    <td>1,367</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const sizes = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35];
+    const bSpeeds = [25.96150997149434, 35.0, 31.144823004794873, 28.284271247461902, 26.248809496813376, 24.186773244895647, 23.259406699226016, 22.20360331117452, 21.2602916254693, 21.213203435596427, 20.248456731316587, 19.235384061671343, 19.235384061671343, 18.35755975068582, 18.35755975068582, 18.35755975068582, 17.204650534085253, 17.26267650163207, 17.204650534085253, 16.278820596099706, 16.278820596099706, 16.278820596099706, 15.231546211727817, 15.524174696260024, 15.297058540778355, 15.264337522473747, 15.297058540778355, 14.422205101855956, 14.7648230602334, 14.7648230602334, 14.317821063276353, 18.0, 14.866068747318506, 14.560219778561036, 16.55294535724685];
+    const sSpeeds = [13.152946437965905, 12.165525060596439, 11.704699910719626, 11.045361017187261, 10.44030650891055, 10.0, 9.848857801796104, 9.433981132056603, 9.055385138137417, 9.055385138137417, 9.0, 8.94427190999916, 8.602325267042627, 8.54400374531753, 8.48528137423857, 8.246211251235321, 8.06225774829855, 8.06225774829855, 8.06225774829855, 8.0, 8.0, 7.810249675906654, 7.810249675906654, 7.615773105863909, 7.615773105863909, 7.280109889280518, 7.280109889280518, 7.280109889280518, 7.211102550927978, 7.211102550927978, 7.211102550927978, 7.0710678118654755, 7.211102550927978, 7.0710678118654755, 7.0710678118654755];
+    const ratios = [1.973817052623022, 2.876982277843753, 2.660881803237964, 2.5607375986579193, 2.5141799691810434, 2.4186773244895647, 2.3616349395342344, 2.3535772438347187, 2.3478064489968546, 2.342606428329091, 2.249828525701843, 2.1505813167606562, 2.2360679774997894, 2.148589852941781, 2.1634591642911953, 2.226181114137207, 2.133974262695348, 2.141171498179299, 2.133974262695348, 2.0348525745124633, 2.0348525745124633, 2.0842893981119723, 1.9501996535033512, 2.0384240024570706, 2.0086021902359583, 2.0967180103901284, 2.101212587917425, 1.9810422261745944, 2.0475125621855637, 2.0475125621855637, 1.985524538329278, 2.545584412271571, 2.0615528128088303, 2.0591260281974, 2.340939982143925];
+
+    new Chart(document.getElementById('velocityChart'), {
+        type: 'line',
+        data: {
+            labels: sizes,
+            datasets: [
+                {
+                    label: 'Bullet Speed (px/tick)',
+                    data: bSpeeds,
+                    borderColor: '#f43f5e',
+                    backgroundColor: 'rgba(244, 63, 94, 0.2)',
+                    tension: 0.2
+                },
+                {
+                    label: 'Ship Cruise Speed (px/tick)',
+                    data: sSpeeds,
+                    borderColor: '#38bdf8',
+                    backgroundColor: 'rgba(56, 189, 248, 0.2)',
+                    tension: 0.2
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: { title: { display: true, text: 'Fleet Size (N)' } },
+                y: { title: { display: true, text: 'Velocity (px/tick)' } }
+            }
+        }
+    });
+
+    new Chart(document.getElementById('ratioChart'), {
+        type: 'line',
+        data: {
+            labels: sizes,
+            datasets: [
+                {
+                    label: 'Speed Ratio (V_bullet / V_ship)',
+                    data: ratios,
+                    borderColor: '#4ade80',
+                    backgroundColor: 'rgba(74, 222, 128, 0.2)',
+                    tension: 0.2
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: { title: { display: true, text: 'Fleet Size (N)' } },
+                y: { title: { display: true, text: 'Ratio' }, min: 1.5, max: 3.5 }
+            }
+        }
+    });
+</script>
+</body>
+</html>

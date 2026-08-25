@@ -83,11 +83,11 @@ namespace Game.Engine.Core.Weapons
             this.Size = World.Hook.BulletSize;
             this.Color = ship.Color;
 
-            var shipCount = ship.Fleet.Ships.Count;
+            var shipCount = Math.Max(1, ship.Fleet.Ships.Count);
             if (World.Hook.ShotThrust != null && shipCount < World.Hook.ShotThrust.Length)
                 this.ThrustAmount = World.Hook.ShotThrust[shipCount] * World.Hook.ShotThrustConverter;
             else
-                this.ThrustAmount = (shipCount * World.Hook.ShotThrustM + World.Hook.ShotThrustB) * World.Hook.ShotThrustConverter;
+                this.ThrustAmount = (41.00f * MathF.Pow(shipCount, -0.2633f)) * World.Hook.ShotThrustConverter;
 
             this.TimeBirth = World.Time;
             if (World.Hook.BulletLifeTable != null && shipCount < World.Hook.BulletLifeTable.Length)

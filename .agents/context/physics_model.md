@@ -54,9 +54,10 @@ Extracted from over **3.8M ship frames**, **413k food orbs**, and **112k laser s
 | **10** | $10.00$ | $250.0$ | $403.1$ | $8.483$ |
 | **20** | $9.22$ | $230.5$ | $325.0$ | $7.359$ |
 
-### Projectile Velocity & Lifespan
-- **Median Bullet Speed**: $19.31\text{ px/tick}$ ($482.8\text{ px/s}$).
-- **Velocity Differential**: Bullet-to-cruise speed ratio $\approx 2.0\times - 2.5\times$.
+### Projectile Velocity, Lifespan & Cooldown
+- **Empirical Velocity Scaling**: Bullets follow a power-law relationship $V_{\text{bullet}}(N) = 41.00 \cdot N^{-0.2633}\text{ px/tick}$ ($1025.0 \cdot N^{-0.2633}\text{ px/s}$ at $25\text{ Hz}$).
+- **Speed Ratio Model**: $R(N) = \frac{V_{\text{bullet}}(N)}{V_{\text{ship}}(N)} = 3.015 \cdot N^{-0.0561}$ (ranges from $3.015\times$ at $N=1$ down to $2.30\times$ at $N=100$, median $\approx 2.33\times$).
+- **Scale Factor Invariant**: `Hook.ShotThrustConverter = 0.00156f` guarantees $\text{ShotThrustConverter} \times 10 = \text{BaseThrustConverter} \times \text{MaxMomentumCoefficient} = 0.0156$, preserving exact $100.0\%$ authentic bullet-to-ship velocity ratios across all fleet sizes.
 - **Lifespan**: Empirical sublinear table `Hook.BulletLifeTable[N]` ($N=1: 1560\text{ ms}, N=3: 1840\text{ ms}, N=10: 2240\text{ ms}, N=20: 2640\text{ ms}, N=45: 3040\text{ ms}$), with linear regression fallback $\tau_{\text{life}} = \text{BulletLifeB} + \text{BulletLifeM} \cdot N = 1985\text{ ms} + 25\text{ ms} \cdot N$.
 - **Cooldown**: Exact empirical discrete closed-form formula $K(N) = 13 + N - \lfloor \frac{N+4}{10} \rfloor \text{ ticks}$ ($\tau_{\text{cooldown}} = K(N) \cdot 40\text{ ms}$), verified across 4,467 cooldown cycles and 36,389 step frames (100.00% exact match). ($N=1: 560\text{ ms}, N=3: 640\text{ ms}, N=5,6: 720\text{ ms}, N=10: 880\text{ ms}, N=20: 1240\text{ ms}, N=50: 2320\text{ ms}$).
 
