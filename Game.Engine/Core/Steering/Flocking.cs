@@ -99,41 +99,58 @@ namespace Game.Engine.Core.Steering
 
             int count = ships.Count;
 
+            Span<Vector2> displacements = count <= 128 ? stackalloc Vector2[count] : new Vector2[count];
+            Span<float> weights = count <= 128 ? stackalloc float[count] : new float[count];
+
             for (int iter = 0; iter < iterations; iter++)
             {
+                displacements.Clear();
+                weights.Clear();
+
                 // 1. Pairwise solid-disc non-penetration pass
                 for (int i = 0; i < count; i++)
                 {
-                    var shipA = ships[i];
-                    var posA = shipA.Position;
+                    var posA = ships[i].Position;
 
                     for (int j = i + 1; j < count; j++)
                     {
-                        var shipB = ships[j];
-                        var posB = shipB.Position;
-
+                        var posB = ships[j].Position;
                         var rVec = posB - posA;
                         float distSq = rVec.LengthSquared();
 
-                        if (distSq < solidDiameter * solidDiameter && distSq > 0.0001f)
+                        if (distSq < solidDiameter * solidDiameter && distSq > 0.001f)
                         {
                             float dist = MathF.Sqrt(distSq);
                             float overlap = solidDiameter - dist;
-                            Vector2 push = (rVec / dist) * (overlap * 0.5f * pushStiffness);
+                            // Smooth quadratic factor: goes smoothly to 0 as dist approaches solidDiameter
+                            float smooth = 1.0f - (dist / solidDiameter);
+                            Vector2 push = (rVec / dist) * (overlap * 0.5f * pushStiffness * (0.5f + 0.5f * smooth));
 
-                            shipA.Position -= push;
-                            shipB.Position += push;
-                            posA = shipA.Position;
+                            displacements[i] -= push;
+                            displacements[j] += push;
+                            weights[i] += 1f;
+                            weights[j] += 1f;
                         }
-                        else if (distSq <= 0.0001f)
+                        else if (distSq <= 0.001f)
                         {
                             // Distinct radial dispersal for identical position spawn bursts
                             float angle = (float)(i * 2.39996323f + j);
                             Vector2 push = new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * (solidDiameter * 0.5f * pushStiffness);
-                            shipA.Position -= push;
-                            shipB.Position += push;
-                            posA = shipA.Position;
+
+                            displacements[i] -= push;
+                            displacements[j] += push;
+                            weights[i] += 1f;
+                            weights[j] += 1f;
                         }
+                    }
+                }
+
+                // Apply accumulated pairwise displacements smoothly
+                for (int i = 0; i < count; i++)
+                {
+                    if (weights[i] > 0.001f)
+                    {
+                        ships[i].Position += displacements[i] / MathF.Max(1.0f, MathF.Sqrt(weights[i]));
                     }
                 }
 

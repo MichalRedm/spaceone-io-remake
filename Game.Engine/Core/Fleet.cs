@@ -374,11 +374,24 @@ namespace Game.Engine.Core
                 else if (ship.Momentum.Length() > 0.001f)
                     ship.Angle = MathF.Atan2(ship.Momentum.Y, ship.Momentum.X);
 
-                shipTargetVector = FleetCenter - ship.Position + AimTarget2;
-    
-                angleMovement = MathF.Atan2(shipTargetVector.Y, shipTargetVector.X);
-                if (!float.IsNaN(angleMovement))
-                    ship.AngleMovement = angleMovement;
+                if (targetLen > 0.001f)
+                {
+                    // Gentle ray convergence towards mouse cursor when distant, pure heading when close
+                    if (targetLen > 200f)
+                    {
+                        shipTargetVector = (FleetCenter - ship.Position) * (100f / targetLen) + AimTarget2;
+                        angleMovement = MathF.Atan2(shipTargetVector.Y, shipTargetVector.X);
+                        ship.AngleMovement = !float.IsNaN(angleMovement) ? angleMovement : angle;
+                    }
+                    else
+                    {
+                        ship.AngleMovement = angle;
+                    }
+                }
+                else if (ship.Momentum.Length() > 0.001f)
+                {
+                    ship.AngleMovement = MathF.Atan2(ship.Momentum.Y, ship.Momentum.X);
+                }
 
                 if (World.Hook.FlockWeight > 0.0001f)
                     Flocking.Flock(ship);
