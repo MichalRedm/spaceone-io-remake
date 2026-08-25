@@ -189,6 +189,10 @@ export class RenderedObject {
       }
     }
     modes.push("default");
+    const now = performance.now();
+    const isPostBoostFading =
+      this.boostEndTime > 0 && now - this.boostEndTime < 500;
+    if ((mode & 1) !== 0 || isPostBoostFading) modes.push("boost");
     return modes;
   }
 
@@ -668,13 +672,14 @@ export class RenderedObject {
       this.currentMode = mode;
       this.currentZIndex = zIndex;
 
-      // if we have any existing sprites, destroy them
-      this.destroySprites();
+      if (reload) {
+        this.destroySprites();
+      }
 
       this.spriteLayers = this.buildSpriteLayers(spriteName, mode, zIndex);
 
       this.foreachLayer(function (layer, index) {
-        this.container.addChildAt(layer, 2);
+        if (!layer.parent) this.container.addChildAt(layer, 2);
       });
 
       // also adds them to the container
@@ -732,6 +737,17 @@ export class RenderedObject {
         }
         if (groupID && RenderedObject.groupBoostEndTimes[groupID]) {
           delete RenderedObject.groupBoostEndTimes[groupID];
+        }
+      } else if (now - this.boostStartTime >= 1000) {
+        this.isBoosting = false;
+        this.boostEndTime = now;
+        if (groupID && RenderedObject.groupBoostEndTimes[groupID]) {
+          this.boostEndTime = RenderedObject.groupBoostEndTimes[groupID];
+        } else if (groupID) {
+          RenderedObject.groupBoostEndTimes[groupID] = now;
+        }
+        if (groupID && RenderedObject.groupBoostTimes[groupID]) {
+          delete RenderedObject.groupBoostTimes[groupID];
         }
       }
     } else if (this.isBoosting) {
@@ -949,6 +965,37 @@ export class RenderedObject {
   update(updateData) {
     this.body = updateData;
 
+    const isBoostNow = (updateData.Mode & 1) !== 0;
+    const groupID = updateData.Group || 0;
+    const now = performance.now();
+
+    if (isBoostNow) {
+      if (!this.isBoosting) {
+        this.isBoosting = true;
+        this.boostEndTime = 0;
+        if (groupID && RenderedObject.groupBoostTimes[groupID]) {
+          this.boostStartTime = RenderedObject.groupBoostTimes[groupID];
+        } else {
+          this.boostStartTime = now;
+          if (groupID) RenderedObject.groupBoostTimes[groupID] = now;
+        }
+        if (groupID && RenderedObject.groupBoostEndTimes[groupID]) {
+          delete RenderedObject.groupBoostEndTimes[groupID];
+        }
+      }
+    } else if (this.isBoosting) {
+      this.isBoosting = false;
+      if (groupID && RenderedObject.groupBoostEndTimes[groupID]) {
+        this.boostEndTime = RenderedObject.groupBoostEndTimes[groupID];
+      } else {
+        this.boostEndTime = now;
+        if (groupID) RenderedObject.groupBoostEndTimes[groupID] = now;
+      }
+      if (groupID && RenderedObject.groupBoostTimes[groupID]) {
+        delete RenderedObject.groupBoostTimes[groupID];
+      }
+    }
+
     const spriteStr = String(this.body?.Sprite || this.currentSpriteName || "");
     if (spriteStr.startsWith("bullet") || spriteStr.startsWith("laser")) {
       const m = updateData.Momentum;
@@ -959,9 +1006,7 @@ export class RenderedObject {
           bulletLifeTable[shipCount] ?? 1985 + 25 * shipCount;
       }
 
-      const groupID = updateData.Group || 0;
       if (groupID) {
-        const now = performance.now();
         const existing = RenderedObject.groupBulletData[groupID];
         if (existing && now - existing.spawnTime < 500) {
           this.spawnTime = existing.spawnTime;
