@@ -1,5 +1,4 @@
 import { fetch } from "whatwg-fetch";
-import { Router } from "./router";
 
 const worlds = document.getElementById("worlds");
 const worldList = document.getElementById("worldList");
@@ -82,7 +81,7 @@ const controls = document.querySelector(".controls");
 const social = document.querySelector(".social");
 let showing = false;
 let firstLoad = true;
-var hostName = window.location.hash;
+var hostName = window.location.host || "localhost:5000";
 var worldConnect = "default";
 var manualHostSet = false;
 var manualWorldSet = false;
@@ -94,8 +93,6 @@ if (firstLoad) {
   if (hostParam != null) {
     manualHostSet = true;
     hostName = hostParam;
-  } else {
-    hostName = "us.daud.io";
   }
 
   var worldParam = url.searchParams.get("world");
@@ -116,10 +113,12 @@ LobbyCallbacks.joinWorld = function (worldKey) {
   refreshList(worldKey);
 };
 
-function refreshList(autoJoinWorld) {
+function refreshList(autoJoinWorld?: string | boolean) {
   if (!showing && !firstLoad && !autoJoinWorld) return;
 
-  const autoJoin = firstLoad || autoJoinWorld;
+  const autoJoin = firstLoad || !!autoJoinWorld;
+  const targetWorldParam =
+    typeof autoJoinWorld === "string" ? autoJoinWorld : null;
 
   firstLoad = false;
 
@@ -133,46 +132,29 @@ function refreshList(autoJoinWorld) {
     .then(({ success, response }) => {
       var world = worldConnect;
       if (success) {
-        if (window.location.hash) {
-          const selected = window.location.hash.substring(1);
-          window.Game.primaryConnection.connect(selected);
-        }
-
         buildList(response);
 
         if (autoJoin) {
-          var worldKey = hostName + "/" + world;
-
-          if (!autoJoinWorld) {
-            if (manualHostSet) {
-              //If user manually sets a particular host via params
-              manualHostSet = false;
-              joinWorld(worldKey);
-              return;
-            }
-
-            const router = new Router();
-
-            if (router.savedBestServer) {
-              // If there is no cookie saved with the best server.
-              joinWorld(router.savedBestServer + world);
-            } else {
-              // if there is no best server cached cookie or the cookie expired then find the best server for user.
-              router.findBestServer(
-                ["us.daud.io/default", "de.daud.io/default"],
-                (best) => {
-                  if (allWorlds[best]) {
-                    best = best = best.split("/")[0] + "/";
-                    router.save(best);
-
-                    joinWorld(best + world);
-                  } else {
-                    joinWorld(worldKey);
-                  }
-                },
+          if (targetWorldParam) {
+            joinWorld(targetWorldParam);
+          } else if (window.location.hash && window.location.hash.length > 1) {
+            const selected = window.location.hash.substring(1);
+            joinWorld(selected);
+          } else {
+            var targetWorldKey = hostName + "/" + world;
+            if (response && Array.isArray(response) && response.length > 0) {
+              const matched = response.find(
+                (w: any) =>
+                  w.world === targetWorldKey || w.world?.endsWith("/" + world),
               );
+              if (matched) {
+                targetWorldKey = matched.world;
+              } else if (response[0]?.world) {
+                targetWorldKey = response[0].world;
+              }
             }
-          } else joinWorld(autoJoinWorld || worldKey);
+            joinWorld(targetWorldKey);
+          }
         }
       }
     });
