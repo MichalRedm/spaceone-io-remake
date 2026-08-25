@@ -319,6 +319,15 @@ Game.Engine/wwwroot/img/base_white.png
 .vite/
 .playwright-cli/
 # =========================
+# Python Caches & Artifacts
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.ipynb_checkpoints/
+
+# =========================
 # AI Assistant Context Directory
 # =========================
 .agents/*

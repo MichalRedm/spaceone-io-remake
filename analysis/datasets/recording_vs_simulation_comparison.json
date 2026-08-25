@@ -1,0 +1,30 @@
+[
+  {
+    "name": "Original Spaceone Analytical",
+    "base_thrust_converter": 0.0038,
+    "drag": 0.88,
+    "rmse_position_error_px": 175.41575463771238,
+    "avg_speed_residual_px_tick": 2.5359435774445496
+  },
+  {
+    "name": "Calibrated Responsive (0.0042 / 0.88)",
+    "base_thrust_converter": 0.0042,
+    "drag": 0.88,
+    "rmse_position_error_px": 192.15744652986245,
+    "avg_speed_residual_px_tick": 2.4168688821652027
+  },
+  {
+    "name": "Calibrated Responsive (0.0048 / 0.88)",
+    "base_thrust_converter": 0.0048,
+    "drag": 0.88,
+    "rmse_position_error_px": 234.6176848015663,
+    "avg_speed_residual_px_tick": 2.7768058652866037
+  },
+  {
+    "name": "Fast Preset (0.00586 / 0.88)",
+    "base_thrust_converter": 0.00586,
+    "drag": 0.88,
+    "rmse_position_error_px": 336.35011494636643,
+    "avg_speed_residual_px_tick": 4.454341266802768
+  }
+]
