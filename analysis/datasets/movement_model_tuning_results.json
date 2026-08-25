@@ -1,0 +1,302 @@
+{
+  "benchmark_results": [
+    {
+      "model_name": "Kinematic Turning Limited",
+      "param_names": [
+        "v_max",
+        "max_turn_rate"
+      ],
+      "calibrated_params": {
+        "v_max": 14.344134283081218,
+        "max_turn_rate": 0.1393384285032692
+      },
+      "test_single_ship_n1": {
+        "pos_rmse": 24.170993463557863,
+        "vel_rmse": 2.5283104364607705,
+        "heading_mae": 0.12382658257457467,
+        "speed_mae": 1.0743944079337422,
+        "aic": 3533.9559597122516,
+        "bic": 3542.482756237435,
+        "total_test_samples": 525
+      },
+      "test_multi_ship": {
+        "pos_rmse": 237.22115056552025,
+        "vel_rmse": 7.466873410970021,
+        "heading_mae": 0.2829727323208525,
+        "speed_mae": 5.212174447505228,
+        "aic": 54842.74771756526,
+        "bic": 54855.22108821069,
+        "total_test_samples": 3777
+      }
+    },
+    {
+      "model_name": "Turn Rate Limited + Speed Dip",
+      "param_names": [
+        "v_max",
+        "max_turn_rate",
+        "speed_dip"
+      ],
+      "calibrated_params": {
+        "v_max": 14.459065460503638,
+        "max_turn_rate": 0.13460512612336897,
+        "speed_dip": 0.40363574873135494
+      },
+      "test_single_ship_n1": {
+        "pos_rmse": 28.340847069040578,
+        "vel_rmse": 2.1771717194818723,
+        "heading_mae": 0.1216404063744965,
+        "speed_mae": 0.6673326011427453,
+        "aic": 3755.6595040961033,
+        "bic": 3768.449698883878,
+        "total_test_samples": 525
+      },
+      "test_multi_ship": {
+        "pos_rmse": 208.17760283378797,
+        "vel_rmse": 7.108894653720491,
+        "heading_mae": 0.2883463562730048,
+        "speed_mae": 4.831219474283078,
+        "aic": 52500.0399965716,
+        "bic": 52518.75005253973,
+        "total_test_samples": 3777
+      }
+    },
+    {
+      "model_name": "Heading Lag + Clamped Newtonian",
+      "param_names": [
+        "v_max",
+        "accel",
+        "turn_rate"
+      ],
+      "calibrated_params": {
+        "v_max": 14.26223728068705,
+        "accel": 2.6966234452277877,
+        "turn_rate": 0.2416400118546768
+      },
+      "test_single_ship_n1": {
+        "pos_rmse": 40.7095543831773,
+        "vel_rmse": 2.6881690484495913,
+        "heading_mae": 0.12508065867327367,
+        "speed_mae": 0.9605353091065518,
+        "aic": 4502.901491377367,
+        "bic": 4515.691686165142,
+        "total_test_samples": 525
+      },
+      "test_multi_ship": {
+        "pos_rmse": 183.3311341158087,
+        "vel_rmse": 7.9042126588726065,
+        "heading_mae": 0.3551755268288433,
+        "speed_mae": 5.038537291706178,
+        "aic": 48165.71632790292,
+        "bic": 48184.426383871054,
+        "total_test_samples": 3777
+      }
+    },
+    {
+      "model_name": "Frictionless Clamped",
+      "param_names": [
+        "accel",
+        "v_max"
+      ],
+      "calibrated_params": {
+        "accel": 2.4620788486311196,
+        "v_max": 14.26414814071663
+      },
+      "test_single_ship_n1": {
+        "pos_rmse": 44.31160205831296,
+        "vel_rmse": 2.6304784226691753,
+        "heading_mae": 0.1295683049726869,
+        "speed_mae": 0.8452379353849323,
+        "aic": 4644.470723094417,
+        "bic": 4652.9975196196,
+        "total_test_samples": 525
+      },
+      "test_multi_ship": {
+        "pos_rmse": 168.17151211481738,
+        "vel_rmse": 6.800760450842862,
+        "heading_mae": 0.27288089560910106,
+        "speed_mae": 4.887344391731394,
+        "aic": 47654.62395514031,
+        "bic": 47667.09732578574,
+        "total_test_samples": 3777
+      }
+    },
+    {
+      "model_name": "Thrust Slew Lag + Momentum",
+      "param_names": [
+        "thrust",
+        "drag",
+        "slew_rate"
+      ],
+      "calibrated_params": {
+        "thrust": 3.454928886453601,
+        "drag": 0.807479392545449,
+        "slew_rate": 0.1731006071831894
+      },
+      "test_single_ship_n1": {
+        "pos_rmse": 55.02389328006676,
+        "vel_rmse": 2.9480125015470913,
+        "heading_mae": 0.16339685644145663,
+        "speed_mae": 0.8734395634137493,
+        "aic": 4797.255898533343,
+        "bic": 4810.046093321117,
+        "total_test_samples": 525
+      },
+      "test_multi_ship": {
+        "pos_rmse": 180.53817568206043,
+        "vel_rmse": 7.340588974258415,
+        "heading_mae": 0.3430114626898404,
+        "speed_mae": 4.528234175892756,
+        "aic": 50319.28911838001,
+        "bic": 50337.999174348144,
+        "total_test_samples": 3777
+      }
+    },
+    {
+      "model_name": "Quadratic (Aerodynamic) Drag",
+      "param_names": [
+        "thrust",
+        "c_drag"
+      ],
+      "calibrated_params": {
+        "thrust": 1.9394094487144635,
+        "c_drag": 0.009286252633813604
+      },
+      "test_single_ship_n1": {
+        "pos_rmse": 57.75122305641508,
+        "vel_rmse": 3.0148404423191764,
+        "heading_mae": 0.16524849692026192,
+        "speed_mae": 1.0688479698165443,
+        "aic": 4826.964193296288,
+        "bic": 4835.490989821471,
+        "total_test_samples": 525
+      },
+      "test_multi_ship": {
+        "pos_rmse": 131.58926025988887,
+        "vel_rmse": 6.1290325996768225,
+        "heading_mae": 0.24823434523726143,
+        "speed_mae": 4.495007926332692,
+        "aic": 44119.74591315313,
+        "bic": 44132.21928379856,
+        "total_test_samples": 3777
+      }
+    },
+    {
+      "model_name": "Anisotropic Drag (Normal/Lateral)",
+      "param_names": [
+        "thrust",
+        "drag_long",
+        "drag_lat"
+      ],
+      "calibrated_params": {
+        "thrust": 3.9237402005182074,
+        "drag_long": 0.7832208761064285,
+        "drag_lat": 0.9104857273249266
+      },
+      "test_single_ship_n1": {
+        "pos_rmse": 62.2815090279295,
+        "vel_rmse": 3.4845245638128355,
+        "heading_mae": 0.21944739553295153,
+        "speed_mae": 0.641158834225259,
+        "aic": 4891.743624868259,
+        "bic": 4904.533819656033,
+        "total_test_samples": 525
+      },
+      "test_multi_ship": {
+        "pos_rmse": 132.9575902000943,
+        "vel_rmse": 6.120493730643773,
+        "heading_mae": 0.2434310778354183,
+        "speed_mae": 4.404842989149718,
+        "aic": 44420.43626373842,
+        "bic": 44439.14631970655,
+        "total_test_samples": 3777
+      }
+    },
+    {
+      "model_name": "Linear Drag Newtonian",
+      "param_names": [
+        "thrust",
+        "drag"
+      ],
+      "calibrated_params": {
+        "thrust": 2.3199166965725873,
+        "drag": 0.8626289237198208
+      },
+      "test_single_ship_n1": {
+        "pos_rmse": 64.19361289399521,
+        "vel_rmse": 3.374435085249827,
+        "heading_mae": 0.19596046837186373,
+        "speed_mae": 1.2384249317070757,
+        "aic": 4899.363757794785,
+        "bic": 4907.890554319968,
+        "total_test_samples": 525
+      },
+      "test_multi_ship": {
+        "pos_rmse": 115.238188701992,
+        "vel_rmse": 5.697582566387041,
+        "heading_mae": 0.22270959689786424,
+        "speed_mae": 4.236998942756525,
+        "aic": 43366.81030010034,
+        "bic": 43379.28367074577,
+        "total_test_samples": 3777
+      }
+    },
+    {
+      "model_name": "Velocity Lerp Interpolation",
+      "param_names": [
+        "v_max",
+        "alpha"
+      ],
+      "calibrated_params": {
+        "v_max": 14.56799137518723,
+        "alpha": 0.1373731380517616
+      },
+      "test_single_ship_n1": {
+        "pos_rmse": 64.19413338466637,
+        "vel_rmse": 3.374439190076909,
+        "heading_mae": 0.19596198447815477,
+        "speed_mae": 1.2383939567116546,
+        "aic": 4899.3695465744095,
+        "bic": 4907.896343099593,
+        "total_test_samples": 525
+      },
+      "test_multi_ship": {
+        "pos_rmse": 115.237558173371,
+        "vel_rmse": 5.697554282440792,
+        "heading_mae": 0.22270811755403105,
+        "speed_mae": 4.236980550419224,
+        "aic": 43366.793542008214,
+        "bic": 43379.26691265364,
+        "total_test_samples": 3777
+      }
+    },
+    {
+      "model_name": "Reynolds Steering Force",
+      "param_names": [
+        "v_max",
+        "max_force"
+      ],
+      "calibrated_params": {
+        "v_max": 14.447672174339676,
+        "max_force": 1.4857474891778788
+      },
+      "test_single_ship_n1": {
+        "pos_rmse": 70.65127788683614,
+        "vel_rmse": 3.429041946138176,
+        "heading_mae": 0.19697481161458683,
+        "speed_mae": 1.471539925084535,
+        "aic": 4924.290191503512,
+        "bic": 4932.816988028695,
+        "total_test_samples": 525
+      },
+      "test_multi_ship": {
+        "pos_rmse": 144.2499253402274,
+        "vel_rmse": 6.388767526247624,
+        "heading_mae": 0.24931255907214805,
+        "speed_mae": 4.793324117301556,
+        "aic": 45205.005510320654,
+        "bic": 45217.47888096608,
+        "total_test_samples": 3777
+      }
+    }
+  ]
+}
