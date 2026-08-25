@@ -950,15 +950,22 @@ export class RenderedObject {
       if (isBoostEmitter) {
         if (self.isBoosting) {
           const boostElapsed = now - self.boostStartTime;
-          // Spawn minimal bullet particles starting from Phase 2 (160ms) along the dash trail
+          // Spawn bullet particles starting from Phase 2 (160ms) along the dash trail
           emitter.emit = boostElapsed >= 160;
         } else {
           // Stop emitting when boost finishes; existing particles finish their lifetime naturally
           emitter.emit = false;
         }
-      }
 
-      emitter.updateOwnerPos(interpolatedPosition.x, interpolatedPosition.y);
+        // Align emitter to the rear nozzle and rotate in the direction of the dash trail
+        const trailAngleDeg = ((angle + Math.PI) * 180) / Math.PI;
+        emitter.rotate(trailAngleDeg);
+        const rearX = interpolatedPosition.x - Math.cos(angle) * (size * 0.45);
+        const rearY = interpolatedPosition.y - Math.sin(angle) * (size * 0.45);
+        emitter.updateOwnerPos(rearX, rearY);
+      } else {
+        emitter.updateOwnerPos(interpolatedPosition.x, interpolatedPosition.y);
+      }
     });
   }
 
