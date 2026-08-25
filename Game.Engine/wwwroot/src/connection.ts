@@ -79,11 +79,13 @@ export class Connection {
     }
   }
   connect(worldKey?: string) {
-    if (!arenaLink.generated) {
+    if (!arenaLink.generated && worldKey) {
       arenaLink.generate(worldKey);
     }
 
-    worldKey = arenaLink.getArena();
+    if (!worldKey) {
+      worldKey = arenaLink.getArena();
+    }
 
     let url: string;
 
@@ -96,7 +98,7 @@ export class Connection {
     let hostname = window.location.host;
 
     if (!hostname) {
-      hostname = "daud.io";
+      hostname = "localhost:5000";
     }
 
     if (worldKey) {

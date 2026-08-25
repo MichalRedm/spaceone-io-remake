@@ -84,27 +84,26 @@ export class ArenaLink {
     let actualWindow: Window;
 
     if (this.iframeDetection()) {
-      console.log("Window is Iframed");
       actualWindow = parent.window;
     } else {
-      console.log("No IFrame detected");
       actualWindow = window;
     }
 
-    if (actualWindow.location.hash.length > 0) {
-      console.log("Reading arena Link from URL");
+    if (actualWindow.location.hash.length > 1) {
       linkInURL = this.readArenaLinkFromURL(actualWindow.location.hash);
-      console.log(`Arena Link from URL: ${linkInURL}`);
     }
 
+    if (!linkInURL) return "";
     return this.decode(linkInURL).toString();
   }
 
   public getArena(): string | undefined {
     const link = this.getLinkFromURL();
+    if (!link) return undefined;
     const lastChar = Number(link.substring(link.length - 1, link.length));
+    if (isNaN(lastChar) || lastChar < 0 || lastChar >= arenas.length)
+      return undefined;
     const arena = arenas[lastChar];
-    console.log(`Arena from link: ${arena}`);
     return arena;
   }
 
