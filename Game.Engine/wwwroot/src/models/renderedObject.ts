@@ -61,6 +61,7 @@ const bulletLifeTable = [
 class GroupParticle extends particles.Particle {
   body: any;
   renderedObject?: RenderedObject;
+  isBoostParticle: boolean;
 
   constructor(emitter: particles.Emitter) {
     super(emitter);
@@ -69,9 +70,17 @@ class GroupParticle extends particles.Particle {
       (<any>emitter).renderedObject?.container?.bodyGroup;
     this.body = (<any>emitter).renderedObject?.body;
     this.renderedObject = (<any>emitter).renderedObject;
+    const texDef = (<any>emitter).textureDefinition;
+    const emitterKey = String(texDef?.emitter || "");
+    this.isBoostParticle = emitterKey.startsWith("boost");
   }
 
   update(delta: number): number {
+    if (this.isBoostParticle && this.renderedObject?.positionDelta) {
+      this.position.x += this.renderedObject.positionDelta.x;
+      this.position.y += this.renderedObject.positionDelta.y;
+    }
+
     var ret = super.update(delta);
 
     const spriteStr = String(this.body?.Sprite || "");
@@ -136,6 +145,7 @@ export class RenderedObject {
 
   additionalClasses?: string[];
   lastPosition: { x: number; y: number };
+  positionDelta: { x: number; y: number };
   spawnTime: number;
   isBoosting: boolean;
   boostStartTime: number;
@@ -157,6 +167,7 @@ export class RenderedObject {
     this.activeEmitters = {};
 
     this.lastPosition = { x: 0, y: 0 };
+    this.positionDelta = { x: 0, y: 0 };
     this.spawnTime = performance.now();
     this.isBoosting = false;
     this.boostStartTime = 0;
@@ -715,6 +726,13 @@ export class RenderedObject {
 
   moveSprites(interpolatedPosition, size) {
     const angle = interpolatedPosition.Angle;
+    if (this.lastPosition.x !== 0 || this.lastPosition.y !== 0) {
+      this.positionDelta.x = interpolatedPosition.x - this.lastPosition.x;
+      this.positionDelta.y = interpolatedPosition.y - this.lastPosition.y;
+    } else {
+      this.positionDelta.x = 0;
+      this.positionDelta.y = 0;
+    }
     this.lastPosition.x = interpolatedPosition.x;
     this.lastPosition.y = interpolatedPosition.y;
     const now = performance.now();

@@ -392,8 +392,8 @@
 			"end": 0.0
 		},
 		"scale": {
-			"start": 0.75,
-			"end": 0.15,
+			"start": 0.65,
+			"end": 0.10,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
@@ -401,9 +401,9 @@
 			"end": "#ffffff"
 		},
 		"speed": {
-			"start": 180,
-			"end": 30,
-			"minimumSpeedMultiplier": 0.6
+			"start": 100,
+			"end": 25,
+			"minimumSpeedMultiplier": 0.5
 		},
 		"acceleration": {
 			"x": 0,
@@ -411,8 +411,8 @@
 		},
 		"maxSpeed": 0,
 		"startRotation": {
-			"min": -15,
-			"max": 15
+			"min": -10,
+			"max": 10
 		},
 		"noRotation": false,
 		"rotationSpeed": {
@@ -420,13 +420,13 @@
 			"max": 0
 		},
 		"lifetime": {
-			"min": 0.25,
-			"max": 0.45
+			"min": 0.10,
+			"max": 0.20
 		},
 		"blendMode": "screen",
-		"frequency": 0.04,
+		"frequency": 0.09,
 		"emitterLifetime": -1,
-		"maxParticles": 100,
+		"maxParticles": 30,
 		"pos": {
 			"x": 0,
 			"y": 0
@@ -440,8 +440,8 @@
 			"end": 0.0
 		},
 		"scale": {
-			"start": 0.75,
-			"end": 0.15,
+			"start": 0.65,
+			"end": 0.10,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
@@ -449,9 +449,9 @@
 			"end": "#ffffff"
 		},
 		"speed": {
-			"start": 180,
-			"end": 30,
-			"minimumSpeedMultiplier": 0.6
+			"start": 100,
+			"end": 25,
+			"minimumSpeedMultiplier": 0.5
 		},
 		"acceleration": {
 			"x": 0,
@@ -459,8 +459,8 @@
 		},
 		"maxSpeed": 0,
 		"startRotation": {
-			"min": -15,
-			"max": 15
+			"min": -10,
+			"max": 10
 		},
 		"noRotation": false,
 		"rotationSpeed": {
@@ -468,13 +468,13 @@
 			"max": 0
 		},
 		"lifetime": {
-			"min": 0.25,
-			"max": 0.45
+			"min": 0.10,
+			"max": 0.20
 		},
 		"blendMode": "screen",
-		"frequency": 0.04,
+		"frequency": 0.09,
 		"emitterLifetime": -1,
-		"maxParticles": 100,
+		"maxParticles": 30,
 		"pos": {
 			"x": 0,
 			"y": 0
@@ -488,8 +488,8 @@
 			"end": 0.0
 		},
 		"scale": {
-			"start": 0.75,
-			"end": 0.15,
+			"start": 0.65,
+			"end": 0.10,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
@@ -497,9 +497,9 @@
 			"end": "#ffffff"
 		},
 		"speed": {
-			"start": 180,
-			"end": 30,
-			"minimumSpeedMultiplier": 0.6
+			"start": 100,
+			"end": 25,
+			"minimumSpeedMultiplier": 0.5
 		},
 		"acceleration": {
 			"x": 0,
@@ -507,8 +507,8 @@
 		},
 		"maxSpeed": 0,
 		"startRotation": {
-			"min": -15,
-			"max": 15
+			"min": -10,
+			"max": 10
 		},
 		"noRotation": false,
 		"rotationSpeed": {
@@ -516,13 +516,13 @@
 			"max": 0
 		},
 		"lifetime": {
-			"min": 0.25,
-			"max": 0.45
+			"min": 0.10,
+			"max": 0.20
 		},
 		"blendMode": "screen",
-		"frequency": 0.04,
+		"frequency": 0.09,
 		"emitterLifetime": -1,
-		"maxParticles": 100,
+		"maxParticles": 30,
 		"pos": {
 			"x": 0,
 			"y": 0
@@ -536,8 +536,8 @@
 			"end": 0.0
 		},
 		"scale": {
-			"start": 0.75,
-			"end": 0.15,
+			"start": 0.65,
+			"end": 0.10,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
@@ -545,9 +545,9 @@
 			"end": "#ffffff"
 		},
 		"speed": {
-			"start": 180,
-			"end": 30,
-			"minimumSpeedMultiplier": 0.6
+			"start": 100,
+			"end": 25,
+			"minimumSpeedMultiplier": 0.5
 		},
 		"acceleration": {
 			"x": 0,
@@ -555,8 +555,8 @@
 		},
 		"maxSpeed": 0,
 		"startRotation": {
-			"min": -15,
-			"max": 15
+			"min": -10,
+			"max": 10
 		},
 		"noRotation": false,
 		"rotationSpeed": {
@@ -564,13 +564,13 @@
 			"max": 0
 		},
 		"lifetime": {
-			"min": 0.25,
-			"max": 0.45
+			"min": 0.10,
+			"max": 0.20
 		},
 		"blendMode": "screen",
-		"frequency": 0.04,
+		"frequency": 0.09,
 		"emitterLifetime": -1,
-		"maxParticles": 100,
+		"maxParticles": 30,
 		"pos": {
 			"x": 0,
 			"y": 0
@@ -584,8 +584,8 @@
 			"end": 0.0
 		},
 		"scale": {
-			"start": 0.75,
-			"end": 0.15,
+			"start": 0.65,
+			"end": 0.10,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
@@ -593,9 +593,9 @@
 			"end": "#ffffff"
 		},
 		"speed": {
-			"start": 180,
-			"end": 30,
-			"minimumSpeedMultiplier": 0.6
+			"start": 100,
+			"end": 25,
+			"minimumSpeedMultiplier": 0.5
 		},
 		"acceleration": {
 			"x": 0,
@@ -603,8 +603,8 @@
 		},
 		"maxSpeed": 0,
 		"startRotation": {
-			"min": -15,
-			"max": 15
+			"min": -10,
+			"max": 10
 		},
 		"noRotation": false,
 		"rotationSpeed": {
@@ -612,13 +612,13 @@
 			"max": 0
 		},
 		"lifetime": {
-			"min": 0.25,
-			"max": 0.45
+			"min": 0.10,
+			"max": 0.20
 		},
 		"blendMode": "screen",
-		"frequency": 0.04,
+		"frequency": 0.09,
 		"emitterLifetime": -1,
-		"maxParticles": 100,
+		"maxParticles": 30,
 		"pos": {
 			"x": 0,
 			"y": 0
@@ -632,8 +632,8 @@
 			"end": 0.0
 		},
 		"scale": {
-			"start": 0.75,
-			"end": 0.15,
+			"start": 0.65,
+			"end": 0.10,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
@@ -641,9 +641,9 @@
 			"end": "#ffffff"
 		},
 		"speed": {
-			"start": 180,
-			"end": 30,
-			"minimumSpeedMultiplier": 0.6
+			"start": 100,
+			"end": 25,
+			"minimumSpeedMultiplier": 0.5
 		},
 		"acceleration": {
 			"x": 0,
@@ -651,8 +651,8 @@
 		},
 		"maxSpeed": 0,
 		"startRotation": {
-			"min": -15,
-			"max": 15
+			"min": -10,
+			"max": 10
 		},
 		"noRotation": false,
 		"rotationSpeed": {
@@ -660,13 +660,13 @@
 			"max": 0
 		},
 		"lifetime": {
-			"min": 0.25,
-			"max": 0.45
+			"min": 0.10,
+			"max": 0.20
 		},
 		"blendMode": "screen",
-		"frequency": 0.04,
+		"frequency": 0.09,
 		"emitterLifetime": -1,
-		"maxParticles": 100,
+		"maxParticles": 30,
 		"pos": {
 			"x": 0,
 			"y": 0
@@ -680,8 +680,8 @@
 			"end": 0.0
 		},
 		"scale": {
-			"start": 0.75,
-			"end": 0.15,
+			"start": 0.65,
+			"end": 0.10,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
@@ -689,9 +689,9 @@
 			"end": "#ffffff"
 		},
 		"speed": {
-			"start": 180,
-			"end": 30,
-			"minimumSpeedMultiplier": 0.6
+			"start": 100,
+			"end": 25,
+			"minimumSpeedMultiplier": 0.5
 		},
 		"acceleration": {
 			"x": 0,
@@ -699,8 +699,8 @@
 		},
 		"maxSpeed": 0,
 		"startRotation": {
-			"min": -15,
-			"max": 15
+			"min": -10,
+			"max": 10
 		},
 		"noRotation": false,
 		"rotationSpeed": {
@@ -708,13 +708,13 @@
 			"max": 0
 		},
 		"lifetime": {
-			"min": 0.25,
-			"max": 0.45
+			"min": 0.10,
+			"max": 0.20
 		},
 		"blendMode": "screen",
-		"frequency": 0.04,
+		"frequency": 0.09,
 		"emitterLifetime": -1,
-		"maxParticles": 100,
+		"maxParticles": 30,
 		"pos": {
 			"x": 0,
 			"y": 0
