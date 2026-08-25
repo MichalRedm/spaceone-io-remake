@@ -420,8 +420,8 @@
 			"max": 0
 		},
 		"lifetime": {
-			"min": 0.10,
-			"max": 0.20
+			"min": 0.30,
+			"max": 0.30
 		},
 		"blendMode": "screen",
 		"frequency": 0.09,
@@ -468,8 +468,8 @@
 			"max": 0
 		},
 		"lifetime": {
-			"min": 0.10,
-			"max": 0.20
+			"min": 0.30,
+			"max": 0.30
 		},
 		"blendMode": "screen",
 		"frequency": 0.09,
@@ -516,8 +516,8 @@
 			"max": 0
 		},
 		"lifetime": {
-			"min": 0.10,
-			"max": 0.20
+			"min": 0.30,
+			"max": 0.30
 		},
 		"blendMode": "screen",
 		"frequency": 0.09,
@@ -564,8 +564,8 @@
 			"max": 0
 		},
 		"lifetime": {
-			"min": 0.10,
-			"max": 0.20
+			"min": 0.30,
+			"max": 0.30
 		},
 		"blendMode": "screen",
 		"frequency": 0.09,
@@ -612,8 +612,8 @@
 			"max": 0
 		},
 		"lifetime": {
-			"min": 0.10,
-			"max": 0.20
+			"min": 0.30,
+			"max": 0.30
 		},
 		"blendMode": "screen",
 		"frequency": 0.09,
@@ -660,8 +660,8 @@
 			"max": 0
 		},
 		"lifetime": {
-			"min": 0.10,
-			"max": 0.20
+			"min": 0.30,
+			"max": 0.30
 		},
 		"blendMode": "screen",
 		"frequency": 0.09,
@@ -708,8 +708,8 @@
 			"max": 0
 		},
 		"lifetime": {
-			"min": 0.10,
-			"max": 0.20
+			"min": 0.30,
+			"max": 0.30
 		},
 		"blendMode": "screen",
 		"frequency": 0.09,
