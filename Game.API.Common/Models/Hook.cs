@@ -75,8 +75,8 @@ namespace Game.API.Common.Models
                     AbandonBuffer = 120,
                     AbandonMomentumMultiplier = 0.4f,
 
-                    ShotCooldownTimeM = 45,
-                    ShotCooldownTimeB = 500,
+                    ShotCooldownTimeM = 0,
+                    ShotCooldownTimeB = 0,
 
                     ShotCooldownTimeBotM = 22,
                     ShotCooldownTimeBotB = 1100,
@@ -438,6 +438,15 @@ namespace Game.API.Common.Models
         public int AbandonBuffer { get; set; }
         public int EarnedShipDelay { get; set; }
         public int MutualDestructionCooldown { get; set; }
+
+        public int CalculateShotCooldown(int shipCount)
+        {
+            if (ShotCooldownTimeM > 0 || ShotCooldownTimeB > 0)
+                return (int)(ShotCooldownTimeM * shipCount + ShotCooldownTimeB);
+
+            int n = System.Math.Max(1, shipCount);
+            return (13 + n - (n + 4) / 10) * (StepTime > 0 ? StepTime : 40);
+        }
 
         public Hook Clone()
         {

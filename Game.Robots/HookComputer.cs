@@ -22,5 +22,15 @@ namespace Game.Robots
                 return Hook.BulletLifeTable[fleetSize];
             return (int)(Hook.BulletLifeB + Hook.BulletLifeM * fleetSize);
         }
+
+        public int ShotCooldown(int fleetSize)
+        {
+            if (Hook.ShotCooldownTimeM > 0 || Hook.ShotCooldownTimeB > 0)
+                return (int)(Hook.ShotCooldownTimeM * fleetSize + Hook.ShotCooldownTimeB);
+
+            int n = System.Math.Max(1, fleetSize);
+            int stepTime = Hook.StepTime > 0 ? Hook.StepTime : 40;
+            return (13 + n - (n + 4) / 10) * stepTime;
+        }
     }
 }

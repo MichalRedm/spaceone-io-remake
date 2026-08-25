@@ -39,7 +39,7 @@ Extracted from over **3.8M ship frames**, **413k food orbs**, and **112k laser s
 - **Median Bullet Speed**: $19.31\text{ px/tick}$ ($482.8\text{ px/s}$).
 - **Velocity Differential**: Bullet-to-cruise speed ratio $\approx 2.0\times - 2.5\times$.
 - **Lifespan**: Empirical sublinear table `Hook.BulletLifeTable[N]` ($N=1: 1560\text{ ms}, N=3: 1840\text{ ms}, N=10: 2240\text{ ms}, N=20: 2640\text{ ms}, N=45: 3040\text{ ms}$), with linear regression fallback $\tau_{\text{life}} = \text{BulletLifeB} + \text{BulletLifeM} \cdot N = 1985\text{ ms} + 25\text{ ms} \cdot N$.
-- **Cooldown**: $\tau_{\text{cooldown}} = \text{ShotCooldownTimeB} + \text{ShotCooldownTimeM} \cdot N = 450\text{ ms} + 36\text{ ms} \cdot N$.
+- **Cooldown**: Exact empirical discrete closed-form formula $K(N) = 13 + N - \lfloor \frac{N+4}{10} \rfloor \text{ ticks}$ ($\tau_{\text{cooldown}} = K(N) \cdot 40\text{ ms}$), verified across 4,467 cooldown cycles and 36,389 step frames (100.00% exact match). ($N=1: 560\text{ ms}, N=3: 640\text{ ms}, N=5,6: 720\text{ ms}, N=10: 880\text{ ms}, N=20: 1240\text{ ms}, N=50: 2320\text{ ms}$).
 
 ---
 
@@ -57,9 +57,9 @@ Extracted from over **3.8M ship frames**, **413k food orbs**, and **112k laser s
 
 Future physics tuning will follow a modular, isolated sequence:
 
-1. **Phase 1: Absolute Invariants (In Progress)**:
+1. **Phase 1: Absolute Invariants (Completed)**:
    - **Bullet Lifetimes ($\tau_{\text{life}}$)**: [DONE] Fully calibrated to discrete empirical table `Hook.BulletLifeTable[N]` ($1560\text{ ms} \dots 3040\text{ ms}$) verified across 27,127 full trajectories from 41 playback sessions.
-   - **Firing Cooldowns ($\tau_{\text{cooldown}}$)** & Reload Rates: $\tau_{\text{cooldown}} = 450\text{ ms} + 36\text{ ms} \cdot N$.
+   - **Firing Cooldowns ($\tau_{\text{cooldown}}$)**: [DONE] Fully calibrated to exact discrete integer formula $K(N) = 13 + N - \lfloor \frac{N+4}{10} \rfloor \text{ ticks}$ ($\tau = K(N) \cdot 40\text{ ms}$) verified across 36,389 step frames from 41 playback sessions.
    - **Server Timestep ($\Delta t$)**: Authoritative fixed 25Hz ($40.0\text{ ms}$).
 2. **Phase 2: Single-Ship Motion Model Identification**:
    - Isolate single-ship ($N=1$) turn and straight trajectories from playback data.
