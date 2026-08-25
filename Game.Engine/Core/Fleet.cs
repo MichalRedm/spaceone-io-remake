@@ -52,6 +52,8 @@ namespace Game.Engine.Core
         public long BoostUntil2 { get; set; } = 0;
         public long BoostStartTime { get; set; } = 0;
         public float BoostAngle { get; set; } = 0;
+        public float FleetAngle { get; set; } = 0;
+        public float FleetTurnSign { get; set; } = 1.0f;
 
         public Vector2 AimTarget { get; set; }
         public Vector2 AimTarget2 { get; set; }
@@ -364,9 +366,33 @@ namespace Game.Engine.Core
             float angle = MathF.Atan2(AimTarget.Y, AimTarget.X);
             float BoostM = (float)Math.Pow(Ships.Count, -0.205); // 4D Klein Manifold's magical formula
 
+            if (targetLen > 0.001f)
+            {
+                // Wrapped angular difference between fleet target and authoritative fleet direction
+                float fleetAngleDiff = (angle - FleetAngle + MathF.PI) % (MathF.PI * 2f);
+                if (fleetAngleDiff < 0) fleetAngleDiff += MathF.PI * 2f;
+                fleetAngleDiff -= MathF.PI;
+
+                // Update authoritative fleet turn direction sign (+1.0 = CCW, -1.0 = CW)
+                if (MathF.Abs(fleetAngleDiff) > 0.001f)
+                {
+                    FleetTurnSign = fleetAngleDiff >= 0 ? 1.0f : -1.0f;
+                }
+
+                // Advance FleetAngle smoothly towards target
+                float fleetMaxTurnRate = isBoosting ? World.Hook.BoostTurnRate : World.Hook.TurnRate;
+                float clampedFleetDelta = Math.Clamp(fleetAngleDiff, -fleetMaxTurnRate, fleetMaxTurnRate);
+                FleetAngle += clampedFleetDelta;
+            }
+            else if (FleetMomentum.LengthSquared() > 0.001f)
+            {
+                FleetAngle = MathF.Atan2(FleetMomentum.Y, FleetMomentum.X);
+            }
+
             // Minimal, smooth mouse convergence: ships steer towards the mouse cursor
-            // with a bounded convergence angle (max ~3.5 deg = 0.06 rad) and proximity fade to eliminate jitter when cursor is near
-            float maxConvergenceAngle = 0.06f * MathF.Min(1.0f, targetLen / 100.0f);
+            // with a bounded convergence angle (max ~3.5 deg = 0.06 rad).
+            // Smoothly fade to 0 when cursor is within 30-100px of fleet center to eliminate radial divergence when passing through the fleet
+            float maxConvergenceAngle = 0.06f * Math.Clamp((targetLen - 30.0f) / 70.0f, 0.0f, 1.0f);
             Vector2 mousePos = FleetCenter + AimTarget;
 
             foreach (var ship in Ships)

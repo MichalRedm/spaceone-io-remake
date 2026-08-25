@@ -211,6 +211,13 @@ namespace Game.Engine.Core
                     if (angleDiff < 0f) angleDiff += MathF.PI * 2f;
                     angleDiff -= MathF.PI;
 
+                    // Enforce unified fleet turn direction on sharp / near-180° turns (|angleDiff| > ~150 deg = 2.6 rad)
+                    // to prevent symmetry breaking where some ships turn left and others turn right, splitting the fleet
+                    if (MathF.Abs(angleDiff) > 2.6f && Fleet != null)
+                    {
+                        angleDiff = Fleet.FleetTurnSign * MathF.Abs(angleDiff);
+                    }
+
                     float maxTurnRate;
                     float effectiveSpeed;
 
