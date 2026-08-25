@@ -28,7 +28,7 @@ const state = {
   laserOffsetY: 0,
   laserTrailSize: 12.5,
   sparkleScaleStart: 0.57,
-  sparkleFreq: 0.025,
+  sparkleFreq: 0.05,
   sparkleLife: 0.2,
 
   // Food
@@ -533,7 +533,7 @@ function setupUI() {
     state.laserOffsetY = 0;
     state.laserTrailSize = 12.5;
     state.sparkleScaleStart = 0.38;
-    state.sparkleFreq = 0.025;
+    state.sparkleFreq = 0.05;
     state.sparkleLife = 0.2;
 
     state.foodCoreSize = 1.2;
@@ -571,8 +571,8 @@ function setupUI() {
     getEl("laser-trail-size-val").textContent = "12.50";
     getEl<HTMLInputElement>("sparkle-scale-start").value = "0.38";
     getEl("sparkle-scale-start-val").textContent = "0.38";
-    getEl<HTMLInputElement>("sparkle-freq").value = "0.025";
-    getEl("sparkle-freq-val").textContent = "0.025s";
+    getEl<HTMLInputElement>("sparkle-freq").value = "0.05";
+    getEl("sparkle-freq-val").textContent = "0.050s";
     getEl<HTMLInputElement>("sparkle-life").value = "0.20";
     getEl("sparkle-life-val").textContent = "0.20s";
 

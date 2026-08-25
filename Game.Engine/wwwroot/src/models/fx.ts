@@ -11,7 +11,7 @@ export const FX_CONFIG = {
   bulletExplosion: {
     particleCount: 2,
     durationMs: 500,
-    baseScale: 0.7,
+    baseScale: 0.9,
     scaleVariation: 0.2,
     alphaStart: 1.0,
     alphaEnd: 1.0,
