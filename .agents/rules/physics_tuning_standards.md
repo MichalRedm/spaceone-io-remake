@@ -16,13 +16,9 @@
 ## 2. Declarative Code Standards (Golden Patterns)
 
 ```python
-# Trajectory loss calculation between simulated and ground truth positions
+# Standard imports and trajectory loss formulation
 import numpy as np
-
-def compute_trajectory_loss(simulated_pos, recorded_pos, weights=None):
-    delta = simulated_pos - recorded_pos
-    mse = np.mean(np.sum(delta ** 2, axis=-1))
-    return mse
+from analysis.core import simulate_discrete_step, compute_trajectory_loss, compute_trajectory_rmse
 ```
 
 ---

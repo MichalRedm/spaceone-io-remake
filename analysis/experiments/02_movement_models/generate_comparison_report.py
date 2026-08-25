@@ -1,69 +1,68 @@
 #!/usr/bin/env python3
 """
-Generate Kinematic Comparison Visualization
---------------------------------------------
-Produces an interactive HTML report and diagnostic dataset comparing
-original Spaceone recordings against the C# physics simulation.
+Phase 2: Generate Interactive Kinematic Comparison Visualizations.
+
+Produces an interactive HTML report with Plotly charts comparing
+ground-truth recorded tracks against the C# fixed-timestep simulation.
 """
 
 import os
 import sys
-import glob
 import math
 import json
-import struct
-import numpy as np
+import argparse
+from typing import List, Dict, Any
 
-sys.path.append(os.path.abspath("analysis/experiments"))
-from extract_telemetry import BinaryReader, parse_variable_header, parse_world_update
-from compare_simulation_with_recording import CSharpShipSimulation
+# Ensure analysis root is in sys.path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../")))
+from analysis.core import get_playback_files, iterate_world_updates
+from compare_trajectories import CSharpShipSimulation
 
-def generate_html_report():
-    playback_files = sorted(glob.glob("reference/space1-original/server-ansible/record/playback/*"), key=lambda x: -os.path.getsize(x))
-    
-    # Extract sample tracks for visualization
+
+def generate_html_report(playback_dir: str = None, output_html: str = None):
+    files = get_playback_files(playback_dir, max_files=5)
     sample_tracks = []
-    for fpath in playback_files[:5]:
-        with open(fpath, "rb") as f:
-            data = f.read()
-        pos = 0
-        tick = 0
+
+    for fpath in files:
         fleet_history = {}
-        while pos + 12 <= len(data) and tick < 1000:
-            high, low, length = struct.unpack_from("<III", data, pos)
-            payload = data[pos + 12 : pos + 12 + length]
-            pos += 12 + length
-            try:
-                reader = BinaryReader(payload)
-                if parse_variable_header(reader) == 0x10:
-                    wu = parse_world_update(reader)
-                    for fleet in wu.get("fleets", []):
-                        f_id = fleet["id"]
-                        f_size = fleet.get("fleetSizeOnServer", 1)
-                        if fleet.get("isDashing", False):
-                            continue
-                        for cell in fleet.get("cells", []):
-                            if not cell["isBullet"]:
-                                if f_id not in fleet_history:
-                                    fleet_history[f_id] = []
-                                fleet_history[f_id].append({
-                                    "tick": tick,
-                                    "x": float(cell["x"]),
-                                    "y": float(cell["y"]),
-                                    "vx": float(cell["velX"]),
-                                    "vy": float(cell["velY"]),
-                                    "size": f_size
-                                })
-                                break
-                    tick += 1
-            except Exception:
-                pass
+        for tick, wu in iterate_world_updates(fpath):
+            if tick >= 1000:
+                break
+            for fleet in wu.get("fleets", []):
+                f_id = fleet["id"]
+                f_size = fleet.get("fleetSizeOnServer", 1)
+                if fleet.get("isDashing", False):
+                    continue
+                for cell in fleet.get("cells", []):
+                    if not cell["isBullet"]:
+                        if f_id not in fleet_history:
+                            fleet_history[f_id] = []
+                        fleet_history[f_id].append(
+                            {
+                                "tick": tick,
+                                "x": float(cell["x"]),
+                                "y": float(cell["y"]),
+                                "vx": float(cell["velX"]),
+                                "vy": float(cell["velY"]),
+                                "size": f_size,
+                            }
+                        )
+                        break
         for f_id, pts in fleet_history.items():
             if len(pts) >= 60 and len(sample_tracks) < 3:
                 sample_tracks.append(pts[:60])
 
-    base_thrust_table = {1: 13.600, 2: 11.799, 3: 10.857, 5: 9.778, 10: 8.483, 20: 7.359}
-    sim = CSharpShipSimulation(base_thrust_table, base_thrust_converter=0.0038, drag=0.88)
+    base_thrust_table = {
+        1: 13.600,
+        2: 11.799,
+        3: 10.857,
+        5: 9.778,
+        10: 8.483,
+        20: 7.359,
+    }
+    sim = CSharpShipSimulation(
+        base_thrust_table, base_thrust_converter=0.0038, drag=0.88
+    )
 
     track_comparisons = []
     for i, track in enumerate(sample_tracks):
@@ -76,19 +75,31 @@ def generate_html_report():
             initial_pos=[track[0]["x"], track[0]["y"]],
             initial_vel=[track[0]["vx"], track[0]["vy"]],
             angles=angles,
-            fleet_size=f_size
+            fleet_size=f_size,
         ).tolist()
 
-        sim_speeds = [math.hypot(sim_pos[j+1][0] - sim_pos[j][0], sim_pos[j+1][1] - sim_pos[j][1]) for j in range(len(sim_pos)-1)]
+        sim_speeds = [
+            math.hypot(
+                sim_pos[j + 1][0] - sim_pos[j][0],
+                sim_pos[j + 1][1] - sim_pos[j][1],
+            )
+            for j in range(len(sim_pos) - 1)
+        ]
 
-        track_comparisons.append({
-            "track_id": i + 1,
-            "fleet_size": f_size,
-            "true_pos": true_pos,
-            "sim_pos": sim_pos,
-            "true_speeds": true_speeds,
-            "sim_speeds": sim_speeds
-        })
+        track_comparisons.append(
+            {
+                "track_id": i + 1,
+                "fleet_size": f_size,
+                "true_pos": true_pos,
+                "sim_pos": sim_pos,
+                "true_speeds": true_speeds,
+                "sim_speeds": sim_speeds,
+            }
+        )
+
+    if not track_comparisons:
+        print("[!] No sample tracks found for visualization.")
+        return
 
     html_content = f"""<!DOCTYPE html>
 <html>
@@ -113,7 +124,7 @@ def generate_html_report():
             <tr><th>Parameter</th><th>Original S1 Telemetry</th><th>Current Tuned Setting</th><th>Status</th></tr>
             <tr><td>Ship Cruise Speed (Size 3)</td><td>12.04 px/tick (301.0 px/s)</td><td>12.04 px/tick (301.0 px/s)</td><td>✅ Exact Match (BTC=0.0038, Drag=0.88)</td></tr>
             <tr><td>Bullet Velocity (Size 3)</td><td>19.31 px/tick (482.8 px/s)</td><td>24.56 px/tick (614.0 px/s)</td><td>✅ Authentic 2.0x - 2.5x differential (STC=0.020)</td></tr>
-            <tr><td>Bullet Lifetime</td><td>1800 ms (+35ms * N)</td><td>1800 ms (+35ms * N)</td><td>✅ Smooth Fade-out (No mid-air explosion)</td></tr>
+            <tr><td>Bullet Lifetime</td><td>1840 ms (Size 3)</td><td>1840 ms (Size 3)</td><td>✅ Empirical Hook.BulletLifeTable[N]</td></tr>
             <tr><td>Turning Inertia Delta</td><td>~13.6% / tick (40ms)</td><td>13.6% / tick (40ms)</td><td>✅ Smooth 0.45s 90-degree drift arc</td></tr>
         </table>
     </div>
@@ -187,11 +198,26 @@ def generate_html_report():
 </body>
 </html>
 """
-    out_html = "analysis/datasets/kinematic_comparison_report.html"
-    with open(out_html, "w", encoding="utf-8") as f:
+    if output_html is None:
+        output_html = os.path.abspath(
+            os.path.join(
+                os.path.dirname(__file__),
+                "../../datasets/kinematic_comparison_report.html",
+            )
+        )
+
+    os.makedirs(os.path.dirname(output_html), exist_ok=True)
+    with open(output_html, "w", encoding="utf-8") as f:
         f.write(html_content)
 
-    print(f"[+] Generated interactive comparison report at {out_html}")
+    print(f"[+] Generated interactive comparison report at {output_html}")
+
 
 if __name__ == "__main__":
-    generate_html_report()
+    parser = argparse.ArgumentParser(
+        description="Generate HTML visualizer comparing simulation with recordings."
+    )
+    parser.add_argument("--playback-dir", default=None)
+    parser.add_argument("--output-html", default=None)
+    args = parser.parse_args()
+    generate_html_report(args.playback_dir, args.output_html)
