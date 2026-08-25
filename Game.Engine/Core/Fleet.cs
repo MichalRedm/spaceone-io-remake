@@ -359,6 +359,8 @@ namespace Game.Engine.Core
             FleetCenter = FleetMath.FleetCenterNaive(this.Ships);
             FleetMomentum = FleetMath.FleetMomentum(this.Ships);
 
+            Flocking.Relaxation(this);
+
             Vector2 shipTargetVector = new Vector2();
             float angleMovement = 0f;
             float angle = MathF.Atan2(AimTarget.Y, AimTarget.X);
@@ -378,7 +380,8 @@ namespace Game.Engine.Core
                 if (!float.IsNaN(angleMovement))
                     ship.AngleMovement = angleMovement;
 
-                Flocking.Flock(ship);
+                if (World.Hook.FlockWeight > 0.0001f)
+                    Flocking.Flock(ship);
 
                 float baseThrust = (BaseThrust[Ships.Count] * BaseThrustConverter);
 
