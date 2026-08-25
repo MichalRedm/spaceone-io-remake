@@ -204,43 +204,6 @@ particle_food_yellow {
   file: "particle_food_yellow";
 }
 
-// food pickup emitters
-food_pickup_blue {
-  emitter: "food_pickup";
-  particle: "particle_food_blue";
-  size: 0.01;
-}
-food_pickup_cyan {
-  emitter: "food_pickup";
-  particle: "particle_food_cyan";
-  size: 0.01;
-}
-food_pickup_green {
-  emitter: "food_pickup";
-  particle: "particle_food_green";
-  size: 0.01;
-}
-food_pickup_orange {
-  emitter: "food_pickup";
-  particle: "particle_food_orange";
-  size: 0.01;
-}
-food_pickup_pink {
-  emitter: "food_pickup";
-  particle: "particle_food_pink";
-  size: 0.01;
-}
-food_pickup_red {
-  emitter: "food_pickup";
-  particle: "particle_food_red";
-  size: 0.01;
-}
-food_pickup_yellow {
-  emitter: "food_pickup";
-  particle: "particle_food_yellow";
-  size: 0.01;
-}
-
 // dash trails
 dash_trail_blue,
 dash_trail_cyan,
