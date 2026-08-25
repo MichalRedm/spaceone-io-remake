@@ -56,8 +56,8 @@
 			"end": 0.0
 		},
 		"scale": {
-			"start": 0.38,
-			"end": 0.05,
+			"start": 0.19,
+			"end": 0.025,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
@@ -104,8 +104,8 @@
 			"end": 0.0
 		},
 		"scale": {
-			"start": 0.38,
-			"end": 0.05,
+			"start": 0.19,
+			"end": 0.025,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
@@ -152,8 +152,8 @@
 			"end": 0.0
 		},
 		"scale": {
-			"start": 0.38,
-			"end": 0.05,
+			"start": 0.19,
+			"end": 0.025,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
@@ -200,8 +200,8 @@
 			"end": 0.0
 		},
 		"scale": {
-			"start": 0.38,
-			"end": 0.05,
+			"start": 0.19,
+			"end": 0.025,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
@@ -248,8 +248,8 @@
 			"end": 0.0
 		},
 		"scale": {
-			"start": 0.38,
-			"end": 0.05,
+			"start": 0.19,
+			"end": 0.025,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
@@ -296,8 +296,8 @@
 			"end": 0.0
 		},
 		"scale": {
-			"start": 0.38,
-			"end": 0.05,
+			"start": 0.19,
+			"end": 0.025,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
@@ -344,8 +344,8 @@
 			"end": 0.0
 		},
 		"scale": {
-			"start": 0.38,
-			"end": 0.05,
+			"start": 0.19,
+			"end": 0.025,
 			"minimumScaleMultiplier": 1
 		},
 		"color": {
