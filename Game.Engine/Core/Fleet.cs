@@ -50,6 +50,7 @@ namespace Game.Engine.Core
         public float BoostCooldownStatus { get; set; } = 0;
         public long BoostUntil { get; set; } = 0;
         public long BoostUntil2 { get; set; } = 0;
+        public long BoostStartTime { get; set; } = 0;
         public float BoostAngle { get; set; } = 0;
 
         public Vector2 AimTarget { get; set; }
@@ -316,19 +317,17 @@ namespace Game.Engine.Core
             bool isBoosting = World.Time < BoostUntil;
             bool isBoosting2 = World.Time < BoostUntil2;
             bool isBoostInitial = false;
-            bool isSleeping = AimTarget.X == 0 && AimTarget.Y == 0;
-
-            float MinPointerDistance = (float)(World.Hook.MinPointerDistanceM * Ships.Count + World.Hook.MinPointerDistanceB);
-            float MaxPointerDistance = (float)(World.Hook.MaxPointerDistanceM * Ships.Count + World.Hook.MaxPointerDistanceB);
-            float c = (float)Math.Min(Math.Max(AimTarget.Length(), MinPointerDistance), MaxPointerDistance) / AimTarget.Length();
-            if (!isSleeping) {
-                AimTarget2 = new Vector2(AimTarget.X * c, AimTarget.Y * c);
-            } else {
-                double circlingAngle = (Math.Log10(Ships.Count) + 1) * 0.1;
-                AimTarget2 = new Vector2(
-                    (float)(AimTarget2.X * Math.Cos(circlingAngle) - AimTarget2.Y * Math.Sin(circlingAngle)),
-                    (float)(AimTarget2.X * Math.Sin(circlingAngle) + AimTarget2.Y * Math.Cos(circlingAngle))
-                );
+            float targetLen = AimTarget.Length();
+            if (targetLen > 0.001f)
+            {
+                float MinPointerDistance = (float)(World.Hook.MinPointerDistanceM * Ships.Count + World.Hook.MinPointerDistanceB);
+                float MaxPointerDistance = (float)(World.Hook.MaxPointerDistanceM * Ships.Count + World.Hook.MaxPointerDistanceB);
+                float clampedDist = Math.Clamp(targetLen, MinPointerDistance, MaxPointerDistance);
+                AimTarget2 = (AimTarget / targetLen) * clampedDist;
+            }
+            else
+            {
+                AimTarget2 = Vector2.Zero;
             }
 
             if (World.Time > BoostCooldownTime && BoostRequested && Ships.Count > 1)
@@ -339,6 +338,7 @@ namespace Game.Engine.Core
 
                 BoostUntil = World.Time + World.Hook.BoostDuration;
                 BoostUntil2 = World.Time + World.Hook.BoostDuration2;
+                BoostStartTime = World.Time;
 
                 Vector2 BoostVector = new Vector2(0, 0);
                 foreach (var ship in Ships) {
@@ -366,9 +366,11 @@ namespace Game.Engine.Core
 
             foreach (var ship in Ships)
             {
-                // todo: this dirties the ship body every cycle
-                if (!isSleeping)
+                // Align ship visual facing angle with aim target or velocity
+                if (targetLen > 0.001f)
                     ship.Angle = angle;
+                else if (ship.Momentum.Length() > 0.001f)
+                    ship.Angle = MathF.Atan2(ship.Momentum.Y, ship.Momentum.X);
 
                 shipTargetVector = FleetCenter - ship.Position + AimTarget2;
     
@@ -409,8 +411,11 @@ namespace Game.Engine.Core
                     if (ship.Momentum != Vector2.Zero)
                         ship.Momentum += Vector2.Normalize(FleetMomentum) * World.Hook.BoostSpeed * BoostM;
 
-                if (ship.Momentum.Length() > (ship.ThrustAmount + ship.BoostThrustAmount) * World.Hook.MaxMomentumCoefficient) {
-                    ship.Momentum = Vector2.Multiply(Vector2.Normalize(ship.Momentum), (ship.ThrustAmount + ship.BoostThrustAmount) * World.Hook.MaxMomentumCoefficient);
+                if (!World.Hook.KinematicMovement)
+                {
+                    if (ship.Momentum.Length() > (ship.ThrustAmount + ship.BoostThrustAmount) * World.Hook.MaxMomentumCoefficient) {
+                        ship.Momentum = Vector2.Multiply(Vector2.Normalize(ship.Momentum), (ship.ThrustAmount + ship.BoostThrustAmount) * World.Hook.MaxMomentumCoefficient);
+                    }
                 }
                 
                 /*if (ship.Momentum.LengthSquared() != 0) {
