@@ -121,6 +121,7 @@ export class RenderedObject {
   > = {};
 
   static getShipCountFromSpeed(speed: number): number {
+    if (speed <= 0) return 1;
     let bestIdx = 1;
     let bestDiff = Math.abs(speed - shotThrust[1]);
     for (let i = 2; i < shotThrust.length; i++) {
@@ -129,6 +130,10 @@ export class RenderedObject {
         bestDiff = diff;
         bestIdx = i;
       }
+    }
+    if (speed < shotThrust[shotThrust.length - 1]) {
+      const estimatedN = Math.round(Math.pow(41.0 / speed, 3.7987));
+      return Math.max(shotThrust.length - 1, estimatedN);
     }
     return bestIdx;
   }
@@ -1025,7 +1030,7 @@ export class RenderedObject {
     if (spriteStr.startsWith("bullet") || spriteStr.startsWith("laser")) {
       const m = updateData.Momentum;
       if (m) {
-        const speed = Math.sqrt(m.x * m.x + m.y * m.y) / 0.0012;
+        const speed = Math.sqrt(m.x * m.x + m.y * m.y) / 0.0156;
         const shipCount = RenderedObject.getShipCountFromSpeed(speed);
         this.bulletLifetime =
           bulletLifeTable[shipCount] ?? 1985 + 25 * shipCount;
