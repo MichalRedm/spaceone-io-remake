@@ -20,10 +20,12 @@ Rebuild and launch a high-fidelity remake of the multiplayer 2D fleet shooter **
 - [x] Agentic context framework and rule routing matrices initialized in `.agents/` and `AGENTS.md`.
 - [x] Upgrade/modernize client build toolchain to Vite with Node 20/22+ support.
 - [x] Upgrade/modernize backend solution to .NET 7.0 with 0 build warnings/errors.
-- [x] Implement telemetry extraction scripts in `analysis/experiments/` to profile original velocity and drag curves.
-- [x] Calibrate C# server physics hooks (`Hook.cs` / fleet kinematics) using empirical telemetry benchmarks.
-- [ ] Fit continuous drag parameter $\gamma$ and acceleration curves from boost/rest transitions.
-- [ ] Calibrate fleet follower separation/cohesion dynamics and turn rates.
+- [x] Ingest authentic binary playback recordings and build telemetry extraction CLI (`extract_telemetry.py`).
+- [x] Build simulation benchmark harness and interactive trajectory visualizer (`analysis/experiments/`).
+- [ ] **Phase 1 (Reverse-Engineering)**: Measure and calibrate absolute invariants (cooldown times, bullet lifespan, reload rate).
+- [ ] **Phase 2 (Reverse-Engineering)**: Identify single-ship ($N=1$) core movement equation (discrete drag vs. kinematic heading velocity).
+- [ ] **Phase 3 (Reverse-Engineering)**: Calibrate multi-ship fleet swarm dynamics (follower separation radius and spring cohesion).
+- [ ] **Phase 4 (Visual Calibration)**: Harmonize camera FOV, viewport proportions, and visual scale.
 
 ## Critical Requirements & Developer Guidelines
 1. **Local Setup & Prerequisites**:
