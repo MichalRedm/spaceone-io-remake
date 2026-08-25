@@ -69,7 +69,7 @@ export class Cache {
           const lifetime = renderer?.bulletLifetime ?? 1840;
           const age = now - spawnTime;
           // Only explode if destroyed early by collision (before natural fade-out)
-          if (age < lifetime - 200) {
+          if (age < lifetime - 100) {
             const parts = spriteStr.split("_");
             const color = parts.length > 1 ? parts[1] : "cyan";
             FX.spawnBulletExplosion(color, x, y);
