@@ -27,8 +27,8 @@ const state = {
   laserOffsetX: -93,
   laserOffsetY: 0,
   laserTrailSize: 12.5,
-  sparkleScaleStart: 0.57,
-  sparkleFreq: 0.025,
+  sparkleScaleStart: 0.3,
+  sparkleFreq: 0.05,
   sparkleLife: 0.2,
 
   // Food
@@ -532,8 +532,8 @@ function setupUI() {
     state.laserOffsetX = -93;
     state.laserOffsetY = 0;
     state.laserTrailSize = 12.5;
-    state.sparkleScaleStart = 0.38;
-    state.sparkleFreq = 0.025;
+    state.sparkleScaleStart = 0.19;
+    state.sparkleFreq = 0.05;
     state.sparkleLife = 0.2;
 
     state.foodCoreSize = 1.2;
@@ -569,10 +569,10 @@ function setupUI() {
     getEl("laser-offset-y-val").textContent = "0";
     getEl<HTMLInputElement>("laser-trail-size").value = "12.5";
     getEl("laser-trail-size-val").textContent = "12.50";
-    getEl<HTMLInputElement>("sparkle-scale-start").value = "0.38";
-    getEl("sparkle-scale-start-val").textContent = "0.38";
-    getEl<HTMLInputElement>("sparkle-freq").value = "0.025";
-    getEl("sparkle-freq-val").textContent = "0.025s";
+    getEl<HTMLInputElement>("sparkle-scale-start").value = "0.30";
+    getEl("sparkle-scale-start-val").textContent = "0.30";
+    getEl<HTMLInputElement>("sparkle-freq").value = "0.05";
+    getEl("sparkle-freq-val").textContent = "0.050s";
     getEl<HTMLInputElement>("sparkle-life").value = "0.20";
     getEl("sparkle-life-val").textContent = "0.20s";
 
@@ -798,17 +798,15 @@ laser_trail {
   offset: { x: ${state.laserOffsetX}; y: ${state.laserOffsetY}; }
 }
 
-// --- Emitter Settings (emitters.json) ---
-boom / boom_sparkles {
-  alpha: { start: ${state.boomAlphaStart.toFixed(2)}, end: ${state.boomAlphaEnd.toFixed(2)} },
-  particlesPerWave: ${state.boomSparklesCount}
+// --- FX & Emitter Settings ---
+shipExplosion (fx.ts): {
+  alphaStart: ${state.boomAlphaStart.toFixed(2)},
+  alphaEnd: ${state.boomAlphaEnd.toFixed(2)},
+  sparklesCount: ${state.boomSparklesCount},
+  debrisCount: ${state.boomDebrisCount}
 }
-boom_debris {
-  alpha: { start: ${state.boomAlphaStart.toFixed(2)}, end: ${state.boomAlphaEnd.toFixed(2)} },
-  particlesPerWave: ${state.boomDebrisCount}
-}
-bullet_emitter {
-  scale: { start: ${state.sparkleScaleStart.toFixed(2)}, end: 0.05 },
+bullet_emitter (emitters.json): {
+  scale: { start: 0.30, end: 0.04 },
   frequency: ${state.sparkleFreq.toFixed(3)},
   lifetime: { min: ${(state.sparkleLife * 0.75).toFixed(2)}, max: ${state.sparkleLife.toFixed(2)} }
 }`;

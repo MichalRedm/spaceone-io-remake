@@ -106,84 +106,6 @@ food_yellow_glow {
   file: "food_yellow_glow";
 }
 
-// boom emitters
-boom {
-  emitter: "boom_sparkles";
-  particle: "particle_cyan";
-  size: 0.01;
-}
-
-boom_sparkles_cyan {
-  emitter: "boom_sparkles";
-  particle: "particle_cyan";
-  size: 0.01;
-}
-boom_debris_cyan {
-  emitter: "boom_debris";
-  particle: "particle_ship_cyan";
-  size: 0.01;
-}
-boom_sparkles_blue {
-  emitter: "boom_sparkles";
-  particle: "particle_blue";
-  size: 0.01;
-}
-boom_debris_blue {
-  emitter: "boom_debris";
-  particle: "particle_ship_blue";
-  size: 0.01;
-}
-boom_sparkles_green {
-  emitter: "boom_sparkles";
-  particle: "particle_green";
-  size: 0.01;
-}
-boom_debris_green {
-  emitter: "boom_debris";
-  particle: "particle_ship_green";
-  size: 0.01;
-}
-boom_sparkles_orange {
-  emitter: "boom_sparkles";
-  particle: "particle_orange";
-  size: 0.01;
-}
-boom_debris_orange {
-  emitter: "boom_debris";
-  particle: "particle_ship_orange";
-  size: 0.01;
-}
-boom_sparkles_pink {
-  emitter: "boom_sparkles";
-  particle: "particle_pink";
-  size: 0.01;
-}
-boom_debris_pink {
-  emitter: "boom_debris";
-  particle: "particle_ship_pink";
-  size: 0.01;
-}
-boom_sparkles_red {
-  emitter: "boom_sparkles";
-  particle: "particle_red";
-  size: 0.01;
-}
-boom_debris_red {
-  emitter: "boom_debris";
-  particle: "particle_ship_red";
-  size: 0.01;
-}
-boom_sparkles_yellow {
-  emitter: "boom_sparkles";
-  particle: "particle_yellow";
-  size: 0.01;
-}
-boom_debris_yellow {
-  emitter: "boom_debris";
-  particle: "particle_ship_yellow";
-  size: 0.01;
-}
-
 // sparkle particles
 particle_blue,
 particle_cyan,
@@ -278,43 +200,6 @@ particle_food_red {
 }
 particle_food_yellow {
   file: "particle_food_yellow";
-}
-
-// food pickup emitters
-food_pickup_blue {
-  emitter: "food_pickup";
-  particle: "particle_food_blue";
-  size: 0.01;
-}
-food_pickup_cyan {
-  emitter: "food_pickup";
-  particle: "particle_food_cyan";
-  size: 0.01;
-}
-food_pickup_green {
-  emitter: "food_pickup";
-  particle: "particle_food_green";
-  size: 0.01;
-}
-food_pickup_orange {
-  emitter: "food_pickup";
-  particle: "particle_food_orange";
-  size: 0.01;
-}
-food_pickup_pink {
-  emitter: "food_pickup";
-  particle: "particle_food_pink";
-  size: 0.01;
-}
-food_pickup_red {
-  emitter: "food_pickup";
-  particle: "particle_food_red";
-  size: 0.01;
-}
-food_pickup_yellow {
-  emitter: "food_pickup";
-  particle: "particle_food_yellow";
-  size: 0.01;
 }
 
 // dash trails
