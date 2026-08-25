@@ -4,15 +4,34 @@
 
 The authoritative C# simulation runs a fixed-rate tick loop with **$\Delta t = 40.0\text{ ms}$** ($25\text{ ticks/s}$, $25\text{ Hz}$), matching the original Spaceone.io server.
 
-Entity movement in `Body.cs` and `Ship.cs` is currently evaluated over discrete tick intervals using a momentum/drag loop:
+### Authoritative Kinematic Turning Model (`Ship.cs`, `Hook.cs`)
+Entity movement is governed by **bounded angular turn-rate kinematics with cruise speed clamping, dynamic turn speed dip, and 3-phase rocket boost**:
 
-$$\vec{v}_{t+1} = (\vec{v}_t + \vec{a}_{\text{thrust}} \cdot \Delta t) \cdot \text{Drag}$$
-$$\vec{r}_{t+1} = \vec{r}_t + \vec{v}_{t+1} \cdot \Delta t$$
+1. **Angular Steering Deviation**:
+   $$\theta_{\text{target}} = \operatorname{atan2}(u_y, u_x)$$
+   $$\theta_{v, t} = \operatorname{atan2}(v_{y, t}, v_{x, t})$$
+   $$\Delta\theta_t = \operatorname{wrap}_{[-\pi, \pi]}(\theta_{\text{target}} - \theta_{v, t})$$
 
-where:
-- $\vec{r}_t$: Entity 2D position vector $(x, y)$ in world units.
-- $\vec{v}_t$: Entity velocity / momentum vector in world units per millisecond.
-- $\vec{a}_{\text{thrust}}$: Applied thrust vector pointing towards heading angle $\theta$.
+2. **Turn Rate Limit**:
+   $$\Delta\theta_{\text{clamped}} = \operatorname{clamp}(\Delta\theta_t, -\omega_{\max}, +\omega_{\max})$$
+   $$\theta_{v, t+1} = \theta_{v, t} + \Delta\theta_{\text{clamped}}$$
+   where $\omega_{\max} = 0.1393\text{ rad/tick}$ ($\approx 7.98^\circ\text{/tick} = 199.5^\circ\text{/s}$) during cruise, and $\omega_{\max, \text{boost}} = 0.0497\text{ rad/tick}$ ($\approx 2.85^\circ\text{/tick} = 71.2^\circ\text{/s}$) during boost.
+
+3. **Cruise Speed & Dynamic Speed Attenuation**:
+   $$s_{t+1} = V_{\text{cruise}}(N) \cdot \left(1.0 - c_{\text{dip}} \cdot \frac{|\Delta\theta_t|}{\pi}\right)$$
+   where $c_{\text{dip}} = 0.4036$ (max $40.4\%$ speed dip on complete $180^\circ$ U-turn).
+
+4. **3-Phase Kinematic Boost Envelope ($T_{\text{boost}} = 25\text{ ticks} = 1000\text{ ms}$)**:
+   $$V_{\text{peak}}(N) = 40.12 - 5.00 \cdot \ln(N) \quad [\text{px/tick}]$$
+   $$s(t, N) = \begin{cases}
+   V_{\text{cruise}}(N) + \left(V_{\text{peak}}(N) - V_{\text{cruise}}(N)\right) \cdot \left(\frac{t}{4}\right), & 0 \le t \le 4 \quad (0 - 160\text{ ms, Surge Ramp}) \\
+   0.77 \cdot V_{\text{peak}}(N), & 5 \le t \le 9 \quad (200 - 360\text{ ms, Sustained Burn}) \\
+   0.77 \cdot V_{\text{peak}}(N) - \left(0.77 \cdot V_{\text{peak}}(N) - 0.5 \cdot V_{\text{cruise}}(N)\right) \cdot \left(\frac{t - 9}{15}\right), & 10 \le t \le 24 \quad (400 - 1000\text{ ms, Deceleration})
+   \end{cases}$$
+
+5. **Velocity Vector & Position Update**:
+   $$\vec{v}_{t+1} = s_{t+1} \begin{bmatrix} \cos(\theta_{v, t+1}) \\ \sin(\theta_{v, t+1}) \end{bmatrix}$$
+   $$\vec{p}_{t+1} = \vec{p}_t + \vec{v}_{t+1} \cdot \Delta t$$
 
 ---
 

@@ -54,6 +54,13 @@ namespace Game.API.Common.Models
                     },
                     BaseThrustConverter = 0.0024f,
 
+                    KinematicMovement = true,
+                    TurnRate = 0.1393f,
+                    SpeedDip = 0.4036f,
+                    BoostTurnRate = 0.0497f,
+                    BoostPeakBase = 40.12f,
+                    BoostPeakSlope = 5.00f,
+
                     Drag = 1f,
                     DragBoost = 1f,
                     DragAbandoned = 0.98f,
@@ -268,6 +275,13 @@ namespace Game.API.Common.Models
         public float Drag { get; set; }
         public float DragBoost { get; set; }
         public float DragAbandoned { get; set; }
+
+        public bool KinematicMovement { get; set; } = true;
+        public float TurnRate { get; set; } = 0.1393f;
+        public float SpeedDip { get; set; } = 0.4036f;
+        public float BoostTurnRate { get; set; } = 0.0497f;
+        public float BoostPeakBase { get; set; } = 40.12f;
+        public float BoostPeakSlope { get; set; } = 5.00f;
 
         public float AbandonMomentumMultiplier { get; set; }
 

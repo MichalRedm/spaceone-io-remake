@@ -192,12 +192,86 @@ namespace Game.Engine.Core
                 ? (float)(Math.Round(AngleMovement / (2 * Math.PI) * World.Hook.QuantizationCount) / World.Hook.QuantizationCount * 2 * Math.PI)
                 : AngleMovement;
 
-            Vector2 thrust = new Vector2(MathF.Cos(AngleMovement), MathF.Sin(AngleMovement)) * ThrustAmount;
-            Vector2 thrustBoost = new Vector2(MathF.Cos(this.Fleet?.BoostAngle ?? 0f), MathF.Sin(this.Fleet?.BoostAngle ?? 0f)) * BoostThrustAmount;
+            if (!Abandoned)
+            {
+                if (World.Hook.KinematicMovement)
+                {
+                    bool isBoosting = Fleet != null && World.Time < Fleet.BoostUntil;
+                    float baseCruiseSpeed = ThrustAmount * World.Hook.MaxMomentumCoefficient;
 
-            if (!Abandoned) {
-                Momentum = (Momentum + thrust + thrustBoost) * Drag;
-            } else {
+                    // Current velocity direction
+                    float currentSpeed = Momentum.Length();
+                    float targetAngle = AngleMovement;
+                    float currentAngle = currentSpeed > 0.0001f
+                        ? MathF.Atan2(Momentum.Y, Momentum.X)
+                        : targetAngle;
+
+                    // Wrapped angular steering difference in [-PI, +PI]
+                    float angleDiff = (targetAngle - currentAngle + MathF.PI) % (MathF.PI * 2f);
+                    if (angleDiff < 0f) angleDiff += MathF.PI * 2f;
+                    angleDiff -= MathF.PI;
+
+                    float maxTurnRate;
+                    float effectiveSpeed;
+
+                    if (isBoosting)
+                    {
+                        // 3-Phase Kinematic Boost Speed Profile
+                        int fleetSize = Math.Max(1, Fleet?.Ships?.Count ?? 1);
+                        float scale = World.Hook.BaseThrustConverter * World.Hook.MaxMomentumCoefficient * (1f - (Fleet?.Burden ?? 0f));
+                        float vPeak = (World.Hook.BoostPeakBase - World.Hook.BoostPeakSlope * MathF.Log(fleetSize)) * scale;
+
+                        // Elapsed time in ticks (0.0 to 24.0)
+                        long elapsedMs = World.Time - (Fleet.BoostUntil - World.Hook.BoostDuration);
+                        float tBoost = Math.Clamp(elapsedMs / 40f, 0f, 24f);
+
+                        float vSustain = 0.77f * vPeak;
+                        if (tBoost <= 4f)
+                        {
+                            // Phase 1: Initial Surge Ramp (0 - 160ms)
+                            effectiveSpeed = baseCruiseSpeed + (vPeak - baseCruiseSpeed) * (tBoost / 4f);
+                            maxTurnRate = World.Hook.BoostTurnRate;
+                        }
+                        else if (tBoost <= 9f)
+                        {
+                            // Phase 2: Sustained Jet Burn Plateau (200 - 360ms)
+                            effectiveSpeed = vSustain;
+                            maxTurnRate = World.Hook.BoostTurnRate;
+                        }
+                        else
+                        {
+                            // Phase 3: Linear Exhaust Deceleration smoothly back to baseCruiseSpeed (400 - 1000ms)
+                            float decelProgress = (tBoost - 9f) / 15f;
+                            effectiveSpeed = vSustain - (vSustain - baseCruiseSpeed) * decelProgress;
+                            maxTurnRate = World.Hook.BoostTurnRate + (World.Hook.TurnRate - World.Hook.BoostTurnRate) * decelProgress;
+                        }
+                    }
+                    else
+                    {
+                        // Dynamic turn speed dip during regular cruising
+                        float turnFraction = MathF.Abs(angleDiff) / MathF.PI;
+                        effectiveSpeed = baseCruiseSpeed * (1.0f - World.Hook.SpeedDip * turnFraction);
+                        maxTurnRate = World.Hook.TurnRate;
+                    }
+
+                    // Clamp turn rate
+                    float clampedDelta = Math.Clamp(angleDiff, -maxTurnRate, maxTurnRate);
+                    float newAngle = currentAngle + clampedDelta;
+
+                    Momentum = new Vector2(
+                        effectiveSpeed * MathF.Cos(newAngle),
+                        effectiveSpeed * MathF.Sin(newAngle)
+                    );
+                }
+                else
+                {
+                    Vector2 thrust = new Vector2(MathF.Cos(AngleMovement), MathF.Sin(AngleMovement)) * ThrustAmount;
+                    Vector2 thrustBoost = new Vector2(MathF.Cos(this.Fleet?.BoostAngle ?? 0f), MathF.Sin(this.Fleet?.BoostAngle ?? 0f)) * BoostThrustAmount;
+                    Momentum = (Momentum + thrust + thrustBoost) * Drag;
+                }
+            }
+            else
+            {
                 Momentum = Momentum * World.Hook.DragAbandoned;
             }
                 
