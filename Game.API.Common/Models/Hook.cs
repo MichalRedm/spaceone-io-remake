@@ -178,7 +178,12 @@ namespace Game.API.Common.Models
                     FlockSeparation = 1f,
                     FlockSeparationMinimumDistanceB = 38f,
                     FlockSeparationMinimumDistanceM = 0.2f,
-                    FlockWeight = 1.8f,
+                    FlockWeight = 0.0f,
+                    FlockSolidDiameter = 18.0f,
+                    FlockPushStiffness = 0.50f,
+                    FlockCohesionDistance = 60.0f,
+                    FlockCohesionWeight = 0.003f,
+                    FlockRelaxationIterations = 2,
                     SnakeWeight = 0f,
                     BossMode = false,
                     
@@ -378,6 +383,11 @@ namespace Game.API.Common.Models
         public float FlockSeparationMinimumDistanceB { get; set; }
         public float FlockSeparationMinimumDistanceM { get; set; }
         public float FlockWeight { get; set; }
+        public float FlockSolidDiameter { get; set; }
+        public float FlockPushStiffness { get; set; }
+        public float FlockCohesionDistance { get; set; }
+        public float FlockCohesionWeight { get; set; }
+        public int FlockRelaxationIterations { get; set; }
         public float SnakeWeight { get; set; }
         public bool BossMode { get; set; }
         public Sprites[] BossModeSprites { get; set; }

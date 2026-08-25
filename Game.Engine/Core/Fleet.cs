@@ -359,10 +359,15 @@ namespace Game.Engine.Core
             FleetCenter = FleetMath.FleetCenterNaive(this.Ships);
             FleetMomentum = FleetMath.FleetMomentum(this.Ships);
 
-            Vector2 shipTargetVector = new Vector2();
-            float angleMovement = 0f;
+            Flocking.Relaxation(this);
+
             float angle = MathF.Atan2(AimTarget.Y, AimTarget.X);
             float BoostM = (float)Math.Pow(Ships.Count, -0.205); // 4D Klein Manifold's magical formula
+
+            // Minimal, smooth mouse convergence: ships steer towards the mouse cursor
+            // with a bounded convergence angle (max ~3.5 deg = 0.06 rad) and proximity fade to eliminate jitter when cursor is near
+            float maxConvergenceAngle = 0.06f * MathF.Min(1.0f, targetLen / 100.0f);
+            Vector2 mousePos = FleetCenter + AimTarget;
 
             foreach (var ship in Ships)
             {
@@ -372,13 +377,31 @@ namespace Game.Engine.Core
                 else if (ship.Momentum.Length() > 0.001f)
                     ship.Angle = MathF.Atan2(ship.Momentum.Y, ship.Momentum.X);
 
-                shipTargetVector = FleetCenter - ship.Position + AimTarget2;
-    
-                angleMovement = MathF.Atan2(shipTargetVector.Y, shipTargetVector.X);
-                if (!float.IsNaN(angleMovement))
-                    ship.AngleMovement = angleMovement;
+                if (targetLen > 0.001f)
+                {
+                    if (maxConvergenceAngle > 0.001f)
+                    {
+                        Vector2 toMouse = mousePos - ship.Position;
+                        float rawAngle = MathF.Atan2(toMouse.Y, toMouse.X);
+                        float angleDiff = (rawAngle - angle + MathF.PI) % (MathF.PI * 2f);
+                        if (angleDiff < 0) angleDiff += MathF.PI * 2f;
+                        angleDiff -= MathF.PI;
 
-                Flocking.Flock(ship);
+                        float clampedDiff = Math.Clamp(angleDiff, -maxConvergenceAngle, maxConvergenceAngle);
+                        ship.AngleMovement = angle + clampedDiff;
+                    }
+                    else
+                    {
+                        ship.AngleMovement = angle;
+                    }
+                }
+                else if (ship.Momentum.Length() > 0.001f)
+                {
+                    ship.AngleMovement = MathF.Atan2(ship.Momentum.Y, ship.Momentum.X);
+                }
+
+                if (World.Hook.FlockWeight > 0.0001f)
+                    Flocking.Flock(ship);
 
                 float baseThrust = (BaseThrust[Ships.Count] * BaseThrustConverter);
 
