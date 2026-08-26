@@ -107,6 +107,13 @@ class GroupParticle extends particles.Particle {
   }
 }
 
+export const SPAWN_INVULNERABILITY_DURATION_MS = 3000;
+export const INVULNERABILITY_BLINK_PERIOD_MS = 250;
+export const BOOST_DURATION_MS = 1000;
+export const BOOST_PHASE1_SURGE_MS = 160;
+export const BOOST_PHASE2_BURN_MS = 360;
+export const BOOST_PHASE3_DURATION_MS = 640;
+
 export interface CustomSpriteLayer extends PIXI.Sprite {
   textureDefinition?: any;
   baseScale?: number;
@@ -814,7 +821,7 @@ export class RenderedObject {
           this.boostStartTime = now;
           if (groupID) RenderedObject.groupBoostTimes[groupID] = now;
         }
-      } else if (now - this.boostStartTime >= 1000) {
+      } else if (now - this.boostStartTime >= BOOST_DURATION_MS) {
         this.isBoosting = false;
         this.boostStartTime = 0;
         if (groupID && RenderedObject.groupBoostTimes[groupID]) {
@@ -839,7 +846,7 @@ export class RenderedObject {
           this.invulnerableStartTime = now;
           if (groupID) RenderedObject.groupInvulnerableTimes[groupID] = now;
         }
-      } else if (now - this.invulnerableStartTime >= 3000) {
+      } else if (now - this.invulnerableStartTime >= SPAWN_INVULNERABILITY_DURATION_MS) {
         this.isInvulnerable = false;
         this.invulnerableStartTime = 0;
         if (groupID && RenderedObject.groupInvulnerableTimes[groupID]) {
@@ -893,8 +900,9 @@ export class RenderedObject {
         let isBlinkDimmed = false;
         if (this.isInvulnerable && !this.isAbandoned) {
           const invulnElapsed = now - this.invulnerableStartTime;
-          if (invulnElapsed < 3000) {
-            const periodIndex = Math.floor(invulnElapsed / 250) + 1;
+          if (invulnElapsed < SPAWN_INVULNERABILITY_DURATION_MS) {
+            const periodIndex =
+              Math.floor(invulnElapsed / INVULNERABILITY_BLINK_PERIOD_MS) + 1;
             const isBlinkVisible = periodIndex % 2 === 1;
             if (!isBlinkVisible) {
               if (this.isBoosting) {
@@ -918,11 +926,11 @@ export class RenderedObject {
             layer.visible = false;
           } else {
             const boostElapsed = now - this.boostStartTime;
-            if (boostElapsed < 160) {
+            if (boostElapsed < BOOST_PHASE1_SURGE_MS) {
               // Phase 1 (0-160ms): Surge ramp - no dash trail
               layer.alpha = 0.0;
               layer.visible = false;
-            } else if (boostElapsed < 360) {
+            } else if (boostElapsed < BOOST_PHASE2_BURN_MS) {
               // Phase 2 (160-360ms): Steady dash trail with flame flicker
               const flicker =
                 0.92 +
@@ -935,10 +943,10 @@ export class RenderedObject {
               layer.visible = true;
             } else {
               // Phase 3 (360-1000ms): Fades out smoothly over the 640ms deceleration phase
-              const phase3Elapsed = boostElapsed - 360;
+              const phase3Elapsed = boostElapsed - BOOST_PHASE2_BURN_MS;
               const phase3Progress = Math.min(
                 1.0,
-                Math.max(0.0, phase3Elapsed / 640),
+                Math.max(0.0, phase3Elapsed / BOOST_PHASE3_DURATION_MS),
               );
               const fadeAlpha = 1.0 - phase3Progress;
               const flicker =
@@ -971,15 +979,15 @@ export class RenderedObject {
           let boostAlpha = 0.0;
           if (this.isBoosting) {
             const boostElapsed = now - this.boostStartTime;
-            if (boostElapsed < 360) {
+            if (boostElapsed < BOOST_PHASE2_BURN_MS) {
               // Phase 1 & 2 (0-360ms): Full intensity throughout surge and steady burn
               boostAlpha = 1.0;
-            } else if (boostElapsed < 1000) {
+            } else if (boostElapsed < BOOST_DURATION_MS) {
               // Phase 3 (360-1000ms): Deceleration fade-out
-              const phase3Elapsed = boostElapsed - 360;
+              const phase3Elapsed = boostElapsed - BOOST_PHASE2_BURN_MS;
               const phase3Progress = Math.min(
                 1.0,
-                Math.max(0.0, phase3Elapsed / 640),
+                Math.max(0.0, phase3Elapsed / BOOST_PHASE3_DURATION_MS),
               );
               boostAlpha = Math.max(0.0, 1.0 - phase3Progress);
             }
@@ -988,8 +996,11 @@ export class RenderedObject {
           let invulnAlpha = 0.0;
           if (this.isInvulnerable) {
             const invulnElapsed = now - this.invulnerableStartTime;
-            if (invulnElapsed < 3000) {
-              const invulnProgress = Math.min(1.0, invulnElapsed / 3000);
+            if (invulnElapsed < SPAWN_INVULNERABILITY_DURATION_MS) {
+              const invulnProgress = Math.min(
+                1.0,
+                invulnElapsed / SPAWN_INVULNERABILITY_DURATION_MS,
+              );
               invulnAlpha = Math.max(0.0, 1.0 - invulnProgress);
             }
           }
