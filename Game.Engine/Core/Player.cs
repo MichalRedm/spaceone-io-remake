@@ -302,7 +302,7 @@ namespace Game.Engine.Core
                 && name.Length > World.Hook.MaxNameLength)
                 name = name.Substring(0, World.Hook.MaxNameLength);
 
-            if (string.IsNullOrWhiteSpace(name) || string.Equals(name, "unknown", StringComparison.OrdinalIgnoreCase))
+            if (string.IsNullOrWhiteSpace(name))
             {
                 if (UnknownSquadronNumber == 0)
                 {
