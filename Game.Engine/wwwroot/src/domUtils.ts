@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Resolves element(s) from a selector, element, or NodeList.
  */
 function resolveElements(
@@ -18,6 +18,29 @@ function resolveElements(
 }
 
 /**
+ * Determines the target display property for an element when making it visible.
+ */
+function getTargetDisplay(el: HTMLElement, defaultDisplay = "block"): string {
+  if (el.style.display && el.style.display !== "none") {
+    return el.style.display;
+  }
+  const tagName = el.tagName.toLowerCase();
+  if (tagName === "span" || tagName === "img" || tagName === "a") {
+    return "inline-block";
+  }
+  if (tagName === "table") {
+    return "table";
+  }
+  if (tagName === "tr") {
+    return "table-row";
+  }
+  if (tagName === "td" || tagName === "th") {
+    return "table-cell";
+  }
+  return defaultDisplay;
+}
+
+/**
  * Fades in element(s) smoothly via CSS opacity transition.
  */
 export function fadeIn(
@@ -29,9 +52,10 @@ export function fadeIn(
   if (elements.length === 0) return;
 
   for (const el of elements) {
+    const targetDisplay = getTargetDisplay(el);
+    el.style.display = targetDisplay;
     el.style.transition = `opacity ${duration}ms ease`;
     el.style.opacity = "0";
-    el.style.display = "";
   }
 
   // Force a browser reflow before triggering transition
@@ -73,15 +97,16 @@ export function fadeOut(
 }
 
 /**
- * Shows element(s) immediately.
+ * Shows element(s) immediately by setting display style.
  */
 export function show(
   target: HTMLElement | string | NodeListOf<HTMLElement> | null | undefined,
-  displayStyle = "",
+  displayStyle?: string,
 ): void {
   const elements = resolveElements(target);
   for (const el of elements) {
-    el.style.display = displayStyle;
+    el.style.display = displayStyle || getTargetDisplay(el);
+    el.style.opacity = "1";
   }
 }
 
