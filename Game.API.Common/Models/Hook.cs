@@ -160,6 +160,7 @@ namespace Game.API.Common.Models
 
                     SpawnShipCount = 3,
                     SpawnInvulnerabilityTime = 3000,
+                    InvulnerabilityBlinkPeriod = 250,
 
                     Fishes = 50, // smaller for test arena; default is 350; ignored if WorldResizeEnabled = true 
                     FishesMultiplier = 0.01, // used when WorldResizeEnabled = true
@@ -431,6 +432,7 @@ namespace Game.API.Common.Models
         public int PlayerCountGracePeriodMS { get; set; }
         public int FleetWeaponStackDepth { get; set; }
         public int SpawnInvulnerabilityTime { get; set; }
+        public int InvulnerabilityBlinkPeriod { get; set; } = 250;
 
 
         public static readonly string[] AllColors = new[] {

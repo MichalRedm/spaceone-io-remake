@@ -81,6 +81,13 @@ namespace Game.Engine.Controllers
             JsonConvert.PopulateObject(json, hook);
         }
 
+        [AllowAnonymous, HttpGet, Route("hook"), EnableCors("AllowAllOrigins")]
+        public Hook GetHook(string worldName = null)
+        {
+            var world = Worlds.Find(worldName);
+            return world?.Hook ?? Game.API.Common.Models.Hook.Default;
+        }
+
         [HttpPost, Route("hook")]
         public async Task<Hook> Hook(string worldName = null)
         {
