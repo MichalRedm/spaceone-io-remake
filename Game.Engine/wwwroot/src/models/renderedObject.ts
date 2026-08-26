@@ -839,6 +839,12 @@ export class RenderedObject {
           this.invulnerableStartTime = now;
           if (groupID) RenderedObject.groupInvulnerableTimes[groupID] = now;
         }
+      } else if (now - this.invulnerableStartTime >= 3000) {
+        this.isInvulnerable = false;
+        this.invulnerableStartTime = 0;
+        if (groupID && RenderedObject.groupInvulnerableTimes[groupID]) {
+          delete RenderedObject.groupInvulnerableTimes[groupID];
+        }
       }
     } else if (this.isInvulnerable) {
       this.isInvulnerable = false;
