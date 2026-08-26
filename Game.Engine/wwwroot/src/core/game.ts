@@ -346,6 +346,18 @@ connection.onView = (newView) => {
 
   if (view.isAlive) {
     cooldown.setCooldown(newView.cooldownShoot());
+    if (ownFleetID) {
+      const ownFleetGroup = cache.getGroup(ownFleetID);
+      if (ownFleetGroup?.Caption) {
+        const selfNickContainer = document.getElementById("selfNickContainer");
+        if (
+          selfNickContainer &&
+          selfNickContainer.textContent !== ownFleetGroup.Caption
+        ) {
+          selfNickContainer.textContent = ownFleetGroup.Caption;
+        }
+      }
+    }
   } else {
     cooldown.hide();
   }
