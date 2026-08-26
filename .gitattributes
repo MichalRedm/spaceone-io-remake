@@ -1,0 +1,37 @@
+﻿# Auto-detect text files and perform LF normalization
+* text=auto
+
+# ==========================================
+# Machine-Generated Datasets & Experiments
+# ==========================================
+analysis/datasets/** linguist-generated=true
+analysis/datasets/** -diff
+
+# ==========================================
+# Reference Assets, Decoders & Playback Dumps
+# ==========================================
+reference/** linguist-vendored=true
+reference/** -diff
+reference/space1-original/server-ansible/record/playback/** binary
+
+# ==========================================
+# Generated Protocol & Build Artifacts
+# ==========================================
+Game.Engine/wwwroot/src/network/game_generated.ts linguist-generated=true
+Game.Engine/wwwroot/dist/** linguist-generated=true
+Game.Engine/wwwroot/dist/** -diff
+Game.Engine.Networking.FlatBuffers/FlatBuffers/** linguist-generated=true
+
+# ==========================================
+# Binary File Type Definitions
+# ==========================================
+*.wasm binary
+*.psd binary
+*.xcf binary
+*.ttf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.dll binary
+*.exe binary
