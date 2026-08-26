@@ -25,20 +25,6 @@ export default defineConfig({
         admin: resolve(__dirname, "admin.html"),
         tuner: resolve(__dirname, "tuner.html"),
       },
-      output: {
-        manualChunks(id) {
-          if (id.includes("node_modules")) {
-            if (
-              id.includes("pixi.js") ||
-              id.includes("pixi-layers") ||
-              id.includes("pixi-particles") ||
-              id.includes("pixi-tilemap")
-            ) {
-              return "pixi-vendor";
-            }
-          }
-        },
-      },
     },
   },
 });
