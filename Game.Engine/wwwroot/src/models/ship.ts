@@ -21,6 +21,17 @@ export class Ship extends RenderedObject {
     modes.push("default");
 
     const now = performance.now();
+    const groupID = this.body?.Group || 0;
+    if (
+      this.boostEndTime === 0 &&
+      groupID &&
+      RenderedObject.groupBoostEndTimes[groupID]
+    ) {
+      const groupEnd = RenderedObject.groupBoostEndTimes[groupID];
+      if (now - groupEnd < 500) {
+        this.boostEndTime = groupEnd;
+      }
+    }
     const isPostBoostFading =
       this.boostEndTime > 0 && now - this.boostEndTime < 500;
     if ((mode & 1) !== 0 || isPostBoostFading) modes.push("boost");

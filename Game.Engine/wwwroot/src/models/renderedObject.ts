@@ -118,6 +118,7 @@ export interface CustomSpriteLayer extends PIXI.Sprite {
 export class RenderedObject {
   static groupBoostTimes: Record<number, number> = {};
   static groupBoostEndTimes: Record<number, number> = {};
+  static groupInvulnerableTimes: Record<number, number> = {};
   static groupBulletData: Record<
     number,
     { spawnTime: number; lifetime: number }
@@ -146,6 +147,13 @@ export class RenderedObject {
       const t = RenderedObject.groupBoostEndTimes[id];
       if (t && now - t > 5000) {
         delete RenderedObject.groupBoostEndTimes[id];
+      }
+    }
+
+    for (const id in RenderedObject.groupInvulnerableTimes) {
+      const t = RenderedObject.groupInvulnerableTimes[id];
+      if (t && now - t > 5000) {
+        delete RenderedObject.groupInvulnerableTimes[id];
       }
     }
   }
@@ -237,6 +245,17 @@ export class RenderedObject {
     }
     modes.push("default");
     const now = performance.now();
+    const groupID = this.body?.Group || 0;
+    if (
+      this.boostEndTime === 0 &&
+      groupID &&
+      RenderedObject.groupBoostEndTimes[groupID]
+    ) {
+      const groupEnd = RenderedObject.groupBoostEndTimes[groupID];
+      if (now - groupEnd < 500) {
+        this.boostEndTime = groupEnd;
+      }
+    }
     const isPostBoostFading =
       this.boostEndTime > 0 && now - this.boostEndTime < 500;
     if ((mode & 1) !== 0 || isPostBoostFading) modes.push("boost");
@@ -825,11 +844,11 @@ export class RenderedObject {
         }
       } else if (now - this.boostStartTime >= 1000) {
         this.isBoosting = false;
-        this.boostEndTime = now;
         if (groupID && RenderedObject.groupBoostEndTimes[groupID]) {
           this.boostEndTime = RenderedObject.groupBoostEndTimes[groupID];
-        } else if (groupID) {
-          RenderedObject.groupBoostEndTimes[groupID] = now;
+        } else {
+          this.boostEndTime = now;
+          if (groupID) RenderedObject.groupBoostEndTimes[groupID] = now;
         }
         if (groupID && RenderedObject.groupBoostTimes[groupID]) {
           delete RenderedObject.groupBoostTimes[groupID];
@@ -846,23 +865,39 @@ export class RenderedObject {
       if (groupID && RenderedObject.groupBoostTimes[groupID]) {
         delete RenderedObject.groupBoostTimes[groupID];
       }
+    } else if (
+      this.boostEndTime === 0 &&
+      groupID &&
+      RenderedObject.groupBoostEndTimes[groupID]
+    ) {
+      const groupEnd = RenderedObject.groupBoostEndTimes[groupID];
+      if (now - groupEnd < 500) {
+        this.boostEndTime = groupEnd;
+      }
     }
 
     if (this.boostEndTime > 0 && now - this.boostEndTime >= 500) {
       this.boostEndTime = 0;
-      if (groupID && RenderedObject.groupBoostEndTimes[groupID]) {
-        delete RenderedObject.groupBoostEndTimes[groupID];
-      }
       this.refreshSprite();
     }
 
     if (isInvulnerableNow) {
       if (!this.isInvulnerable) {
         this.isInvulnerable = true;
-        this.invulnerableStartTime = now;
+        if (groupID && RenderedObject.groupInvulnerableTimes[groupID]) {
+          this.invulnerableStartTime =
+            RenderedObject.groupInvulnerableTimes[groupID];
+        } else {
+          this.invulnerableStartTime = now;
+          if (groupID) RenderedObject.groupInvulnerableTimes[groupID] = now;
+        }
       }
     } else if (this.isInvulnerable) {
       this.isInvulnerable = false;
+      this.invulnerableStartTime = 0;
+      if (groupID && RenderedObject.groupInvulnerableTimes[groupID]) {
+        delete RenderedObject.groupInvulnerableTimes[groupID];
+      }
     }
 
     if (this.spriteLayers && this.spriteLayers.length) {
@@ -900,16 +935,24 @@ export class RenderedObject {
           layer.textureDefinition?.file || "",
         ).toLowerCase();
 
-        // Invulnerability 12-period (0.25s each, 3s total) blink check (odd=visible, even=invisible)
+        // Invulnerability 12-period (0.25s each, 3s total) blink check (odd=visible, even=invisible/dimmed)
+        let isBlinkDimmed = false;
         if (this.isInvulnerable && !this.isAbandoned) {
           const invulnElapsed = now - this.invulnerableStartTime;
           if (invulnElapsed < 3000) {
             const periodIndex = Math.floor(invulnElapsed / 250) + 1;
             const isBlinkVisible = periodIndex % 2 === 1;
             if (!isBlinkVisible) {
-              layer.alpha = 0.0;
-              layer.visible = false;
-              continue;
+              if (this.isBoosting) {
+                // When boosting, dash trail stays continuous; ship body/aura dims to ghostly translucent (alpha 0.25)
+                if (!fileStr.startsWith("dash_trail")) {
+                  isBlinkDimmed = true;
+                }
+              } else {
+                layer.alpha = 0.0;
+                layer.visible = false;
+                continue;
+              }
             }
           }
         }
@@ -971,28 +1014,48 @@ export class RenderedObject {
           fileStr.startsWith("particle_ship") ||
           fileStr.includes("_boost")
         ) {
+          let boostAlpha = 0.0;
           if (this.isBoosting) {
-            // Full intensity throughout all boost phases (Phase 1, 2, 3)
-            layer.alpha = 1.0;
-            layer.visible = true;
+            const boostElapsed = now - this.boostStartTime;
+            if (boostElapsed < 360) {
+              // Phase 1 & 2 (0-360ms): Full intensity throughout surge and steady burn
+              boostAlpha = 1.0;
+            } else {
+              // Phase 3 (360-1000ms): Deceleration fade-out
+              const phase3Elapsed = boostElapsed - 360;
+              const phase3Progress = Math.min(
+                1.0,
+                Math.max(0.0, phase3Elapsed / 640),
+              );
+              boostAlpha = Math.max(0.0, 1.0 - phase3Progress);
+            }
           } else if (this.boostEndTime > 0 && now - this.boostEndTime < 500) {
-            // Post-boost 0.5s fade-out only after entire boost is finished
+            // Post-boost 0.5s fade-out fallback
             const postBoostElapsed = now - this.boostEndTime;
             const fadeProgress = Math.min(
               1.0,
               Math.max(0.0, postBoostElapsed / 500),
             );
-            layer.alpha = Math.max(0.0, 1.0 - fadeProgress);
-            layer.visible = layer.alpha > 0.01;
-          } else if (this.isInvulnerable) {
-            const invulnElapsed = now - this.invulnerableStartTime;
-            const invulnProgress = Math.min(1.0, invulnElapsed / 3000);
-            layer.alpha = Math.max(0.0, 1.0 - invulnProgress);
-            layer.visible = layer.alpha > 0.01;
-          } else {
-            layer.alpha = 0.0;
-            layer.visible = false;
+            boostAlpha = Math.max(0.0, 1.0 - fadeProgress);
           }
+
+          let invulnAlpha = 0.0;
+          if (this.isInvulnerable) {
+            const invulnElapsed = now - this.invulnerableStartTime;
+            if (invulnElapsed < 3000) {
+              const invulnProgress = Math.min(1.0, invulnElapsed / 3000);
+              invulnAlpha = Math.max(0.0, 1.0 - invulnProgress);
+            }
+          }
+
+          // Composite overlay: maximum intensity between boost and invulnerability overlays
+          let combinedAlpha = Math.max(boostAlpha, invulnAlpha);
+          if (isBlinkDimmed) {
+            combinedAlpha *= 0.25;
+          }
+
+          layer.alpha = combinedAlpha;
+          layer.visible = layer.alpha > 0.01;
         } else if (
           fileStr.startsWith("ship") &&
           !fileStr.startsWith("ship_ab")
@@ -1003,8 +1066,8 @@ export class RenderedObject {
             layer.alpha = Math.max(0.0, 1.0 - abProgress);
             layer.visible = layer.alpha > 0.01;
           } else {
-            layer.alpha = 1.0;
-            layer.visible = true;
+            layer.alpha = isBlinkDimmed ? 0.25 : 1.0;
+            layer.visible = layer.alpha > 0.01;
           }
         } else if (fileStr.includes("glow")) {
           const spawnAge = now - this.spawnTime;
@@ -1108,6 +1171,35 @@ export class RenderedObject {
       }
       if (groupID && RenderedObject.groupBoostTimes[groupID]) {
         delete RenderedObject.groupBoostTimes[groupID];
+      }
+    } else if (
+      this.boostEndTime === 0 &&
+      groupID &&
+      RenderedObject.groupBoostEndTimes[groupID]
+    ) {
+      const groupEnd = RenderedObject.groupBoostEndTimes[groupID];
+      if (now - groupEnd < 500) {
+        this.boostEndTime = groupEnd;
+      }
+    }
+
+    const isInvulnerableNow = (updateData.Mode & 2) !== 0;
+    if (isInvulnerableNow) {
+      if (!this.isInvulnerable) {
+        this.isInvulnerable = true;
+        if (groupID && RenderedObject.groupInvulnerableTimes[groupID]) {
+          this.invulnerableStartTime =
+            RenderedObject.groupInvulnerableTimes[groupID] ?? now;
+        } else {
+          this.invulnerableStartTime = now;
+          if (groupID) RenderedObject.groupInvulnerableTimes[groupID] = now;
+        }
+      }
+    } else if (this.isInvulnerable) {
+      this.isInvulnerable = false;
+      this.invulnerableStartTime = 0;
+      if (groupID && RenderedObject.groupInvulnerableTimes[groupID]) {
+        delete RenderedObject.groupInvulnerableTimes[groupID];
       }
     }
 
