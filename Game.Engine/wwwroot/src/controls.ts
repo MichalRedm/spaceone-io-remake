@@ -337,14 +337,14 @@ window.addEventListener(
         } else if (!Controls.autofire) {
           Controls.autofire = true;
           Controls.shoot = true;
-          autofTgg.innerHTML = "ON";
-          autofCon.style.color = "#fff";
+          if (autofTgg) autofTgg.textContent = "ON";
+          if (autofCon) autofCon.style.color = "#fff";
           console.log("Autofire enabled!");
         } else {
           Controls.autofire = false;
           Controls.shoot = false;
-          autofTgg.innerHTML = "OFF";
-          autofCon.style.color = "";
+          if (autofTgg) autofTgg.textContent = "OFF";
+          if (autofCon) autofCon.style.color = "";
           console.log("Autofire disabled!");
         }
         break;
@@ -586,14 +586,15 @@ function closeFullscreen() {
   }
 }
 
+const clockEl = document.getElementById("clock");
 var d = new Date(),
   n = d.toLocaleTimeString();
-document.getElementById("clock").innerHTML = n;
+if (clockEl) clockEl.textContent = n;
 
 setTimeout(function () {
   setInterval(function () {
     d = new Date();
     n = d.toLocaleTimeString();
-    document.getElementById("clock").innerHTML = n;
+    if (clockEl) clockEl.textContent = n;
   }, 1000);
 }, 1000 - d.getMilliseconds());

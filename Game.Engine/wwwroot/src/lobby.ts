@@ -1,4 +1,5 @@
 import { fetch } from "whatwg-fetch";
+import { escapeHtml } from "./leaderboard";
 
 const worlds = document.getElementById("worlds");
 const worldList = document.getElementById("worldList");
@@ -9,8 +10,10 @@ let lastKeys = null;
 function selectRow(selectedWorld) {
   for (const world in allWorlds) {
     const row = document.getElementById(`${world}_row`);
-    if (world == selectedWorld) row.classList.add("selected");
-    else row.classList.remove("selected");
+    if (row) {
+      if (world == selectedWorld) row.classList.add("selected");
+      else row.classList.remove("selected");
+    }
   }
 }
 
@@ -40,20 +43,29 @@ function buildList(response) {
   for (const world of response) {
     allWorlds[world.world] = world;
 
-    options += `<tbody id="${world.world}_row" world="${world.world}" class="worldrow">`;
+    const safeWorld = escapeHtml(world.world);
+    const safeName = escapeHtml(world.name);
+    const safeDescription = escapeHtml(world.description);
+    const safeInstructions = escapeHtml(world.instructions || "");
+    const safePlayers = escapeHtml(String(world.players ?? 0));
+
+    options += `<tbody id="${safeWorld}_row" world="${safeWorld}" class="worldrow">`;
     options +=
       `<tr>` +
-      `<td><button class="button1 button3" id="join">Join</button> (<span id="${world.world}_playercount">${world.players}</span>)</td>` +
-      `<td id="second-world-td"><b>${world.name}</b>: ${world.description}</td>` +
+      `<td><button class="button1 button3" id="join">Join</button> (<span id="${safeWorld}_playercount">${safePlayers}</span>)</td>` +
+      `<td id="second-world-td"><b>${safeName}</b>: ${safeDescription}</td>` +
       `</tr>`;
 
-    const img = world.image ? `<img src="${imgs[world.image]}" />` : "";
+    const img =
+      world.image && imgs[world.image]
+        ? `<img src="${imgs[world.image]}" />`
+        : "";
     if (world.instructions || img)
-      options += `<tr class="details"><td colspan="3">${img}${world.instructions || ""}</td></tr>`;
+      options += `<tr class="details"><td colspan="3">${img}${safeInstructions}</td></tr>`;
     options += `</tbody>`;
   }
 
-  worldList.innerHTML = `${options}`;
+  if (worldList) worldList.innerHTML = `${options}`;
 
   document.querySelectorAll(".worldrow").forEach((worldRow) =>
     worldRow.addEventListener("click", function (e) {
@@ -68,12 +80,13 @@ function buildList(response) {
 
 function updateList(response) {
   for (const world of response) {
-    document.getElementById(`${world.world}_playercount`).innerHTML =
-      world.players;
+    const countEl = document.getElementById(`${world.world}_playercount`);
+    if (countEl) countEl.textContent = String(world.players ?? 0);
     const row = document.getElementById(`${world.world}_row`);
-
-    if (world.players > 0) row.classList.remove("empty");
-    else row.classList.add("empty");
+    if (row) {
+      if (world.players > 0) row.classList.remove("empty");
+      else row.classList.add("empty");
+    }
   }
 }
 
