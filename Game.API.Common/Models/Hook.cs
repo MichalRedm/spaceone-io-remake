@@ -81,6 +81,7 @@ namespace Game.API.Common.Models
 
                     AbandonBuffer = 120,
                     AbandonMomentumMultiplier = 0.4f,
+                    AbandonedShipLifespan = 0,
 
                     ShotCooldownTimeM = 0,
                     ShotCooldownTimeB = 0,
@@ -460,6 +461,7 @@ namespace Game.API.Common.Models
         public int AutoRemoveOnEmptyThreshold { get; set; }
         public uint ExplosionTime { get; set; }
         public int AbandonBuffer { get; set; }
+        public int AbandonedShipLifespan { get; set; } = 0;
         public int EarnedShipDelay { get; set; }
         public int MutualDestructionCooldown { get; set; }
 

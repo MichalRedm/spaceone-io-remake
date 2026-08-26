@@ -172,16 +172,13 @@ namespace Game.Engine.Core
         {
             base.Think();
 
-            if (Abandoned && AbandonedByFleet.PendingDestruction) {
+            if (Abandoned && (AbandonedByFleet?.PendingDestruction ?? false)) {
                 Die(null, null, null);
             }
 
-            /*
-            if (Abandoned && TimeDeath == 0)
-                TimeDeath = World.Time + 20000;
-
-            if (TimeDeath > 0 && World.Time > TimeDeath)
-                Die(null, null, null);*/
+            if (Abandoned && World.Hook.AbandonedShipLifespan > 0 && World.Time >= AbandonedTime + World.Hook.AbandonedShipLifespan) {
+                Die(null, null, null);
+            }
 
             Health = Math.Max(Math.Min(Health, MaxHealth), 0) + HealthRegenerationPerFrame;
             //Size = (int)(SizeMinimum + (Health / MaxHealth) * (SizeMaximum - SizeMinimum));
