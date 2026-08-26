@@ -34,8 +34,28 @@ export function escapeHtml(str?: string): string {
   return div.innerHTML;
 }
 
+export interface LeaderboardRecord {
+  Score: number;
+  Name?: string;
+}
+
+export interface LeaderboardEntry {
+  FleetID?: number;
+  Name?: string;
+  Score?: number;
+  Color?: string;
+  Position?: { x: number; y: number };
+  Mode?: number;
+}
+
+export interface LeaderboardData {
+  Type: string;
+  Entries: LeaderboardEntry[];
+  Record?: LeaderboardRecord;
+}
+
 function getOut(
-  entry: any,
+  entry: LeaderboardEntry,
   position: Vector2,
   rank?: number,
   entryIsSelf?: boolean,
@@ -62,13 +82,17 @@ function getOut(
   return (
     begin +
     `<td class="name">${rankStr} ${escapeHtml(entry.Name) || "Unknown Squadron"}</td>` +
-    `<td class="score">${entry.Score}</td>` +
+    `<td class="score">${entry.Score ?? 0}</td>` +
     `</tr>`
   );
 }
 
 export class Leaderboard {
-  public update(data: any, position: Vector2, fleetID: any): void {
+  public update(
+    data: LeaderboardData,
+    position: Vector2,
+    fleetID?: number,
+  ): void {
     if (Settings.leaderboardEnabled) {
       if (record) record.style.visibility = "visible";
       if (leaderboard) leaderboard.style.visibility = "visible";
@@ -100,9 +124,11 @@ export class Leaderboard {
     if (data.Type === "FFA" && leaderboard) {
       let out = "";
       for (let i = 0; i < data.Entries.length; i++) {
-        const entryIsSelf = data.Entries[i].FleetID == fleetID;
+        const entry = data.Entries[i];
+        if (!entry) continue;
+        const entryIsSelf = entry.FleetID === fleetID;
         if (i < 10 || entryIsSelf) {
-          out += getOut(data.Entries[i], position, i + 1, entryIsSelf);
+          out += getOut(entry, position, i + 1, entryIsSelf);
         }
       }
       leaderboard.innerHTML = `<tbody>${out}</tbody>`;
@@ -111,7 +137,7 @@ export class Leaderboard {
       let outR = "";
       let outC = "";
 
-      data.Entries.forEach((entry: any, i: number) => {
+      data.Entries.forEach((entry: LeaderboardEntry, i: number) => {
         const str = getOut(entry, position, i + 1);
         if (i === 0 || i === 1) {
           outC += str;
@@ -129,10 +155,10 @@ export class Leaderboard {
     } else if (data.Type === "CTF") {
       let outL = "";
       let outR = "";
-      let redFlag: any = null;
-      let cyanFlag: any = null;
+      let redFlag: LeaderboardEntry | null = null;
+      let cyanFlag: LeaderboardEntry | null = null;
 
-      data.Entries.forEach((entry: any, i: number) => {
+      data.Entries.forEach((entry: LeaderboardEntry, i: number) => {
         const str = getOut(entry, position, i + 1);
         if (i === 0) {
           cyanFlag = entry;
@@ -149,12 +175,12 @@ export class Leaderboard {
         blurText(
           document.getElementById("ctf_score_left"),
           document.getElementById("ctf_score_left_blur"),
-          `${cyanFlag.Score}`,
+          `${(cyanFlag as LeaderboardEntry).Score ?? 0}`,
         );
         blurText(
           document.getElementById("ctf_score_right"),
           document.getElementById("ctf_score_right_blur"),
-          `${redFlag.Score}`,
+          `${(redFlag as LeaderboardEntry).Score ?? 0}`,
         );
       }
 

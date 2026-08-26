@@ -1,5 +1,9 @@
 import { Vector2 } from "./Vector2";
-import { Dimension2 } from "./Dimension2";
+import type { Dimension2 } from "./Dimension2";
+
+export interface CameraSettings {
+  fieldOfView?: number;
+}
 
 export class Camera {
   distance: number;
@@ -15,8 +19,9 @@ export class Camera {
     height: number;
     scale: number[];
   };
-  aspectRatio: number;
-  constructor(size: Dimension2, settings = { fieldOfView: Math.PI / 4.0 }) {
+  aspectRatio = 1.0;
+
+  constructor(size: Dimension2, settings: CameraSettings = {}) {
     this.distance = 1500.0;
     this.lookat = [0, 0];
     this.size = size;
@@ -33,7 +38,7 @@ export class Camera {
     this.updateViewport();
   }
 
-  updateViewport() {
+  updateViewport(): void {
     this.aspectRatio = this.size.width / this.size.height;
     this.viewport.width = this.distance * Math.tan(this.fieldOfView);
     this.viewport.height = this.viewport.width / this.aspectRatio;
@@ -45,20 +50,22 @@ export class Camera {
     this.viewport.scale[1] = this.size.height / this.viewport.height;
   }
 
-  zoomTo(z) {
+  zoomTo(z: number): void {
     this.distance = z;
     this.updateViewport();
   }
 
-  moveTo(position: Vector2) {
+  moveTo(position: Vector2): void {
     this.lookat[0] = position.x;
     this.lookat[1] = position.y;
     this.updateViewport();
   }
 
-  screenToWorld(pos: Vector2, obj: Vector2 = new Vector2(0, 0)) {
-    obj.x = pos.x / this.viewport.scale[0] + this.viewport.left;
-    obj.y = pos.y / this.viewport.scale[1] + this.viewport.top;
+  screenToWorld(pos: Vector2, obj: Vector2 = new Vector2(0, 0)): Vector2 {
+    const scaleX = this.viewport.scale[0] || 1;
+    const scaleY = this.viewport.scale[1] || 1;
+    obj.x = pos.x / scaleX + this.viewport.left;
+    obj.y = pos.y / scaleY + this.viewport.top;
     return obj;
   }
 }

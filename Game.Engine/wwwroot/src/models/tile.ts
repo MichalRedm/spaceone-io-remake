@@ -1,54 +1,59 @@
 import { RenderedObject } from "./renderedObject";
+import type { CustomContainer } from "../CustomContainer";
+import type { Cache, BodyState } from "../cache";
+import type { Interpolator } from "../interpolator";
 
 export class Tile extends RenderedObject {
-  constructor(container, cache) {
+  constructor(container: CustomContainer, _cache?: Cache) {
     super(container);
     this.container.tiles.isDirty = true;
   }
 
-  destroy() {
+  override destroy(): void {
     this.container.tiles.isDirty = true;
     super.destroy();
   }
 
-  update(updateData) {
+  override update(updateData: BodyState): void {
     this.body = updateData;
-    //super.update(updateData);
   }
 
-  preRender(currentTime, interpolator) {
+  override preRender(_currentTime: number, _interpolator: Interpolator): void {
     if (!this.body) return;
 
     if (this.container.tiles.isRefreshing) {
-      var tiles = this.container.tiles;
-      var mapKey = RenderedObject.parseMapKey(this.body.Sprite);
+      const tiles = this.container.tiles;
+      const spriteName = this.body.Sprite || "";
+      const mapKey = RenderedObject.parseMapKey(spriteName);
 
-      if (!mapKey)
+      if (!mapKey) {
         console.log(
           `non-map key used to reference map texture: ${this.body.Sprite}`,
         );
-      else {
-        const textureDefinition = RenderedObject.getTextureDefinition(
-          this.body.Sprite,
-        );
+      } else {
+        const textureDefinition =
+          RenderedObject.getTextureDefinition(spriteName);
+        if (!textureDefinition) return;
         const textures = RenderedObject.loadTexture(
           textureDefinition,
           mapKey.name,
         );
-        var texture = textures[mapKey.mapID];
+        const texture = textures[mapKey.mapID];
+        const tileWidth = Number(textureDefinition["tile-width"] ?? 1);
+        const tileHeight = Number(textureDefinition["tile-height"] ?? 1);
 
-        tiles.addFrame(
-          texture,
-          (this.body.OriginalPosition.x / (this.body.Size * 2)) *
-            textureDefinition["tile-width"] -
-            textureDefinition["tile-width"] / 2,
-          (this.body.OriginalPosition.y / (this.body.Size * 2)) *
-            textureDefinition["tile-height"] -
-            textureDefinition["tile-height"] / 2,
-        );
+        if (texture) {
+          tiles.addFrame(
+            texture,
+            (this.body.OriginalPosition.x / (this.body.Size * 2)) * tileWidth -
+              tileWidth / 2,
+            (this.body.OriginalPosition.y / (this.body.Size * 2)) * tileHeight -
+              tileHeight / 2,
+          );
+        }
 
-        tiles.scale.x = (this.body.Size * 2) / textureDefinition["tile-width"];
-        tiles.scale.y = (this.body.Size * 2) / textureDefinition["tile-height"];
+        tiles.scale.x = (this.body.Size * 2) / tileWidth;
+        tiles.scale.y = (this.body.Size * 2) / tileHeight;
       }
     }
   }

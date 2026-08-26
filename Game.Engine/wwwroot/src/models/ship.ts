@@ -30,26 +30,26 @@ export class Ship extends RenderedObject {
     return modes;
   }
 
-  static getSelectorImage(spriteName) {
+  static getSelectorImage(spriteName: string): any {
     const spriteDefinition = RenderedObject.getSpriteDefinition(spriteName);
 
-    if (spriteDefinition.selector)
+    if (spriteDefinition?.selector)
       return RenderedObject.getTextureImage(spriteDefinition.selector);
     else return false;
   }
 
-  destroy() {
+  override destroy(): void {
     if (this.fleet) this.fleet.removeShip(this);
 
     super.destroy();
   }
 
-  update(updateData) {
+  override update(updateData: any): void {
     super.update(updateData);
 
     // when a ship is abandoned, the ship lives on
     // but it's disconnected from its group
-    if (this.fleet && this.body.Group != this.fleet.ID) {
+    if (this.fleet && this.body && this.body.Group !== this.fleet.ID) {
       this.fleet.removeShip(this);
       this.fleet = null;
     }

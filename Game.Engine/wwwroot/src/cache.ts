@@ -3,27 +3,59 @@ import { Ship } from "./models/ship";
 import { RenderedObject } from "./models/renderedObject";
 import { Fleet } from "./models/fleet";
 import { Tile } from "./models/tile";
-import { Container } from "pixi.js";
 import { CustomContainer } from "./CustomContainer";
 import { FX } from "./models/fx";
+import type { Vector2 } from "./Vector2";
+
+export interface GroupState {
+  ID: number;
+  Caption?: string;
+  Type?: number;
+  ZIndex?: number;
+  CustomData?: string;
+  renderer?: any;
+}
+
+export interface BodyState {
+  ID: number;
+  DefinitionTime: number;
+  OriginalAngle: number;
+  AngularVelocity: number;
+  OriginalPosition: { x: number; y: number };
+  Momentum: { x: number; y: number };
+  Size: number;
+  Sprite: string | null;
+  Mode: number;
+  Group: number;
+  Angle?: number;
+  Position?: Vector2 | { x: number; y: number };
+  previous?: BodyState | false;
+  renderer?: any;
+  group?: GroupState | null;
+  zIndex?: number;
+  obsolete?: number;
+}
 
 export class Cache {
   container: CustomContainer;
-  bodies: any;
-  groups: any;
-  static count: number;
+  bodies: Record<string, BodyState>;
+  groups: Record<string, GroupState>;
+  static count = 0;
+
   constructor(container: CustomContainer) {
     this.container = container;
+    this.bodies = {};
+    this.groups = {};
     this.clear();
   }
 
-  clear() {
-    this.foreach(function (body) {
-      if (body && body.renderer) body.renderer.destroy();
+  clear(): void {
+    this.foreach((body) => {
+      if (body?.renderer) body.renderer.destroy();
     }, this);
 
-    this.foreachGroup(function (group) {
-      if (group && group.renderer) group.renderer.destroy();
+    this.foreachGroup((group) => {
+      if (group?.renderer) group.renderer.destroy();
     });
 
     this.bodies = {};
@@ -31,17 +63,24 @@ export class Cache {
     Cache.count = 0;
   }
 
-  empty() {
+  empty(): void {
     this.clear();
   }
 
-  refreshSprites() {
-    this.foreach(function (body) {
-      if (body && body.renderer) body.renderer.refreshSprite();
+  refreshSprites(): void {
+    this.foreach((body) => {
+      if (body?.renderer) body.renderer.refreshSprite();
     }, this);
   }
 
-  update(updates, deletes, groups, groupDeletes, time, myFleetID) {
+  update(
+    updates: BodyState[],
+    deletes: number[],
+    groups: GroupState[],
+    groupDeletes: number[],
+    time: number,
+    myFleetID: number,
+  ): void {
     let i = 0;
 
     // delete objects that should no longer exist
@@ -217,36 +256,36 @@ export class Cache {
     }
   }
 
-  foreach(action, thisObj) {
-    this.foreachGroup(function (group) {
+  foreach(action: (body: BodyState) => void, thisObj?: unknown): void {
+    this.foreachGroup((group) => {
       for (const key in this.bodies) {
         if (key.indexOf("b-") === 0) {
           const body = this.bodies[key];
-          if (body.Group == group.ID) {
-            action.apply(thisObj, [body]);
+          if (body && body.Group === group.ID) {
+            action.call(thisObj, body);
           }
         }
       }
     }, this);
   }
 
-  foreachGroup(action, thisObj?) {
-    const sortedGroups = [];
+  foreachGroup(action: (group: GroupState) => void, thisObj?: unknown): void {
+    const sortedGroups: GroupState[] = [];
 
     for (const key in this.groups) {
-      let group = this.groups[key];
-      sortedGroups.push(group);
+      const group = this.groups[key];
+      if (group) sortedGroups.push(group);
     }
 
-    sortedGroups.sort((a, b) => a.ZIndex - b.ZIndex);
+    sortedGroups.sort((a, b) => (a.ZIndex ?? 0) - (b.ZIndex ?? 0));
     sortedGroups.unshift({ ID: 0 });
 
-    for (let group of sortedGroups) {
-      action.apply(thisObj, [group]);
+    for (const group of sortedGroups) {
+      action.call(thisObj, group);
     }
   }
 
-  getGroup(groupID) {
+  getGroup(groupID: number): GroupState | undefined {
     return this.groups[`g-${groupID}`];
   }
 }

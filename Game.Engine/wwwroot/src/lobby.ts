@@ -1,17 +1,34 @@
 import { fetch } from "whatwg-fetch";
 import { escapeHtml } from "./leaderboard";
 
+export interface WorldInfo {
+  world: string;
+  name: string;
+  description: string;
+  instructions?: string;
+  players?: number;
+  image?: string;
+  [key: string]: unknown;
+}
+
+export interface LobbyCallbacksType {
+  onLobbyClose: (() => void) | null;
+  onWorldJoin: ((worldKey: string, worldInfo?: WorldInfo) => void) | null;
+  joinWorld: ((worldKey: string) => void) | null;
+}
+
 const worlds = document.getElementById("worlds");
 const worldList = document.getElementById("worldList");
 
-let allWorlds = null;
-let lastKeys = null;
+let allWorlds: Record<string, WorldInfo> | null = null;
+let lastKeys: string | null = null;
 
-function selectRow(selectedWorld) {
+function selectRow(selectedWorld: string | null): void {
+  if (!allWorlds) return;
   for (const world in allWorlds) {
     const row = document.getElementById(`${world}_row`);
     if (row) {
-      if (world == selectedWorld) row.classList.add("selected");
+      if (world === selectedWorld) row.classList.add("selected");
       else row.classList.remove("selected");
     }
   }
@@ -28,12 +45,13 @@ for (const [path, url] of Object.entries(rawWorldImgs)) {
   imgs[filenameWithExt] = url;
   imgs[filenameWithoutExt] = url;
 }
-function buildList(response) {
+
+function buildList(response: WorldInfo[]): void {
   if (allWorlds != null) {
     let keys = "";
     response.forEach((w) => (keys += ":" + w.world));
 
-    if (lastKeys == keys) return updateList(response);
+    if (lastKeys === keys) return updateList(response);
     else lastKeys = keys;
   }
 
@@ -68,8 +86,9 @@ function buildList(response) {
   if (worldList) worldList.innerHTML = `${options}`;
 
   document.querySelectorAll(".worldrow").forEach((worldRow) =>
-    worldRow.addEventListener("click", function (e) {
-      const worldKey = this.getAttribute("world");
+    worldRow.addEventListener("click", (e) => {
+      const worldKey = worldRow.getAttribute("world");
+      if (!worldKey) return;
 
       if ((e.target as HTMLElement | null)?.tagName === "BUTTON")
         joinWorld(worldKey);
@@ -78,13 +97,13 @@ function buildList(response) {
   );
 }
 
-function updateList(response) {
+function updateList(response: WorldInfo[]): void {
   for (const world of response) {
     const countEl = document.getElementById(`${world.world}_playercount`);
     if (countEl) countEl.textContent = String(world.players ?? 0);
     const row = document.getElementById(`${world.world}_row`);
     if (row) {
-      if (world.players > 0) row.classList.remove("empty");
+      if ((world.players ?? 0) > 0) row.classList.remove("empty");
       else row.classList.add("empty");
     }
   }
@@ -94,21 +113,21 @@ const controls = document.querySelector(".controls");
 const social = document.querySelector(".social");
 let showing = false;
 let firstLoad = true;
-var hostName = window.location.host || "localhost:5000";
-var worldConnect = "default";
-var manualHostSet = false;
-var manualWorldSet = false;
+let hostName = window.location.host || "localhost:5000";
+let worldConnect = "default";
+let manualHostSet = false;
+let manualWorldSet = false;
 
 if (firstLoad) {
-  var url = new URL(window.location.href);
-  var hostParam = url.searchParams.get("host");
+  const url = new URL(window.location.href);
+  const hostParam = url.searchParams.get("host");
 
   if (hostParam != null) {
     manualHostSet = true;
     hostName = hostParam;
   }
 
-  var worldParam = url.searchParams.get("world");
+  const worldParam = url.searchParams.get("world");
 
   if (worldParam != null) {
     manualWorldSet = true;
@@ -116,17 +135,17 @@ if (firstLoad) {
   }
 }
 
-export const LobbyCallbacks = {
+export const LobbyCallbacks: LobbyCallbacksType = {
   onLobbyClose: null,
   onWorldJoin: null,
   joinWorld: null,
 };
 
-LobbyCallbacks.joinWorld = function (worldKey) {
+LobbyCallbacks.joinWorld = function (worldKey: string) {
   refreshList(worldKey);
 };
 
-function refreshList(autoJoinWorld?: string | boolean) {
+function refreshList(autoJoinWorld?: string | boolean): void {
   if (!showing && !firstLoad && !autoJoinWorld) return;
 
   const autoJoin = firstLoad || !!autoJoinWorld;
@@ -142,73 +161,82 @@ function refreshList(autoJoinWorld?: string | boolean) {
     },
   })
     .then((r) => r.json())
-    .then(({ success, response }) => {
-      var world = worldConnect;
-      if (success) {
-        buildList(response);
+    .then(
+      ({ success, response }: { success: boolean; response: WorldInfo[] }) => {
+        const world = worldConnect;
+        if (success) {
+          buildList(response);
 
-        if (autoJoin) {
-          if (targetWorldParam) {
-            joinWorld(targetWorldParam);
-          } else if (window.location.hash && window.location.hash.length > 1) {
-            const selected = window.location.hash.substring(1);
-            joinWorld(selected);
-          } else {
-            var targetWorldKey = hostName + "/" + world;
-            if (response && Array.isArray(response) && response.length > 0) {
-              const matched = response.find(
-                (w: any) =>
-                  w.world === targetWorldKey || w.world?.endsWith("/" + world),
-              );
-              if (matched) {
-                targetWorldKey = matched.world;
-              } else if (response[0]?.world) {
-                targetWorldKey = response[0].world;
+          if (autoJoin) {
+            if (targetWorldParam) {
+              joinWorld(targetWorldParam);
+            } else if (
+              window.location.hash &&
+              window.location.hash.length > 1
+            ) {
+              const selected = window.location.hash.substring(1);
+              joinWorld(selected);
+            } else {
+              let targetWorldKey = hostName + "/" + world;
+              if (response && Array.isArray(response) && response.length > 0) {
+                const matched = response.find(
+                  (w: WorldInfo) =>
+                    w.world === targetWorldKey ||
+                    w.world?.endsWith("/" + world),
+                );
+                if (matched) {
+                  targetWorldKey = matched.world;
+                } else if (response[0]?.world) {
+                  targetWorldKey = response[0].world;
+                }
               }
+              joinWorld(targetWorldKey);
             }
-            joinWorld(targetWorldKey);
           }
         }
-      }
-    });
+      },
+    );
 }
 
-function hide() {
-  worlds.classList.add("closed");
-  controls.classList.remove("blur");
-  social.classList.remove("blur");
+function hide(): void {
+  worlds?.classList.add("closed");
+  controls?.classList.remove("blur");
+  social?.classList.remove("blur");
   document.body.classList.remove("lobby");
   showing = false;
 
   if (LobbyCallbacks.onLobbyClose) LobbyCallbacks.onLobbyClose();
 }
 
-function show() {
-  controls.classList.add("blur");
-  social.classList.add("blur");
+function show(): void {
+  controls?.classList.add("blur");
+  social?.classList.add("blur");
   document.body.classList.add("lobby");
   showing = true;
 }
 
-function joinWorld(worldKey) {
+function joinWorld(worldKey: string): void {
   if (LobbyCallbacks.onWorldJoin)
-    LobbyCallbacks.onWorldJoin(worldKey, allWorlds[worldKey]);
+    LobbyCallbacks.onWorldJoin(
+      worldKey,
+      allWorlds ? allWorlds[worldKey] : undefined,
+    );
   hide();
 }
 
-export function toggleLobby() {
+export function toggleLobby(): void {
   if (!showing) show();
   else hide();
 }
 
-document.getElementById("wcancel").addEventListener("click", (e) => {
+document.getElementById("wcancel")?.addEventListener("click", () => {
   if (showing) hide();
 });
 
-document.getElementById("arenas").addEventListener("click", (e) => {
+document.getElementById("arenas")?.addEventListener("click", (e) => {
   show();
   refreshList(false);
-  worlds.classList.remove("closed");
+  worlds?.classList.remove("closed");
   e.preventDefault();
   return false;
 });

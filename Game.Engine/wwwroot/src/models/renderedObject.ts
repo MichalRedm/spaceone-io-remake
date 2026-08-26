@@ -6,24 +6,19 @@ import { getDefaultSpriteModeMapRules } from "./spriteModeMap";
 import * as PIXI from "pixi.js";
 import "pixi-layers";
 import * as particles from "pixi-particles";
-import { compressionOptions } from "jszip/lib/defaults";
 import { CustomContainer } from "../CustomContainer";
-import {
-  parseScssIntoRules,
-  parseCssIntoRules,
-  queryProperties,
-} from "../parser/parseTheme";
-import { Sprite } from "pixi.js";
+import { queryProperties } from "../parser/parseTheme";
+import type { BodyState } from "../cache";
+import type { Interpolator, ProjectedPoint } from "../interpolator";
 
 import {
-  initializeAtlasTextures,
   preloadAllGameTextures,
   createTextureFromDefinition,
   images,
 } from "../atlasLoader";
 
-var textureMapRules = [getDefaultTextureMapRules(Settings.graphics)];
-var spriteModeMapRules = [getDefaultSpriteModeMapRules(Settings.graphics)];
+const textureMapRules = [getDefaultTextureMapRules(Settings.graphics)];
+const spriteModeMapRules = [getDefaultSpriteModeMapRules(Settings.graphics)];
 
 textureCache.initAtlases = () => {
   const rules =
@@ -139,14 +134,14 @@ export class RenderedObject {
   }
 
   container: CustomContainer;
-  currentSpriteName: boolean;
+  currentSpriteName: string | false;
   currentMode: number;
   currentZIndex: number;
-  activeTextures: {};
-  activeEmitters: {};
-  body?: any;
-  spriteLayers?: any;
-  emitterLayers?: any;
+  activeTextures: Record<string, PIXI.Sprite>;
+  activeEmitters: Record<string, particles.Emitter>;
+  body?: BodyState | null;
+  spriteLayers?: PIXI.Sprite[] | false;
+  emitterLayers?: particles.Emitter[] | false;
   lastTime: number;
 
   additionalClasses?: string[];
@@ -213,10 +208,12 @@ export class RenderedObject {
     return modes;
   }
 
-  static getImageFromTextureDefinition(textureDefinition) {
+  static getImageFromTextureDefinition(
+    textureDefinition: any,
+  ): HTMLImageElement {
     const img = new Image();
-    if (textureDefinition.url) img.src = textureDefinition.url;
-    else {
+    if (textureDefinition?.url) img.src = textureDefinition.url;
+    else if (textureDefinition?.file) {
       const src = images[textureDefinition.file];
       if (src) img.src = src;
     }
@@ -224,12 +221,12 @@ export class RenderedObject {
     return img;
   }
 
-  static getTextureImage(textureName) {
+  static getTextureImage(textureName: string): HTMLImageElement {
     const textureDefinition = RenderedObject.getTextureDefinition(textureName);
     return RenderedObject.getImageFromTextureDefinition(textureDefinition);
   }
 
-  static loadTexture(textureDefinition, textureName) {
+  static loadTexture(textureDefinition: any, textureName: string): any {
     if (!textureName) return null;
     const cleanName = String(textureName);
     let textures =
@@ -255,21 +252,21 @@ export class RenderedObject {
     return textures;
   }
 
-  static getTextureDefinition(textureName) {
-    var mapKey = this.parseMapKey(textureName);
+  static getTextureDefinition(textureName: string): any {
+    const mapKey = this.parseMapKey(textureName);
     if (mapKey) textureName = mapKey.name;
 
-    var textureDefinition = null;
+    let textureDefinition: any = null;
     try {
       textureDefinition = queryProperties(
         { element: textureName },
         textureMapRules[0],
       );
-      for (var i in textureDefinition) {
-        textureDefinition[i] = textureDefinition[i].map(function (x) {
-          var k = x;
+      for (const i in textureDefinition) {
+        textureDefinition[i] = textureDefinition[i].map(function (x: string) {
+          let k: any = x;
           try {
-            var m = JSON.parse(x);
+            const m = JSON.parse(x);
             k = m;
           } finally {
             return k;
@@ -287,32 +284,34 @@ export class RenderedObject {
     return textureDefinition;
   }
 
-  static parseMapKey(mapKey) {
+  static parseMapKey(mapKey: string): { name: string; mapID: number } | false {
     if (!mapKey) return false;
 
-    var mapKeyMatches = mapKey.match(/^(.*)\[(\d*)\]/);
+    const mapKeyMatches = mapKey.match(/^(.*)\[(\d*)\]/);
 
-    if (mapKeyMatches)
+    if (mapKeyMatches && mapKeyMatches[1] && mapKeyMatches[2])
       return {
         name: mapKeyMatches[1],
-        mapID: mapKeyMatches[2],
+        mapID: parseInt(mapKeyMatches[2], 10),
       };
     else return false;
   }
 
-  buildSprite(textureName, spriteName): Sprite {
+  buildSprite(textureName: string, _spriteName: string): PIXI.Sprite | null {
     if (!textureName) return null;
     const textureDefinition = RenderedObject.getTextureDefinition(textureName);
     if (!textureDefinition) return null;
     const textures = RenderedObject.loadTexture(textureDefinition, textureName);
     if (!textures || !textures.length) return null;
-    var pixiSprite = null;
+    let pixiSprite: any = null;
 
     if (textureDefinition.animated) {
       pixiSprite = new PIXI.AnimatedSprite(textures);
       if (pixiSprite instanceof PIXI.AnimatedSprite) {
-        pixiSprite.loop = textureDefinition.loop;
-        pixiSprite.animationSpeed = textureDefinition["animation-speed"];
+        pixiSprite.loop = Boolean(textureDefinition.loop);
+        pixiSprite.animationSpeed = Number(
+          textureDefinition["animation-speed"] ?? 1,
+        );
       }
       pixiSprite.parentGroup = this.container.bodyGroup;
     } else if (textureDefinition.emitter) {
@@ -324,14 +323,16 @@ export class RenderedObject {
       pixiSprite.parentGroup = this.container.bodyGroup;
     }
 
+    if (!pixiSprite) return null;
+
     if (textureDefinition.tint) {
-      if (typeof textureDefinition.tint == "string")
-        pixiSprite.tint = parseInt(textureDefinition.tint);
-      else pixiSprite.tint = textureDefinition.tint;
+      if (typeof textureDefinition.tint === "string")
+        pixiSprite.tint = parseInt(textureDefinition.tint, 10);
+      else pixiSprite.tint = Number(textureDefinition.tint);
     }
 
     if (textureDefinition.alpha !== undefined)
-      pixiSprite.alpha = textureDefinition.alpha;
+      pixiSprite.alpha = Number(textureDefinition.alpha);
 
     if (textureDefinition.blendMode)
       pixiSprite.blendMode = textureDefinition.blendMode;
@@ -346,7 +347,7 @@ export class RenderedObject {
       textures[0].height,
     );
     pixiSprite.scale = pixiSprite.baseScale;
-    (<any>pixiSprite).textureDefinition = textureDefinition;
+    pixiSprite.textureDefinition = textureDefinition;
 
     let rot = Math.PI / 2;
     if (textureDefinition.rotate !== undefined) {
@@ -383,12 +384,13 @@ export class RenderedObject {
 
     return pixiSprite;
   }
-  static getScale(textureDefinition, pixiTex): number {
-    var spriteSize = 1;
+
+  static getScale(textureDefinition: any, pixiTex: PIXI.Texture): number {
+    let spriteSize = 1;
     if (textureDefinition["size"]) {
-      var spriteSizeIsPercent =
-        typeof textureDefinition["size"] == "string" &&
-        textureDefinition["size"][textureDefinition["size"].length - 1] == "%";
+      const spriteSizeIsPercent =
+        typeof textureDefinition["size"] === "string" &&
+        textureDefinition["size"][textureDefinition["size"].length - 1] === "%";
       spriteSize = spriteSizeIsPercent
         ? parseFloat(
             textureDefinition["size"].slice(
@@ -403,12 +405,13 @@ export class RenderedObject {
     }
     return spriteSize;
   }
-  static getScaleWithHeight(textureDefinition, height): number {
-    var spriteSize = 1;
+
+  static getScaleWithHeight(textureDefinition: any, height: number): number {
+    let spriteSize = 1;
     if (textureDefinition["size"]) {
-      var spriteSizeIsPercent =
-        typeof textureDefinition["size"] == "string" &&
-        textureDefinition["size"][textureDefinition["size"].length - 1] == "%";
+      const spriteSizeIsPercent =
+        typeof textureDefinition["size"] === "string" &&
+        textureDefinition["size"][textureDefinition["size"].length - 1] === "%";
       spriteSize = spriteSizeIsPercent
         ? parseFloat(
             textureDefinition["size"].slice(
@@ -423,12 +426,13 @@ export class RenderedObject {
     }
     return spriteSize;
   }
-  static getSpriteDefinition(spriteName, additional?: string[]): any {
-    let spriteDefinition = null;
+
+  static getSpriteDefinition(spriteName: string, additional?: string[]): any {
+    let spriteDefinition: any = null;
     if (!additional) {
       additional = [];
     }
-    var mapKey = this.parseMapKey(spriteName);
+    const mapKey = this.parseMapKey(spriteName);
     if (mapKey) spriteName = mapKey.name;
     try {
       spriteDefinition = queryProperties(
@@ -438,11 +442,11 @@ export class RenderedObject {
         },
         spriteModeMapRules[0],
       );
-      for (var i in spriteDefinition) {
-        spriteDefinition[i] = spriteDefinition[i].map(function (x) {
-          var k = x;
+      for (const i in spriteDefinition) {
+        spriteDefinition[i] = spriteDefinition[i].map(function (x: string) {
+          let k: any = x;
           try {
-            var m = JSON.parse(x);
+            const m = JSON.parse(x);
             k = m;
           } finally {
             return k;
@@ -466,8 +470,8 @@ export class RenderedObject {
     return spriteDefinition;
   }
 
-  getModeMap(spriteName, mode) {
-    let layers = [];
+  getModeMap(spriteName: string | false, mode: number): string[] | false {
+    if (!spriteName) return false;
     const modes = this.decodeModes(mode);
 
     const spriteDefinition = RenderedObject.getSpriteDefinition(
@@ -475,23 +479,27 @@ export class RenderedObject {
       modes,
     );
 
-    return spriteDefinition.textures;
+    return spriteDefinition?.textures ?? false;
   }
 
-  buildSpriteLayers(spriteName, mode, zIndex) {
+  buildSpriteLayers(
+    spriteName: string | false,
+    mode: number,
+    zIndex: number,
+  ): PIXI.Sprite[] | false {
     const layers = this.getModeMap(spriteName, mode);
 
     if (layers) {
-      const spriteLayers = [];
+      const spriteLayers: PIXI.Sprite[] = [];
       for (let i = 0; i < layers.length; i++) {
-        let spriteLayer = null;
-        var textureName = layers[i];
+        let spriteLayer: any = null;
+        const textureName = layers[i];
+        if (!textureName) continue;
 
         if (this.activeTextures[textureName])
           spriteLayer = this.activeTextures[textureName];
         else {
-          //console.log('building sprite for ' + textureName);
-          spriteLayer = this.buildSprite(textureName, spriteName);
+          spriteLayer = this.buildSprite(textureName, spriteName || "");
         }
 
         if (spriteLayer != null) {
@@ -527,12 +535,13 @@ export class RenderedObject {
         }
       }
 
-      for (var key in this.activeTextures) {
-        if (layers.indexOf(key) == -1) {
-          let layer = this.activeTextures[key];
-          this.container.removeChild(layer);
-          layer.destroy();
-          //console.log(`delete sprite layer ${spriteName}:${key}`);
+      for (const key in this.activeTextures) {
+        if (layers.indexOf(key) === -1) {
+          const layer = this.activeTextures[key];
+          if (layer) {
+            this.container.removeChild(layer);
+            layer.destroy();
+          }
           delete this.activeTextures[key];
         }
       }
@@ -541,14 +550,18 @@ export class RenderedObject {
     } else return false;
   }
 
-  buildEmitterLayers(spriteName, mode, zIndex) {
+  buildEmitterLayers(
+    spriteName: string | false,
+    mode: number,
+    zIndex: number,
+  ): particles.Emitter[] | false {
     const layers = this.getModeMap(spriteName, mode);
 
     if (layers) {
-      const emitterLayers = [];
+      const emitterLayers: particles.Emitter[] = [];
       for (let i = 0; i < layers.length; i++) {
-        let emitterLayer = null;
-        var textureName = layers[i];
+        let emitterLayer: any = null;
+        const textureName = layers[i];
         if (!textureName) continue;
 
         if (this.activeEmitters[textureName])
@@ -558,7 +571,7 @@ export class RenderedObject {
             RenderedObject.getTextureDefinition(textureName);
 
           if (textureDefinition && textureDefinition.emitter) {
-            let particleTextureName =
+            const particleTextureName =
               textureDefinition.particle || "particle_cyan";
             const particleDef =
               RenderedObject.getTextureDefinition(particleTextureName);
@@ -579,10 +592,10 @@ export class RenderedObject {
                   emitterConfig,
                 );
                 emitterLayer.emit = true;
-                emitterLayer.renderedObject = this;
+                (emitterLayer as any).renderedObject = this;
                 emitterLayer.particleConstructor = GroupParticle;
-                (<any>emitterLayer).textureName = textureName;
-                (<any>emitterLayer).textureDefinition = textureDefinition;
+                (emitterLayer as any).textureName = textureName;
+                (emitterLayer as any).textureDefinition = textureDefinition;
               }
             }
           }
@@ -621,11 +634,13 @@ export class RenderedObject {
         }
       }
 
-      for (var key in this.activeEmitters) {
-        if (layers.indexOf(key) == -1) {
-          let layer = this.activeEmitters[key];
-          this.container.removeChild(layer);
-          layer.destroy();
+      for (const key in this.activeEmitters) {
+        if (layers.indexOf(key) === -1) {
+          const layer = this.activeEmitters[key];
+          if (layer) {
+            this.container.removeChild(layer as any);
+            layer.destroy();
+          }
           delete this.activeEmitters[key];
         }
       }
@@ -634,11 +649,11 @@ export class RenderedObject {
     } else return false;
   }
 
-  destroy() {
+  destroy(): void {
     this.destroySprites();
   }
 
-  destroySprites() {
+  destroySprites(): void {
     if (this.spriteLayers) {
       for (const layer of this.spriteLayers) {
         this.container.removeChild(layer);
@@ -651,7 +666,7 @@ export class RenderedObject {
 
     if (this.emitterLayers) {
       for (const layer of this.emitterLayers) {
-        this.container.removeChild(layer);
+        this.container.removeChild(layer as any);
         layer.destroy();
       }
 
@@ -659,7 +674,7 @@ export class RenderedObject {
     }
   }
 
-  refreshSprite() {
+  refreshSprite(): void {
     this.setSprite(
       this.currentSpriteName,
       this.currentMode,
@@ -668,18 +683,23 @@ export class RenderedObject {
     );
   }
 
-  setSprite(spriteName, mode, zIndex, reload = false) {
+  setSprite(
+    spriteName: string | false,
+    mode: number,
+    zIndex: number,
+    reload = false,
+  ): void {
     // check that we really need to change anything
     if (
       reload ||
-      spriteName != this.currentSpriteName ||
-      mode != this.currentMode ||
-      zIndex != this.currentZIndex
+      spriteName !== this.currentSpriteName ||
+      mode !== this.currentMode ||
+      zIndex !== this.currentZIndex
     ) {
       const spriteStr = String(spriteName || "");
       const isAb =
         spriteStr.startsWith("ship_ab") ||
-        (Array.isArray(mode) && mode.includes("ab"));
+        (Array.isArray(mode) && (mode as any).includes("ab"));
       if (isAb && !this.isAbandoned) {
         this.isAbandoned = true;
         this.abandonedStartTime = performance.now();
@@ -695,7 +715,7 @@ export class RenderedObject {
 
       this.spriteLayers = this.buildSpriteLayers(spriteName, mode, zIndex);
 
-      this.foreachLayer(function (layer, index) {
+      this.foreachLayer((layer) => {
         if (!layer.parent) this.container.addChildAt(layer, 2);
       });
 
@@ -703,16 +723,18 @@ export class RenderedObject {
       this.emitterLayers = this.buildEmitterLayers(spriteName, mode, zIndex);
     }
   }
-  fixLoadingTextureScales() {
-    this.foreachLayer(function (layer, index) {
-      if ((<any>layer).textureDefinition)
+
+  fixLoadingTextureScales(): void {
+    this.foreachLayer((layer) => {
+      if (layer.textureDefinition)
         layer.baseScale = RenderedObject.getScaleWithHeight(
-          (<any>layer).textureDefinition,
+          layer.textureDefinition,
           layer.texture.height,
         );
     });
   }
-  preRender(time, interpolator) {
+
+  preRender(time: number, interpolator: Interpolator): void {
     this.fixLoadingTextureScales();
     if (this.body) {
       const newPosition = interpolator.projectObject(this.body, time);
@@ -720,8 +742,6 @@ export class RenderedObject {
     }
 
     if (this.lastTime > 0) {
-      //console.log(`update emitters (${time}-${this.lastTime} = ${time - this.lastTime}) * 0.001 = ${(time - this.lastTime) * 0.001}) `);
-
       this.foreachEmitter((e) => {
         e.update((time - this.lastTime) * 0.001);
       });
@@ -730,7 +750,7 @@ export class RenderedObject {
     this.lastTime = time;
   }
 
-  moveSprites(interpolatedPosition, size) {
+  moveSprites(interpolatedPosition: ProjectedPoint, size: number): void {
     const angle = interpolatedPosition.Angle;
     if (this.lastPosition.x !== 0 || this.lastPosition.y !== 0) {
       this.positionDelta.x = interpolatedPosition.x - this.lastPosition.x;
@@ -744,9 +764,9 @@ export class RenderedObject {
     const now = performance.now();
 
     const isBoostNow =
-      (this.body?.Mode & 1) !== 0 || (this.currentMode & 1) !== 0;
+      ((this.body?.Mode ?? 0) & 1) !== 0 || (this.currentMode & 1) !== 0;
     const isInvulnerableNow =
-      (this.body?.Mode & 2) !== 0 || (this.currentMode & 2) !== 0;
+      ((this.body?.Mode ?? 0) & 2) !== 0 || (this.currentMode & 2) !== 0;
     const groupID = this.body?.Group || 0;
 
     if (isBoostNow) {
@@ -965,8 +985,8 @@ export class RenderedObject {
       }
     });
 
-    this.foreachEmitter(function (emitter) {
-      const texDef = (<any>emitter).textureDefinition;
+    this.foreachEmitter((emitter) => {
+      const texDef = (emitter as any).textureDefinition;
       const emitterKey = String(texDef?.emitter || "");
       const isBoostEmitter = emitterKey.startsWith("boost");
 
@@ -992,7 +1012,7 @@ export class RenderedObject {
     });
   }
 
-  update(updateData) {
+  update(updateData: any): void {
     this.body = updateData;
 
     const isBoostNow = (updateData.Mode & 1) !== 0;
@@ -1004,7 +1024,7 @@ export class RenderedObject {
         this.isBoosting = true;
         this.boostEndTime = 0;
         if (groupID && RenderedObject.groupBoostTimes[groupID]) {
-          this.boostStartTime = RenderedObject.groupBoostTimes[groupID];
+          this.boostStartTime = RenderedObject.groupBoostTimes[groupID] ?? now;
         } else {
           this.boostStartTime = now;
           if (groupID) RenderedObject.groupBoostTimes[groupID] = now;
@@ -1016,7 +1036,7 @@ export class RenderedObject {
     } else if (this.isBoosting) {
       this.isBoosting = false;
       if (groupID && RenderedObject.groupBoostEndTimes[groupID]) {
-        this.boostEndTime = RenderedObject.groupBoostEndTimes[groupID];
+        this.boostEndTime = RenderedObject.groupBoostEndTimes[groupID] ?? now;
       } else {
         this.boostEndTime = now;
         if (groupID) RenderedObject.groupBoostEndTimes[groupID] = now;
@@ -1053,15 +1073,16 @@ export class RenderedObject {
     this.setSprite(updateData.Sprite, updateData.Mode, updateData.zIndex);
   }
 
-  foreachLayer(action) {
+  foreachLayer(action: (layer: any, i: number) => void): void {
     if (this.spriteLayers && this.spriteLayers.length)
       this.spriteLayers.forEach((layer, i) => {
         action.apply(this, [layer, i]);
       });
   }
 
-  foreachEmitter(action) {
-    //console.log(`enumerating this.emitterLayers.length ${this.emitterLayers.length}`);
+  foreachEmitter(
+    action: (emitter: particles.Emitter, i: number) => void,
+  ): void {
     if (this.emitterLayers && this.emitterLayers.length)
       this.emitterLayers.forEach((layer, i) => {
         action.apply(this, [layer, i]);

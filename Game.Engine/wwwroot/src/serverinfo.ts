@@ -1,9 +1,18 @@
-import { fetch } from "whatwg-fetch";
 import * as dat from "dat.gui";
 
 export const gui = new dat.GUI({ width: 500 });
 
-const hooks: Record<string, any> = {};
+const hooks: Record<string, number | boolean | string> = {};
+
+interface AuthResponse {
+  response: {
+    token: string;
+  };
+}
+
+interface HookResponse {
+  response: string;
+}
 
 const token: Promise<string> = fetch("/api/v1/user/authenticate", {
   method: "POST",
@@ -14,10 +23,10 @@ const token: Promise<string> = fetch("/api/v1/user/authenticate", {
     Identifier: {
       UserKey: "Administrator",
     },
-    password: prompt("What is the password"),
+    password: prompt("What is the password") ?? "",
   }),
 })
-  .then((r) => r.json())
+  .then((r) => r.json() as Promise<AuthResponse>)
   .then(({ response }) => response.token)
   .then((r: string) => {
     fetch("/api/v1/server/hook", {
@@ -28,30 +37,35 @@ const token: Promise<string> = fetch("/api/v1/user/authenticate", {
       },
       body: "{}",
     })
-      .then((res) => res.json())
+      .then((res) => res.json() as Promise<HookResponse>)
       .then(({ response }) => {
-        const obj = JSON.parse(response);
+        const obj = JSON.parse(response) as Record<
+          string,
+          number | boolean | string
+        >;
         for (const key in obj) {
-          hooks[key] = obj[key] === 0 ? obj[key] + 0.01 : obj[key];
+          const val = obj[key];
+          hooks[key] = val === 0 ? 0.01 : val;
         }
         for (const key in hooks) {
-          if (typeof hooks[key] === "boolean") {
+          const val = hooks[key];
+          if (typeof val === "boolean") {
             gui.add(hooks, key).onChange(bindParam(key));
-          } else if (typeof hooks[key] !== "function") {
+          } else if (typeof val === "number") {
             let min: number;
             let max: number;
             let step: number | undefined;
-            if (hooks[key] < 0) {
+            if (val < 0) {
               min = -1;
               max = 0;
               step = 0.000001;
-            } else if (hooks[key] <= 1) {
+            } else if (val <= 1) {
               min = 0;
               max = 1;
               step = 0.000001;
             } else {
               min = 0;
-              max = 10 ** Math.ceil(Math.log10(hooks[key] + 1));
+              max = 10 ** Math.ceil(Math.log10(val + 1));
               step = 1;
             }
 

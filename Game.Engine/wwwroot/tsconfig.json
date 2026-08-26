@@ -9,9 +9,9 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "strict": false,
-    "noImplicitAny": false,
-    "strictNullChecks": false,
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "types": ["vite/client"]

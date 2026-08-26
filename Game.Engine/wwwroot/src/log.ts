@@ -6,15 +6,33 @@ const bigLog = document.getElementById("bigLog");
 const scoreCon = document.getElementById("plusScoreContainer");
 const comboMsg = document.getElementById("comboMessage");
 
+export interface LogEntryExtraData {
+  ping?: { you: number; them: number };
+  stats?: { kills: number; deaths: number };
+  score?: number;
+  kills?: number;
+  gameTime?: number;
+  maxCombo?: number;
+  combo?: { text: string; score: number };
+}
+
+export interface LogEntry {
+  type?: string;
+  text?: string;
+  pointsDelta?: number | string;
+  extraData?: LogEntryExtraData;
+}
+
 export class Log {
-  data: Array<{ time: Date; entry: any }>;
-  lastDisplay: any;
+  data: Array<{ time: Date; entry: LogEntry }>;
+  lastDisplay: number;
+
   constructor() {
     this.data = [];
-    this.lastDisplay = false;
+    this.lastDisplay = 0;
   }
 
-  addEntry(entry) {
+  addEntry(entry: LogEntry): void {
     this.data.push({ time: new Date(), entry });
     while (this.data.length > Settings.logLength) this.data.shift();
 
@@ -47,28 +65,22 @@ export class Log {
 
     if (log) log.innerHTML = out;
 
-    let lastData = this.data[this.data.length - 1].entry;
-    /*
-        var lastDataArr = lastData.split(" - ");
+    const lastSlot = this.data[this.data.length - 1];
+    if (!lastSlot) return;
+    const lastData = lastSlot.entry;
 
-        var score = lastDataArr[1];
-        lastData = lastDataArr.join(" - ");
-        if (score[0] === "+") {
-            scoreCon.insertAdjacentHTML("beforeend", "<div class='plusScore'>" + score + "</div>");
-        }*/
-
-    var lastMsg = "";
-    if (lastData.type == "kill") {
+    let lastMsg = "";
+    if (lastData.type === "kill") {
       lastMsg = (lastData.text || "") + "!";
       if (scoreCon) {
         scoreCon.insertAdjacentHTML(
           "beforeend",
           "<div class='plusScore'>+" +
-            escapeHtml(String(lastData.pointsDelta)) +
+            escapeHtml(String(lastData.pointsDelta ?? "")) +
             "</div>",
         );
       }
-    } else if (lastData.type == "killed") {
+    } else if (lastData.type === "killed") {
       deathStats(lastData);
     } else {
       if (lastData.type === "universeDeath") {
@@ -86,13 +98,9 @@ export class Log {
     ) {
       comboMsg.textContent = `${lastData.extraData.combo.text} +${lastData.extraData.combo.score}`;
     }
-
-    /*
-		scoreCon.insertAdjacentHTML("beforeend", "<div class='plusScore'>" + lastData.pointsDelta + "</div>");
-		comboMsg.innerHTML = lastData.extraData.combo;*/
   }
 
-  check() {
+  check(): void {
     const time = performance.now() - this.lastDisplay;
     if (time > 6000 && log) {
       log.textContent = "";
@@ -108,18 +116,20 @@ export class Log {
   }
 }
 
-function deathStats(lastData) {
+function deathStats(lastData: LogEntry): void {
   const deathScreen = document.getElementById("deathScreen");
   if (deathScreen) deathScreen.style.visibility = "visible";
+  const score = lastData.extraData?.score ?? 0;
   const scoreEl = document.getElementById("deathScreenScore");
-  if (scoreEl) scoreEl.textContent = String(lastData.extraData.score);
-  updateHighscore(lastData.extraData.score);
-  console.log("Died with score " + lastData.extraData.score);
+  if (scoreEl) scoreEl.textContent = String(score);
+  updateHighscore(score);
+  console.log("Died with score " + score);
   const killsEl = document.getElementById("deathScreenKills");
-  if (killsEl) killsEl.textContent = String(lastData.extraData.kills);
-  var gameTimeInSeconds = Math.round(lastData.extraData.gameTime / 1000),
-    gameTimeMinutes = Math.floor(gameTimeInSeconds / 60),
-    gameTimeSeconds = gameTimeInSeconds - 60 * gameTimeMinutes;
+  if (killsEl) killsEl.textContent = String(lastData.extraData?.kills ?? 0);
+  const gameTime = lastData.extraData?.gameTime ?? 0;
+  const gameTimeInSeconds = Math.round(gameTime / 1000);
+  const gameTimeMinutes = Math.floor(gameTimeInSeconds / 60);
+  const gameTimeSeconds = gameTimeInSeconds - 60 * gameTimeMinutes;
   const timeEl = document.getElementById("deathScreenGameTime");
   if (timeEl) {
     if (gameTimeMinutes === 0) {
@@ -129,13 +139,13 @@ function deathStats(lastData) {
     }
   }
   const comboEl = document.getElementById("deathScreenMaxKillStreak");
-  if (comboEl) comboEl.textContent = String(lastData.extraData.maxCombo);
+  if (comboEl) comboEl.textContent = String(lastData.extraData?.maxCombo ?? 0);
 }
 
 updateHighscore(0);
 
-function updateHighscore(score) {
-  var currentHighscore = Number(Cookies.get("highscore") ?? 0);
+function updateHighscore(score: number): void {
+  const currentHighscore = Number(Cookies.get("highscore") ?? 0);
   if (score >= currentHighscore) {
     Cookies.set("highscore", score);
   }

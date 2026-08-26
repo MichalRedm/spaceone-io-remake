@@ -759,6 +759,14 @@ input#nick:focus {
   box-shadow: 0px 0px 10px 0px #0052ff;
 }
 
+.main-ui > .blue-box-border,
+#dev-notice {
+  display: inline-block;
+  width: auto;
+  max-width: fit-content;
+  box-sizing: border-box;
+}
+
 #arena-link {
   position: absolute;
   left: 10px;
