@@ -71,6 +71,8 @@ namespace Game.Engine.Core
 
         public string IP { get; set; } = null;
 
+        public int UnknownSquadronNumber { get; set; } = 0;
+
         private bool CummulativeBoostRequested = false;
         private bool CummulativeShootRequested = false;
 
@@ -299,8 +301,15 @@ namespace Game.Engine.Core
             if (name != null
                 && name.Length > World.Hook.MaxNameLength)
                 name = name.Substring(0, World.Hook.MaxNameLength);
-                
-            if (name == "") { name = "Unknown Squadron #0"; }
+
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                if (UnknownSquadronNumber == 0)
+                {
+                    UnknownSquadronNumber = World != null ? World.NextUnknownSquadronNumber() : 1;
+                }
+                name = $"Unknown Squadron #{UnknownSquadronNumber}";
+            }
 
             CummulativeBoostRequested = false;
             CummulativeShootRequested = false;
