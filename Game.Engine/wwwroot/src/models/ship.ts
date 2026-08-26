@@ -20,10 +20,7 @@ export class Ship extends RenderedObject {
 
     modes.push("default");
 
-    const now = performance.now();
-    const isPostBoostFading =
-      this.boostEndTime > 0 && now - this.boostEndTime < 500;
-    if ((mode & 1) !== 0 || isPostBoostFading) modes.push("boost");
+    if ((mode & 1) !== 0) modes.push("boost");
     if ((mode & 2) !== 0) modes.push("invulnerable");
     if ((mode & 16) !== 0) modes.push("shield");
 

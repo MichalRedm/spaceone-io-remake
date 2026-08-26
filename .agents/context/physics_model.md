@@ -31,8 +31,10 @@ Entity movement is governed by **bounded angular turn-rate kinematics with cruis
 
    - **Client Visual Synchronization (`renderedObject.ts`, `ship.ts`, `emitters.json`)**:
      - *Phase 1 ($0 - 160\text{ ms}$)*: Particle sprite (`particle_ship_*`) displayed at full alpha ($1.0$), dash trail suppressed ($\alpha = 0.0$), bullet emitter idle.
-     - *Phases 2 & 3 ($160 - 1000\text{ ms}$)*: Dash trail activated with flame flicker, particle sprite active ($1.0$), minimal bullet particles streamed along dash trail at lower frequency than bullets ($f = 0.08\text{ s}$ vs $0.05\text{ s}$).
-     - *Post-Boost Fade ($1000 - 1500\text{ ms}$)*: $0.5\text{ s}$ smooth alpha decay after boost finishes; emitters stop spawning new particles while in-flight particles expire.
+     - *Phase 2 ($160 - 360\text{ ms}$)*: Steady dash trail with flame flicker, particle sprite active ($1.0$), bullet particles streamed along dash trail at lower frequency than bullets ($f = 0.08\text{ s}$ vs $0.05\text{ s}$).
+     - *Phase 3 ($360 - 1000\text{ ms}$)*: Dash trail and particle sprite smoothly fade out ($1.0 \to 0.0$) over the 640ms deceleration phase, ending synchronously with the authoritative server boost.
+     - *Fleet Growth & Group Synchronization*: New ships joining during boost or invulnerability inherit `groupBoostTimes`, `groupBoostEndTimes`, and `groupInvulnerableTimes` so visual phases, blinking, and overlay decays match across all fleet ships in lockstep.
+     - *Invulnerability + Boost Composition*: When boosting while invulnerable, dash trails remain continuous while hull and aura pulse between full opacity and translucent phantom ($\alpha = 0.25$), with composite aura blending $\alpha = \max(\alpha_{\text{boost}}, \alpha_{\text{invuln}})$.
 
 5. **Velocity Vector & Position Update**:
    $$\vec{v}_{t+1} = s_{t+1} \begin{bmatrix} \cos(\theta_{v, t+1}) \\ \sin(\theta_{v, t+1}) \end{bmatrix}$$
