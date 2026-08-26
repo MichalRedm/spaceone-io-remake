@@ -21,27 +21,17 @@ export class Renderer {
     fleetID: number,
   ): void {
     FX.update();
-    const groupsUsed: GroupState[] = [];
 
     cache.foreach((body: BodyState) => {
-      if (body.Group) {
-        const group = cache.getGroup(body.Group);
-        if (group && groupsUsed.indexOf(group) === -1) groupsUsed.push(group);
-      }
-
-      if (body.renderer)
+      if (body.renderer) {
         body.renderer.preRender(currentTime, interpolator, fleetID);
+      }
     }, this);
 
-    const ids: string[] = [];
-
-    for (const group of groupsUsed) {
-      if (group) {
-        ids.push(`g-${group.ID}`);
-
-        if (group.renderer)
-          group.renderer.preRender(currentTime, interpolator, fleetID);
+    cache.foreachGroup((group: GroupState) => {
+      if (group.renderer) {
+        group.renderer.preRender(currentTime, interpolator, fleetID);
       }
-    }
+    }, this);
   }
 }

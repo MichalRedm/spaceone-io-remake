@@ -14,6 +14,7 @@ export interface InterpolableObject {
   Momentum: { x: number; y: number };
   Angle?: number;
   Position?: Vector2 | { x: number; y: number };
+  projectedPoint?: ProjectedPoint;
   previous?:
     | {
         Position?: Vector2 | { x: number; y: number };
@@ -45,16 +46,27 @@ export class Interpolator {
   projectObject(object: InterpolableObject, time: number): ProjectedPoint {
     const timeShift = time - object.DefinitionTime;
     object.Angle = object.OriginalAngle + timeShift * object.AngularVelocity;
-    object.Position = new Vector2(
-      object.OriginalPosition.x + timeShift * object.Momentum.x,
-      object.OriginalPosition.y + timeShift * object.Momentum.y,
-    );
+
+    const posX = object.OriginalPosition.x + timeShift * object.Momentum.x;
+    const posY = object.OriginalPosition.y + timeShift * object.Momentum.y;
+
+    if (object.Position) {
+      object.Position.x = posX;
+      object.Position.y = posY;
+    } else {
+      object.Position = new Vector2(posX, posY);
+    }
+
+    if (!object.projectedPoint) {
+      object.projectedPoint = { x: 0, y: 0, Angle: 0 };
+    }
 
     if (object.previous && object.previous.Position) {
       const lerpAmount = 0.7;
 
       // disable position lerping
-      object.previous.Position = object.Position;
+      object.previous.Position.x = posX;
+      object.previous.Position.y = posY;
 
       object.previous.Angle = this.angleLerp(
         object.previous.Angle ?? object.Angle,
@@ -62,17 +74,15 @@ export class Interpolator {
         lerpAmount,
       );
 
-      return {
-        x: object.previous.Position.x,
-        y: object.previous.Position.y,
-        Angle: object.previous.Angle,
-      };
+      object.projectedPoint.x = object.previous.Position.x;
+      object.projectedPoint.y = object.previous.Position.y;
+      object.projectedPoint.Angle = object.previous.Angle;
+      return object.projectedPoint;
     } else {
-      return {
-        x: object.Position.x,
-        y: object.Position.y,
-        Angle: object.Angle,
-      };
+      object.projectedPoint.x = posX;
+      object.projectedPoint.y = posY;
+      object.projectedPoint.Angle = object.Angle;
+      return object.projectedPoint;
     }
   }
 }

@@ -40,13 +40,50 @@ export class Cache {
   container: CustomContainer;
   bodies: Record<string, BodyState>;
   groups: Record<string, GroupState>;
+  private bodiesMap: Map<number, BodyState>;
+  private groupsMap: Map<number, GroupState>;
+  private bodiesByGroup: Map<number, Set<BodyState>>;
+  private sortedGroups: GroupState[];
+  private groupsDirty: boolean;
+  private defaultGroup: GroupState;
   static count = 0;
 
   constructor(container: CustomContainer) {
     this.container = container;
     this.bodies = {};
     this.groups = {};
+    this.bodiesMap = new Map();
+    this.groupsMap = new Map();
+    this.bodiesByGroup = new Map();
+    this.sortedGroups = [];
+    this.groupsDirty = true;
+    this.defaultGroup = { ID: 0 };
     this.clear();
+  }
+
+  private addBodyToGroup(body: BodyState, groupID: number): void {
+    let set = this.bodiesByGroup.get(groupID);
+    if (!set) {
+      set = new Set<BodyState>();
+      this.bodiesByGroup.set(groupID, set);
+    }
+    set.add(body);
+  }
+
+  private removeBodyFromGroup(body: BodyState, groupID: number): void {
+    const set = this.bodiesByGroup.get(groupID);
+    if (set) {
+      set.delete(body);
+      if (set.size === 0 && groupID !== 0) {
+        this.bodiesByGroup.delete(groupID);
+      }
+    }
+  }
+
+  private sortGroups(): void {
+    this.sortedGroups = Array.from(this.groupsMap.values());
+    this.sortedGroups.sort((a, b) => (a.ZIndex ?? 0) - (b.ZIndex ?? 0));
+    this.groupsDirty = false;
   }
 
   clear(): void {
@@ -60,6 +97,11 @@ export class Cache {
 
     this.bodies = {};
     this.groups = {};
+    this.bodiesMap.clear();
+    this.groupsMap.clear();
+    this.bodiesByGroup.clear();
+    this.sortedGroups = [];
+    this.groupsDirty = true;
     Cache.count = 0;
   }
 
@@ -85,12 +127,17 @@ export class Cache {
 
     // delete objects that should no longer exist
     for (i = 0; i < deletes.length; i++) {
-      let deleteKey = deletes[i];
-      let key = `b-${deleteKey}`;
-      if (key in this.bodies) Cache.count--;
+      const deleteKey = deletes[i];
+      if (deleteKey === undefined) continue;
+      const key = `b-${deleteKey}`;
 
-      const body = this.bodies[key];
+      const body = this.bodiesMap.get(deleteKey) ?? this.bodies[key];
       if (body) {
+        this.removeBodyFromGroup(body, body.Group || 0);
+        this.bodiesMap.delete(deleteKey);
+        delete this.bodies[key];
+        Cache.count--;
+
         const spriteStr = String(body.Sprite || "");
         const renderer = body.renderer as RenderedObject | undefined;
         const x = renderer?.lastPosition?.x ?? body.OriginalPosition?.x ?? 0;
@@ -117,32 +164,40 @@ export class Cache {
 
         if (body.renderer) body.renderer.destroy();
       }
-      delete this.bodies[key];
     }
 
     // delete groups that should no longer exist
     for (i = 0; i < groupDeletes.length; i++) {
-      let deleteKey = groupDeletes[i];
-      let key = `g-${deleteKey}`;
-      let group = this.groups[key];
-      if (!group) console.log("group delete on object not in cache");
+      const deleteKey = groupDeletes[i];
+      if (deleteKey === undefined) continue;
+      const key = `g-${deleteKey}`;
+      const group = this.groupsMap.get(deleteKey) ?? this.groups[key];
 
-      //console.log(`deleting group: ${key}`);
-
-      if (group && group.renderer) group.renderer.destroy();
-      delete this.groups[key];
+      if (group) {
+        if (group.renderer) group.renderer.destroy();
+        this.groupsMap.delete(deleteKey);
+        this.bodiesByGroup.delete(deleteKey);
+        delete this.groups[key];
+        this.groupsDirty = true;
+      }
     }
 
     // update groups that should be here
     for (i = 0; i < groups.length; i++) {
       const group = groups[i];
-      let existing = this.groups[`g-${group.ID}`];
+      if (!group) continue;
+      let existing =
+        this.groupsMap.get(group.ID) ?? this.groups[`g-${group.ID}`];
 
       if (!existing) {
         if (group.Type == 1) group.renderer = new Fleet(this.container, this);
 
         existing = group;
+        this.groupsDirty = true;
       } else {
+        if (existing.ZIndex !== group.ZIndex) {
+          this.groupsDirty = true;
+        }
         existing.ID = group.ID;
         existing.Caption = group.Caption;
         existing.Type = group.Type;
@@ -152,17 +207,34 @@ export class Cache {
 
       if (existing.renderer) existing.renderer.update(existing, myFleetID);
 
+      this.groupsMap.set(group.ID, existing);
       this.groups[`g-${group.ID}`] = existing;
     }
 
     // update objects that should be here
     for (i = 0; i < updates.length; i++) {
       const update = updates[i];
-      let existing = this.bodies[`b-${update.ID}`];
+      if (!update) continue;
+      const key = `b-${update.ID}`;
+      let existing = this.bodiesMap.get(update.ID) ?? this.bodies[key];
 
-      this.bodies[`b-${update.ID}`] = update;
+      this.bodiesMap.set(update.ID, update);
+      this.bodies[key] = update;
 
       if (existing) {
+        if (existing.Group !== update.Group) {
+          this.removeBodyFromGroup(existing, existing.Group || 0);
+          this.addBodyToGroup(update, update.Group || 0);
+        } else {
+          const groupSet = this.bodiesByGroup.get(update.Group || 0);
+          if (groupSet) {
+            groupSet.delete(existing);
+            groupSet.add(update);
+          } else {
+            this.addBodyToGroup(update, update.Group || 0);
+          }
+        }
+
         update.renderer = existing.renderer;
         update.previous = existing;
 
@@ -179,8 +251,8 @@ export class Cache {
         if (update.AngularVelocity === -999)
           update.AngularVelocity = existing.AngularVelocity;
 
-        let group = null;
-        if (update.Group != 0) group = this.getGroup(update.Group);
+        let group: GroupState | null = null;
+        if (update.Group != 0) group = this.getGroup(update.Group) ?? null;
         update.group = group;
         update.zIndex = 0;
         if (group) update.zIndex = group.ZIndex || 0;
@@ -189,9 +261,11 @@ export class Cache {
       }
 
       if (!existing) {
-        let group = null;
+        this.addBodyToGroup(update, update.Group || 0);
+
+        let group: GroupState | null = null;
         if (update.Group != 0) {
-          group = this.groups[`g-${update.Group}`];
+          group = this.getGroup(update.Group) ?? null;
           if (group) {
             switch (group.Type) {
               case 1:
@@ -257,35 +331,46 @@ export class Cache {
   }
 
   foreach(action: (body: BodyState) => void, thisObj?: unknown): void {
-    this.foreachGroup((group) => {
-      for (const key in this.bodies) {
-        if (key.indexOf("b-") === 0) {
-          const body = this.bodies[key];
-          if (body && body.Group === group.ID) {
+    if (this.groupsDirty) {
+      this.sortGroups();
+    }
+
+    const group0Bodies = this.bodiesByGroup.get(0);
+    if (group0Bodies) {
+      for (const body of group0Bodies) {
+        action.call(thisObj, body);
+      }
+    }
+
+    for (let i = 0; i < this.sortedGroups.length; i++) {
+      const group = this.sortedGroups[i];
+      if (group && group.ID !== 0) {
+        const bodiesInGroup = this.bodiesByGroup.get(group.ID);
+        if (bodiesInGroup) {
+          for (const body of bodiesInGroup) {
             action.call(thisObj, body);
           }
         }
       }
-    }, this);
+    }
   }
 
   foreachGroup(action: (group: GroupState) => void, thisObj?: unknown): void {
-    const sortedGroups: GroupState[] = [];
-
-    for (const key in this.groups) {
-      const group = this.groups[key];
-      if (group) sortedGroups.push(group);
+    if (this.groupsDirty) {
+      this.sortGroups();
     }
 
-    sortedGroups.sort((a, b) => (a.ZIndex ?? 0) - (b.ZIndex ?? 0));
-    sortedGroups.unshift({ ID: 0 });
+    action.call(thisObj, this.defaultGroup);
 
-    for (const group of sortedGroups) {
-      action.call(thisObj, group);
+    for (let i = 0; i < this.sortedGroups.length; i++) {
+      const group = this.sortedGroups[i];
+      if (group) {
+        action.call(thisObj, group);
+      }
     }
   }
 
   getGroup(groupID: number): GroupState | undefined {
-    return this.groups[`g-${groupID}`];
+    return this.groupsMap.get(groupID) ?? this.groups[`g-${groupID}`];
   }
 }

@@ -198,12 +198,28 @@ function refreshList(autoJoinWorld?: string | boolean): void {
     );
 }
 
+let pollTimer: ReturnType<typeof setInterval> | null = null;
+
+function startPolling(): void {
+  if (!pollTimer) {
+    pollTimer = setInterval(refreshList, 1000);
+  }
+}
+
+function stopPolling(): void {
+  if (pollTimer) {
+    clearInterval(pollTimer);
+    pollTimer = null;
+  }
+}
+
 function hide(): void {
   worlds?.classList.add("closed");
   controls?.classList.remove("blur");
   social?.classList.remove("blur");
   document.body.classList.remove("lobby");
   showing = false;
+  stopPolling();
 
   if (LobbyCallbacks.onLobbyClose) LobbyCallbacks.onLobbyClose();
 }
@@ -213,6 +229,8 @@ function show(): void {
   social?.classList.add("blur");
   document.body.classList.add("lobby");
   showing = true;
+  refreshList(false);
+  startPolling();
 }
 
 function joinWorld(worldKey: string): void {
@@ -235,11 +253,9 @@ document.getElementById("wcancel")?.addEventListener("click", () => {
 
 document.getElementById("arenas")?.addEventListener("click", (e) => {
   show();
-  refreshList(false);
   worlds?.classList.remove("closed");
   e.preventDefault();
   return false;
 });
 
 refreshList(false);
-setInterval(refreshList, 1000);

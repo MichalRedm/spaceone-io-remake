@@ -560,6 +560,11 @@ const dangerZoneWarning = document.getElementById("dangerZoneWarning");
 let lastCustomData: string | null = null;
 let spotSprites: PIXI.Sprite[] = [];
 
+const currentCameraPosition = new Vector2(0, 0);
+const mouseScreenPos = new Vector2(0, 0);
+const mouseWorldPos = new Vector2(0, 0);
+let currentFleetSize = -1;
+
 // Game Loop
 app.ticker.add(() => {
   const _latency = connection.minLatency || 0;
@@ -567,32 +572,30 @@ app.ticker.add(() => {
     performance.now() + (serverTimeOffset !== false ? serverTimeOffset : 0);
   frameCounter++;
 
-  for (const key in cache.groups) {
-    if (cache.groups[key].ID === fleetID) {
-      if (
-        fleetSizeDisplay &&
-        Number(fleetSizeDisplay.innerHTML) !==
-          cache.groups[key].renderer.ships.length
-      ) {
-        fleetSizeDisplay.innerText = String(
-          cache.groups[key].renderer.ships.length,
-        );
-      }
+  const ownGroup = cache.getGroup(fleetID);
+  if (ownGroup?.renderer?.ships) {
+    const shipCount = ownGroup.renderer.ships.length;
+    if (fleetSizeDisplay && currentFleetSize !== shipCount) {
+      currentFleetSize = shipCount;
+      fleetSizeDisplay.innerText = String(shipCount);
     }
   }
 
-  let position = new Vector2(0, 0);
+  const position = currentCameraPosition;
 
   if (view && view.camera) {
     const positionA = interpolator.projectObject(view.camera, gameTime);
-    position = new Vector2(positionA.x, positionA.y);
-    position.x = position.x * (1 - cameraDrag) + lastCamera.x * cameraDrag;
-    position.y = position.y * (1 - cameraDrag) + lastCamera.y * cameraDrag;
+    position.x = positionA.x * (1 - cameraDrag) + lastCamera.x * cameraDrag;
+    position.y = positionA.y * (1 - cameraDrag) + lastCamera.y * cameraDrag;
 
-    lastCamera = position;
+    lastCamera.x = position.x;
+    lastCamera.y = position.y;
 
     camera.moveTo(position);
     camera.zoomTo(zoom);
+  } else {
+    position.x = 0;
+    position.y = 0;
   }
   container.pivot.x = position.x - zoom / 2;
   container.pivot.y = position.y - (zoom / 2) * (9 / 16);
@@ -600,11 +603,16 @@ app.ticker.add(() => {
   container.position.y = container.position.y;
 
   renderer.draw(cache, interpolator, gameTime, ownFleetID);
-  background.updateFocus(new Vector2(position.x, position.y));
+  background.updateFocus(position);
   background.draw();
   minimap.checkDisplay();
 
-  lastPosition = position;
+  if (lastPosition) {
+    lastPosition.x = position.x;
+    lastPosition.y = position.y;
+  } else {
+    lastPosition = new Vector2(position.x, position.y);
+  }
 
   if (dangerZoneWarning) {
     if (
@@ -621,8 +629,6 @@ app.ticker.add(() => {
   // cooldown.draw();
 
   if (Controls.mouseX) {
-    var pos;
-
     if (
       Controls.numUp ||
       Controls.numUpRight ||
@@ -667,25 +673,16 @@ app.ticker.add(() => {
         angle = mergeSet(angle, (5 * Math.PI) / 4, i);
         i++;
       }
-      /*if (Controls.right || Controls.left || Controls.up || Controls.down || keyboardSteering) {
-            if (Controls.right && !Controls.left) {
-                angle += keyboardSteeringSpeed * Math.PI;
-            } else if (Controls.left && !Controls.right) {
-                angle -= keyboardSteeringSpeed * Math.PI;
-            }
-            if (Controls.up) {
-                angle += Math.PI;
-            } // optional
-            */
-      aimTarget = new Vector2(d * Math.cos(angle), d * Math.sin(angle));
+      aimTarget.x = d * Math.cos(angle);
+      aimTarget.y = d * Math.sin(angle);
       keyboardSteering = true;
     } else {
-      pos = camera.screenToWorld(new Vector2(Controls.mouseX, Controls.mouseY));
+      mouseScreenPos.x = Controls.mouseX;
+      mouseScreenPos.y = Controls.mouseY;
+      camera.screenToWorld(mouseScreenPos, mouseWorldPos);
       angle = Controls.angle;
-      aimTarget = new Vector2(
-        Settings.mouseScale * (pos.x - position.x),
-        Settings.mouseScale * (pos.y - position.y),
-      );
+      aimTarget.x = Settings.mouseScale * (mouseWorldPos.x - position.x);
+      aimTarget.y = Settings.mouseScale * (mouseWorldPos.y - position.y);
     }
   }
 
