@@ -62,6 +62,16 @@ namespace Game.Engine.Core
         private uint LastObjectID = 0;
         public uint GenerateObjectID() { lock (this) return ++LastObjectID; }
 
+        private int LastUnknownSquadronNumber = 0;
+        public int NextUnknownSquadronNumber()
+        {
+            lock (this)
+            {
+                LastUnknownSquadronNumber = (LastUnknownSquadronNumber % 99) + 1;
+                return LastUnknownSquadronNumber;
+            }
+        }
+
         public World(Hook hook, GameConfiguration gameConfiguration)
         {
             this.GameConfiguration = gameConfiguration;

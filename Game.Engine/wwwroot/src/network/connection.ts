@@ -242,7 +242,7 @@ export class Connection {
     const builder = new flatbuffers.Builder(0);
 
     const stringColor = builder.createString(color || "gray");
-    const stringName = builder.createString(name || "unknown");
+    const stringName = builder.createString(name || "");
     const stringShip = builder.createString(ship || "ship_gray");
     const stringToken = builder.createString(token || "");
 
