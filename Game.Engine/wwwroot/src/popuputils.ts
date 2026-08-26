@@ -1,53 +1,62 @@
+import { fadeIn, fadeOut } from "./domUtils";
+
 export type PopupName = "changelog" | "instructions";
 
 export function bootstrapPopups(): void {
-  $(".change-log-button").on("click", function () {
-    pressPopup("changelog");
-  });
+  document
+    .querySelectorAll(".change-log-button, #changelogButton")
+    .forEach((btn) => {
+      btn.addEventListener("click", () => {
+        pressPopup("changelog");
+      });
+    });
 
-  $("#instructions").on("click", function () {
-    pressPopup("instructions");
-  });
+  const instructionsBtn = document.getElementById("instructions");
+  if (instructionsBtn) {
+    instructionsBtn.addEventListener("click", () => {
+      pressPopup("instructions");
+    });
+  }
 
-  $("#changelogClose").on("click", function () {
-    closePopup("changelog");
-  });
+  document
+    .querySelectorAll("#changelogClose, #changelogBack")
+    .forEach((btn) => {
+      btn.addEventListener("click", () => {
+        closePopup("changelog");
+      });
+    });
 
-  $("#instructionsClose").on("click", function () {
-    closePopup("instructions");
-  });
-
-  $("#changelogBack").on("click", function () {
-    closePopup("changelog");
-  });
-
-  $("#instructionsBack").on("click", function () {
-    closePopup("instructions");
-  });
+  document
+    .querySelectorAll("#instructionsClose, #instructionsBack")
+    .forEach((btn) => {
+      btn.addEventListener("click", () => {
+        closePopup("instructions");
+      });
+    });
 }
 
 export function pressPopup(popupPressed: PopupName): void {
-  window.popupShowing = true;
-  const popupToFadeIn = sortPopup(popupPressed);
-  if (popupToFadeIn) {
-    $(popupToFadeIn).fadeIn(500);
+  (window as any).popupShowing = true;
+  const popupEl = getPopupElement(popupPressed);
+  if (popupEl) {
+    fadeIn(popupEl, 500);
   }
 }
 
 export function closePopup(popupPressed: PopupName): void {
-  window.popupShowing = false;
-  const popupToFadeOut = sortPopup(popupPressed);
-  if (popupToFadeOut) {
-    $(popupToFadeOut).fadeOut(500);
+  (window as any).popupShowing = false;
+  const popupEl = getPopupElement(popupPressed);
+  if (popupEl) {
+    fadeOut(popupEl, 500);
   }
 }
 
-export function sortPopup(popupPressed: PopupName): any {
+export function getPopupElement(popupPressed: PopupName): HTMLElement | null {
   switch (popupPressed) {
     case "changelog":
-      return $("#popupChangelog");
+      return document.getElementById("popupChangelog");
     case "instructions":
-      return $("#popupInstructions");
+      return document.getElementById("popupInstructions");
     default:
       return null;
   }

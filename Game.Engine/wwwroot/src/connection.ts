@@ -5,6 +5,7 @@ import { Settings } from "./settings";
 import { Vector2 } from "./Vector2";
 import { Controls } from "./controls";
 import { ArenaLink } from "./arenalink";
+import { fadeIn, hide } from "./domUtils";
 
 const arenaLink = new ArenaLink();
 
@@ -135,14 +136,14 @@ export class Connection {
     this.socket.onerror = (error) => {
       if (self.connectionStatusReporting) {
         document.body.classList.add("connectionerror");
-        $("#toast-container").fadeIn(300);
+        fadeIn("#toast-container", 300);
       }
     };
 
     this.socket.onopen = (event) => {
       if (self.connectionStatusReporting) {
         document.body.classList.remove("connectionerror");
-        $("#toast-container").fadeOut(0);
+        hide("#toast-container");
       }
       self.onOpen(event);
     };

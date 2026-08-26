@@ -84,6 +84,3 @@ interface Document {
   webkitExitFullscreen?: () => Promise<void>;
   msExitFullscreen?: () => Promise<void>;
 }
-
-declare const $: any;
-declare const jQuery: any;
