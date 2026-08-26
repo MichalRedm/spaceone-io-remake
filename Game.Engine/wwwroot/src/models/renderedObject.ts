@@ -53,6 +53,8 @@ const bulletLifeTable = [
   3320, 3320, 3360, 3360, 3360, 3360, 3360, 3360, 3400, 3400,
 ];
 
+export const SHOT_THRUST_SCALE = 0.013;
+
 class GroupParticle extends particles.Particle {
   body: any;
   renderedObject?: RenderedObject;
@@ -846,7 +848,10 @@ export class RenderedObject {
           this.invulnerableStartTime = now;
           if (groupID) RenderedObject.groupInvulnerableTimes[groupID] = now;
         }
-      } else if (now - this.invulnerableStartTime >= SPAWN_INVULNERABILITY_DURATION_MS) {
+      } else if (
+        now - this.invulnerableStartTime >=
+        SPAWN_INVULNERABILITY_DURATION_MS
+      ) {
         this.isInvulnerable = false;
         this.invulnerableStartTime = 0;
         if (groupID && RenderedObject.groupInvulnerableTimes[groupID]) {
@@ -1146,7 +1151,7 @@ export class RenderedObject {
     if (spriteStr.startsWith("bullet") || spriteStr.startsWith("laser")) {
       const m = updateData.Momentum;
       if (m) {
-        const speed = Math.sqrt(m.x * m.x + m.y * m.y) / 0.0156;
+        const speed = Math.sqrt(m.x * m.x + m.y * m.y) / SHOT_THRUST_SCALE;
         const shipCount = RenderedObject.getShipCountFromSpeed(speed);
         this.bulletLifetime =
           bulletLifeTable[shipCount] ?? 1985 + 25 * shipCount;

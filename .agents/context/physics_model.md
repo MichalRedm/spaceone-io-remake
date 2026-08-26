@@ -107,5 +107,7 @@ Future physics tuning will follow a modular, isolated sequence:
    - **Unified Turn Direction Synchronization**: Authoritative fleet turn sign ($\text{sign}(\Delta\theta_{\text{fleet}})$) enforces uniform angular sweep on sharp / near-$180^\circ$ U-turns ($|\Delta\theta| > 150^\circ$), completely preventing symmetry-breaking fleet splitting.
    - **Straggler Cohesion ($D_{\text{coh}}, w_{\text{coh}}$)**: Soft inward pull for ships separated beyond $D_{\text{coh}} = 80.0\text{ px}$ with $w_{\text{coh}} = 0.0056$.
    - **Collision Rate**: Reduced from $66.9\%$ (baseline) and $29.0\%$ (angular Boids) down to $3.2\%$ in 25-step turning rollouts (`analysis/datasets/flocking_model_benchmark_results.json`).
-4. **Phase 4: Global Game Pacing & Viewport Alignment**:
-   - Harmonize camera FOV and visual rendering scales only after core simulation mechanics achieve minimal trajectory RMSE.
+4. **Phase 4: Global Game Pacing & Viewport Alignment (Completed)**:
+   - **Original Viewport Baseline**: $1920.0 \times 1080.0\text{ units}$ ($16:9$ aspect ratio), $V_{\text{bullet, orig}} = 1025.0\text{ px/s} \implies 0.5339\text{ screen widths/s}$, horizontal traversal from center to edge $= 936.59\text{ ms}$.
+   - **Remake Camera Zoom & Physics Scaling (`game.ts`, `Hook.cs`)**: Calibrated `zoom = 1000` ($1000.0 \times 562.5\text{ units}$ at $16:9$ for $20\%$ zoom-in object scaling), with `Hook.BaseThrustConverter = 0.002f` and `Hook.ShotThrustConverter = 0.0013f`. With $V_{\text{bullet, remake}} = 533.0\text{ units/s}$, horizontal traversal is $938.09\text{ ms}$ ($+0.16\%$ margin to ground truth), achieving $99.84\%$ screen velocity match while preserving the exact $1:1$ speed ratio invariant $\text{ShotThrustConverter} \times 10 = \text{BaseThrustConverter} \times 6.5 = 0.0130$.
+
