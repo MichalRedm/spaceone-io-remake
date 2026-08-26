@@ -111,12 +111,16 @@ if (nick) {
   });
 }
 
-function unicode(e) {
+function unicode(e: string): string {
   return e
     .split("-")
-    .reduce((total, x) => total + getUnicodeCharacter(parseInt(x, 16)), "");
+    .reduce(
+      (total: string, x: string) =>
+        total + (getUnicodeCharacter(parseInt(x, 16)) || ""),
+      "",
+    );
 }
-function getUnicodeCharacter(cp) {
+function getUnicodeCharacter(cp: number): string {
   if ((cp >= 0 && cp <= 0xd7ff) || (cp >= 0xe000 && cp <= 0xffff)) {
     return String.fromCharCode(cp);
   } else if (cp >= 0x10000 && cp <= 0x10ffff) {
@@ -126,16 +130,49 @@ function getUnicodeCharacter(cp) {
 
     // we add 0xD800 to the number formed by the first 10 bits
     // to give the first byte
-    var first = ((0xffc00 & cp) >> 10) + 0xd800;
+    const first = ((0xffc00 & cp) >> 10) + 0xd800;
 
     // we add 0xDC00 to the number formed by the low 10 bits
     // to give the second byte
-    var second = (0x3ff & cp) + 0xdc00;
+    const second = (0x3ff & cp) + 0xdc00;
 
     return String.fromCharCode(first) + String.fromCharCode(second);
   }
+  return "";
 }
-export var Controls = {
+
+export interface ControlsType {
+  emoji: string;
+  nick: string;
+  left: boolean;
+  up: boolean;
+  right: boolean;
+  down: boolean;
+  numUp: boolean;
+  numUpRight: boolean;
+  numRight: boolean;
+  numDownRight: boolean;
+  numDown: boolean;
+  numDownLeft: boolean;
+  numLeft: boolean;
+  numUpLeft: boolean;
+  boost: boolean;
+  shoot: boolean;
+  autofire: boolean;
+  downSince: number | false;
+  customData: any;
+  mouseX: number;
+  mouseY: number;
+  angle: number;
+  canvas: HTMLCanvasElement | null;
+  color: string | null;
+  ship: string;
+  registerCanvas(canvas: HTMLCanvasElement): void;
+  initializeWorld(world?: any): void;
+  addSecretShips(discord?: any): void;
+}
+
+export const Controls: ControlsType = {
   emoji: "👋",
   nick: "",
   left: false,
@@ -153,23 +190,28 @@ export var Controls = {
   boost: false,
   shoot: false,
   autofire: false,
-  downSince: null,
+  downSince: false,
   customData: false,
   mouseX: 0,
   mouseY: 0,
   angle: 0,
   canvas: null,
   color: null,
-  registerCanvas(canvas) {
-    const getMousePos = (canvas, { clientX, clientY }) => {
-      const rect = canvas.getBoundingClientRect();
+  ship: "ship_green",
+
+  registerCanvas(canvas: HTMLCanvasElement): void {
+    const getMousePos = (
+      c: HTMLCanvasElement,
+      { clientX, clientY }: MouseEvent,
+    ) => {
+      const rect = c.getBoundingClientRect();
       return {
         x: clientX - rect.left,
         y: clientY - rect.top,
       };
     };
-    if (isMobile) {
-      nipple.on("move", (e, { angle, force }) => {
+    if (isMobile && nipple) {
+      nipple.on("move", (_e: any, { angle, force }: any) => {
         Controls.angle = angle.radian;
         const cx = canvas.width / 2;
         const cy = canvas.height / 2;
@@ -178,18 +220,18 @@ export var Controls = {
         Controls.mouseY =
           Math.sin(-angle.radian) * force * window.innerHeight + cy;
       });
-      document.getElementById("shoot").addEventListener("touchstart", (e) => {
+      document.getElementById("shoot")?.addEventListener("touchstart", () => {
         Controls.shoot = true;
       });
-      document.getElementById("shoot").addEventListener("touchend", (e) => {
+      document.getElementById("shoot")?.addEventListener("touchend", () => {
         if (!Controls.autofire) {
           Controls.shoot = false;
         }
       });
-      document.getElementById("boost").addEventListener("touchstart", (e) => {
+      document.getElementById("boost")?.addEventListener("touchstart", () => {
         Controls.boost = true;
       });
-      document.getElementById("boost").addEventListener("touchend", (e) => {
+      document.getElementById("boost")?.addEventListener("touchend", () => {
         Controls.boost = false;
       });
     } else {
@@ -205,8 +247,8 @@ export var Controls = {
         Controls.angle = Math.atan2(dy, dx);
       });
       window.addEventListener("mousedown", ({ button }) => {
-        if (button == 2)
-          //right click
+        if (button === 2)
+          // right click
           Controls.boost = true;
         else {
           if (Settings.mouseOneButton > 0) {
@@ -218,12 +260,15 @@ export var Controls = {
       });
 
       window.addEventListener("mouseup", ({ button }) => {
-        if (button == 2)
-          //right click
+        if (button === 2)
+          // right click
           Controls.boost = false;
         else {
           if (Settings.mouseOneButton > 0) {
-            const timeDelta = new Date().getTime() - Controls.downSince;
+            const timeDelta =
+              Controls.downSince !== false
+                ? new Date().getTime() - Controls.downSince
+                : 0;
             Controls.downSince = false;
             if (timeDelta < Settings.mouseOneButton) {
               Controls.shoot = true;
@@ -238,49 +283,51 @@ export var Controls = {
                 Controls.boost = false;
               }, 100);
             }
-          } else if (!Controls.autofire) {
-            Controls.shoot = false;
+          } else {
+            if (!Controls.autofire) {
+              Controls.shoot = false;
+            }
           }
         }
       });
       document
         .getElementById("gameArea")
-        .addEventListener("contextmenu", (e) => {
+        ?.addEventListener("contextmenu", (e) => {
           e.preventDefault();
           return false;
         });
     }
     Controls.canvas = canvas;
   },
-  initializeWorld: function (world) {
-    colors = shuffle(colors); // shuffle(world.allowedColors); - ignored for secret ships bug fix
-    Controls.ship = colors[3];
+
+  initializeWorld: function (_world?: any): void {
+    colors = shuffle(colors);
+    Controls.ship = colors[3] ?? "ship_green";
     drawColorSelector();
   },
-  ship: "ship_green",
 
-  addSecretShips: function (discord) {
+  addSecretShips: function (discord?: any): void {
     try {
       if (discord && discord.data && discord.data.roles) {
         if (discord.data.roles.includes("Player")) {
           if (shipSelectorSwitch) {
-            var ship = shipSelectorSwitch.querySelector(
+            const ship = shipSelectorSwitch.querySelector(
               "[data-color=ship_secret]",
             );
-            if (ship) (<any>ship).style.display = "inline-block";
+            if (ship) (ship as HTMLElement).style.display = "inline-block";
           }
         }
         if (discord.data.roles.includes("Old Guard")) {
           if (shipSelectorSwitch) {
-            var ship = shipSelectorSwitch.querySelector(
+            const ship = shipSelectorSwitch.querySelector(
               "[data-color=ship_zed]",
             );
-            if (ship) (<any>ship).style.display = "inline-block";
+            if (ship) (ship as HTMLElement).style.display = "inline-block";
           }
         }
       }
     } catch (e) {
-      console.log("exception in addSecretShips: ", e);
+      console.log("error adding secret ships", e);
     }
   },
 };
@@ -419,26 +466,26 @@ const savedNick = Cookies.get("nick");
 const savedColor = Cookies.get("ship") || Cookies.get("color");
 const savedEmoji = Cookies.get("emoji");
 
-if (savedNick != undefined) {
+if (savedNick !== undefined) {
   Controls.nick = savedNick;
-  nick.value = savedNick;
+  if (nick) nick.value = savedNick;
 }
 
-if (savedColor != undefined && colors.includes(savedColor)) {
+if (savedColor !== undefined && colors.includes(savedColor)) {
   Controls.color = savedColor;
   Controls.ship = savedColor;
   refreshSelectedStyle();
 }
 
-if (savedEmoji != undefined) {
+if (savedEmoji !== undefined) {
   Controls.emoji = savedEmoji;
-  emojiTrigger.innerText = savedEmoji;
+  if (emojiTrigger) emojiTrigger.innerText = savedEmoji;
 }
 
-function shuffle(array) {
-  var currentIndex = array.length,
-    temporaryValue,
-    randomIndex;
+function shuffle<T>(array: T[]): T[] {
+  let currentIndex = array.length,
+    temporaryValue: T,
+    randomIndex: number;
 
   // While there remain elements to shuffle...
   while (0 !== currentIndex) {
@@ -447,9 +494,13 @@ function shuffle(array) {
     currentIndex -= 1;
 
     // And swap it with the current element.
-    temporaryValue = array[currentIndex];
-    array[currentIndex] = array[randomIndex];
-    array[randomIndex] = temporaryValue;
+    const currentElem = array[currentIndex];
+    const randomElem = array[randomIndex];
+    if (currentElem !== undefined && randomElem !== undefined) {
+      temporaryValue = currentElem;
+      array[currentIndex] = randomElem;
+      array[randomIndex] = temporaryValue;
+    }
   }
 
   return array;
@@ -551,7 +602,7 @@ if (document.readyState === "loading") {
 
 document
   .getElementById("fullscreenButton")
-  .addEventListener("click", toggleFullscreen);
+  ?.addEventListener("click", toggleFullscreen);
 
 function toggleFullscreen() {
   if (window.innerHeight == screen.height) {

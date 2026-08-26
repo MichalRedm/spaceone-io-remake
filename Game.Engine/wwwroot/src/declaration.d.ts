@@ -15,6 +15,35 @@ declare module "*?raw" {
   export default content;
 }
 
+declare module "whatwg-fetch" {
+  export const fetch: typeof globalThis.fetch;
+  export const Headers: typeof globalThis.Headers;
+  export const Request: typeof globalThis.Request;
+  export const Response: typeof globalThis.Response;
+}
+
+declare module "js-cookie" {
+  interface CookieAttributes {
+    expires?: number | Date;
+    path?: string;
+    domain?: string;
+    secure?: boolean;
+    sameSite?: "strict" | "lax" | "none";
+  }
+  interface CookiesStatic {
+    get(name: string): string | undefined;
+    get(): Record<string, string>;
+    set(
+      name: string,
+      value: string | number | boolean | object,
+      options?: CookieAttributes,
+    ): string | undefined;
+    remove(name: string, options?: CookieAttributes): void;
+  }
+  const Cookies: CookiesStatic;
+  export default Cookies;
+}
+
 declare module "*.json" {
   const value: any;
   export default value;
@@ -55,6 +84,16 @@ declare module "dat.gui" {
 declare module "nipplejs" {
   const nipplejs: any;
   export default nipplejs;
+}
+
+declare module "plotly.js/lib/core" {
+  const Plotly: any;
+  export default Plotly;
+}
+
+declare module "plotly.js/lib/barpolar" {
+  const barpolar: any;
+  export default barpolar;
 }
 
 declare module "emoji-mart" {

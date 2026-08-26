@@ -3,13 +3,14 @@ import { CustomContainer } from "./CustomContainer";
 
 export class Overlay {
   container: CustomContainer;
-  plotly: Plotly;
+  plotly: any;
   canvas: HTMLCanvasElement;
-  data: any;
+  data: unknown;
+
   constructor(
     container: CustomContainer,
     canvas: HTMLCanvasElement,
-    plotly: Plotly,
+    plotly: any,
   ) {
     this.container = container;
     this.plotly = plotly;
@@ -17,7 +18,7 @@ export class Overlay {
     this.data = false;
   }
 
-  update(customData) {
+  update(customData: unknown): void {
     this.data = customData;
 
     if (this.plotly.used) this.container.plotly.style.visibility = "visible";

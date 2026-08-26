@@ -2,22 +2,21 @@ import { Settings } from "./settings";
 
 const hudh = document.getElementById("hud");
 export class HUD {
-  _latency: number;
-  framesPerSecond: number;
-  playerCount: number;
-  spectatorCount: number;
-  set latency(l) {
+  _latency = 0;
+  framesPerSecond = 0;
+  playerCount = 0;
+  spectatorCount = 0;
+
+  set latency(l: number) {
     this._latency = l;
     this.update();
   }
-  update() {
+
+  update(): void {
+    if (!hudh) return;
     if (Settings.hudEnabled) hudh.style.visibility = "visible";
     else hudh.style.visibility = "hidden";
 
-    /* hudh.innerHTML = `fps: ${this.framesPerSecond || 0} - \
-                          players: ${this.playerCount || 0} - \
-                          spectators: ${this.spectatorCount || 0} - \
-                          ping: ${Math.floor(this._latency || 0)}`;*/
     hudh.style.fontFamily = Settings.font;
 
     if (this.playerCount > 0)

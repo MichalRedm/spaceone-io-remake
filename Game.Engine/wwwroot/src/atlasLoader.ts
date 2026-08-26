@@ -175,8 +175,8 @@ export function createTextureFromDefinition(
       const tex = new PIXI.Texture(
         baseTexture,
         new PIXI.Rectangle(sx, sy, sw, sh),
-        null,
-        null,
+        undefined,
+        undefined,
         textureDefinition.rotate || 0,
       );
       (tex as any).daudScale = calculateScaleWithHeight(
@@ -256,8 +256,8 @@ export function initializeAtlasTextures(enableMipmapping = false): void {
       const texture = new PIXI.Texture(
         baseTexture,
         rect,
-        null,
-        null,
+        undefined,
+        undefined,
         frameData.rotated ? 2 : 0,
       );
       (texture as any).daudScale = 1.0;

@@ -1,14 +1,14 @@
 import Cookies from "js-cookie";
 
-var changelog = document.getElementById("changelog");
-var currentChangelogVersion = "0";
-var lastversion = Cookies.get("changelog");
-var open = false;
+const changelog = document.getElementById("changelog");
+let currentChangelogVersion = "0";
+const lastversion = Cookies.get("changelog");
+let open = false;
 
 if (changelog) {
   currentChangelogVersion = changelog.getAttribute("data-version") || "0";
 
-  if (lastversion != currentChangelogVersion) {
+  if (lastversion !== currentChangelogVersion) {
     const cookieOptions = { expires: 300 };
     Cookies.set("changelog", currentChangelogVersion, cookieOptions);
 
@@ -17,8 +17,8 @@ if (changelog) {
   }
 
   changelog.addEventListener("click", () => {
-    if (open) changelog.classList.remove("new");
-    else changelog.classList.add("new");
+    if (open) changelog?.classList.remove("new");
+    else changelog?.classList.add("new");
     open = !open;
   });
 }

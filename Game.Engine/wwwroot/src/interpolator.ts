@@ -1,25 +1,48 @@
 import { Vector2 } from "./Vector2";
 
-export class Interpolator {
-  constructor(settings = {}) {}
+export interface ProjectedPoint {
+  x: number;
+  y: number;
+  Angle: number;
+}
 
-  shortAngleDist(a0, a1) {
+export interface InterpolableObject {
+  DefinitionTime: number;
+  OriginalAngle: number;
+  AngularVelocity: number;
+  OriginalPosition: { x: number; y: number };
+  Momentum: { x: number; y: number };
+  Angle?: number;
+  Position?: Vector2 | { x: number; y: number };
+  previous?:
+    | {
+        Position?: Vector2 | { x: number; y: number };
+        Angle?: number;
+        obsolete?: number;
+      }
+    | false;
+}
+
+export class Interpolator {
+  constructor(_settings: Record<string, unknown> = {}) {}
+
+  shortAngleDist(a0: number, a1: number): number {
     const max = Math.PI * 2;
     const da = (a1 - a0) % max;
     return ((2 * da) % max) - da;
   }
 
-  angleLerp(a0, a1, t) {
+  angleLerp(a0: number, a1: number, t: number): number {
     return a0 + this.shortAngleDist(a0, a1) * t;
   }
 
-  lerp(value1, value2, amount) {
+  lerp(value1: number, value2: number, amount: number): number {
     amount = amount < 0 ? 0 : amount;
     amount = amount > 1 ? 1 : amount;
     return value1 + (value2 - value1) * amount;
   }
 
-  projectObject(object, time) {
+  projectObject(object: InterpolableObject, time: number): ProjectedPoint {
     const timeShift = time - object.DefinitionTime;
     object.Angle = object.OriginalAngle + timeShift * object.AngularVelocity;
     object.Position = new Vector2(
@@ -28,39 +51,28 @@ export class Interpolator {
     );
 
     if (object.previous && object.previous.Position) {
-      //var lerpAmount = Math.max(0.0, Math.min((time-object.previous.obsolete) / 400.0, 1.0));
       const lerpAmount = 0.7;
-
-      if (lerpAmount > 0 && lerpAmount < 1) {
-        const x = 1;
-      }
 
       // disable position lerping
       object.previous.Position = object.Position;
-      //object.previous.Position.X = this.lerp(object.previous.Position.X, object.Position.X, lerpAmount);
-      //object.previous.Position.Y = this.lerp(object.previous.Position.Y, object.Position.Y, lerpAmount);
 
       object.previous.Angle = this.angleLerp(
-        object.previous.Angle,
+        object.previous.Angle ?? object.Angle,
         object.Angle,
         lerpAmount,
       );
 
-      var newPoint = {
+      return {
         x: object.previous.Position.x,
         y: object.previous.Position.y,
         Angle: object.previous.Angle,
       };
-
-      return newPoint;
     } else {
-      var newPoint = {
+      return {
         x: object.Position.x,
         y: object.Position.y,
         Angle: object.Angle,
       };
-
-      return newPoint;
     }
   }
 }

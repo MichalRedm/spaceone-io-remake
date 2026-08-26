@@ -1,5 +1,6 @@
 import "./bootstrap";
 import * as PIXI from "pixi.js";
+import { Game as FBGame } from "./game_generated";
 
 import { Renderer } from "./renderer";
 import { Background } from "./background";
@@ -13,6 +14,7 @@ import { Leaderboard, clear as clearLeaderboards } from "./leaderboard";
 import { Minimap } from "./minimap";
 import { HUD } from "./hud";
 import { Log } from "./log";
+import type { LogEntryExtraData } from "./log";
 import { Cooldown } from "./cooldown";
 import { FX } from "./models/fx";
 import { Controls } from "./controls";
@@ -23,6 +25,7 @@ import { Settings } from "./settings";
 import { Events } from "./events";
 import { ArenaLink } from "./arenalink";
 import { LobbyCallbacks, toggleLobby } from "./lobby";
+import type { WorldInfo } from "./lobby";
 import "pixi-layers";
 import * as pixi_tilemap from "pixi-tilemap";
 import "./changelog";
@@ -78,28 +81,20 @@ container.tiles = new (
 container.tiles.parentGroup = tileGroup;
 container.addChild(container.tiles);
 
-container.emitterContainer = new PIXI.Container();
-container.emitterContainer.parentGroup = bodyGroup;
-container.zOrder = 128;
-container.addChild(container.emitterContainer);
-FX.init(container);
-
-const renderer = new Renderer(container);
 const background = new Background(container);
 const border = new Border(container);
-const overlay = new Overlay(
-  container,
-  canvas,
-  document.getElementById("plotly"),
-);
-container.plotly = document.getElementById("plotly");
+const overlay = new Overlay(container, canvas, container.plotly);
+FX.init(container);
 const camera = new Camera(size);
+
 const interpolator = new Interpolator();
+const renderer = new Renderer(container);
 const leaderboard = new Leaderboard();
 const minimap = new Minimap(app.stage, size);
 const hud = new HUD();
 const log = new Log();
 const cooldown = new Cooldown();
+
 let isSpectating = false;
 
 let angle = 0.0;
@@ -109,18 +104,24 @@ let d = 500; // for steering with arrows
 let keyboardSteering = false;
 let keyboardSteeringSpeed = 0.075;
 
-let cache = new Cache(container);
-let view = null;
-let serverTimeOffset = null;
-let lastOffset = null;
-let gameTime = null;
-let lastPosition = null;
+interface GameViewState {
+  time: number;
+  isAlive: boolean;
+  camera?: any;
+}
+
+const cache = new Cache(container);
+let view: GameViewState | null = null;
+let serverTimeOffset: number | false = false;
+let lastOffset = 0;
+let gameTime = 0;
+let lastPosition: Vector2 | null = null;
 let worldSize = 1000;
 
-let CustomData = null;
-let CustomDataTime = null;
+let CustomData: string | null = null;
+let CustomDataTime: number | null = null;
 
-let currentWorld = false;
+let currentWorld: WorldInfo | false = false;
 
 Controls.registerCanvas(canvas);
 
@@ -143,21 +144,25 @@ const arenaLink = new ArenaLink();
 
 document
   .getElementById("generate-link-button")
-  .addEventListener("click", function () {
+  ?.addEventListener("click", function () {
     arenaLink.copy();
   });
 
-const bodyFromServer = (cache: Cache, body) => {
+function bodyFromServer(
+  _cache: Cache,
+  body: FBGame.Engine.Networking.FlatBuffers.NetBody | null,
+): any {
+  if (!body) return null;
   const originalPosition = body.originalPosition();
   const momentum = body.velocity();
   const groupID = body.group();
 
-  var spriteIndex = body.sprite();
-  var spriteName = null;
+  const spriteIndex = body.sprite();
+  let spriteName: string | null = null;
   if (spriteIndex >= 1000) spriteName = `map[${spriteIndex - 1000}]`;
-  else spriteName = spriteIndices[spriteIndex];
+  else spriteName = spriteIndices[spriteIndex] ?? null;
 
-  const newBody = {
+  return {
     ID: body.id(),
     DefinitionTime: body.definitionTime(),
     Size: body.size() * 5,
@@ -167,50 +172,60 @@ const bodyFromServer = (cache: Cache, body) => {
     Group: groupID,
     OriginalAngle: body.originalAngle(),
     AngularVelocity: body.angularVelocity(),
-    Momentum: new Vector2(momentum.x(), momentum.y()),
-    OriginalPosition: new Vector2(originalPosition.x(), originalPosition.y()),
+    Momentum: momentum
+      ? new Vector2(momentum.x(), momentum.y())
+      : new Vector2(0, 0),
+    OriginalPosition: originalPosition
+      ? new Vector2(originalPosition.x(), originalPosition.y())
+      : new Vector2(0, 0),
   };
+}
 
-  return newBody;
-};
+function groupFromServer(
+  _cache: Cache,
+  group: FBGame.Engine.Networking.FlatBuffers.NetGroup | null,
+): any {
+  if (!group) return null;
+  let customData = group.customData();
+  if (customData) {
+    try {
+      customData = JSON.parse(customData);
+    } catch {
+      // keep raw string
+    }
+  }
 
-const groupFromServer = (cache, group) => {
-  const newGroup = {
+  return {
     ID: group.group(),
-    Caption: group.caption(),
+    Caption: group.caption() ?? undefined,
     Type: group.type(),
     ZIndex: group.zindex(),
-    CustomData: group.customData(),
+    CustomData: customData,
   };
-
-  if (newGroup.CustomData)
-    newGroup.CustomData = JSON.parse(newGroup.CustomData);
-
-  return newGroup;
-};
+}
 
 connection.onLeaderboard = (lb) => {
-  leaderboard.update(lb, lastPosition, fleetID);
+  leaderboard.update(lb, lastPosition ?? new Vector2(0, 0), fleetID);
   minimap.update(lb, worldSize, fleetID);
 };
 
 var fleetID = 0;
 let ownFleetID = 0;
-let lastAliveState = null;
-let aliveSince = null;
+let lastAliveState: boolean | null = null;
+let aliveSince: number | null = null;
 let joiningWorld = false;
 
 connection.onConnected = () => {
-  connection.sendAuthenticate(getToken());
+  connection.sendAuthenticate(getToken() ?? "");
 };
 
 connection.onView = (newView) => {
   viewCounter++;
 
-  view = {};
-  view.time = newView.time();
-
-  view.isAlive = newView.isAlive();
+  view = {
+    time: newView.time(),
+    isAlive: newView.isAlive(),
+  };
 
   fleetID = newView.fleetID();
   if (view.isAlive) {
@@ -243,37 +258,17 @@ connection.onView = (newView) => {
       animateOpacity("#overlay", 0.8, 2000);
     }, 1000);
 
-    Events.Death((gameTime - aliveSince) / 1000);
-
-    /*let countDown = 3;
-        let interval = null;
-        const updateButton = function() {
-            const button = document.getElementById("spawn") as HTMLButtonElement;
-            const buttonSpectate = document.getElementById("spawnSpectate") as HTMLButtonElement;
-
-            if (countDown > 0) {
-                buttonSpectate.value = button.value = `${countDown--} ...`;
-                buttonSpectate.disabled = button.disabled = true;
-            } else {
-                buttonSpectate.value = button.value = `LAUNCH!`;
-                buttonSpectate.disabled = button.disabled = false;
-                clearInterval(interval);
-            }
-        };
-        updateButton();*/
-
-    //interval = setInterval(updateButton, 1000);
+    Events.Death((gameTime - (aliveSince ?? gameTime)) / 1000);
   }
 
   lastOffset = view.time + connection.latency / 2 - performance.now();
-  if (!serverTimeOffset) serverTimeOffset = lastOffset;
+  if (serverTimeOffset === false) serverTimeOffset = lastOffset;
   serverTimeOffset = 0.95 * serverTimeOffset + 0.05 * lastOffset;
 
   const groupsLength = newView.groupsLength();
   const groups = [];
   for (let u = 0; u < groupsLength; u++) {
     const group = newView.groups(u);
-
     groups.push(groupFromServer(cache, group));
   }
 
@@ -281,48 +276,60 @@ connection.onView = (newView) => {
   const updates = [];
   for (let u = 0; u < updatesLength; u++) {
     const update = newView.updates(u);
-
     updates.push(bodyFromServer(cache, update));
   }
 
   const announcementsLength = newView.announcementsLength();
   for (let u = 0; u < announcementsLength; u++) {
     const announcement = newView.announcements(u);
+    if (!announcement) continue;
     switch (announcement.type()) {
-      case "join":
-        let worldKey = announcement.text();
-
-        if (!joiningWorld) {
+      case "join": {
+        const worldKey = announcement.text() ?? "";
+        if (!joiningWorld && LobbyCallbacks.joinWorld) {
           joiningWorld = true;
           console.log("received join: " + worldKey);
           LobbyCallbacks.joinWorld(worldKey);
         }
         break;
-      default:
-        let extra = announcement.extraData();
-
-        if (extra) extra = JSON.parse(extra);
+      }
+      default: {
+        let extra: LogEntryExtraData | undefined = undefined;
+        const extraRaw = announcement.extraData();
+        if (extraRaw) {
+          try {
+            extra = JSON.parse(extraRaw);
+          } catch {
+            // ignore
+          }
+        }
 
         log.addEntry({
-          type: announcement.type(),
-          text: announcement.text(),
+          type: announcement.type() ?? "",
+          text: announcement.text() ?? "",
           pointsDelta: announcement.pointsDelta(),
           extraData: extra,
         });
         break;
+      }
     }
   }
 
   updateCounter += updatesLength;
 
-  const deletes = [];
+  const deletes: number[] = [];
   const deletesLength = newView.deletesLength();
-  for (let d = 0; d < deletesLength; d++) deletes.push(newView.deletes(d));
+  for (let d = 0; d < deletesLength; d++) {
+    const del = newView.deletes(d);
+    if (del !== null) deletes.push(del);
+  }
 
-  const groupDeletes = [];
+  const groupDeletes: number[] = [];
   const groupDeletesLength = newView.groupDeletesLength();
-  for (let d = 0; d < groupDeletesLength; d++)
-    groupDeletes.push(newView.groupDeletes(d));
+  for (let d = 0; d < groupDeletesLength; d++) {
+    const gdel = newView.groupDeletes(d);
+    if (gdel !== null) groupDeletes.push(gdel);
+  }
 
   cache.update(updates, deletes, groups, groupDeletes, gameTime, fleetID);
   overlay.update(newView.customData());
@@ -330,7 +337,7 @@ connection.onView = (newView) => {
   hud.playerCount = newView.playerCount();
   hud.spectatorCount = newView.spectatorCount();
 
-  if (newView.worldSize() != border.worldSize) {
+  if (newView.worldSize() !== border.worldSize) {
     worldSize = newView.worldSize();
     border.updateWorldSize(newView.worldSize());
   }
@@ -340,11 +347,6 @@ connection.onView = (newView) => {
   } else {
     cooldown.hide();
   }
-  /*console.log({
-        playerCount: Game.Stats.playerCount,
-        cooldownBoost: newView.cooldownBoost(),
-        cooldownShoot: newView.cooldownShoot()
-    })*/
 
   view.camera = bodyFromServer(cache, newView.camera());
 
@@ -377,13 +379,13 @@ setInterval(() => {
     Controls.shoot !== lastControl.shoot ||
     message.txt !== lastControl.chat
   ) {
-    let spectateControl = null;
+    let spectateControl: string | undefined = undefined;
     if (isSpectating) {
       if (Controls.shoot) spectateControl = "action:next";
       else spectateControl = "spectating";
     }
 
-    var customData = null;
+    let customData: string | undefined = undefined;
 
     if (message.time + 3000 > Date.now())
       customData = JSON.stringify({ chat: message.txt });
@@ -413,14 +415,14 @@ LobbyCallbacks.onLobbyClose = function () {
 };
 
 var spawnOnView = false;
-LobbyCallbacks.onWorldJoin = function (worldKey, world) {
+LobbyCallbacks.onWorldJoin = function (worldKey: string, world?: WorldInfo) {
   console.log(`onWorldJoin: ${worldKey} ${world}`);
   if (joiningWorld) {
     joiningWorld = false;
     spawnOnView = true;
   }
 
-  currentWorld = world;
+  currentWorld = world ?? false;
   connection.disconnect();
   cache.empty();
   connection.connect(worldKey);
@@ -429,15 +431,15 @@ LobbyCallbacks.onWorldJoin = function (worldKey, world) {
   Controls.initializeWorld(world);
 };
 
-function doSpawn() {
+function doSpawn(): void {
   isSpectating = false;
   Events.Spawn();
   aliveSince = gameTime;
   connection.sendSpawn(
     Controls.nick,
-    Controls.color,
+    Controls.color ?? "gray",
     Controls.ship,
-    getToken(),
+    getToken() ?? "",
   );
   const overlayEl = document.getElementById("overlay");
   if (overlayEl) overlayEl.style.opacity = "0";
@@ -446,14 +448,15 @@ function doSpawn() {
   show(".visibility2");
   show(".visibility3");
 }
-document.getElementById("spawn").addEventListener("click", doSpawn);
-document.getElementById("spawnSpectate").addEventListener("click", doSpawn);
+document.getElementById("spawn")?.addEventListener("click", doSpawn);
+document.getElementById("spawnSpectate")?.addEventListener("click", doSpawn);
 
 function startSpectate(hideButton = false) {
   isSpectating = true;
   ownFleetID = 0;
   Events.Spectate();
-  document.getElementById("overlay").style.opacity = "0";
+  const overlay = document.getElementById("overlay");
+  if (overlay) overlay.style.opacity = "0";
   document.body.classList.add("spectating");
   document.body.classList.add("dead");
   canvas.style.visibility = "initial";
@@ -467,7 +470,7 @@ function startSpectate(hideButton = false) {
   }
 }
 
-document.getElementById("spectate").addEventListener("click", () => {
+document.getElementById("spectate")?.addEventListener("click", () => {
   startSpectate();
 });
 
@@ -478,9 +481,10 @@ function stopSpectate() {
   document.body.classList.remove("spectate_only");
 }
 
-document.getElementById("stop_spectating").addEventListener("click", () => {
+document.getElementById("stop_spectating")?.addEventListener("click", () => {
   stopSpectate();
-  document.getElementById("deathScreen").style.visibility = "hidden";
+  const deathScreen = document.getElementById("deathScreen");
+  if (deathScreen) deathScreen.style.visibility = "hidden";
 });
 
 document.addEventListener("keydown", ({ keyCode, which }) => {
@@ -552,31 +556,34 @@ container.addChild(graphics);
 const fleetSizeDisplay = document.getElementById("fleetSize");
 const dangerZoneWarning = document.getElementById("dangerZoneWarning");
 
-let lastCustomData = false;
-let spotSprites = [];
+let lastCustomData: string | null = null;
+let spotSprites: PIXI.Sprite[] = [];
 
 // Game Loop
 app.ticker.add(() => {
-  const latency = connection.minLatency || 0;
-  gameTime = performance.now() + serverTimeOffset;
+  const _latency = connection.minLatency || 0;
+  gameTime =
+    performance.now() + (serverTimeOffset !== false ? serverTimeOffset : 0);
   frameCounter++;
 
-  for (var key in cache.groups) {
-    if (cache.groups[key].ID == fleetID) {
+  for (const key in cache.groups) {
+    if (cache.groups[key].ID === fleetID) {
       if (
+        fleetSizeDisplay &&
         Number(fleetSizeDisplay.innerHTML) !==
-        cache.groups[key].renderer.ships.length
+          cache.groups[key].renderer.ships.length
       ) {
-        fleetSizeDisplay.innerText = cache.groups[key].renderer.ships.length;
-        //shake(document.body, 3);
+        fleetSizeDisplay.innerText = String(
+          cache.groups[key].renderer.ships.length,
+        );
       }
     }
   }
 
   let position = new Vector2(0, 0);
 
-  if (view) {
-    var positionA = interpolator.projectObject(view.camera, gameTime);
+  if (view && view.camera) {
+    const positionA = interpolator.projectObject(view.camera, gameTime);
     position = new Vector2(positionA.x, positionA.y);
     position.x = position.x * (1 - cameraDrag) + lastCamera.x * cameraDrag;
     position.y = position.y * (1 - cameraDrag) + lastCamera.y * cameraDrag;
@@ -598,13 +605,15 @@ app.ticker.add(() => {
 
   lastPosition = position;
 
-  if (
-    (Math.abs(position.x) > worldSize || Math.abs(position.y) > worldSize) &&
-    document.body.classList.contains("alive")
-  ) {
-    dangerZoneWarning.style.display = "block";
-  } else {
-    dangerZoneWarning.style.display = "none";
+  if (dangerZoneWarning) {
+    if (
+      (Math.abs(position.x) > worldSize || Math.abs(position.y) > worldSize) &&
+      document.body.classList.contains("alive")
+    ) {
+      dangerZoneWarning.style.display = "block";
+    } else {
+      dangerZoneWarning.style.display = "none";
+    }
   }
 
   log.check();
@@ -679,11 +688,13 @@ app.ticker.add(() => {
     }
   }
 
-  if (CustomData != lastCustomData) {
+  if (CustomData !== lastCustomData) {
     lastCustomData = CustomData;
 
-    for (let i = 0; i < spotSprites.length; i++)
-      container.removeChild(spotSprites[i]);
+    for (let i = 0; i < spotSprites.length; i++) {
+      const sprite = spotSprites[i];
+      if (sprite) container.removeChild(sprite);
+    }
 
     spotSprites = [];
 
@@ -715,20 +726,22 @@ app.ticker.add(() => {
 
 document.body.classList.remove("loading");
 
-function parseQuery(queryString) {
-  const query = {};
+function parseQuery(queryString: string): Record<string, string> {
+  const query: Record<string, string> = {};
   const pairs = (
-    queryString[0] === "?" ? queryString.substr(1) : queryString
+    queryString[0] === "?" ? queryString.substring(1) : queryString
   ).split("&");
   for (let i = 0; i < pairs.length; i++) {
-    const pair = pairs[i].split("=");
-    query[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1] || "");
+    const pair = pairs[i]?.split("=");
+    if (pair && pair[0]) {
+      query[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1] || "");
+    }
   }
   return query;
 }
 
 const query = parseQuery(window.location.search);
-if ((<any>query).spectate && (<any>query).spectate !== "0") {
+if (query["spectate"] && query["spectate"] !== "0") {
   startSpectate(true);
 }
 
@@ -737,7 +750,7 @@ canvas.onmousemove = function () {
 };
 
 // clicking enter in nick causes fleet spawn
-document.getElementById("nick").addEventListener("keyup", function (e) {
+document.getElementById("nick")?.addEventListener("keyup", function (e) {
   if (e.keyCode === 13) {
     doSpawn();
   }
@@ -756,7 +769,8 @@ document.body.addEventListener("keydown", function (e) {
   if (
     document.body.classList.contains("dead") &&
     document.getElementById("nick") !== document.activeElement &&
-    e.keyCode === 87
+    e.keyCode === 87 &&
+    worlds
   ) {
     if (worlds.classList.contains("closed")) {
       worlds.classList.remove("closed");
@@ -766,54 +780,41 @@ document.body.addEventListener("keydown", function (e) {
   }
 });
 
-document.getElementById("wcancel").addEventListener("click", function () {
-  worlds.classList.add("closed");
+document.getElementById("wcancel")?.addEventListener("click", function () {
+  worlds?.classList.add("closed");
 });
 
-function mergeSet(a0, a, i) {
-  var ret = (a0 * i + a) / (i + 1);
+function mergeSet(a0: number, a: number, i: number): number {
+  let ret = (a0 * i + a) / (i + 1);
   if (Math.abs(a - a0) > Math.PI) {
     ret += Math.PI;
   }
   return ret;
 }
 
-var shakingElements = [];
-var shake = function (element, magnitude = 16, angular = false) {
-  //First set the initial tilt angle to the right (+1)
-  var tiltAngle = 1;
+const shakingElements: HTMLElement[] = [];
 
-  //A counter to count the number of shakes
-  var counter = 1;
+export function shake(
+  element: HTMLElement,
+  magnitude = 16,
+  angular = false,
+): void {
+  let tiltAngle = 1;
+  let counter = 1;
+  const numberOfShakes = 15;
 
-  //The total number of shakes (there will be 1 shake per frame)
-  var numberOfShakes = 15;
+  const startX = 0;
+  const startY = 0;
+  const startAngle = 0;
+  const magnitudeUnit = magnitude / numberOfShakes;
 
-  //Capture the element's position and angle so you can
-  //restore them after the shaking has finished
-  var startX = 0,
-    startY = 0,
-    startAngle = 0;
-
-  // Divide the magnitude into 10 units so that you can
-  // reduce the amount of shake by 10 percent each frame
-  var magnitudeUnit = magnitude / numberOfShakes;
-
-  //The `randomInt` helper function
-  var randomInt = (min, max) => {
+  const randomInt = (min: number, max: number): number => {
     return Math.floor(Math.random() * (max - min + 1)) + min;
   };
 
-  //Add the element to the `shakingElements` array if it
-  //isn't already there
   if (shakingElements.indexOf(element) === -1) {
-    //console.log("added")
     shakingElements.push(element);
 
-    //Add an `updateShake` method to the element.
-    //The `updateShake` method will be called each frame
-    //in the game loop. The shake effect type can be either
-    //up and down (x/y shaking) or angular (rotational shaking).
     if (angular) {
       angularShake();
     } else {
@@ -821,68 +822,43 @@ var shake = function (element, magnitude = 16, angular = false) {
     }
   }
 
-  //The `upAndDownShake` function
-  function upAndDownShake() {
-    //Shake the element while the `counter` is less than
-    //the `numberOfShakes`
+  function upAndDownShake(): void {
     if (counter < numberOfShakes) {
-      //Reset the element's position at the start of each shake
       element.style.transform = "translate(" + startX + "px, " + startY + "px)";
-
-      //Reduce the magnitude
       magnitude -= magnitudeUnit;
 
-      //Randomly change the element's position
-      var randomX = randomInt(-magnitude, magnitude);
-      var randomY = randomInt(-magnitude, magnitude);
+      const randomX = randomInt(-magnitude, magnitude);
+      const randomY = randomInt(-magnitude, magnitude);
 
       element.style.transform =
         "translate(" + randomX + "px, " + randomY + "px)";
-
-      //Add 1 to the counter
       counter += 1;
 
       requestAnimationFrame(upAndDownShake);
     }
 
-    //When the shaking is finished, restore the element to its original
-    //position and remove it from the `shakingElements` array
     if (counter >= numberOfShakes) {
       element.style.transform = "translate(" + startX + ", " + startY + ")";
       shakingElements.splice(shakingElements.indexOf(element), 1);
     }
   }
 
-  //The `angularShake` function
-  function angularShake() {
+  function angularShake(): void {
     if (counter < numberOfShakes) {
-      console.log(tiltAngle);
-      //Reset the element's rotation
       element.style.transform = "rotate(" + startAngle + "deg)";
-
-      //Reduce the magnitude
       magnitude -= magnitudeUnit;
 
-      //Rotate the element left or right, depending on the direction,
-      //by an amount in radians that matches the magnitude
-      var angle = Number(magnitude * tiltAngle).toFixed(2);
-      console.log(angle);
+      const angle = Number(magnitude * tiltAngle).toFixed(2);
       element.style.transform = "rotate(" + angle + "deg)";
       counter += 1;
-
-      //Reverse the tilt angle so that the element is tilted
-      //in the opposite direction for the next shake
       tiltAngle *= -1;
 
       requestAnimationFrame(angularShake);
     }
 
-    //When the shaking is finished, reset the element's angle and
-    //remove it from the `shakingElements` array
     if (counter >= numberOfShakes) {
       element.style.transform = "rotate(" + startAngle + "deg)";
       shakingElements.splice(shakingElements.indexOf(element), 1);
-      //console.log("removed")
     }
   }
-};
+}

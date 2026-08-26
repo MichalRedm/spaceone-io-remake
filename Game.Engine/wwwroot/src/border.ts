@@ -1,12 +1,12 @@
 import * as PIXI from "pixi.js";
-import { CustomContainer } from "./CustomContainer";
+import type { CustomContainer } from "./CustomContainer";
 import { RenderedObject } from "./models/renderedObject";
 import { hexToRGB } from "./hexColor";
-const worldDefinition = RenderedObject.getSpriteDefinition("world");
 
 export class Border extends RenderedObject {
   graphics: PIXI.Graphics;
-  worldSize: number;
+  worldSize = 6000;
+
   constructor(container: CustomContainer) {
     super(container);
 
@@ -17,10 +17,10 @@ export class Border extends RenderedObject {
     this.container.addChild(this.graphics);
   }
 
-  updateWorldSize(size) {
+  updateWorldSize(size: number): void {
     const edgeWidth = 4000;
     this.graphics.clear();
-    var v = hexToRGB("#200000", 1);
+    const v = hexToRGB("#200000", 1);
     this.graphics.beginFill(v[0] * 256 * 256 + v[1] * 256 + v[2], v[3]);
     this.graphics.drawRect(
       -size - edgeWidth,
@@ -37,7 +37,7 @@ export class Border extends RenderedObject {
       edgeWidth,
     );
     this.graphics.endFill();
-    var v2 = hexToRGB("#ff0000", 1);
+    const v2 = hexToRGB("#ff0000", 1);
     this.graphics.lineStyle(3, v2[0] * 256 * 256 + v2[1] * 256 + v2[2], v2[3]);
     this.graphics.drawRect(-size, -size, size * 2, size * 2);
 

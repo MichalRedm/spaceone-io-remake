@@ -1,8 +1,9 @@
 import { RenderedObject } from "./renderedObject";
-import { CustomContainer } from "../CustomContainer";
+import type { CustomContainer } from "../CustomContainer";
+import type { Cache } from "../cache";
 
 export class Bullet extends RenderedObject {
-  constructor(container: CustomContainer, cache) {
+  constructor(container: CustomContainer, _cache?: Cache) {
     super(container);
   }
 }

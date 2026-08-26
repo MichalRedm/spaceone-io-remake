@@ -2,12 +2,14 @@ import { Settings } from "./settings";
 import { RenderedObject } from "./models/renderedObject";
 import * as PIXI from "pixi.js";
 import { Vector2 } from "./Vector2";
-import { CustomContainer } from "./CustomContainer";
+import type { CustomContainer } from "./CustomContainer";
+import type { BodyState } from "./cache";
 
 export class Background extends RenderedObject {
   focus: Vector2;
   speeds: number[];
-  backgroundSprites: PIXI.TilingSprite[];
+  backgroundSprites: (PIXI.TilingSprite | null)[] = [];
+
   constructor(container: CustomContainer) {
     super(container);
     this.focus = new Vector2(0, 0);
@@ -15,24 +17,26 @@ export class Background extends RenderedObject {
     this.refreshSprite();
   }
 
-  draw() {
+  draw(): void {
     if (this.backgroundSprites) {
-      for (var i = 0; i < this.backgroundSprites.length; i++) {
-        var backgroundSprite = this.backgroundSprites[i];
+      for (let i = 0; i < this.backgroundSprites.length; i++) {
+        const backgroundSprite = this.backgroundSprites[i];
+        if (!backgroundSprite) continue;
         if (this.speeds && this.speeds.length > i) {
+          const speed = this.speeds[i] ?? 1;
           backgroundSprite.position.x =
             -100000 *
               (Math.cos(backgroundSprite.rotation) -
                 Math.sin(backgroundSprite.rotation)) -
-            this.focus.x * (this.speeds[i] - 1);
+            this.focus.x * (speed - 1);
           backgroundSprite.position.y =
             -100000 *
               (Math.sin(backgroundSprite.rotation) +
                 Math.cos(backgroundSprite.rotation)) -
-            this.focus.y * (this.speeds[i] - 1);
-          if (Settings.background == "none" && backgroundSprite.visible)
+            this.focus.y * (speed - 1);
+          if (Settings.background === "none" && backgroundSprite.visible)
             backgroundSprite.visible = false;
-          if (Settings.background == "on" && !backgroundSprite.visible)
+          if (Settings.background === "on" && !backgroundSprite.visible)
             backgroundSprite.visible = true;
         } else {
           backgroundSprite.visible = false;
@@ -40,38 +44,42 @@ export class Background extends RenderedObject {
       }
     }
   }
-  updateFocus(focus: Vector2) {
+
+  updateFocus(focus: Vector2): void {
     this.focus = focus;
   }
 
-  refreshSprite() {
+  refreshSprite(): void {
     const spriteDefinition = RenderedObject.getSpriteDefinition("bg");
+    if (!spriteDefinition) return;
 
-    var layerSpeeds = spriteDefinition["layer-speeds"];
-    var layerTextures = spriteDefinition["layer-textures"];
+    let layerSpeeds = spriteDefinition["layer-speeds"];
+    let layerTextures = spriteDefinition["layer-textures"];
     if (!layerSpeeds || !layerTextures) {
       layerSpeeds = [];
       layerTextures = [];
     }
-    var speeds = layerSpeeds;
+    const speeds = layerSpeeds;
     this.speeds = speeds;
-    var allLayersTextureNames = layerTextures;
-    var allLayersTextures = allLayersTextureNames.map((x) =>
+    const allLayersTextureNames: string[] = Array.isArray(layerTextures)
+      ? layerTextures
+      : [layerTextures];
+    const allLayersTextures = allLayersTextureNames.map((x: string) =>
       RenderedObject.getTextureDefinition(x),
     );
     if (!this.backgroundSprites) {
       this.backgroundSprites = [];
     }
-    for (var i = 0; i < allLayersTextures.length; i++) {
+    for (let i = 0; i < allLayersTextures.length; i++) {
       if (i >= this.backgroundSprites.length) {
         this.backgroundSprites.push(null);
       }
-      var textures = RenderedObject.loadTexture(
+      const textures = RenderedObject.loadTexture(
         allLayersTextures[i],
-        allLayersTextureNames[i],
+        allLayersTextureNames[i] ?? "",
       );
-      if (textures.length > 0) {
-        var backgroundSprite = this.backgroundSprites[i];
+      if (textures && textures.length > 0) {
+        let backgroundSprite = this.backgroundSprites[i];
         if (!backgroundSprite) {
           backgroundSprite = new PIXI.TilingSprite(textures[0], 200000, 200000);
           backgroundSprite.parentGroup = this.container.backgroundGroup;
@@ -92,22 +100,22 @@ export class Background extends RenderedObject {
 
           this.backgroundSprites[i] = backgroundSprite;
         } else backgroundSprite.texture = textures[0];
-      } else {
       }
     }
   }
 
-  destroy() {
+  override destroy(): void {
     if (this.backgroundSprites) {
-      for (var i = 0; i < this.backgroundSprites.length; i++) {
-        var backgroundSprite = this.backgroundSprites[i];
+      for (let i = 0; i < this.backgroundSprites.length; i++) {
+        const backgroundSprite = this.backgroundSprites[i];
         if (backgroundSprite) this.container.removeChild(backgroundSprite);
       }
     }
 
     this.backgroundSprites = [];
   }
-  update(updateData) {
+
+  override update(updateData: BodyState): void {
     super.update(updateData);
   }
 }
