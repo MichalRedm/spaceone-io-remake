@@ -340,3 +340,11 @@ __pycache__/
 # Ignore transient agent session logs and archives
 .agents/archive/
 .agents/memory.md
+
+# =========================
+# Analysis Generated Outputs
+# =========================
+# Large machine-generated datasets and reports produced by analysis scripts.
+# These should never be committed — regenerate locally by running the scripts.
+analysis/datasets/*.json
+analysis/datasets/*.html
