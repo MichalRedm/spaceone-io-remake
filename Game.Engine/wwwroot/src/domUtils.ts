@@ -21,8 +21,18 @@ function resolveElements(
  * Determines the target display property for an element when making it visible.
  */
 function getTargetDisplay(el: HTMLElement, defaultDisplay = "block"): string {
+  if (el.dataset.originalDisplay && el.dataset.originalDisplay !== "none") {
+    return el.dataset.originalDisplay;
+  }
   if (el.style.display && el.style.display !== "none") {
     return el.style.display;
+  }
+  const styleAttr = el.getAttribute("style");
+  if (styleAttr) {
+    const match = styleAttr.match(/(?:^|;|\s)display\s*:\s*([^;]+)/i);
+    if (match && match[1] && match[1].trim() !== "none") {
+      return match[1].trim();
+    }
   }
   const tagName = el.tagName.toLowerCase();
   if (tagName === "span" || tagName === "img" || tagName === "a") {
@@ -84,6 +94,12 @@ export function fadeOut(
   if (elements.length === 0) return;
 
   for (const el of elements) {
+    if (!el.dataset.originalDisplay) {
+      const targetDisplay = getTargetDisplay(el);
+      if (targetDisplay !== "none") {
+        el.dataset.originalDisplay = targetDisplay;
+      }
+    }
     el.style.transition = `opacity ${duration}ms ease`;
     el.style.opacity = "0";
   }
@@ -118,6 +134,12 @@ export function hide(
 ): void {
   const elements = resolveElements(target);
   for (const el of elements) {
+    if (!el.dataset.originalDisplay) {
+      const targetDisplay = getTargetDisplay(el);
+      if (targetDisplay !== "none") {
+        el.dataset.originalDisplay = targetDisplay;
+      }
+    }
     el.style.display = "none";
   }
 }
