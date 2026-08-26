@@ -25,13 +25,15 @@ import { ArenaLink } from "./arenalink";
 import { LobbyCallbacks, toggleLobby } from "./lobby";
 import "pixi-layers";
 import * as pixi_tilemap from "pixi-tilemap";
-import "pixi-particles";
 import "./changelog";
-
 import "./hintbox";
+import { bootstrapPopups } from "./popuputils";
+import { show, hide, fadeIn, animateOpacity } from "./domUtils";
 import { Vector2 } from "./Vector2";
 import { CustomContainer } from "./CustomContainer";
 import { preloadAllAssets } from "./atlasLoader";
+
+bootstrapPopups();
 
 window.Game = window.Game || {};
 const pixiAny = (window as any).PIXI;
@@ -219,11 +221,14 @@ connection.onView = (newView) => {
     document.body.classList.remove("spectating");
     document.body.classList.add("alive");
     canvas.style.visibility = "initial";
-    $(".visibility").hide();
-    $(".visibility4").hide();
-    $(".visibility3").show();
-    $("#overlay").stop();
-    $("#overlay").css("opacity", "0");
+    hide(".visibility");
+    hide(".visibility4");
+    show(".visibility3");
+    const overlay = document.getElementById("overlay");
+    if (overlay) {
+      overlay.style.transition = "none";
+      overlay.style.opacity = "0";
+    }
   } else if (!view.isAlive && lastAliveState) {
     lastAliveState = false;
 
@@ -231,9 +236,9 @@ connection.onView = (newView) => {
       document.body.classList.remove("alive");
       document.body.classList.add("spectating");
       document.body.classList.add("dead");
-      $(".visibility").fadeIn(2000);
-      $(".visibility3").hide();
-      $("#overlay").animate({ opacity: "0.8" }, 2000);
+      fadeIn(".visibility", 2000);
+      hide(".visibility3");
+      animateOpacity("#overlay", 0.8, 2000);
     }, 1000);
 
     Events.Death((gameTime - aliveSince) / 1000);
@@ -436,8 +441,8 @@ function doSpawn() {
   if (overlayEl) overlayEl.style.opacity = "0";
   const selfNickContainer = document.getElementById("selfNickContainer");
   if (selfNickContainer) selfNickContainer.textContent = Controls.nick;
-  $(".visibility2").show();
-  $(".visibility3").show();
+  show(".visibility2");
+  show(".visibility3");
 }
 document.getElementById("spawn").addEventListener("click", doSpawn);
 document.getElementById("spawnSpectate").addEventListener("click", doSpawn);
@@ -450,10 +455,10 @@ function startSpectate(hideButton = false) {
   document.body.classList.add("spectating");
   document.body.classList.add("dead");
   canvas.style.visibility = "initial";
-  $(".visibility").hide();
-  $(".visibility2").show();
-  $(".visibility3").hide();
-  $(".visibility4").hide();
+  hide(".visibility");
+  show(".visibility2");
+  hide(".visibility3");
+  hide(".visibility4");
 
   if (hideButton) {
     document.body.classList.add("spectate_only");

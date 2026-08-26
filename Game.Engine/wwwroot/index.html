@@ -21,9 +21,7 @@
     <link rel="shortcut icon" type="image/png" href="img/ship_icon.png" />
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.1/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous" />
     <link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" >
-    <link href="https://fonts.googleapis.com/css?family=Exo+2&display=swap" rel="stylesheet"> 
-    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
-
+    <link href="https://fonts.googleapis.com/css?family=Exo+2&display=swap" rel="stylesheet">
 </head>
 
 <body class="loading dead static_background">
@@ -704,20 +702,15 @@
             featuredVideosIDs.push("6OYueeto_6o");
         }
         var index = Math.floor(featuredVideosIDs.length * Math.random());
-        $("#player").html('<iframe id="playerIframe" width="336" height="189" src="https://www.youtube.com/embed/'+featuredVideosIDs[index]+'" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>');
-    
-        $("#changelogButton").click(function(){
-            $("#popupChangelog").fadeIn(500);
-        });
-        
-        $("#changelogClose, #changelogBack").click(function(){
-            $("#popupChangelog").fadeOut(500);
-        });
+        const playerEl = document.getElementById("player");
+        if (playerEl) {
+            playerEl.innerHTML = '<iframe id="playerIframe" width="336" height="189" src="https://www.youtube.com/embed/' + encodeURIComponent(featuredVideosIDs[index]) + '" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
+        }
         
         function loadIframe(iframeName, url) {
-            var $iframe = $('#' + iframeName);
-            if ( $iframe.length ) {
-                $iframe.attr('src',url);   
+            var iframe = document.getElementById(iframeName);
+            if (iframe) {
+                iframe.setAttribute('src', url);   
                 return false;
             }
             return true;

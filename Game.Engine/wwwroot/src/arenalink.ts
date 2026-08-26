@@ -1,3 +1,5 @@
+import { show, fadeOut } from "./domUtils";
+
 const arenaLinkInput = document.getElementById(
   "arena-link-input",
 ) as HTMLInputElement | null;
@@ -73,9 +75,9 @@ export class ArenaLink {
     // remove selection
     arenaLinkInput.setSelectionRange(0, 0);
 
-    $("#arena-link-success").show();
+    show("#arena-link-success");
     setTimeout(function () {
-      $("#arena-link-success").fadeOut(1000);
+      fadeOut("#arena-link-success", 1000);
     }, 3000);
   }
 

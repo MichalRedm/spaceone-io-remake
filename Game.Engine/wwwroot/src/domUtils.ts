@@ -1,0 +1,113 @@
+﻿/**
+ * Resolves element(s) from a selector, element, or NodeList.
+ */
+function resolveElements(
+  target: HTMLElement | string | NodeListOf<HTMLElement> | null | undefined,
+): HTMLElement[] {
+  if (!target) return [];
+  if (typeof target === "string") {
+    return Array.from(document.querySelectorAll<HTMLElement>(target));
+  }
+  if (
+    "length" in target &&
+    typeof (target as NodeListOf<HTMLElement>).item === "function"
+  ) {
+    return Array.from(target as NodeListOf<HTMLElement>);
+  }
+  return [target as HTMLElement];
+}
+
+/**
+ * Fades in element(s) smoothly via CSS opacity transition.
+ */
+export function fadeIn(
+  target: HTMLElement | string | NodeListOf<HTMLElement> | null | undefined,
+  duration = 300,
+  callback?: () => void,
+): void {
+  const elements = resolveElements(target);
+  if (elements.length === 0) return;
+
+  for (const el of elements) {
+    el.style.transition = `opacity ${duration}ms ease`;
+    el.style.opacity = "0";
+    el.style.display = "";
+  }
+
+  // Force a browser reflow before triggering transition
+  void document.body.offsetHeight;
+
+  requestAnimationFrame(() => {
+    for (const el of elements) {
+      el.style.opacity = "1";
+    }
+  });
+
+  if (callback) {
+    setTimeout(callback, duration);
+  }
+}
+
+/**
+ * Fades out element(s) smoothly and sets display: none after completion.
+ */
+export function fadeOut(
+  target: HTMLElement | string | NodeListOf<HTMLElement> | null | undefined,
+  duration = 300,
+  callback?: () => void,
+): void {
+  const elements = resolveElements(target);
+  if (elements.length === 0) return;
+
+  for (const el of elements) {
+    el.style.transition = `opacity ${duration}ms ease`;
+    el.style.opacity = "0";
+  }
+
+  setTimeout(() => {
+    for (const el of elements) {
+      el.style.display = "none";
+    }
+    if (callback) callback();
+  }, duration);
+}
+
+/**
+ * Shows element(s) immediately.
+ */
+export function show(
+  target: HTMLElement | string | NodeListOf<HTMLElement> | null | undefined,
+  displayStyle = "",
+): void {
+  const elements = resolveElements(target);
+  for (const el of elements) {
+    el.style.display = displayStyle;
+  }
+}
+
+/**
+ * Hides element(s) immediately with display: none.
+ */
+export function hide(
+  target: HTMLElement | string | NodeListOf<HTMLElement> | null | undefined,
+): void {
+  const elements = resolveElements(target);
+  for (const el of elements) {
+    el.style.display = "none";
+  }
+}
+
+/**
+ * Smoothly animates the opacity of an element over a specified duration.
+ */
+export function animateOpacity(
+  target: HTMLElement | string | null | undefined,
+  opacity: number | string,
+  duration = 300,
+): void {
+  const elements = resolveElements(target);
+  for (const el of elements) {
+    el.style.transition = `opacity ${duration}ms ease`;
+    el.style.opacity = String(opacity);
+  }
+}

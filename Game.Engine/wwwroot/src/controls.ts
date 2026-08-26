@@ -2,6 +2,7 @@ import Cookies from "js-cookie";
 import nipplejs from "nipplejs";
 import { Settings } from "./settings";
 import { Ship } from "./models/ship";
+import { fadeIn } from "./domUtils";
 import "emoji-mart/css/emoji-mart.css";
 import { Picker } from "emoji-mart";
 import React from "react";
@@ -482,10 +483,8 @@ let uiFadedIn = false;
 export function fadeInUI(duration = 500): void {
   if (uiFadedIn) return;
   uiFadedIn = true;
-  if (typeof $ !== "undefined") {
-    $(".visibility").fadeIn(duration);
-    $(".visibility4").fadeIn(duration);
-  }
+  fadeIn(".visibility", duration);
+  fadeIn(".visibility4", duration);
 }
 
 function drawColorSelector() {
@@ -517,9 +516,14 @@ function drawColorSelector() {
     }
   }
 
-  $("#shipSelectorSwitch img").click(function () {
-    Controls.ship = $(this).attr("data-color");
-    drawColorSelector();
+  document.querySelectorAll("#shipSelectorSwitch img").forEach((img) => {
+    img.addEventListener("click", function (this: HTMLImageElement) {
+      const chosen = this.getAttribute("data-color");
+      if (chosen) {
+        Controls.ship = chosen;
+        drawColorSelector();
+      }
+    });
   });
 
   save();
