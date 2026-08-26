@@ -7,6 +7,7 @@ import { Controls } from "../ui/controls";
 import { ArenaLink } from "./arenaLink";
 import { fadeIn, hide } from "../ui/domUtils";
 import type { LeaderboardData } from "../ui/leaderboard";
+import { WorldConfig } from "../models/worldConfig";
 
 const arenaLink = new ArenaLink();
 
@@ -394,15 +395,20 @@ export class Connection {
       case this.fb.AllMessages.NetEvent: {
         const message = quantum.message(new this.fb.NetEvent());
         if (message) {
+          const eventType = message.type();
           const netEvent = {
-            type: message.type(),
+            type: eventType,
             data: JSON.parse(message.data() ?? "{}"),
           };
 
-          if (netEvent.data.roles !== undefined) {
-            window.discordData = netEvent;
+          if (eventType === "hook") {
+            WorldConfig.updateFromHook(netEvent.data);
+          } else {
+            if (netEvent.data.roles !== undefined) {
+              window.discordData = netEvent;
+            }
+            Controls.addSecretShips(netEvent);
           }
-          Controls.addSecretShips(netEvent);
         }
         break;
       }

@@ -16,6 +16,7 @@ import {
   createTextureFromDefinition,
   images,
 } from "../rendering/atlasLoader";
+import { WorldConfig } from "./worldConfig";
 
 const textureMapRules = [getDefaultTextureMapRules(Settings.graphics)];
 const spriteModeMapRules = [getDefaultSpriteModeMapRules(Settings.graphics)];
@@ -28,32 +29,6 @@ textureCache.initAtlases = () => {
   preloadAllGameTextures(rules, Settings.mipmapping);
 };
 textureCache.initAtlases();
-
-const shotThrust = [
-  0, 41, 34.17, 30.71, 28.47, 26.85, 25.59, 24.58, 23.73, 23.01, 22.38, 21.82,
-  21.33, 20.88, 20.48, 20.11, 19.77, 19.46, 19.17, 18.9, 18.65, 18.41, 18.19,
-  17.97, 17.77, 17.58, 17.4, 17.23, 17.07, 16.91, 16.76, 16.62, 16.48, 16.35,
-  16.22, 16.1, 15.98, 15.86, 15.75, 15.64, 15.54, 15.44, 15.34, 15.25, 15.16,
-  15.07, 14.98, 14.89, 14.81, 14.73, 14.65, 14.58, 14.5, 14.43, 14.36, 14.29,
-  14.22, 14.16, 14.09, 14.03, 13.97, 13.91, 13.85, 13.79, 13.73, 13.68, 13.62,
-  13.57, 13.52, 13.46, 13.41, 13.36, 13.31, 13.27, 13.22, 13.17, 13.13, 13.08,
-  13.04, 12.99, 12.95, 12.91, 12.87, 12.83, 12.79, 12.75, 12.71, 12.67, 12.63,
-  12.59, 12.56, 12.52, 12.48, 12.45, 12.41, 12.38, 12.34, 12.21, 12.07, 12.03,
-  12,
-];
-
-const bulletLifeTable = [
-  0, 1560, 1760, 1840, 1960, 2040, 2160, 2160, 2240, 2280, 2240, 2320, 2400,
-  2400, 2480, 2440, 2440, 2560, 2520, 2520, 2640, 2600, 2600, 2720, 2720, 2680,
-  2680, 2680, 2840, 2800, 2800, 2800, 2760, 2760, 2760, 2920, 2920, 2920, 2880,
-  2880, 2880, 2880, 2840, 2840, 3040, 3040, 3040, 3040, 3000, 3000, 3000, 3040,
-  3040, 3040, 3040, 3080, 3080, 3080, 3080, 3120, 3120, 3120, 3120, 3120, 3160,
-  3160, 3160, 3160, 3160, 3200, 3200, 3200, 3200, 3200, 3240, 3240, 3240, 3240,
-  3240, 3240, 3280, 3280, 3280, 3280, 3280, 3280, 3320, 3320, 3320, 3320, 3320,
-  3320, 3320, 3360, 3360, 3360, 3360, 3360, 3360, 3400, 3400,
-];
-
-export const SHOT_THRUST_SCALE = 0.013;
 
 class GroupParticle extends particles.Particle {
   body: any;
@@ -109,13 +84,6 @@ class GroupParticle extends particles.Particle {
   }
 }
 
-export const SPAWN_INVULNERABILITY_DURATION_MS = 3000;
-export const INVULNERABILITY_BLINK_PERIOD_MS = 250;
-export const BOOST_DURATION_MS = 1000;
-export const BOOST_PHASE1_SURGE_MS = 160;
-export const BOOST_PHASE2_BURN_MS = 360;
-export const BOOST_PHASE3_DURATION_MS = 640;
-
 export interface CustomSpriteLayer extends PIXI.Sprite {
   textureDefinition?: any;
   baseScale?: number;
@@ -160,21 +128,7 @@ export class RenderedObject {
   }
 
   static getShipCountFromSpeed(speed: number): number {
-    if (speed <= 0) return 1;
-    let bestIdx = 1;
-    let bestDiff = Math.abs(speed - shotThrust[1]);
-    for (let i = 2; i < shotThrust.length; i++) {
-      const diff = Math.abs(speed - shotThrust[i]);
-      if (diff < bestDiff) {
-        bestDiff = diff;
-        bestIdx = i;
-      }
-    }
-    if (speed < shotThrust[shotThrust.length - 1]) {
-      const estimatedN = Math.round(Math.pow(41.0 / speed, 3.7987));
-      return Math.max(shotThrust.length - 1, estimatedN);
-    }
-    return bestIdx;
+    return WorldConfig.getShipCountFromSpeed(speed);
   }
 
   container: CustomContainer;
@@ -823,7 +777,7 @@ export class RenderedObject {
           this.boostStartTime = now;
           if (groupID) RenderedObject.groupBoostTimes[groupID] = now;
         }
-      } else if (now - this.boostStartTime >= BOOST_DURATION_MS) {
+      } else if (now - this.boostStartTime >= WorldConfig.boostDurationMs) {
         this.isBoosting = false;
         this.boostStartTime = 0;
         if (groupID && RenderedObject.groupBoostTimes[groupID]) {
@@ -850,7 +804,7 @@ export class RenderedObject {
         }
       } else if (
         now - this.invulnerableStartTime >=
-        SPAWN_INVULNERABILITY_DURATION_MS
+        WorldConfig.spawnInvulnerabilityDurationMs
       ) {
         this.isInvulnerable = false;
         this.invulnerableStartTime = 0;
@@ -905,9 +859,11 @@ export class RenderedObject {
         let isBlinkDimmed = false;
         if (this.isInvulnerable && !this.isAbandoned) {
           const invulnElapsed = now - this.invulnerableStartTime;
-          if (invulnElapsed < SPAWN_INVULNERABILITY_DURATION_MS) {
+          if (invulnElapsed < WorldConfig.spawnInvulnerabilityDurationMs) {
             const periodIndex =
-              Math.floor(invulnElapsed / INVULNERABILITY_BLINK_PERIOD_MS) + 1;
+              Math.floor(
+                invulnElapsed / WorldConfig.invulnerabilityBlinkPeriodMs,
+              ) + 1;
             const isBlinkVisible = periodIndex % 2 === 1;
             if (!isBlinkVisible) {
               if (this.isBoosting) {
@@ -931,11 +887,11 @@ export class RenderedObject {
             layer.visible = false;
           } else {
             const boostElapsed = now - this.boostStartTime;
-            if (boostElapsed < BOOST_PHASE1_SURGE_MS) {
+            if (boostElapsed < WorldConfig.boostPhase1SurgeMs) {
               // Phase 1 (0-160ms): Surge ramp - no dash trail
               layer.alpha = 0.0;
               layer.visible = false;
-            } else if (boostElapsed < BOOST_PHASE2_BURN_MS) {
+            } else if (boostElapsed < WorldConfig.boostPhase2BurnMs) {
               // Phase 2 (160-360ms): Steady dash trail with flame flicker
               const flicker =
                 0.92 +
@@ -948,10 +904,14 @@ export class RenderedObject {
               layer.visible = true;
             } else {
               // Phase 3 (360-1000ms): Fades out smoothly over the 640ms deceleration phase
-              const phase3Elapsed = boostElapsed - BOOST_PHASE2_BURN_MS;
+              const phase3Elapsed =
+                boostElapsed - WorldConfig.boostPhase2BurnMs;
               const phase3Progress = Math.min(
                 1.0,
-                Math.max(0.0, phase3Elapsed / BOOST_PHASE3_DURATION_MS),
+                Math.max(
+                  0.0,
+                  phase3Elapsed / WorldConfig.boostPhase3DurationMs,
+                ),
               );
               const fadeAlpha = 1.0 - phase3Progress;
               const flicker =
@@ -984,15 +944,19 @@ export class RenderedObject {
           let boostAlpha = 0.0;
           if (this.isBoosting) {
             const boostElapsed = now - this.boostStartTime;
-            if (boostElapsed < BOOST_PHASE2_BURN_MS) {
+            if (boostElapsed < WorldConfig.boostPhase2BurnMs) {
               // Phase 1 & 2 (0-360ms): Full intensity throughout surge and steady burn
               boostAlpha = 1.0;
-            } else if (boostElapsed < BOOST_DURATION_MS) {
+            } else if (boostElapsed < WorldConfig.boostDurationMs) {
               // Phase 3 (360-1000ms): Deceleration fade-out
-              const phase3Elapsed = boostElapsed - BOOST_PHASE2_BURN_MS;
+              const phase3Elapsed =
+                boostElapsed - WorldConfig.boostPhase2BurnMs;
               const phase3Progress = Math.min(
                 1.0,
-                Math.max(0.0, phase3Elapsed / BOOST_PHASE3_DURATION_MS),
+                Math.max(
+                  0.0,
+                  phase3Elapsed / WorldConfig.boostPhase3DurationMs,
+                ),
               );
               boostAlpha = Math.max(0.0, 1.0 - phase3Progress);
             }
@@ -1001,10 +965,10 @@ export class RenderedObject {
           let invulnAlpha = 0.0;
           if (this.isInvulnerable) {
             const invulnElapsed = now - this.invulnerableStartTime;
-            if (invulnElapsed < SPAWN_INVULNERABILITY_DURATION_MS) {
+            if (invulnElapsed < WorldConfig.spawnInvulnerabilityDurationMs) {
               const invulnProgress = Math.min(
                 1.0,
-                invulnElapsed / SPAWN_INVULNERABILITY_DURATION_MS,
+                invulnElapsed / WorldConfig.spawnInvulnerabilityDurationMs,
               );
               invulnAlpha = Math.max(0.0, 1.0 - invulnProgress);
             }
@@ -1151,10 +1115,11 @@ export class RenderedObject {
     if (spriteStr.startsWith("bullet") || spriteStr.startsWith("laser")) {
       const m = updateData.Momentum;
       if (m) {
-        const speed = Math.sqrt(m.x * m.x + m.y * m.y) / SHOT_THRUST_SCALE;
+        const speed =
+          Math.sqrt(m.x * m.x + m.y * m.y) / WorldConfig.shotThrustScale;
         const shipCount = RenderedObject.getShipCountFromSpeed(speed);
         this.bulletLifetime =
-          bulletLifeTable[shipCount] ?? 1985 + 25 * shipCount;
+          WorldConfig.bulletLifeTable[shipCount] ?? 1985 + 25 * shipCount;
       }
 
       if (groupID) {

@@ -21,6 +21,7 @@ import { Controls } from "../ui/controls";
 import { message } from "../ui/chat";
 import { Connection } from "../network/connection";
 import { getToken } from "../network/discord";
+import { WorldConfig } from "../models/worldConfig";
 import { Settings } from "../ui/settings";
 import { Events } from "./events";
 import { ArenaLink } from "../network/arenaLink";
@@ -426,6 +427,7 @@ LobbyCallbacks.onWorldJoin = function (worldKey: string, world?: WorldInfo) {
   currentWorld = world ?? false;
   connection.disconnect();
   cache.empty();
+  WorldConfig.resetToDefaults();
   connection.connect(worldKey);
   serverTimeOffset = false;
 
