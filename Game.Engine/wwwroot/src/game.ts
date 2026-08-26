@@ -347,7 +347,13 @@ connection.onView = (newView) => {
   }
 };
 
-let lastControl = {
+let lastControl: {
+  angle: number | null;
+  aimTarget: Vector2 | null;
+  boost: boolean | null;
+  shoot: boolean | null;
+  chat: string | null;
+} = {
   angle: null,
   aimTarget: null,
   boost: null,
@@ -358,8 +364,8 @@ let lastControl = {
 setInterval(() => {
   if (
     angle !== lastControl.angle ||
-    aimTarget.x !== aimTarget.x ||
-    aimTarget.y !== aimTarget.y ||
+    aimTarget.x !== lastControl.aimTarget?.x ||
+    aimTarget.y !== lastControl.aimTarget?.y ||
     Controls.boost !== lastControl.boost ||
     Controls.shoot !== lastControl.shoot ||
     message.txt !== lastControl.chat
@@ -387,7 +393,7 @@ setInterval(() => {
 
     lastControl = {
       angle,
-      aimTarget,
+      aimTarget: new Vector2(aimTarget.x, aimTarget.y),
       boost: Controls.boost,
       shoot: Controls.shoot,
       chat: message.txt,
@@ -426,8 +432,10 @@ function doSpawn() {
     Controls.ship,
     getToken(),
   );
-  document.getElementById("overlay").style.opacity = "0";
-  document.getElementById("selfNickContainer").innerHTML = Controls.nick;
+  const overlayEl = document.getElementById("overlay");
+  if (overlayEl) overlayEl.style.opacity = "0";
+  const selfNickContainer = document.getElementById("selfNickContainer");
+  if (selfNickContainer) selfNickContainer.textContent = Controls.nick;
   $(".visibility2").show();
   $(".visibility3").show();
 }

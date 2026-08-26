@@ -1,11 +1,13 @@
 import Cookies from "js-cookie";
 
 const dauth = document.getElementById("dauth");
-dauth.addEventListener("click", () => {
-  window.location.assign(
-    `https://discordapp.com/api/oauth2/authorize?response_type=token&client_id=514844767511642112&scope=identify&redirect_uri=${encodeURIComponent(window.location.origin)}`,
-  );
-});
+if (dauth) {
+  dauth.addEventListener("click", () => {
+    window.location.assign(
+      `https://discord.com/api/oauth2/authorize?response_type=token&client_id=514844767511642112&scope=identify&redirect_uri=${encodeURIComponent(window.location.origin)}`,
+    );
+  });
+}
 
 const secondsToDays = 60 * 60 * 24;
 const sp = new URLSearchParams(window.location.hash.substr(1));
@@ -15,17 +17,23 @@ export function getToken() {
 let token = sp.get("access_token") || Cookies.get("auth_token");
 if (token) {
   history.pushState({}, "", "/");
-  dauth.style.display = "none";
-  (<HTMLButtonElement>dauth.previousElementSibling).value = "Launch";
+  if (dauth) {
+    dauth.style.display = "none";
+    const prev = dauth.previousElementSibling as HTMLButtonElement | null;
+    if (prev) prev.value = "Launch";
+  }
 
   if (sp.get("access_token")) {
-    let expirationSeconds = parseFloat(sp.get("expires_in"));
+    let expirationSeconds = parseFloat(sp.get("expires_in") || "0");
     let cookieOptions = { expires: expirationSeconds / secondsToDays };
     Cookies.set("auth_token", token, cookieOptions);
   }
 } else if (window.frameElement) {
-  (<HTMLButtonElement>dauth.previousElementSibling).value = "Launch";
-  dauth.style.display = "none";
+  if (dauth) {
+    const prev = dauth.previousElementSibling as HTMLButtonElement | null;
+    if (prev) prev.value = "Launch";
+    dauth.style.display = "none";
+  }
 }
 
 if (token) {
