@@ -28,12 +28,14 @@ import * as pixi_tilemap from "pixi-tilemap";
 import "./changelog";
 import "./hintbox";
 import { bootstrapPopups } from "./popuputils";
+import { initFeaturedVideo } from "./featuredVideo";
 import { show, hide, fadeIn, animateOpacity } from "./domUtils";
 import { Vector2 } from "./Vector2";
 import { CustomContainer } from "./CustomContainer";
 import { preloadAllAssets } from "./atlasLoader";
 
 bootstrapPopups();
+initFeaturedVideo();
 
 window.Game = window.Game || {};
 const pixiAny = (window as any).PIXI;
