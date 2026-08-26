@@ -117,7 +117,6 @@ export interface CustomSpriteLayer extends PIXI.Sprite {
 
 export class RenderedObject {
   static groupBoostTimes: Record<number, number> = {};
-  static groupBoostEndTimes: Record<number, number> = {};
   static groupInvulnerableTimes: Record<number, number> = {};
   static groupBulletData: Record<
     number,
@@ -140,13 +139,6 @@ export class RenderedObject {
       const t = RenderedObject.groupBoostTimes[id];
       if (t && now - t > 5000) {
         delete RenderedObject.groupBoostTimes[id];
-      }
-    }
-
-    for (const id in RenderedObject.groupBoostEndTimes) {
-      const t = RenderedObject.groupBoostEndTimes[id];
-      if (t && now - t > 5000) {
-        delete RenderedObject.groupBoostEndTimes[id];
       }
     }
 
@@ -193,7 +185,6 @@ export class RenderedObject {
   spawnTime: number;
   isBoosting: boolean;
   boostStartTime: number;
-  boostEndTime: number;
   bulletLifetime: number;
   isAbandoned: boolean;
   abandonedStartTime: number;
@@ -215,7 +206,6 @@ export class RenderedObject {
     this.spawnTime = performance.now();
     this.isBoosting = false;
     this.boostStartTime = 0;
-    this.boostEndTime = 0;
     this.bulletLifetime = 1840;
     this.isAbandoned = false;
     this.abandonedStartTime = 0;
@@ -244,21 +234,7 @@ export class RenderedObject {
       }
     }
     modes.push("default");
-    const now = performance.now();
-    const groupID = this.body?.Group || 0;
-    if (
-      this.boostEndTime === 0 &&
-      groupID &&
-      RenderedObject.groupBoostEndTimes[groupID]
-    ) {
-      const groupEnd = RenderedObject.groupBoostEndTimes[groupID];
-      if (now - groupEnd < 500) {
-        this.boostEndTime = groupEnd;
-      }
-    }
-    const isPostBoostFading =
-      this.boostEndTime > 0 && now - this.boostEndTime < 500;
-    if ((mode & 1) !== 0 || isPostBoostFading) modes.push("boost");
+    if ((mode & 1) !== 0) modes.push("boost");
     return modes;
   }
 
@@ -832,53 +808,25 @@ export class RenderedObject {
     if (isBoostNow) {
       if (!this.isBoosting) {
         this.isBoosting = true;
-        this.boostEndTime = 0;
         if (groupID && RenderedObject.groupBoostTimes[groupID]) {
           this.boostStartTime = RenderedObject.groupBoostTimes[groupID];
         } else {
           this.boostStartTime = now;
           if (groupID) RenderedObject.groupBoostTimes[groupID] = now;
         }
-        if (groupID && RenderedObject.groupBoostEndTimes[groupID]) {
-          delete RenderedObject.groupBoostEndTimes[groupID];
-        }
       } else if (now - this.boostStartTime >= 1000) {
         this.isBoosting = false;
-        if (groupID && RenderedObject.groupBoostEndTimes[groupID]) {
-          this.boostEndTime = RenderedObject.groupBoostEndTimes[groupID];
-        } else {
-          this.boostEndTime = now;
-          if (groupID) RenderedObject.groupBoostEndTimes[groupID] = now;
-        }
+        this.boostStartTime = 0;
         if (groupID && RenderedObject.groupBoostTimes[groupID]) {
           delete RenderedObject.groupBoostTimes[groupID];
         }
       }
     } else if (this.isBoosting) {
       this.isBoosting = false;
-      if (groupID && RenderedObject.groupBoostEndTimes[groupID]) {
-        this.boostEndTime = RenderedObject.groupBoostEndTimes[groupID];
-      } else {
-        this.boostEndTime = now;
-        if (groupID) RenderedObject.groupBoostEndTimes[groupID] = now;
-      }
+      this.boostStartTime = 0;
       if (groupID && RenderedObject.groupBoostTimes[groupID]) {
         delete RenderedObject.groupBoostTimes[groupID];
       }
-    } else if (
-      this.boostEndTime === 0 &&
-      groupID &&
-      RenderedObject.groupBoostEndTimes[groupID]
-    ) {
-      const groupEnd = RenderedObject.groupBoostEndTimes[groupID];
-      if (now - groupEnd < 500) {
-        this.boostEndTime = groupEnd;
-      }
-    }
-
-    if (this.boostEndTime > 0 && now - this.boostEndTime >= 500) {
-      this.boostEndTime = 0;
-      this.refreshSprite();
     }
 
     if (isInvulnerableNow) {
@@ -1020,7 +968,7 @@ export class RenderedObject {
             if (boostElapsed < 360) {
               // Phase 1 & 2 (0-360ms): Full intensity throughout surge and steady burn
               boostAlpha = 1.0;
-            } else {
+            } else if (boostElapsed < 1000) {
               // Phase 3 (360-1000ms): Deceleration fade-out
               const phase3Elapsed = boostElapsed - 360;
               const phase3Progress = Math.min(
@@ -1029,14 +977,6 @@ export class RenderedObject {
               );
               boostAlpha = Math.max(0.0, 1.0 - phase3Progress);
             }
-          } else if (this.boostEndTime > 0 && now - this.boostEndTime < 500) {
-            // Post-boost 0.5s fade-out fallback
-            const postBoostElapsed = now - this.boostEndTime;
-            const fadeProgress = Math.min(
-              1.0,
-              Math.max(0.0, postBoostElapsed / 500),
-            );
-            boostAlpha = Math.max(0.0, 1.0 - fadeProgress);
           }
 
           let invulnAlpha = 0.0;
@@ -1150,36 +1090,18 @@ export class RenderedObject {
     if (isBoostNow) {
       if (!this.isBoosting) {
         this.isBoosting = true;
-        this.boostEndTime = 0;
         if (groupID && RenderedObject.groupBoostTimes[groupID]) {
           this.boostStartTime = RenderedObject.groupBoostTimes[groupID] ?? now;
         } else {
           this.boostStartTime = now;
           if (groupID) RenderedObject.groupBoostTimes[groupID] = now;
         }
-        if (groupID && RenderedObject.groupBoostEndTimes[groupID]) {
-          delete RenderedObject.groupBoostEndTimes[groupID];
-        }
       }
     } else if (this.isBoosting) {
       this.isBoosting = false;
-      if (groupID && RenderedObject.groupBoostEndTimes[groupID]) {
-        this.boostEndTime = RenderedObject.groupBoostEndTimes[groupID] ?? now;
-      } else {
-        this.boostEndTime = now;
-        if (groupID) RenderedObject.groupBoostEndTimes[groupID] = now;
-      }
+      this.boostStartTime = 0;
       if (groupID && RenderedObject.groupBoostTimes[groupID]) {
         delete RenderedObject.groupBoostTimes[groupID];
-      }
-    } else if (
-      this.boostEndTime === 0 &&
-      groupID &&
-      RenderedObject.groupBoostEndTimes[groupID]
-    ) {
-      const groupEnd = RenderedObject.groupBoostEndTimes[groupID];
-      if (now - groupEnd < 500) {
-        this.boostEndTime = groupEnd;
       }
     }
 
