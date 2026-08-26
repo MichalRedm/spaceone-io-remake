@@ -1,4 +1,4 @@
-import { parseScssIntoRules } from "../parser/parseTheme.js";
+import { parseScssIntoRules } from "../parser/parseTheme";
 import spriteModeMapLow from "./spriteModeMap_low.scss?raw";
 import spriteModeMapMedium from "./spriteModeMap_medium.scss?raw";
 import spriteModeMapHigh from "./spriteModeMap_high.scss?raw";

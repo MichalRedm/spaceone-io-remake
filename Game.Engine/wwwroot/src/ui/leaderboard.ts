@@ -1,7 +1,7 @@
 import { Settings } from "./settings";
-import { RenderedObject } from "./models/renderedObject";
-import arrow from "../img/arrow.png";
-import { Vector2 } from "./Vector2";
+import { RenderedObject } from "../models/renderedObject";
+import arrow from "../../img/arrow.png";
+import { Vector2 } from "../math/vector2";
 
 const record = document.getElementById("record");
 const recordScore = document.getElementById("record-score");

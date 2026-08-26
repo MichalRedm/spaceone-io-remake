@@ -1,7 +1,7 @@
 import { RenderedObject } from "./renderedObject";
-import type { CustomContainer } from "../CustomContainer";
-import type { Cache, BodyState } from "../cache";
-import type { Interpolator } from "../interpolator";
+import type { CustomContainer } from "../rendering/customContainer";
+import type { Cache, BodyState } from "./cache";
+import type { Interpolator } from "../rendering/interpolator";
 
 export class Tile extends RenderedObject {
   constructor(container: CustomContainer, _cache?: Cache) {

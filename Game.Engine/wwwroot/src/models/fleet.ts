@@ -1,10 +1,10 @@
-import { getPlotly } from "../plotly-subset";
-import { Settings } from "../settings";
+import { getPlotly } from "../ui/plotlySubset";
+import { Settings } from "../ui/settings";
 import * as PIXI from "pixi.js";
-import type { CustomContainer } from "../CustomContainer";
+import type { CustomContainer } from "../rendering/customContainer";
 import type { Ship } from "./ship";
-import type { Cache, GroupState } from "../cache";
-import type { Interpolator } from "../interpolator";
+import type { Cache, GroupState } from "./cache";
+import type { Interpolator } from "../rendering/interpolator";
 
 export class Fleet {
   container: CustomContainer;

@@ -1,21 +1,21 @@
 import * as emitters from "../../img/emitters.json";
-import { Settings } from "../settings";
+import { Settings } from "../ui/settings";
 import { textureCache } from "./textureCache";
 import { getDefaultTextureMapRules } from "./textureMap";
 import { getDefaultSpriteModeMapRules } from "./spriteModeMap";
 import * as PIXI from "pixi.js";
 import "pixi-layers";
 import * as particles from "pixi-particles";
-import { CustomContainer } from "../CustomContainer";
+import { CustomContainer } from "../rendering/customContainer";
 import { queryProperties } from "../parser/parseTheme";
-import type { BodyState } from "../cache";
-import type { Interpolator, ProjectedPoint } from "../interpolator";
+import type { BodyState } from "./cache";
+import type { Interpolator, ProjectedPoint } from "../rendering/interpolator";
 
 import {
   preloadAllGameTextures,
   createTextureFromDefinition,
   images,
-} from "../atlasLoader";
+} from "../rendering/atlasLoader";
 
 const textureMapRules = [getDefaultTextureMapRules(Settings.graphics)];
 const spriteModeMapRules = [getDefaultSpriteModeMapRules(Settings.graphics)];

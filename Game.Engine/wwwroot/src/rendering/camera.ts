@@ -1,5 +1,5 @@
-import { Vector2 } from "./Vector2";
-import type { Dimension2 } from "./Dimension2";
+import { Vector2 } from "../math/vector2";
+import type { Dimension2 } from "../math/dimension2";
 
 export interface CameraSettings {
   fieldOfView?: number;

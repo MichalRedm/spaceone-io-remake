@@ -1,20 +1,20 @@
 import * as PIXI from "pixi.js";
-import { textureCache } from "./models/textureCache";
-import type { ThemeRule } from "./parser/parseTheme";
-import { queryProperties } from "./parser/parseTheme";
-import { getDefaultTextureMapRules } from "./models/textureMap";
-import { Settings } from "./settings";
+import { textureCache } from "../models/textureCache";
+import type { ThemeRule } from "../parser/parseTheme";
+import { queryProperties } from "../parser/parseTheme";
+import { getDefaultTextureMapRules } from "../models/textureMap";
+import { Settings } from "../ui/settings";
 
 const rawImages = import.meta.glob(
   [
-    "../img/*.png",
-    "../img/*.webp",
-    "../img/*.jpg",
-    "../img/*.svg",
-    "../img/atlas/*.png",
-    "../img/main_menu/*.png",
-    "../img/main_menu/*.svg",
-    "../img/worlds/*.png",
+    "../../img/*.png",
+    "../../img/*.webp",
+    "../../img/*.jpg",
+    "../../img/*.svg",
+    "../../img/atlas/*.png",
+    "../../img/main_menu/*.png",
+    "../../img/main_menu/*.svg",
+    "../../img/worlds/*.png",
   ],
   {
     eager: true,
@@ -22,7 +22,7 @@ const rawImages = import.meta.glob(
   },
 ) as Record<string, string>;
 
-const rawAtlases = import.meta.glob("../img/atlas/*.json", {
+const rawAtlases = import.meta.glob("../../img/atlas/*.json", {
   eager: true,
   import: "default",
 }) as Record<string, any>;

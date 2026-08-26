@@ -1,4 +1,4 @@
-import { show, fadeOut } from "./domUtils";
+import { show, fadeOut } from "../ui/domUtils";
 
 const arenaLinkInput = document.getElementById(
   "arena-link-input",

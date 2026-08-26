@@ -1,9 +1,9 @@
-import { Settings } from "./settings";
-import { RenderedObject } from "./models/renderedObject";
+import { Settings } from "../ui/settings";
+import { RenderedObject } from "../models/renderedObject";
 import * as PIXI from "pixi.js";
-import { Vector2 } from "./Vector2";
-import type { CustomContainer } from "./CustomContainer";
-import type { BodyState } from "./cache";
+import { Vector2 } from "../math/vector2";
+import type { CustomContainer } from "./customContainer";
+import type { BodyState } from "../models/cache";
 
 export class Background extends RenderedObject {
   focus: Vector2;
