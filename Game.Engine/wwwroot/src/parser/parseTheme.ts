@@ -1,10 +1,4 @@
 import { is } from "css-select";
-import * as sass from "sass";
-import { Buffer } from "buffer";
-
-if (typeof window !== "undefined") {
-  (window as any).Buffer = Buffer;
-}
 
 export interface ThemeRule {
   selector: string;
@@ -18,70 +12,154 @@ export interface ElementQueryProps {
 }
 
 export function parseScssIntoRules(scss: string): ThemeRule[] {
-  try {
-    if (sass && typeof (sass as any).compileString === "function") {
-      return parseCssIntoRules((sass as any).compileString(scss).css);
-    } else if (sass && typeof (sass as any).renderSync === "function") {
-      return parseCssIntoRules(
-        (sass as any).renderSync({ data: scss }).css.toString("utf8"),
-      );
-    }
-  } catch (e) {
-    console.warn("Failed to compile SCSS, parsing directly:", e);
+  const clean = (scss ?? "")
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/\/\/.*$/gm, "");
+
+  const rulesMap = new Map<string, Record<string, string[]>>();
+  flattenScss(clean, [""], rulesMap);
+
+  const ruleList: ThemeRule[] = [];
+  for (const [selector, obj] of rulesMap.entries()) {
+    ruleList.push({ selector, obj });
   }
-  return parseCssIntoRules(scss);
+  return ruleList;
+}
+
+function flattenScss(
+  content: string,
+  parentSelectors: string[],
+  rulesMap: Map<string, Record<string, string[]>>,
+  propertyPrefix = "",
+): void {
+  let i = 0;
+  const len = content.length;
+
+  while (i < len) {
+    // Skip whitespace
+    while (i < len && /\s/.test(content[i])) i++;
+    if (i >= len) break;
+
+    const braceIdx = content.indexOf("{", i);
+    const semiIdx = content.indexOf(";", i);
+
+    // If no more braces
+    if (braceIdx === -1) {
+      if (semiIdx !== -1) {
+        const declStr = content.substring(i, semiIdx).trim();
+        addDeclToMap(declStr, parentSelectors, rulesMap, propertyPrefix);
+        i = semiIdx + 1;
+        continue;
+      }
+      break;
+    }
+
+    // If semicolon comes before brace, it's a direct declaration
+    if (semiIdx !== -1 && semiIdx < braceIdx) {
+      const declStr = content.substring(i, semiIdx).trim();
+      addDeclToMap(declStr, parentSelectors, rulesMap, propertyPrefix);
+      i = semiIdx + 1;
+      continue;
+    }
+
+    // Selector followed by '{'
+    const rawSelector = content.substring(i, braceIdx).trim();
+    i = braceIdx + 1;
+
+    // Find matching '}'
+    let depth = 1;
+    const blockStart = i;
+    while (i < len && depth > 0) {
+      if (content[i] === "{") depth++;
+      else if (content[i] === "}") depth--;
+      i++;
+    }
+    const blockBody = content.substring(blockStart, i - 1);
+
+    if (rawSelector.endsWith(":")) {
+      const prefixSegment = rawSelector.slice(0, -1).trim();
+      const nextPrefix = propertyPrefix
+        ? `${propertyPrefix}-${prefixSegment}`
+        : prefixSegment;
+      flattenScss(blockBody, parentSelectors, rulesMap, nextPrefix);
+    } else {
+      const currentSelectors = rawSelector
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+      const combinedSelectors: string[] = [];
+      for (const parent of parentSelectors) {
+        for (const current of currentSelectors) {
+          if (!parent) {
+            combinedSelectors.push(current);
+          } else if (current.includes("&")) {
+            combinedSelectors.push(current.replace(/&/g, parent));
+          } else {
+            combinedSelectors.push(`${parent} ${current}`);
+          }
+        }
+      }
+
+      flattenScss(blockBody, combinedSelectors, rulesMap, "");
+    }
+  }
+}
+
+function addDeclToMap(
+  declStr: string,
+  selectors: string[],
+  rulesMap: Map<string, Record<string, string[]>>,
+  propertyPrefix = "",
+): void {
+  const colonIdx = declStr.indexOf(":");
+  if (colonIdx === -1) return;
+  const rawProp = declStr.substring(0, colonIdx).trim();
+  const prop = propertyPrefix ? `${propertyPrefix}-${rawProp}` : rawProp;
+  const valStr = declStr.substring(colonIdx + 1).trim();
+  if (!prop || !valStr) return;
+
+  const values: string[] = [];
+  const tokenRegex = /(?:"[^"]*"|'[^']*'|rgba?\([^)]+\)|[^\s,]+)/g;
+  let valMatch: RegExpExecArray | null;
+  while ((valMatch = tokenRegex.exec(valStr)) !== null) {
+    values.push(valMatch[0]);
+  }
+  if (values.length === 0) return;
+
+  for (const sel of selectors) {
+    if (!sel) continue;
+    let obj = rulesMap.get(sel);
+    if (!obj) {
+      obj = {};
+      rulesMap.set(sel, obj);
+    }
+    obj[prop] = values;
+  }
 }
 
 export function parseCssIntoRules(css?: string): ThemeRule[] {
-  const cleanCss = (css ?? "").replace(/\/\*[\s\S]*?\*\//g, "");
-  const ruleList: ThemeRule[] = [];
-  const ruleRegex = /([^{}]+)\{([^{}]+)\}/g;
-  let match: RegExpExecArray | null;
-  while ((match = ruleRegex.exec(cleanCss)) !== null) {
-    const selectorGroup = (match[1] ?? "").trim();
-    const body = (match[2] ?? "").trim();
-    const blockOBJ: Record<string, string[]> = {};
-    const decls = body.split(";");
-    for (const decl of decls) {
-      const colonIdx = decl.indexOf(":");
-      if (colonIdx === -1) continue;
-      const prop = decl.substring(0, colonIdx).trim();
-      const valStr = decl.substring(colonIdx + 1).trim();
-      if (!prop || !valStr) continue;
-      const values: string[] = [];
-      const tokenRegex = /(?:"[^"]*"|'[^']*'|rgba?\([^)]+\)|[^\s,]+)/g;
-      let valMatch: RegExpExecArray | null;
-      while ((valMatch = tokenRegex.exec(valStr)) !== null) {
-        values.push(valMatch[0]);
-      }
-      if (values.length > 0) {
-        blockOBJ[prop] = values;
-      }
-    }
-    const selectors = selectorGroup
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean);
-    for (const sel of selectors) {
-      ruleList.push({ selector: sel, obj: blockOBJ });
-    }
-  }
-  return ruleList;
+  return parseScssIntoRules(css ?? "");
 }
 
 export function selectorMatches(
   selector: string,
   selectProps: ElementQueryProps,
 ): boolean {
-  const thing: any = {
-    type: "tag",
-    name: selectProps.element ?? "",
-    attribs: {
-      id: selectProps.id ?? "",
-      class: selectProps.class ?? "",
-    },
-  };
-  return is(thing, selector);
+  if (!selector || selector.trim() === "") return false;
+  try {
+    const thing: any = {
+      type: "tag",
+      name: selectProps.element ?? "",
+      attribs: {
+        id: selectProps.id ?? "",
+        class: selectProps.class ?? "",
+      },
+    };
+    return is(thing, selector);
+  } catch {
+    return false;
+  }
 }
 
 export function queryProperties(

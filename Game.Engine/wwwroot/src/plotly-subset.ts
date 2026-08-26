@@ -1,6 +1,16 @@
-import Plotly from "plotly.js/lib/core";
-import barpolar from "plotly.js/lib/barpolar";
-// Load in the trace types for barpolar
-Plotly.register([barpolar]);
+let plotlyInstance: any = null;
+let plotlyPromise: Promise<any> | null = null;
 
-export default Plotly;
+export async function getPlotly(): Promise<any> {
+  if (plotlyInstance) return plotlyInstance;
+  if (!plotlyPromise) {
+    plotlyPromise = (async () => {
+      const Plotly = (await import("plotly.js/lib/core")).default;
+      const barpolar = (await import("plotly.js/lib/barpolar")).default;
+      Plotly.register([barpolar]);
+      plotlyInstance = Plotly;
+      return Plotly;
+    })();
+  }
+  return plotlyPromise;
+}

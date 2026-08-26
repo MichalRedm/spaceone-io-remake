@@ -1,19 +1,9 @@
 import { defineConfig } from "vite";
 import { resolve } from "path";
-import { nodePolyfills } from "vite-plugin-node-polyfills";
 
 export default defineConfig({
   root: ".",
   base: "./",
-  plugins: [
-    nodePolyfills({
-      globals: {
-        Buffer: true,
-        global: true,
-        process: true,
-      },
-    }),
-  ],
   server: {
     port: 3000,
     proxy: {
@@ -27,6 +17,7 @@ export default defineConfig({
   build: {
     outDir: "dist",
     emptyOutDir: true,
+    chunkSizeWarningLimit: 1000,
     rollupOptions: {
       input: {
         main: resolve(__dirname, "index.html"),

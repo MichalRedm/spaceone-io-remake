@@ -696,6 +696,64 @@ input#nick:focus {
   animation: pulse-blue 2s infinite;
 }
 
+#emoji-container {
+  display: none;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  margin-top: 5px;
+}
+
+#emoji-container.open {
+  display: block;
+}
+
+.emoji-picker-panel {
+  background: rgba(10, 25, 55, 0.95);
+  border: 2px solid #3262d1;
+  border-radius: 12px;
+  box-shadow: 0px 0px 20px 0px #0052ff;
+  padding: 10px;
+  width: 320px;
+  max-height: 220px;
+  overflow-y: auto;
+  backdrop-filter: blur(8px);
+}
+
+.emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+}
+
+.emoji-item {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-size: 1.5em;
+  padding: 6px 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    transform 0.1s ease,
+    background 0.15s ease,
+    border-color 0.15s ease;
+  line-height: 1;
+}
+
+.emoji-item:hover {
+  background: rgba(61, 120, 255, 0.35);
+  border-color: #3d78ff;
+  transform: scale(1.2);
+}
+
+.emoji-item:active {
+  transform: scale(0.95);
+}
+
 #spawn {
   -webkit-user-select: none;
   -moz-user-select: none;

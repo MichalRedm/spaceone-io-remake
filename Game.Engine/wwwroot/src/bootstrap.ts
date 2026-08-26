@@ -15,8 +15,15 @@ for (const key of Object.keys(pixiModule)) {
   } catch {}
 }
 
-(window as any).PIXI = mutablePIXI;
-(globalThis as any).PIXI = mutablePIXI;
+if (typeof window !== "undefined") {
+  (window as any).PIXI = mutablePIXI;
+}
+if (typeof globalThis !== "undefined") {
+  (globalThis as any).PIXI = mutablePIXI;
+}
+if (typeof (global as any) !== "undefined") {
+  (global as any).PIXI = mutablePIXI;
+}
 
 export default mutablePIXI;
 export { mutablePIXI as PIXI };

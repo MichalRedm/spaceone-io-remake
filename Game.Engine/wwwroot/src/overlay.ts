@@ -1,4 +1,3 @@
-import Plotly from "./plotly-subset";
 import { CustomContainer } from "./CustomContainer";
 
 export class Overlay {

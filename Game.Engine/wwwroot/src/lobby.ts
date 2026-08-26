@@ -1,4 +1,3 @@
-import { fetch } from "whatwg-fetch";
 import { escapeHtml } from "./leaderboard";
 
 export interface WorldInfo {

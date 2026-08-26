@@ -1,8 +1,3 @@
-import process from "process";
-
-window.process = process;
-window.global = window as any;
-
 import { CustomContainer } from "./CustomContainer";
 import { Interpolator } from "./interpolator";
 import { Cache, GroupState, BodyState } from "./cache";

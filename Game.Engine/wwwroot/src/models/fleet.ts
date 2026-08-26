@@ -1,4 +1,4 @@
-import Plotly from "../plotly-subset";
+import { getPlotly } from "../plotly-subset";
 import { Settings } from "../settings";
 import * as PIXI from "pixi.js";
 import type { CustomContainer } from "../CustomContainer";
@@ -78,15 +78,19 @@ export class Fleet {
         this.usingPlotly = true;
         console.log("setting plotly use");
       }
-      Plotly.react(
-        this.container.plotly,
-        this.plotly.data,
-        this.plotly.layout,
-        {
-          displayModeBar: false,
-          staticPlot: true,
-        },
-      );
+      getPlotly().then((Plotly) => {
+        if (this.usingPlotly && this.container.plotly && this.plotly) {
+          Plotly.react(
+            this.container.plotly,
+            this.plotly.data,
+            this.plotly.layout,
+            {
+              displayModeBar: false,
+              staticPlot: true,
+            },
+          );
+        }
+      });
     }
 
     if (this.usingPlotly && this.ID !== myFleetID) {
