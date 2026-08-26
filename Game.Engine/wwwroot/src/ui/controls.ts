@@ -1,7 +1,7 @@
 import Cookies from "js-cookie";
 import nipplejs from "nipplejs";
 import { Settings } from "./settings";
-import { Ship } from "./models/ship";
+import { Ship } from "../models/ship";
 import { fadeIn } from "./domUtils";
 const DEFAULT_EMOJIS = [
   "👋",

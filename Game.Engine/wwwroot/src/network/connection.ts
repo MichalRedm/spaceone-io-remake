@@ -1,12 +1,12 @@
 import { flatbuffers } from "flatbuffers";
 import { Game } from "./game_generated";
-import { Cache } from "./cache";
-import { Settings } from "./settings";
-import { Vector2 } from "./Vector2";
-import { Controls } from "./controls";
-import { ArenaLink } from "./arenalink";
-import { fadeIn, hide } from "./domUtils";
-import type { LeaderboardData } from "./leaderboard";
+import { Cache } from "../models/cache";
+import { Settings } from "../ui/settings";
+import { Vector2 } from "../math/vector2";
+import { Controls } from "../ui/controls";
+import { ArenaLink } from "./arenaLink";
+import { fadeIn, hide } from "../ui/domUtils";
+import type { LeaderboardData } from "../ui/leaderboard";
 
 const arenaLink = new ArenaLink();
 

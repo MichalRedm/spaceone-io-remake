@@ -1,5 +1,5 @@
 import Cookies from "js-cookie";
-import { Connection } from "./connection";
+import { Connection } from "../network/connection";
 
 export interface PingResult {
   worldKey: string;

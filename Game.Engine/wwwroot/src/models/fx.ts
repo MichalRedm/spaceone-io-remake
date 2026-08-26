@@ -1,7 +1,7 @@
 import * as PIXI from "pixi.js";
 import { textureCache } from "./textureCache";
-import type { CustomContainer } from "../CustomContainer";
-import { Settings } from "../settings";
+import type { CustomContainer } from "../rendering/customContainer";
+import { Settings } from "../ui/settings";
 
 /**
  * Global FX Configuration Parameters

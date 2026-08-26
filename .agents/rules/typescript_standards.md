@@ -105,11 +105,11 @@ Always use `import type` when importing types, interfaces, or type aliases that 
 
 ```typescript
 // ✅ RECOMMENDED: Type-only import
-import type { Vector2 } from "./Vector2";
-import type { CustomContainer } from "./CustomContainer";
+import type { Vector2 } from "../math/vector2";
+import type { CustomContainer } from "../rendering/customContainer";
 
 // ❌ AVOID: Runtime import of pure types
-import { CustomContainer } from "./CustomContainer"; // when only used as a type annotation
+import { CustomContainer } from "../rendering/customContainer"; // when only used as a type annotation
 ```
 
 ---
@@ -139,4 +139,4 @@ Use optional chaining (`element?.classList?.add(...)`) instead of verbose nested
 | **Using `any` or `as any`** | Destroys compiler safety and introduces subtle runtime crashes. | Define explicit interfaces or use `unknown` with type narrowing. |
 | **Global `window.PIXI` Overwriting** | Overwrites the mutable Pixi namespace with frozen module namespaces. | Import `bootstrap.ts` first and use typed global declarations. |
 | **Direct DOM Manipulation in Render Loop** | Triggers layout reflows on every 60 FPS frame. | Update canvas UI via Pixi display objects; perform DOM updates out-of-loop. |
-| **Untyped FlatBuffers Access** | Results in missing packet fields or mismatched byte offsets. | Use generated FlatBuffers types from `src/game_generated.ts`. |
+| **Untyped FlatBuffers Access** | Results in missing packet fields or mismatched byte offsets. | Use generated FlatBuffers types from `src/network/game_generated.ts`. |

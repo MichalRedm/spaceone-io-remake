@@ -1,7 +1,7 @@
-import { CustomContainer } from "./CustomContainer";
+import { CustomContainer } from "./customContainer";
 import { Interpolator } from "./interpolator";
-import { Cache, GroupState, BodyState } from "./cache";
-import { FX } from "./models/fx";
+import { Cache, GroupState, BodyState } from "../models/cache";
+import { FX } from "../models/fx";
 
 export class Renderer {
   container: CustomContainer;

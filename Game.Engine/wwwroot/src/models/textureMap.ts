@@ -1,4 +1,4 @@
-import { parseScssIntoRules } from "../parser/parseTheme.js";
+import { parseScssIntoRules } from "../parser/parseTheme";
 import textureMapLow from "./textureMap_low.scss?raw";
 import textureMapMedium from "./textureMap_medium.scss?raw";
 import textureMapHigh from "./textureMap_high.scss?raw";

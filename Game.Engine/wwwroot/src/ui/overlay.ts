@@ -1,4 +1,4 @@
-import { CustomContainer } from "./CustomContainer";
+import { CustomContainer } from "../rendering/customContainer";
 
 export class Overlay {
   container: CustomContainer;

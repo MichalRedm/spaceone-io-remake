@@ -1,7 +1,7 @@
 import * as PIXI from "pixi.js";
-import type { CustomContainer } from "./CustomContainer";
-import { RenderedObject } from "./models/renderedObject";
-import { hexToRGB } from "./hexColor";
+import type { CustomContainer } from "./customContainer";
+import { RenderedObject } from "../models/renderedObject";
+import { hexToRGB } from "../math/hexColor";
 
 export class Border extends RenderedObject {
   graphics: PIXI.Graphics;

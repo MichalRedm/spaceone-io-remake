@@ -1,10 +1,10 @@
 import Cookies from "js-cookie";
 import JSZip from "jszip";
-import { textureCache } from "./models/textureCache";
-import { getDefaultTextureMapRules } from "./models/textureMap";
-import { getDefaultSpriteModeMapRules } from "./models/spriteModeMap";
+import { textureCache } from "../models/textureCache";
+import { getDefaultTextureMapRules } from "../models/textureMap";
+import { getDefaultSpriteModeMapRules } from "../models/spriteModeMap";
 import { Controls } from "./controls";
-import { queryProperties, parseScssIntoRules } from "./parser/parseTheme";
+import { queryProperties, parseScssIntoRules } from "../parser/parseTheme";
 
 export interface SettingsData {
   graphics: string;

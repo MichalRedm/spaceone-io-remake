@@ -1,4 +1,4 @@
-import { escapeHtml } from "./leaderboard";
+import { escapeHtml } from "../ui/leaderboard";
 
 export interface WorldInfo {
   world: string;

@@ -1,6 +1,6 @@
 import { RenderedObject } from "./renderedObject";
 import { Fleet } from "./fleet";
-import { CustomContainer } from "../CustomContainer";
+import { CustomContainer } from "../rendering/customContainer";
 
 export class Ship extends RenderedObject {
   fleet?: Fleet | null;

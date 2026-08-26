@@ -1,11 +1,11 @@
-import { Bullet } from "./models/bullet";
-import { Ship } from "./models/ship";
-import { RenderedObject } from "./models/renderedObject";
-import { Fleet } from "./models/fleet";
-import { Tile } from "./models/tile";
-import { CustomContainer } from "./CustomContainer";
-import { FX } from "./models/fx";
-import type { Vector2 } from "./Vector2";
+import { Bullet } from "./bullet";
+import { Ship } from "./ship";
+import { RenderedObject } from "./renderedObject";
+import { Fleet } from "./fleet";
+import { Tile } from "./tile";
+import { CustomContainer } from "../rendering/customContainer";
+import { FX } from "./fx";
+import type { Vector2 } from "../math/vector2";
 
 export interface GroupState {
   ID: number;

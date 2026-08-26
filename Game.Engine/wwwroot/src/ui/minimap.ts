@@ -1,7 +1,7 @@
 import { Settings } from "./settings";
 import * as PIXI from "pixi.js";
-import { Vector2 } from "./Vector2";
-import type { Dimension2 } from "./Dimension2";
+import { Vector2 } from "../math/vector2";
+import type { Dimension2 } from "../math/dimension2";
 import type { LeaderboardData } from "./leaderboard";
 
 const minimapSize = 180;
