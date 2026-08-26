@@ -37,6 +37,9 @@ export class Connection {
   autoReload: boolean;
   statPongCount: number;
   connectionStatusReporting: boolean;
+  reconnectAttempts = 0;
+  reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
+  lastWorldKey?: string;
 
   constructor() {
     this.onView = () => {};
@@ -77,18 +80,31 @@ export class Connection {
     }, 1000);
   }
   disconnect(): void {
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+      this.reconnectTimeout = null;
+    }
     if (this.socket) {
       this.disconnecting = true;
       this.socket.close();
     }
   }
   connect(worldKey?: string): void {
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+      this.reconnectTimeout = null;
+    }
+
+    if (worldKey !== undefined) {
+      this.lastWorldKey = worldKey;
+    }
+
     if (!arenaLink.generated && worldKey) {
       arenaLink.generate(worldKey);
     }
 
     if (!worldKey) {
-      worldKey = arenaLink.getArena();
+      worldKey = this.lastWorldKey ?? arenaLink.getArena();
     }
 
     let url: string;
@@ -306,6 +322,11 @@ export class Connection {
 
   onOpen(_event: Event): void {
     this.connected = true;
+    this.reconnectAttempts = 0;
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+      this.reconnectTimeout = null;
+    }
     console.log("connected");
     this.sendPing();
     this.onConnected();
@@ -325,7 +346,21 @@ export class Connection {
         this.reloading = true;
       }
 
-      this.connect();
+      const baseDelay = Math.min(
+        10000,
+        500 * Math.pow(1.5, this.reconnectAttempts),
+      );
+      const jitter = Math.random() * 500;
+      const delay = Math.round(baseDelay + jitter);
+
+      this.reconnectAttempts++;
+      console.log(
+        `Scheduling reconnect in ${delay}ms (attempt #${this.reconnectAttempts})...`,
+      );
+
+      this.reconnectTimeout = setTimeout(() => {
+        this.connect(this.lastWorldKey);
+      }, delay);
     }
     this.disconnecting = false;
   }
