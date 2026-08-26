@@ -46,7 +46,7 @@ pixiAny.tilemap = pixiAny.tilemap || pixi_tilemap;
 
 const size = { width: 1000, height: 500 };
 const canvas = document.getElementById("gameCanvas") as HTMLCanvasElement;
-const zoom = 1050;
+const zoom = 1200;
 const cameraDrag = 0.8;
 
 //PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
