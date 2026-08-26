@@ -846,7 +846,10 @@ export class RenderedObject {
           this.invulnerableStartTime = now;
           if (groupID) RenderedObject.groupInvulnerableTimes[groupID] = now;
         }
-      } else if (now - this.invulnerableStartTime >= SPAWN_INVULNERABILITY_DURATION_MS) {
+      } else if (
+        now - this.invulnerableStartTime >=
+        SPAWN_INVULNERABILITY_DURATION_MS
+      ) {
         this.isInvulnerable = false;
         this.invulnerableStartTime = 0;
         if (groupID && RenderedObject.groupInvulnerableTimes[groupID]) {

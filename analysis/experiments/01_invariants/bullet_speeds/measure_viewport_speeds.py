@@ -56,29 +56,29 @@ def run_viewport_bullet_speed_analysis():
     # ---------------------------------------------------------
     # Remake Hook constants:
     remake_shot_thrust_1 = 41.00 # Hook.ShotThrust[1]
-    remake_shot_thrust_conv = 0.00156 # Hook.ShotThrustConverter
+    remake_shot_thrust_conv = 0.0013 # Hook.ShotThrustConverter
     # ShipWeaponBullet.cs: Momentum = thrust * 10 = ShotThrust[1] * ShotThrustConverter * 10
-    remake_bullet_vel_ms = remake_shot_thrust_1 * remake_shot_thrust_conv * 10.0 # 0.6396 units/ms
-    remake_bullet_vel_sec = remake_bullet_vel_ms * 1000.0 # 639.6 units/s
-    remake_bullet_vel_tick = remake_bullet_vel_ms * dt_ms # 25.584 units/tick
+    remake_bullet_vel_ms = remake_shot_thrust_1 * remake_shot_thrust_conv * 10.0 # 0.533 units/ms
+    remake_bullet_vel_sec = remake_bullet_vel_ms * 1000.0 # 533.0 units/s
+    remake_bullet_vel_tick = remake_bullet_vel_ms * dt_ms # 21.32 units/tick
     
     # Remake Ship constants:
     remake_base_thrust_1 = 13.60 # Hook.BaseThrust[1]
-    remake_base_thrust_conv = 0.0024 # Hook.BaseThrustConverter
+    remake_base_thrust_conv = 0.002 # Hook.BaseThrustConverter
     remake_max_momentum_coeff = 6.5 # Hook.MaxMomentumCoefficient
-    remake_ship_vel_ms = remake_base_thrust_1 * remake_base_thrust_conv * remake_max_momentum_coeff # 0.21216 units/ms
-    remake_ship_vel_sec = remake_ship_vel_ms * 1000.0 # 212.16 units/s
-    remake_ship_vel_tick = remake_ship_vel_ms * dt_ms # 8.4864 units/tick
+    remake_ship_vel_ms = remake_base_thrust_1 * remake_base_thrust_conv * remake_max_momentum_coeff # 0.1768 units/ms
+    remake_ship_vel_sec = remake_ship_vel_ms * 1000.0 # 176.8 units/s
+    remake_ship_vel_tick = remake_ship_vel_ms * dt_ms # 7.072 units/tick
     
     # Remake Viewport (from game.ts):
-    # zoom = 1050, 16:9 Aspect Ratio
+    # zoom = 1000, 16:9 Aspect Ratio
     # container.scale.set(width / zoom, width / zoom)
-    remake_zoom = 1050.0 # world units
-    remake_viewport_w = remake_zoom # 1050.0 world units
-    remake_viewport_h = remake_zoom * (9.0 / 16.0) # 590.625 world units
-    remake_half_w = remake_viewport_w / 2.0 # 525.0 world units
-    remake_half_h = remake_viewport_h / 2.0 # 295.3125 world units
-    remake_half_diag = math.hypot(remake_half_w, remake_half_h) # 602.357488 world units
+    remake_zoom = 1000.0 # world units
+    remake_viewport_w = remake_zoom # 1000.0 world units
+    remake_viewport_h = remake_zoom * (9.0 / 16.0) # 562.5 world units
+    remake_half_w = remake_viewport_w / 2.0 # 500.0 world units
+    remake_half_h = remake_viewport_h / 2.0 # 281.25 world units
+    remake_half_diag = math.hypot(remake_half_w, remake_half_h)
     
     # Remake Times to reach viewport edges from screen center:
     remake_t_center_to_horiz_edge = remake_half_w / remake_bullet_vel_sec # s
