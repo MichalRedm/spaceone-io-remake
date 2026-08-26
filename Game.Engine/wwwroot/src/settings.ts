@@ -4,13 +4,7 @@ import { textureCache } from "./models/textureCache";
 import { getDefaultTextureMapRules } from "./models/textureMap";
 import { getDefaultSpriteModeMapRules } from "./models/spriteModeMap";
 import { Controls } from "./controls";
-import * as sass from "sass";
-import { Buffer } from "buffer";
-
-// in case your code is isomorphic
-if (typeof window !== "undefined") (<any>window).Buffer = Buffer;
-
-import { queryProperties, parseScssIntoRules } from "./parser/parseTheme.js";
+import { queryProperties, parseScssIntoRules } from "./parser/parseTheme";
 
 export interface SettingsData {
   graphics: string;
@@ -376,9 +370,9 @@ async function theme(v?: string) {
 
               if (text3) {
                 try {
-                  const ab = sass
-                    .renderSync({ data: text3 })
-                    .css.toString("utf8");
+                  const ab = text3
+                    .replace(/\/\*[\s\S]*?\*\//g, "")
+                    .replace(/\/\/.*$/gm, "");
                   const imagePromises: Promise<void>[] = [];
                   let cleansed = ab;
                   const images: string[] =

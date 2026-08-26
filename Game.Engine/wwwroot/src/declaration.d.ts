@@ -15,13 +15,6 @@ declare module "*?raw" {
   export default content;
 }
 
-declare module "whatwg-fetch" {
-  export const fetch: typeof globalThis.fetch;
-  export const Headers: typeof globalThis.Headers;
-  export const Request: typeof globalThis.Request;
-  export const Response: typeof globalThis.Response;
-}
-
 declare module "js-cookie" {
   interface CookieAttributes {
     expires?: number | Date;
@@ -94,12 +87,6 @@ declare module "plotly.js/lib/core" {
 declare module "plotly.js/lib/barpolar" {
   const barpolar: any;
   export default barpolar;
-}
-
-declare module "emoji-mart" {
-  export const Picker: any;
-  export const NimblePicker: any;
-  export const Emoji: any;
 }
 
 interface Window {

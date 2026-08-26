@@ -1,19 +1,9 @@
 import { defineConfig } from "vite";
 import { resolve } from "path";
-import { nodePolyfills } from "vite-plugin-node-polyfills";
 
 export default defineConfig({
   root: ".",
   base: "./",
-  plugins: [
-    nodePolyfills({
-      globals: {
-        Buffer: true,
-        global: true,
-        process: true,
-      },
-    }),
-  ],
   server: {
     port: 3000,
     proxy: {
@@ -27,12 +17,27 @@ export default defineConfig({
   build: {
     outDir: "dist",
     emptyOutDir: true,
+    chunkSizeWarningLimit: 1000,
     rollupOptions: {
       input: {
         main: resolve(__dirname, "index.html"),
         game: resolve(__dirname, "game.html"),
         admin: resolve(__dirname, "admin.html"),
         tuner: resolve(__dirname, "tuner.html"),
+      },
+      output: {
+        manualChunks(id) {
+          if (id.includes("node_modules")) {
+            if (
+              id.includes("pixi.js") ||
+              id.includes("pixi-layers") ||
+              id.includes("pixi-particles") ||
+              id.includes("pixi-tilemap")
+            ) {
+              return "pixi-vendor";
+            }
+          }
+        },
       },
     },
   },

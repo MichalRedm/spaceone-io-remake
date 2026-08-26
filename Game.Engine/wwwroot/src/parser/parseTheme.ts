@@ -1,10 +1,4 @@
 import { is } from "css-select";
-import * as sass from "sass";
-import { Buffer } from "buffer";
-
-if (typeof window !== "undefined") {
-  (window as any).Buffer = Buffer;
-}
 
 export interface ThemeRule {
   selector: string;
@@ -18,18 +12,10 @@ export interface ElementQueryProps {
 }
 
 export function parseScssIntoRules(scss: string): ThemeRule[] {
-  try {
-    if (sass && typeof (sass as any).compileString === "function") {
-      return parseCssIntoRules((sass as any).compileString(scss).css);
-    } else if (sass && typeof (sass as any).renderSync === "function") {
-      return parseCssIntoRules(
-        (sass as any).renderSync({ data: scss }).css.toString("utf8"),
-      );
-    }
-  } catch (e) {
-    console.warn("Failed to compile SCSS, parsing directly:", e);
-  }
-  return parseCssIntoRules(scss);
+  const clean = (scss ?? "")
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/\/\/.*$/gm, "");
+  return parseCssIntoRules(clean);
 }
 
 export function parseCssIntoRules(css?: string): ThemeRule[] {

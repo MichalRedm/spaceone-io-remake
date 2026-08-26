@@ -3,42 +3,119 @@ import nipplejs from "nipplejs";
 import { Settings } from "./settings";
 import { Ship } from "./models/ship";
 import { fadeIn } from "./domUtils";
-import "emoji-mart/css/emoji-mart.css";
-import { Picker } from "emoji-mart";
-import React from "react";
-import ReactDOM from "react-dom";
+const DEFAULT_EMOJIS = [
+  "👋",
+  "🚀",
+  "🔥",
+  "💥",
+  "⚡",
+  "👑",
+  "💀",
+  "👽",
+  "👾",
+  "🛸",
+  "🎯",
+  "🛡️",
+  "💎",
+  "🌟",
+  "⚔️",
+  "🏆",
+  "🤖",
+  "🎃",
+  "👻",
+  "🍕",
+  "🍔",
+  "🐱",
+  "🐶",
+  "🦄",
+  "🐉",
+  "💯",
+  "🏴‍☠️",
+  "🎮",
+  "🕹️",
+  "⚓",
+  "🚩",
+  "🦾",
+  "🩸",
+  "✨",
+  "💣",
+  "🕶️",
+  "😈",
+  "🤠",
+  "🥳",
+  "🤩",
+  "😎",
+  "😱",
+  "🥶",
+  "🥵",
+  "🤯",
+  "💫",
+  "❤️",
+  "👍",
+  "👎",
+  "💩",
+  "🧠",
+  "👀",
+  "💪",
+  "🌈",
+  "⭐",
+  "🎉",
+  "🍿",
+  "☕",
+  "🍺",
+  "🧊",
+];
 
 const emojiContainer = document.getElementById("emoji-container");
-if (emojiContainer) {
-  ReactDOM.render(
-    React.createElement(
-      Picker,
-      {
-        native: true,
-        title: "",
-        emoji: "rocket",
-        onClick: (e: any) => {
-          console.log(e);
-          Cookies.set("emoji", e.native);
-          var x = e.native;
-          if (emojiTrigger) emojiTrigger.innerText = e.native;
+const emojiTrigger = document.getElementById("emoji-trigger");
 
-          Controls.emoji = x;
-          console.log(Controls.emoji);
-          emojiContainer.classList.remove("open");
-        },
-      },
-      null,
-    ),
-    emojiContainer,
-  );
+if (emojiContainer) {
+  const panel = document.createElement("div");
+  panel.className = "emoji-picker-panel";
+
+  const grid = document.createElement("div");
+  grid.className = "emoji-grid";
+
+  for (const emoji of DEFAULT_EMOJIS) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "emoji-item";
+    btn.innerText = emoji;
+    btn.title = emoji;
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      Cookies.set("emoji", emoji);
+      if (emojiTrigger) emojiTrigger.innerText = emoji;
+      Controls.emoji = emoji;
+      emojiContainer.classList.remove("open");
+    });
+    grid.appendChild(btn);
+  }
+
+  panel.appendChild(grid);
+  emojiContainer.replaceChildren(panel);
+}
+
+if (emojiTrigger && emojiContainer) {
+  emojiTrigger.addEventListener("click", (e) => {
+    e.stopPropagation();
+    emojiContainer.classList.toggle("open");
+  });
+
+  document.addEventListener("click", (e) => {
+    if (
+      !emojiContainer.contains(e.target as Node) &&
+      e.target !== emojiTrigger
+    ) {
+      emojiContainer.classList.remove("open");
+    }
+  });
 }
 
 const secretShips = ["ship_secret", "ship_zed"];
 
 const autofCon = document.getElementById("autofireContainer");
 const autofTgg = document.getElementById("autofireToggle");
-const emojiTrigger = document.getElementById("emoji-trigger");
 const selector = document.getElementById("shipSelectorSwitch");
 var colors = [
   "ship_blue",
@@ -49,12 +126,6 @@ var colors = [
   "ship_red",
   "ship_pink",
 ]; // to fix secret ships bug
-
-if (emojiTrigger && emojiContainer) {
-  emojiTrigger.addEventListener("click", () => {
-    emojiContainer.classList.toggle("open");
-  });
-}
 
 const nippleZone = document.getElementById("nipple-zone");
 export const nipple = nippleZone
