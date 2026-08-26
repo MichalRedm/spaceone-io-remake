@@ -21,7 +21,12 @@ export class Overlay {
   update(customData: unknown): void {
     this.data = customData;
 
-    if (this.plotly.used) this.container.plotly.style.visibility = "visible";
-    else this.container.plotly.style.visibility = "hidden";
+    if (this.plotly && this.plotly.used) {
+      if (this.container.plotly)
+        this.container.plotly.style.visibility = "visible";
+    } else {
+      if (this.container.plotly)
+        this.container.plotly.style.visibility = "hidden";
+    }
   }
 }

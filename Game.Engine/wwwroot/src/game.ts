@@ -83,6 +83,7 @@ container.addChild(container.tiles);
 
 const background = new Background(container);
 const border = new Border(container);
+container.plotly = document.getElementById("plotly");
 const overlay = new Overlay(container, canvas, container.plotly);
 FX.init(container);
 const camera = new Camera(size);

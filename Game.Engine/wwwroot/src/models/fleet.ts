@@ -72,7 +72,7 @@ export class Fleet {
       else this.plotly = null;
     }
 
-    if (this.plotly && this.ID === myFleetID) {
+    if (this.plotly && this.ID === myFleetID && this.container.plotly) {
       if (!this.container.plotly.used) {
         this.container.plotly.used = true;
         this.usingPlotly = true;
@@ -90,7 +90,9 @@ export class Fleet {
     }
 
     if (this.usingPlotly && this.ID !== myFleetID) {
-      this.container.plotly.used = false;
+      if (this.container.plotly) {
+        this.container.plotly.used = false;
+      }
       this.usingPlotly = false;
     }
   }
@@ -138,7 +140,9 @@ export class Fleet {
     this.container.removeChild(this.text);
     this.container.removeChild(this.textChat);
     if (this.usingPlotly) {
-      this.container.plotly.used = false;
+      if (this.container.plotly) {
+        this.container.plotly.used = false;
+      }
       console.log("unsetting plotly use");
     }
   }
