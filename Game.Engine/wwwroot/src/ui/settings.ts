@@ -42,7 +42,7 @@ export const Settings: SettingsData = {
   bandwidth: 100,
   showCooldown: true,
   logLength: 4,
-  displayMinimap: true,
+  displayMinimap: false,
   bigKillMessage: true,
   showKeyboardHints: true,
   showOwnName: true,
@@ -252,23 +252,4 @@ document.getElementById("settingsSave")?.addEventListener("click", () => {
 document.getElementById("settingsReset")?.addEventListener("click", () => {
   reset();
   window.location.reload();
-});
-
-let minimapChanged = false;
-window.addEventListener("keydown", function (e) {
-  if (
-    (e.code === "KeyM" || e.key === "m" || e.key === "M") &&
-    !minimapChanged &&
-    (document.body.classList.contains("alive") ||
-      document.body.classList.contains("spectating"))
-  ) {
-    Settings.displayMinimap = !Settings.displayMinimap;
-    minimapChanged = true;
-  }
-});
-
-window.addEventListener("keyup", function (e) {
-  if (e.code === "KeyM" || e.key === "m" || e.key === "M") {
-    minimapChanged = false;
-  }
 });
