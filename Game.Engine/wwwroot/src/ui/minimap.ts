@@ -20,37 +20,66 @@ const colors: Record<string, number> = {
 
 export class Minimap {
   ctx: PIXI.Graphics;
-  worldSize = 0;
+  worldSize = 6000;
 
   constructor(stage: PIXI.Container, size: Dimension2) {
     this.ctx = new PIXI.Graphics();
+    this.ctx.visible = Settings.displayMinimap;
     this.size(size);
     stage.addChild(this.ctx);
   }
 
   size(size: Dimension2): void {
-    this.ctx.position = new Vector2(
+    this.ctx.position.set(
       size.width - minimapSize - minimapMarginRight,
       size.height - minimapSize - minimapMarginBottom,
     );
   }
 
   checkDisplay(): void {
-    if (Settings.displayMinimap !== this.ctx.visible)
+    if (Settings.displayMinimap !== this.ctx.visible) {
       this.ctx.visible = Settings.displayMinimap;
+      if (!this.ctx.visible) {
+        this.ctx.clear();
+      }
+    }
   }
 
-  update(_data: LeaderboardData, _worldSize: number, _fleetID: number): void {
-    // Minimap update hook
-  }
+  update(data: LeaderboardData, worldSize: number, fleetID: number): void {
+    if (!this.ctx.visible) return;
+    if (worldSize > 0) this.worldSize = worldSize;
 
-  drawMinimap(
-    _position: Vector2,
-    _color: string,
-    _self: boolean,
-    _rank: number,
-    _isCTF: boolean,
-  ): void {
-    // Minimap draw hook
+    this.ctx.clear();
+
+    // Minimap boundary box
+    this.ctx.beginFill(0x071530, 0.5);
+    this.ctx.lineStyle(1, 0x1a4580, 0.8);
+    this.ctx.drawRect(0, 0, minimapSize, minimapSize);
+    this.ctx.endFill();
+
+    if (!data?.Entries) return;
+
+    for (let i = 0; i < data.Entries.length; i++) {
+      const entry = data.Entries[i];
+      if (!entry || !entry.Position) continue;
+
+      const normX = (entry.Position.x + this.worldSize) / (this.worldSize * 2);
+      const normY = (entry.Position.y + this.worldSize) / (this.worldSize * 2);
+
+      const px = Math.max(2, Math.min(minimapSize - 2, normX * minimapSize));
+      const py = Math.max(2, Math.min(minimapSize - 2, normY * minimapSize));
+
+      const isSelf = entry.FleetID === fleetID;
+      const isLeader = i === 0;
+
+      const color = isSelf
+        ? 0x00ff00
+        : (colors[entry.Color?.toLowerCase() ?? ""] ?? 0xffffff);
+      const radius = isSelf ? 3.5 : isLeader ? 3 : 2;
+
+      this.ctx.beginFill(color, isSelf ? 1.0 : 0.85);
+      this.ctx.drawCircle(px, py, radius);
+      this.ctx.endFill();
+    }
   }
 }
