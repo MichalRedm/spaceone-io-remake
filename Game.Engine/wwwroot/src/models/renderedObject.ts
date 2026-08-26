@@ -107,6 +107,14 @@ class GroupParticle extends particles.Particle {
   }
 }
 
+export interface CustomSpriteLayer extends PIXI.Sprite {
+  textureDefinition?: any;
+  baseScale?: number;
+  baseOffset?: { x: number; y: number };
+  baseRotation?: number;
+  zOrder?: number;
+}
+
 export class RenderedObject {
   static groupBoostTimes: Record<number, number> = {};
   static groupBoostEndTimes: Record<number, number> = {};
@@ -114,6 +122,33 @@ export class RenderedObject {
     number,
     { spawnTime: number; lifetime: number }
   > = {};
+  static lastPruneTime = 0;
+
+  static pruneStaticState(now: number): void {
+    if (now - RenderedObject.lastPruneTime < 5000) return;
+    RenderedObject.lastPruneTime = now;
+
+    for (const id in RenderedObject.groupBulletData) {
+      const entry = RenderedObject.groupBulletData[id];
+      if (entry && now - entry.spawnTime > 5000) {
+        delete RenderedObject.groupBulletData[id];
+      }
+    }
+
+    for (const id in RenderedObject.groupBoostTimes) {
+      const t = RenderedObject.groupBoostTimes[id];
+      if (t && now - t > 5000) {
+        delete RenderedObject.groupBoostTimes[id];
+      }
+    }
+
+    for (const id in RenderedObject.groupBoostEndTimes) {
+      const t = RenderedObject.groupBoostEndTimes[id];
+      if (t && now - t > 5000) {
+        delete RenderedObject.groupBoostEndTimes[id];
+      }
+    }
+  }
 
   static getShipCountFromSpeed(speed: number): number {
     if (speed <= 0) return 1;
@@ -137,10 +172,10 @@ export class RenderedObject {
   currentSpriteName: string | false;
   currentMode: number;
   currentZIndex: number;
-  activeTextures: Record<string, PIXI.Sprite>;
+  activeTextures: Record<string, CustomSpriteLayer>;
   activeEmitters: Record<string, particles.Emitter>;
   body?: BodyState | null;
-  spriteLayers?: PIXI.Sprite[] | false;
+  spriteLayers?: CustomSpriteLayer[] | false;
   emitterLayers?: particles.Emitter[] | false;
   lastTime: number;
 
@@ -486,11 +521,11 @@ export class RenderedObject {
     spriteName: string | false,
     mode: number,
     zIndex: number,
-  ): PIXI.Sprite[] | false {
+  ): CustomSpriteLayer[] | false {
     const layers = this.getModeMap(spriteName, mode);
 
     if (layers) {
-      const spriteLayers: PIXI.Sprite[] = [];
+      const spriteLayers: CustomSpriteLayer[] = [];
       for (let i = 0; i < layers.length; i++) {
         let spriteLayer: any = null;
         const textureName = layers[i];
@@ -725,13 +760,17 @@ export class RenderedObject {
   }
 
   fixLoadingTextureScales(): void {
-    this.foreachLayer((layer) => {
-      if (layer.textureDefinition)
-        layer.baseScale = RenderedObject.getScaleWithHeight(
-          layer.textureDefinition,
-          layer.texture.height,
-        );
-    });
+    if (this.spriteLayers && this.spriteLayers.length) {
+      for (let i = 0; i < this.spriteLayers.length; i++) {
+        const layer = this.spriteLayers[i];
+        if (layer && layer.textureDefinition) {
+          layer.baseScale = RenderedObject.getScaleWithHeight(
+            layer.textureDefinition,
+            layer.texture.height,
+          );
+        }
+      }
+    }
   }
 
   preRender(time: number, interpolator: Interpolator): void {
@@ -741,10 +780,12 @@ export class RenderedObject {
       this.moveSprites(newPosition, this.body.Size);
     }
 
-    if (this.lastTime > 0) {
-      this.foreachEmitter((e) => {
-        e.update((time - this.lastTime) * 0.001);
-      });
+    if (this.lastTime > 0 && this.emitterLayers && this.emitterLayers.length) {
+      const dt = (time - this.lastTime) * 0.001;
+      for (let i = 0; i < this.emitterLayers.length; i++) {
+        const e = this.emitterLayers[i];
+        if (e) e.update(dt);
+      }
     }
 
     this.lastTime = time;
@@ -824,192 +865,215 @@ export class RenderedObject {
       this.isInvulnerable = false;
     }
 
-    const self = this;
-    this.foreachLayer(function (layer, index) {
-      layer.pivot.x = layer.texture.width / 2;
-      layer.pivot.y = layer.texture.height / 2;
+    if (this.spriteLayers && this.spriteLayers.length) {
+      for (let i = 0; i < this.spriteLayers.length; i++) {
+        const layer = this.spriteLayers[i];
+        if (!layer) continue;
 
-      const scale = size * layer.baseScale;
-      layer.scale.set(scale, scale);
+        layer.pivot.x = layer.texture.width / 2;
+        layer.pivot.y = layer.texture.height / 2;
 
-      const offX = (layer.baseOffset?.x || 0) * scale;
-      const offY = (layer.baseOffset?.y || 0) * scale;
+        const scale = size * (layer.baseScale || 1);
+        layer.scale.set(scale, scale);
 
-      layer.position.x =
-        interpolatedPosition.x +
-        (offX * Math.cos(angle) - offY * Math.sin(angle));
+        const offX = (layer.baseOffset?.x || 0) * scale;
+        const offY = (layer.baseOffset?.y || 0) * scale;
 
-      layer.position.y =
-        interpolatedPosition.y +
-        (offY * Math.cos(angle) + offX * Math.sin(angle));
+        layer.position.x =
+          interpolatedPosition.x +
+          (offX * Math.cos(angle) - offY * Math.sin(angle));
 
-      const rotationOffset =
-        layer.baseRotation !== undefined
-          ? layer.baseRotation
-          : layer.textureDefinition?.rotate !== undefined
-            ? Number(layer.textureDefinition.rotate)
-            : Math.PI / 2;
+        layer.position.y =
+          interpolatedPosition.y +
+          (offY * Math.cos(angle) + offX * Math.sin(angle));
 
-      layer.rotation = angle + rotationOffset;
+        const rotationOffset =
+          layer.baseRotation !== undefined
+            ? layer.baseRotation
+            : layer.textureDefinition?.rotate !== undefined
+              ? Number(layer.textureDefinition.rotate)
+              : Math.PI / 2;
 
-      const fileStr = String(layer.textureDefinition?.file || "").toLowerCase();
+        layer.rotation = angle + rotationOffset;
 
-      // Invulnerability 12-period (0.25s each, 3s total) blink check (odd=visible, even=invisible)
-      if (self.isInvulnerable && !self.isAbandoned) {
-        const invulnElapsed = now - self.invulnerableStartTime;
-        if (invulnElapsed < 3000) {
-          const periodIndex = Math.floor(invulnElapsed / 250) + 1;
-          const isBlinkVisible = periodIndex % 2 === 1;
-          if (!isBlinkVisible) {
-            layer.alpha = 0.0;
-            layer.visible = false;
-            return;
+        const fileStr = String(
+          layer.textureDefinition?.file || "",
+        ).toLowerCase();
+
+        // Invulnerability 12-period (0.25s each, 3s total) blink check (odd=visible, even=invisible)
+        if (this.isInvulnerable && !this.isAbandoned) {
+          const invulnElapsed = now - this.invulnerableStartTime;
+          if (invulnElapsed < 3000) {
+            const periodIndex = Math.floor(invulnElapsed / 250) + 1;
+            const isBlinkVisible = periodIndex % 2 === 1;
+            if (!isBlinkVisible) {
+              layer.alpha = 0.0;
+              layer.visible = false;
+              continue;
+            }
           }
         }
-      }
 
-      // Dynamic Lifecycle Alphas & Crossfades
-      if (fileStr.startsWith("dash_trail")) {
-        if (!self.isBoosting) {
-          layer.alpha = 0.0;
-          layer.visible = false;
-        } else {
-          const boostElapsed = now - self.boostStartTime;
-          if (boostElapsed < 160) {
-            // Phase 1 (0-160ms): Surge ramp - no dash trail
+        // Dynamic Lifecycle Alphas & Crossfades
+        if (fileStr.startsWith("dash_trail")) {
+          if (!this.isBoosting) {
             layer.alpha = 0.0;
             layer.visible = false;
-          } else if (boostElapsed < 360) {
-            // Phase 2 (160-360ms): Steady dash trail with flame flicker
-            const flicker =
-              0.92 +
-              0.12 * Math.sin(now * 0.035 + ((self.body?.ID || 0) % 10) * 1.5);
-            layer.scale.set(scale, scale * flicker);
-            layer.alpha =
-              0.85 +
-              0.15 * Math.cos(now * 0.05 + ((self.body?.ID || 0) % 10) * 1.5);
-            layer.visible = true;
           } else {
-            // Phase 3 (360-1000ms): Fades out smoothly over the 640ms deceleration phase
-            const phase3Elapsed = boostElapsed - 360;
-            const phase3Progress = Math.min(
-              1.0,
-              Math.max(0.0, phase3Elapsed / 640),
-            );
-            const fadeAlpha = 1.0 - phase3Progress;
-            const flicker =
-              0.92 +
-              0.12 * Math.sin(now * 0.035 + ((self.body?.ID || 0) % 10) * 1.5);
-            layer.scale.set(scale, scale * flicker);
-            layer.alpha =
-              fadeAlpha *
-              (0.85 +
-                0.15 *
-                  Math.cos(now * 0.05 + ((self.body?.ID || 0) % 10) * 1.5));
+            const boostElapsed = now - this.boostStartTime;
+            if (boostElapsed < 160) {
+              // Phase 1 (0-160ms): Surge ramp - no dash trail
+              layer.alpha = 0.0;
+              layer.visible = false;
+            } else if (boostElapsed < 360) {
+              // Phase 2 (160-360ms): Steady dash trail with flame flicker
+              const flicker =
+                0.92 +
+                0.12 *
+                  Math.sin(now * 0.035 + ((this.body?.ID || 0) % 10) * 1.5);
+              layer.scale.set(scale, scale * flicker);
+              layer.alpha =
+                0.85 +
+                0.15 * Math.cos(now * 0.05 + ((this.body?.ID || 0) % 10) * 1.5);
+              layer.visible = true;
+            } else {
+              // Phase 3 (360-1000ms): Fades out smoothly over the 640ms deceleration phase
+              const phase3Elapsed = boostElapsed - 360;
+              const phase3Progress = Math.min(
+                1.0,
+                Math.max(0.0, phase3Elapsed / 640),
+              );
+              const fadeAlpha = 1.0 - phase3Progress;
+              const flicker =
+                0.92 +
+                0.12 *
+                  Math.sin(now * 0.035 + ((this.body?.ID || 0) % 10) * 1.5);
+              layer.scale.set(scale, scale * flicker);
+              layer.alpha =
+                fadeAlpha *
+                (0.85 +
+                  0.15 *
+                    Math.cos(now * 0.05 + ((this.body?.ID || 0) % 10) * 1.5));
+              layer.visible = layer.alpha > 0.01;
+            }
+          }
+        } else if (fileStr.startsWith("dead_ship")) {
+          if (!this.isAbandoned) {
+            layer.alpha = 0.0;
+            layer.visible = false;
+          } else {
+            const abElapsed = now - this.abandonedStartTime;
+            const abProgress = Math.min(1.0, abElapsed / 2000);
+            layer.alpha = abProgress;
             layer.visible = layer.alpha > 0.01;
           }
-        }
-      } else if (fileStr.startsWith("dead_ship")) {
-        if (!self.isAbandoned) {
-          layer.alpha = 0.0;
-          layer.visible = false;
-        } else {
-          const abElapsed = now - self.abandonedStartTime;
-          const abProgress = Math.min(1.0, abElapsed / 2000);
-          layer.alpha = abProgress;
+        } else if (
+          fileStr.startsWith("particle_ship") ||
+          fileStr.includes("_boost")
+        ) {
+          if (this.isBoosting) {
+            // Full intensity throughout all boost phases (Phase 1, 2, 3)
+            layer.alpha = 1.0;
+            layer.visible = true;
+          } else if (this.boostEndTime > 0 && now - this.boostEndTime < 500) {
+            // Post-boost 0.5s fade-out only after entire boost is finished
+            const postBoostElapsed = now - this.boostEndTime;
+            const fadeProgress = Math.min(
+              1.0,
+              Math.max(0.0, postBoostElapsed / 500),
+            );
+            layer.alpha = Math.max(0.0, 1.0 - fadeProgress);
+            layer.visible = layer.alpha > 0.01;
+          } else if (this.isInvulnerable) {
+            const invulnElapsed = now - this.invulnerableStartTime;
+            const invulnProgress = Math.min(1.0, invulnElapsed / 3000);
+            layer.alpha = Math.max(0.0, 1.0 - invulnProgress);
+            layer.visible = layer.alpha > 0.01;
+          } else {
+            layer.alpha = 0.0;
+            layer.visible = false;
+          }
+        } else if (
+          fileStr.startsWith("ship") &&
+          !fileStr.startsWith("ship_ab")
+        ) {
+          if (this.isAbandoned) {
+            const abElapsed = now - this.abandonedStartTime;
+            const abProgress = Math.min(1.0, abElapsed / 2000);
+            layer.alpha = Math.max(0.0, 1.0 - abProgress);
+            layer.visible = layer.alpha > 0.01;
+          } else {
+            layer.alpha = 1.0;
+            layer.visible = true;
+          }
+        } else if (fileStr.includes("glow")) {
+          const spawnAge = now - this.spawnTime;
+          const spawnAlpha = Math.min(1.0, spawnAge / 1000);
+          const glowPulse =
+            0.4 + 0.6 * (0.5 + 0.5 * Math.sin((now / 1000) * 2 * Math.PI));
+          layer.alpha = spawnAlpha * glowPulse;
+          layer.visible = true;
+        } else if (fileStr.startsWith("food") || fileStr.startsWith("fish")) {
+          const spawnAge = now - this.spawnTime;
+          layer.alpha = Math.min(1.0, spawnAge / 1000);
+          layer.visible = true;
+        } else if (fileStr.includes("laser") && fileStr.includes("trail")) {
+          const age = now - this.spawnTime;
+          const remaining = this.bulletLifetime - age;
+          const fadeIn = Math.min(1.0, age / 180);
+          const fadeOut =
+            remaining < 112.5 ? Math.max(0.0, remaining / 112.5) : 1.0;
+          layer.alpha = fadeIn * fadeOut;
+          layer.visible = layer.alpha > 0.01;
+        } else if (
+          fileStr.startsWith("laser") ||
+          fileStr.startsWith("bullet")
+        ) {
+          const age = now - this.spawnTime;
+          const remaining = this.bulletLifetime - age;
+          const fadeIn = Math.min(1.0, age / 56.25);
+          const fadeOut =
+            remaining < 56.25 ? Math.max(0.0, remaining / 56.25) : 1.0;
+          layer.alpha = fadeIn * fadeOut;
           layer.visible = layer.alpha > 0.01;
         }
-      } else if (
-        fileStr.startsWith("particle_ship") ||
-        fileStr.includes("_boost")
-      ) {
-        if (self.isBoosting) {
-          // Full intensity throughout all boost phases (Phase 1, 2, 3)
-          layer.alpha = 1.0;
-          layer.visible = true;
-        } else if (self.boostEndTime > 0 && now - self.boostEndTime < 500) {
-          // Post-boost 0.5s fade-out only after entire boost is finished
-          const postBoostElapsed = now - self.boostEndTime;
-          const fadeProgress = Math.min(
-            1.0,
-            Math.max(0.0, postBoostElapsed / 500),
+      }
+    }
+
+    if (this.emitterLayers && this.emitterLayers.length) {
+      for (let i = 0; i < this.emitterLayers.length; i++) {
+        const emitter = this.emitterLayers[i];
+        if (!emitter) continue;
+        const texDef = (emitter as any).textureDefinition;
+        const emitterKey = String(texDef?.emitter || "");
+        const isBoostEmitter = emitterKey.startsWith("boost");
+
+        if (isBoostEmitter) {
+          if (this.isBoosting) {
+            const boostElapsed = now - this.boostStartTime;
+            // Spawn bullet particles starting from Phase 2 (160ms) along the dash trail
+            emitter.emit = boostElapsed >= 160;
+          } else {
+            // Stop emitting when boost finishes; existing particles finish their lifetime naturally
+            emitter.emit = false;
+          }
+
+          // Align emitter to the rear nozzle and rotate in the direction of the dash trail
+          const trailAngleDeg = ((angle + Math.PI) * 180) / Math.PI;
+          emitter.rotate(trailAngleDeg);
+          const rearX =
+            interpolatedPosition.x - Math.cos(angle) * (size * 0.45);
+          const rearY =
+            interpolatedPosition.y - Math.sin(angle) * (size * 0.45);
+          emitter.updateOwnerPos(rearX, rearY);
+        } else {
+          emitter.updateOwnerPos(
+            interpolatedPosition.x,
+            interpolatedPosition.y,
           );
-          layer.alpha = Math.max(0.0, 1.0 - fadeProgress);
-          layer.visible = layer.alpha > 0.01;
-        } else if (self.isInvulnerable) {
-          const invulnElapsed = now - self.invulnerableStartTime;
-          const invulnProgress = Math.min(1.0, invulnElapsed / 3000);
-          layer.alpha = Math.max(0.0, 1.0 - invulnProgress);
-          layer.visible = layer.alpha > 0.01;
-        } else {
-          layer.alpha = 0.0;
-          layer.visible = false;
         }
-      } else if (fileStr.startsWith("ship") && !fileStr.startsWith("ship_ab")) {
-        if (self.isAbandoned) {
-          const abElapsed = now - self.abandonedStartTime;
-          const abProgress = Math.min(1.0, abElapsed / 2000);
-          layer.alpha = Math.max(0.0, 1.0 - abProgress);
-          layer.visible = layer.alpha > 0.01;
-        } else {
-          layer.alpha = 1.0;
-          layer.visible = true;
-        }
-      } else if (fileStr.includes("glow")) {
-        const spawnAge = now - self.spawnTime;
-        const spawnAlpha = Math.min(1.0, spawnAge / 1000);
-        const glowPulse =
-          0.4 + 0.6 * (0.5 + 0.5 * Math.sin((now / 1000) * 2 * Math.PI));
-        layer.alpha = spawnAlpha * glowPulse;
-        layer.visible = true;
-      } else if (fileStr.startsWith("food") || fileStr.startsWith("fish")) {
-        const spawnAge = now - self.spawnTime;
-        layer.alpha = Math.min(1.0, spawnAge / 1000);
-        layer.visible = true;
-      } else if (fileStr.includes("laser") && fileStr.includes("trail")) {
-        const age = now - self.spawnTime;
-        const remaining = self.bulletLifetime - age;
-        const fadeIn = Math.min(1.0, age / 180);
-        const fadeOut =
-          remaining < 112.5 ? Math.max(0.0, remaining / 112.5) : 1.0;
-        layer.alpha = fadeIn * fadeOut;
-        layer.visible = layer.alpha > 0.01;
-      } else if (fileStr.startsWith("laser") || fileStr.startsWith("bullet")) {
-        const age = now - self.spawnTime;
-        const remaining = self.bulletLifetime - age;
-        const fadeIn = Math.min(1.0, age / 56.25);
-        const fadeOut =
-          remaining < 56.25 ? Math.max(0.0, remaining / 56.25) : 1.0;
-        layer.alpha = fadeIn * fadeOut;
-        layer.visible = layer.alpha > 0.01;
       }
-    });
-
-    this.foreachEmitter((emitter) => {
-      const texDef = (emitter as any).textureDefinition;
-      const emitterKey = String(texDef?.emitter || "");
-      const isBoostEmitter = emitterKey.startsWith("boost");
-
-      if (isBoostEmitter) {
-        if (self.isBoosting) {
-          const boostElapsed = now - self.boostStartTime;
-          // Spawn bullet particles starting from Phase 2 (160ms) along the dash trail
-          emitter.emit = boostElapsed >= 160;
-        } else {
-          // Stop emitting when boost finishes; existing particles finish their lifetime naturally
-          emitter.emit = false;
-        }
-
-        // Align emitter to the rear nozzle and rotate in the direction of the dash trail
-        const trailAngleDeg = ((angle + Math.PI) * 180) / Math.PI;
-        emitter.rotate(trailAngleDeg);
-        const rearX = interpolatedPosition.x - Math.cos(angle) * (size * 0.45);
-        const rearY = interpolatedPosition.y - Math.sin(angle) * (size * 0.45);
-        emitter.updateOwnerPos(rearX, rearY);
-      } else {
-        emitter.updateOwnerPos(interpolatedPosition.x, interpolatedPosition.y);
-      }
-    });
+    }
   }
 
   update(updateData: any): void {
@@ -1018,6 +1082,7 @@ export class RenderedObject {
     const isBoostNow = (updateData.Mode & 1) !== 0;
     const groupID = updateData.Group || 0;
     const now = performance.now();
+    RenderedObject.pruneStaticState(now);
 
     if (isBoostNow) {
       if (!this.isBoosting) {
@@ -1074,18 +1139,21 @@ export class RenderedObject {
   }
 
   foreachLayer(action: (layer: any, i: number) => void): void {
-    if (this.spriteLayers && this.spriteLayers.length)
-      this.spriteLayers.forEach((layer, i) => {
-        action.apply(this, [layer, i]);
-      });
+    if (this.spriteLayers && this.spriteLayers.length) {
+      for (let i = 0; i < this.spriteLayers.length; i++) {
+        action.call(this, this.spriteLayers[i], i);
+      }
+    }
   }
 
   foreachEmitter(
     action: (emitter: particles.Emitter, i: number) => void,
   ): void {
-    if (this.emitterLayers && this.emitterLayers.length)
-      this.emitterLayers.forEach((layer, i) => {
-        action.apply(this, [layer, i]);
-      });
+    if (this.emitterLayers && this.emitterLayers.length) {
+      for (let i = 0; i < this.emitterLayers.length; i++) {
+        const emitter = this.emitterLayers[i];
+        if (emitter) action.call(this, emitter, i);
+      }
+    }
   }
 }

@@ -139,6 +139,8 @@ export class Fleet {
   destroy(): void {
     this.container.removeChild(this.text);
     this.container.removeChild(this.textChat);
+    this.text.destroy({ children: true, texture: true, baseTexture: true });
+    this.textChat.destroy({ children: true, texture: true, baseTexture: true });
     if (this.usingPlotly) {
       if (this.container.plotly) {
         this.container.plotly.used = false;
