@@ -483,6 +483,124 @@ body {
   margin-top: 65px;
 }
 
+.arena-modal-popup {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  margin: auto;
+  width: 480px;
+  max-width: 90vw;
+  height: fit-content;
+  max-height: 320px;
+  background: #060b19;
+  border: 2px solid #0052ff;
+  border-radius: 10px;
+  box-shadow: 0px 0px 35px 5px rgba(0, 82, 255, 0.7);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  overflow: hidden;
+  font-family: "Exo 2", sans-serif;
+  color: #fff;
+}
+
+.arena-modal-popup .header {
+  position: relative;
+  width: 100%;
+  height: 50px;
+  background: rgba(0, 30, 80, 0.6);
+  border-bottom: 1px solid rgba(61, 120, 255, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  box-sizing: border-box;
+}
+
+.arena-modal-popup .header .title {
+  font-size: 1.4em;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 0 10px #0052ff;
+  padding: 0;
+  margin: 0;
+}
+
+.arena-modal-popup .header .close {
+  float: none;
+  font-size: 24px;
+  padding: 0;
+  color: #aaa;
+  cursor: pointer;
+  transition:
+    color 0.2s,
+    text-shadow 0.2s;
+}
+
+.arena-modal-popup .header .close:hover {
+  color: #fff;
+  text-shadow: 0 0 8px #fff;
+}
+
+.arena-modal-body {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.arena-modal-body .modal-text {
+  font-size: 1.15em;
+  margin: 0 0 8px 0;
+  color: #dbe8ff;
+  line-height: 1.4;
+}
+
+.arena-modal-body .modal-subtext {
+  font-size: 0.95em;
+  color: #7a9cd6;
+  margin-bottom: 15px;
+}
+
+.arena-modal-body .modal-btn {
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: pointer;
+  box-sizing: border-box;
+  color: black;
+  font-family: "Exo 2", sans-serif;
+  font-weight: 900;
+  font-size: 1.1em;
+  border: 3px #feff00 solid;
+  border-radius: 8px;
+  min-width: 140px;
+  padding: 7px 0;
+  margin: 10px auto 0;
+  text-shadow: 0px 2px 2px #feff00;
+  background: linear-gradient(to bottom, #fae40b 50%, #f5c807 50%);
+  -webkit-box-shadow: 0px 0px 30px 0px #f5c807;
+  -moz-box-shadow: 0px 0px 30px 0px #f5c807;
+  box-shadow: 0px 0px 30px 0px #f5c807;
+  text-align: center;
+  outline: none;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.arena-modal-body .modal-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0px 0px 35px 0px #ffe600;
+}
+
+.arena-modal-body .modal-btn:active {
+  transform: scale(0.98);
+}
+
 #iluminati-button > img {
   position: absolute;
   left: 300px;
