@@ -437,6 +437,12 @@ LobbyCallbacks.onWorldJoin = function (worldKey: string, world?: WorldInfo) {
   }
 
   currentWorld = world ?? false;
+  if (world?.arenaID || world?.arenaKey) {
+    const arenaId = world.arenaID ?? world.arenaKey;
+    arenaLink.generate(arenaId);
+    arenaLink.updateURLHash(arenaId);
+  }
+
   connection.disconnect();
   cache.empty();
   WorldConfig.resetToDefaults();

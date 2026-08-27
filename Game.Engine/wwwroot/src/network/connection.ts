@@ -4,12 +4,8 @@ import { Cache } from "../models/cache";
 import { Settings } from "../ui/settings";
 import { Vector2 } from "../math/vector2";
 import { Controls } from "../ui/controls";
-import { ArenaLink } from "./arenaLink";
 import { fadeIn, hide } from "../ui/domUtils";
 import type { LeaderboardData } from "../ui/leaderboard";
-import { WorldConfig } from "../models/worldConfig";
-
-const arenaLink = new ArenaLink();
 
 type NetFB = typeof Game.Engine.Networking.FlatBuffers;
 
@@ -100,12 +96,8 @@ export class Connection {
       this.lastWorldKey = worldKey;
     }
 
-    if (!arenaLink.generated && worldKey) {
-      arenaLink.generate(worldKey);
-    }
-
     if (!worldKey) {
-      worldKey = this.lastWorldKey ?? arenaLink.getArena();
+      worldKey = this.lastWorldKey ?? "default";
     }
 
     let url: string;
