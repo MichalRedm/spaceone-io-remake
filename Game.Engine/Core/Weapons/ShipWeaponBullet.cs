@@ -56,10 +56,10 @@ namespace Game.Engine.Core.Weapons
             this.Momentum = momentum;
             this.Position = bulletOrigin;
 
-            if (World.Hook.PrecisionBullets && ship.Fleet != null)
+            if (World.Hook.PrecisionBullets && ship.Fleet != null && ship.Fleet.AimTarget != Vector2.Zero && ship.Fleet.AimTarget.Length() > 0.001f)
             {
                 Vector2 toTarget = Vector2.Zero;
-                if (World.Hook.PrecisionBulletsMinimumRange > 0 && ship.Fleet.AimTarget != Vector2.Zero)
+                if (World.Hook.PrecisionBulletsMinimumRange > 0)
                 {
                     var minAim = Vector2.Normalize(ship.Fleet.AimTarget) * MathF.Max(ship.Fleet.AimTarget.Length(), World.Hook.PrecisionBulletsMinimumRange);
 
@@ -76,7 +76,13 @@ namespace Game.Engine.Core.Weapons
                     + noise;
             }
             else
-                this.Angle = ship.Angle;
+            {
+                var noise = 0f;
+                if (ship.Fleet?.Ships.Count > 1)
+                    noise = ((float)r.NextDouble() - 0.5f) * World.Hook.PrecisionBulletsNoise;
+
+                this.Angle = ship.Angle + noise;
+            }
 
             this.OwnedByFleet = ship.Fleet;
             this.Sprite = ship.BulletSprite;

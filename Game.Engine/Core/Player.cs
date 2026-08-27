@@ -262,9 +262,6 @@ namespace Game.Engine.Core
                 }
             }
 
-            if (this.Backgrounded)
-                Fleet.AimTarget = Vector2.Zero;
-
             this.IsControlNew = false;
 
             if (IsInvulnerable)

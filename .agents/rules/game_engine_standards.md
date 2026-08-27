@@ -40,3 +40,4 @@ foreach (var body in candidates)
 | **Allocating objects in `Tick()`** | Triggers frequent .NET Garbage Collection pauses, causing stutter/lag spikes. | Reuse structs, pre-allocated pools, or stack variables during the physics step. |
 | **$O(N^2)$ distance checks** | Severely degrades server tick rate as player/ship count scales. | Query `RBush` spatial index bounds before executing narrow-phase distance math. |
 | **Floating point non-determinism** | Unclamped `NaN` / infinity velocities corrupt physics state and crash simulation. | Validate and clamp position/velocity vectors at the end of each tick. |
+| **Zeroing `AimTarget` on AFK/Background** | Causes precision bullets to converge inward toward `FleetCenter` and corrupts travel heading. | Preserve `Fleet.AimTarget` across AFK states and fall back to `ship.Angle` when `AimTarget` is zero. |
