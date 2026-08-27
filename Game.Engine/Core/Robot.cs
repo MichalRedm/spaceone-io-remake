@@ -94,12 +94,12 @@ namespace Game.Engine.Core
                 var bullet = bullets.First();
 
                 var distance = Vector2.Distance(bullet.Position, this.Fleet.FleetCenter);
-                if (distance < 2000)
+                if (distance < 500)
                 {
                     var avoid = (this.Fleet.FleetCenter - bullet.Position);
-                    vel += avoid * 400_000 / avoid.LengthSquared();
+                    vel += avoid * 20_000 / avoid.LengthSquared();
                 }
-                if (distance < 200)
+                if (distance < 30)
                 {
                     danger = true;
                 }
