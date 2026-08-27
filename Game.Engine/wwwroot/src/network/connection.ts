@@ -6,6 +6,7 @@ import { Vector2 } from "../math/vector2";
 import { Controls } from "../ui/controls";
 import { fadeIn, hide } from "../ui/domUtils";
 import type { LeaderboardData } from "../ui/leaderboard";
+import { WorldConfig } from "../models/worldConfig";
 
 type NetFB = typeof Game.Engine.Networking.FlatBuffers;
 
