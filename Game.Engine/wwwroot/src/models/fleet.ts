@@ -101,8 +101,13 @@ export class Fleet {
     }
   }
 
-  preRender(time: number, interpolator: Interpolator, myFleetID: number): void {
-    if (this.ships.length > 0 && this.ID !== myFleetID) {
+  preRender(
+    time: number,
+    interpolator: Interpolator,
+    myFleetID: number,
+    isSpectating: boolean,
+  ): void {
+    if (this.ships.length > 0 && (this.ID !== myFleetID || isSpectating)) {
       if (this.text.visible !== Settings.namesEnabled)
         this.text.visible = Settings.namesEnabled;
 

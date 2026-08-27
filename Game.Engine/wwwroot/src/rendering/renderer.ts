@@ -14,6 +14,7 @@ export class Renderer {
     interpolator: Interpolator,
     currentTime: number,
     fleetID: number,
+    isSpectating: boolean,
   ): void {
     FX.update();
 
@@ -25,7 +26,12 @@ export class Renderer {
 
     cache.foreachGroup((group: GroupState) => {
       if (group.renderer) {
-        group.renderer.preRender(currentTime, interpolator, fleetID);
+        group.renderer.preRender(
+          currentTime,
+          interpolator,
+          fleetID,
+          isSpectating,
+        );
       }
     }, this);
   }
