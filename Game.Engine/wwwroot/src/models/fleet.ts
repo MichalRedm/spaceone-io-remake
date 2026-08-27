@@ -31,12 +31,16 @@ export class Fleet {
     this.text.scale.y = 0.25;
     this.text.style.stroke = "black";
     this.text.style.strokeThickness = 8;
+    this.text.parentGroup = this.container.bodyGroup;
+    this.text.zOrder = 350;
 
     this.textChat = new PIXI.Text("", {
       fontFamily: "FontAwesome",
       fontSize: Settings.nameSize,
       fill: 0xffffff,
     });
+    this.textChat.parentGroup = this.container.bodyGroup;
+    this.textChat.zOrder = 351;
     this.chat = null;
     this.plotly = null;
     this.text.anchor.set(0.5, 0.5);
@@ -101,8 +105,13 @@ export class Fleet {
     }
   }
 
-  preRender(time: number, interpolator: Interpolator, myFleetID: number): void {
-    if (this.ships.length > 0 && this.ID !== myFleetID) {
+  preRender(
+    time: number,
+    interpolator: Interpolator,
+    myFleetID: number,
+    isSpectating: boolean,
+  ): void {
+    if (this.ships.length > 0 && (this.ID !== myFleetID || isSpectating)) {
       if (this.text.visible !== Settings.namesEnabled)
         this.text.visible = Settings.namesEnabled;
 

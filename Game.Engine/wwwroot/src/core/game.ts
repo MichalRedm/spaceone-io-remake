@@ -622,7 +622,7 @@ app.ticker.add(() => {
   container.position.x = container.position.x;
   container.position.y = container.position.y;
 
-  renderer.draw(cache, interpolator, gameTime, ownFleetID);
+  renderer.draw(cache, interpolator, gameTime, ownFleetID, isSpectating);
   background.updateFocus(position);
   background.draw();
   minimap.checkDisplay();
