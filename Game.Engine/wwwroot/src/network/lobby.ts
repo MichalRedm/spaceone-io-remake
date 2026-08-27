@@ -13,6 +13,7 @@ export interface WorldInfo {
   image?: string;
   arenaID?: string;
   arenaKey?: string;
+  allowedColors?: string[];
   [key: string]: unknown;
 }
 

@@ -722,8 +722,6 @@ body {
 .container #selection-container {
   text-align: center;
   margin: 0 auto;
-}
-.container #selection-container {
   max-width: 854px;
   position: relative;
 }
@@ -767,6 +765,7 @@ body {
   left: 0;
   right: 0;
   margin: 0 auto;
+  transition: transform 0.2s ease;
 }
 .container #selection-container #shipSelectorSwitch img {
   overflow: hidden;
@@ -780,6 +779,7 @@ body {
   -moz-user-drag: none;
   -o-user-drag: none;
   user-select: none;
+  cursor: pointer;
 }
 .container #high-score {
   font-size: 1.6em;
