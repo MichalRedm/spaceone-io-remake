@@ -17,6 +17,7 @@ namespace Game.Engine.Core
     {
         public string WorldKey { get; set; }
         public string GameID { get; set; }
+        public string ArenaID { get; set; }
 
         public int AdvertisedPlayerCount { get; set; }
 
@@ -72,14 +73,32 @@ namespace Game.Engine.Core
             }
         }
 
+        private static readonly char[] ArenaIdChars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".ToCharArray();
+
+        public static string GenerateArenaID()
+        {
+            var bytes = new byte[6];
+            using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(bytes);
+            }
+            var chars = new char[6];
+            for (int i = 0; i < 6; i++)
+            {
+                chars[i] = ArenaIdChars[bytes[i] % ArenaIdChars.Length];
+            }
+            return new string(chars);
+        }
+
         public World(Hook hook, GameConfiguration gameConfiguration)
         {
             this.GameConfiguration = gameConfiguration;
             OffsetTicks = DateTime.Now.Ticks;
             Hook = hook ?? Hook.Default;
             GameID = Guid.NewGuid().ToString().Replace("-", "");
+            ArenaID = GenerateArenaID();
 
-            Console.WriteLine($"Initializing World: {this.Hook.Name}");
+            Console.WriteLine($"Initializing World: {this.Hook.Name} (Arena ID: {this.ArenaID})");
 
             InitializeSystemActors();
             InitializeStepTimer();
