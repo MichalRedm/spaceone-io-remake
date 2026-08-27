@@ -141,7 +141,7 @@ export class Leaderboard {
         const str = getOut(entry, position, i + 1);
         if (i === 0 || i === 1) {
           outC += str;
-        } else if (entry.Color === "cyan") {
+        } else if (entry.Color === "cyan" || entry.Color === "blue") {
           outL += str;
         } else {
           outR += str;
@@ -164,7 +164,7 @@ export class Leaderboard {
           cyanFlag = entry;
         } else if (i === 1) {
           redFlag = entry;
-        } else if (entry.Color === "cyan") {
+        } else if (entry.Color === "cyan" || entry.Color === "blue") {
           outL += str;
         } else {
           outR += str;

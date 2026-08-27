@@ -13,7 +13,7 @@ namespace Game.Engine.Core.SystemActors.CTF
 
         public Flag(Sprites flagSprite, Team team, Base b)
         {
-            Size = 200;
+            Size = 20;
             Team = team;
             Base = b;
             Sprite = flagSprite;

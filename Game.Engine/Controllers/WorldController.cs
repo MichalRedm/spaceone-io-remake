@@ -175,7 +175,7 @@ namespace Game.Engine.Controllers
 
                             return new
                             {
-                                world = $"{Request.Host}/{s.Value.WorldKey}",
+                                world = $"{Request.Host}/{s.Value.ArenaID}",
                                 server = Request.Host,
                                 players = s.Value.AdvertisedPlayerCount,
                                 name = "Local: " + name,
@@ -183,7 +183,8 @@ namespace Game.Engine.Controllers
                                 allowedColors = s.Value.Hook.AllowedColors,
                                 instructions = s.Value.Hook.Instructions,
                                 arenaID = s.Value.ArenaID,
-                                arenaKey = s.Value.ArenaID
+                                arenaKey = s.Value.ArenaID,
+                                worldKey = s.Value.WorldKey
                             };
                         }));
             }

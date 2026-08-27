@@ -153,7 +153,7 @@ namespace Game.API.Common.Models
                     TeamMode = false,
                     CTFMode = false,
                     CTFCarryBurden = 0.2f,
-                    CTFSpawnDistance = 6000,
+                    CTFSpawnDistance = 1200,
 
                     SumoMode = false,
                     SumoRingSize = 1000,
@@ -436,17 +436,17 @@ namespace Game.API.Common.Models
 
 
         public static readonly string[] AllColors = new[] {
-            "ship_pink",
-            "ship_red",
-            "ship_orange",
-            "ship_yellow",
-            "ship_green",
+            "ship_blue",
             "ship_cyan",
-            "ship_blue"
+            "ship_green",
+            "ship_yellow",
+            "ship_orange",
+            "ship_red",
+            "ship_pink"
         };
         public static readonly string[] TeamColors = new[] {
             "ship_red",
-            "ship_cyan"
+            "ship_blue"
         };
 
         public string Name { get; set; }

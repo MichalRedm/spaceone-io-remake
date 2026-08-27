@@ -147,8 +147,8 @@ namespace Game.Engine.Core.SystemActors.CTF
 
             if (World.Hook.CTFMode && Flags.Count == 0)
             {
-                CreateTeam("cyan", Sprites.ctf_flag_blue, new Vector2(-World.Hook.WorldSize, -World.Hook.WorldSize));
-                CreateTeam("red", Sprites.ctf_flag_red, new Vector2(World.Hook.WorldSize, World.Hook.WorldSize));
+                CreateTeam("blue", Sprites.ctf_flag_blue, new Vector2(-World.Hook.WorldSize * 0.8f, -World.Hook.WorldSize * 0.8f));
+                CreateTeam("red", Sprites.ctf_flag_red, new Vector2(World.Hook.WorldSize * 0.8f, World.Hook.WorldSize * 0.8f));
                 World.FleetSpawnPositionGenerator = this.FleetSpawnPosition;
                 World.LeaderboardGenerator = this.LeaderboardGenerator;
             }

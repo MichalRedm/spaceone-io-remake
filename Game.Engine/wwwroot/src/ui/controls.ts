@@ -145,31 +145,98 @@ const shipSelectorSwitch = document.getElementById("shipSelectorSwitch");
 
 const refreshSelectedStyle = function () {
   const switchEl = document.getElementById("shipSelectorSwitch");
+  const container = document.getElementById("selection-container");
   if (!switchEl) return;
-  const options = Array.from(switchEl.children);
+  const options = Array.from(switchEl.children) as HTMLElement[];
 
+  const isOdd = colors.length % 2 !== 0;
+  if (container) {
+    if (colors.length >= 7) {
+      container.style.maxWidth = "854px";
+    } else {
+      const targetWidth = Math.min(
+        854,
+        Math.max(380, colors.length * 84 + 266),
+      );
+      container.style.maxWidth = `${targetWidth}px`;
+    }
+  }
+
+  let selectedEl: HTMLElement | null = null;
   for (const option of options) {
-    if (option.getAttribute("data-color") == Controls.ship)
+    if (option.getAttribute("data-color") === Controls.ship) {
       option.classList.add("selected");
-    else option.classList.remove("selected");
+      selectedEl = option;
+    } else {
+      option.classList.remove("selected");
+    }
+  }
+
+  const selectionIndicator = document.getElementById("selection");
+  if (selectionIndicator) {
+    if (isOdd) {
+      selectionIndicator.style.transform = "translateX(0px)";
+    } else if (selectedEl) {
+      const switchRect = switchEl.getBoundingClientRect();
+      const selectedRect = selectedEl.getBoundingClientRect();
+      if (switchRect.width > 0 && selectedRect.width > 0) {
+        const offset =
+          selectedRect.left +
+          selectedRect.width / 2 -
+          (switchRect.left + switchRect.width / 2);
+        selectionIndicator.style.transform = `translateX(${Math.round(offset)}px)`;
+      } else {
+        const selectedIdx = colors.indexOf(Controls.ship);
+        const offset = (selectedIdx - (colors.length - 1) / 2) * 84;
+        selectionIndicator.style.transform = `translateX(${Math.round(offset)}px)`;
+      }
+    }
   }
 
   Controls.addSecretShips(window.discordData);
 };
 
+window.addEventListener("resize", () => {
+  refreshSelectedStyle();
+});
+
 const leftArrow = document.getElementById("left-arrow");
 if (leftArrow) {
   leftArrow.addEventListener("click", function () {
-    Controls.ship = colors[2];
-    drawColorSelector();
+    if (colors.length === 0) return;
+    const isOdd = colors.length % 2 !== 0;
+    if (isOdd) {
+      const centerIdx = Math.floor(colors.length / 2);
+      const prevIdx = (centerIdx - 1 + colors.length) % colors.length;
+      Controls.ship = colors[prevIdx];
+      drawColorSelector();
+    } else {
+      const curIdx = colors.indexOf(Controls.ship);
+      const prevIdx = (curIdx - 1 + colors.length) % colors.length;
+      Controls.ship = colors[prevIdx] ?? colors[0];
+      refreshSelectedStyle();
+      save();
+    }
   });
 }
 
 const rightArrow = document.getElementById("right-arrow");
 if (rightArrow) {
   rightArrow.addEventListener("click", function () {
-    Controls.ship = colors[4];
-    drawColorSelector();
+    if (colors.length === 0) return;
+    const isOdd = colors.length % 2 !== 0;
+    if (isOdd) {
+      const centerIdx = Math.floor(colors.length / 2);
+      const nextIdx = (centerIdx + 1) % colors.length;
+      Controls.ship = colors[nextIdx];
+      drawColorSelector();
+    } else {
+      const curIdx = colors.indexOf(Controls.ship);
+      const nextIdx = (curIdx + 1) % colors.length;
+      Controls.ship = colors[nextIdx] ?? colors[0];
+      refreshSelectedStyle();
+      save();
+    }
   });
 }
 
@@ -371,9 +438,25 @@ export const Controls: ControlsType = {
     Controls.canvas = canvas;
   },
 
-  initializeWorld: function (_world?: any): void {
-    colors = shuffle(colors);
-    Controls.ship = colors[3] ?? "ship_green";
+  initializeWorld: function (world?: any): void {
+    const allowed = world?.allowedColors ?? world?.AllowedColors;
+    if (Array.isArray(allowed) && allowed.length > 0) {
+      colors = shuffle([...allowed]);
+    } else {
+      colors = shuffle([
+        "ship_blue",
+        "ship_cyan",
+        "ship_green",
+        "ship_yellow",
+        "ship_orange",
+        "ship_red",
+        "ship_pink",
+      ]);
+    }
+    const centerIdx = Math.floor(colors.length / 2);
+    if (!colors.includes(Controls.ship)) {
+      Controls.ship = colors[centerIdx] ?? colors[0] ?? "ship_green";
+    }
     drawColorSelector();
   },
 
@@ -610,15 +693,25 @@ export function fadeInUI(duration = 500): void {
 }
 
 function drawColorSelector() {
-  if (!colors.includes(Controls.ship)) {
-    Controls.ship = colors[3] ?? "ship_green";
-  }
+  if (colors.length === 0) return;
+  const isOdd = colors.length % 2 !== 0;
 
-  let safety = 0;
-  while (colors[3] !== Controls.ship && safety < colors.length) {
-    colors.push(colors[0]);
-    colors.shift();
-    safety++;
+  if (isOdd) {
+    const centerIdx = Math.floor(colors.length / 2);
+    if (!colors.includes(Controls.ship)) {
+      Controls.ship = colors[centerIdx] ?? "ship_green";
+    }
+
+    let safety = 0;
+    while (colors[centerIdx] !== Controls.ship && safety < colors.length) {
+      colors.push(colors[0]);
+      colors.shift();
+      safety++;
+    }
+  } else {
+    if (!colors.includes(Controls.ship)) {
+      Controls.ship = colors[0] ?? "ship_green";
+    }
   }
 
   const switchEl = document.getElementById("shipSelectorSwitch") || selector;
@@ -643,13 +736,20 @@ function drawColorSelector() {
       const chosen = this.getAttribute("data-color");
       if (chosen) {
         Controls.ship = chosen;
-        drawColorSelector();
+        if (isOdd) {
+          drawColorSelector();
+        } else {
+          refreshSelectedStyle();
+          save();
+        }
       }
     });
   });
 
   save();
-  refreshSelectedStyle();
+  requestAnimationFrame(() => {
+    refreshSelectedStyle();
+  });
 }
 
 function initShipSelectorAndFadeIn(): void {
