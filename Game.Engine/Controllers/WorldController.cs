@@ -181,7 +181,9 @@ namespace Game.Engine.Controllers
                                 name = "Local: " + name,
                                 description,
                                 allowedColors = s.Value.Hook.AllowedColors,
-                                instructions = s.Value.Hook.Instructions
+                                instructions = s.Value.Hook.Instructions,
+                                arenaID = s.Value.ArenaID,
+                                arenaKey = s.Value.ArenaID
                             };
                         }));
             }

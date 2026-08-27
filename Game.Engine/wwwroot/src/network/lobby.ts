@@ -1,4 +1,8 @@
 import { escapeHtml } from "../ui/leaderboard";
+import { pressPopup } from "../ui/popupUtils";
+import { ArenaLink } from "./arenaLink";
+
+const arenaLinkHelper = new ArenaLink();
 
 export interface WorldInfo {
   world: string;
@@ -7,6 +11,8 @@ export interface WorldInfo {
   instructions?: string;
   players?: number;
   image?: string;
+  arenaID?: string;
+  arenaKey?: string;
   [key: string]: unknown;
 }
 
@@ -169,27 +175,64 @@ function refreshList(autoJoinWorld?: string | boolean): void {
           if (autoJoin) {
             if (targetWorldParam) {
               joinWorld(targetWorldParam);
-            } else if (
-              window.location.hash &&
-              window.location.hash.length > 1
-            ) {
-              const selected = window.location.hash.substring(1);
-              joinWorld(selected);
             } else {
-              let targetWorldKey = hostName + "/" + world;
-              if (response && Array.isArray(response) && response.length > 0) {
-                const matched = response.find(
+              const urlTarget = arenaLinkHelper.getArenaIDFromURL();
+
+              if (urlTarget) {
+                // Search for world by arenaID or world key
+                const matchedWorld = response.find(
                   (w: WorldInfo) =>
-                    w.world === targetWorldKey ||
-                    w.world?.endsWith("/" + world),
+                    (w.arenaID &&
+                      w.arenaID.toLowerCase() === urlTarget.toLowerCase()) ||
+                    (w.arenaKey &&
+                      w.arenaKey.toLowerCase() === urlTarget.toLowerCase()) ||
+                    w.world === urlTarget ||
+                    w.world
+                      ?.toLowerCase()
+                      .endsWith("/" + urlTarget.toLowerCase()),
                 );
-                if (matched) {
-                  targetWorldKey = matched.world;
-                } else if (response[0]?.world) {
-                  targetWorldKey = response[0].world;
+
+                if (matchedWorld) {
+                  joinWorld(matchedWorld.world);
+                } else {
+                  // Invalid arena link provided in URL!
+                  pressPopup("invalidArena");
+
+                  // Fallback to default world
+                  let defaultWorldKey = hostName + "/" + world;
+                  const defaultMatched = response.find(
+                    (w: WorldInfo) =>
+                      w.world === defaultWorldKey ||
+                      w.world?.endsWith("/" + world),
+                  );
+                  if (defaultMatched) {
+                    defaultWorldKey = defaultMatched.world;
+                  } else if (response[0]?.world) {
+                    defaultWorldKey = response[0].world;
+                  }
+
+                  joinWorld(defaultWorldKey);
                 }
+              } else {
+                let targetWorldKey = hostName + "/" + world;
+                if (
+                  response &&
+                  Array.isArray(response) &&
+                  response.length > 0
+                ) {
+                  const matched = response.find(
+                    (w: WorldInfo) =>
+                      w.world === targetWorldKey ||
+                      w.world?.endsWith("/" + world),
+                  );
+                  if (matched) {
+                    targetWorldKey = matched.world;
+                  } else if (response[0]?.world) {
+                    targetWorldKey = response[0].world;
+                  }
+                }
+                joinWorld(targetWorldKey);
               }
-              joinWorld(targetWorldKey);
             }
           }
         }

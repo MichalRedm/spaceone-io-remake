@@ -1,6 +1,6 @@
 import { fadeIn, fadeOut } from "./domUtils";
 
-export type PopupName = "changelog" | "instructions";
+export type PopupName = "changelog" | "instructions" | "invalidArena";
 
 export function bootstrapPopups(): void {
   document
@@ -33,6 +33,14 @@ export function bootstrapPopups(): void {
         closePopup("instructions");
       });
     });
+
+  document
+    .querySelectorAll("#invalidArenaClose, #invalidArenaBack, #invalidArenaOk")
+    .forEach((btn) => {
+      btn.addEventListener("click", () => {
+        closePopup("invalidArena");
+      });
+    });
 }
 
 export function pressPopup(popupPressed: PopupName): void {
@@ -57,6 +65,8 @@ export function getPopupElement(popupPressed: PopupName): HTMLElement | null {
       return document.getElementById("popupChangelog");
     case "instructions":
       return document.getElementById("popupInstructions");
+    case "invalidArena":
+      return document.getElementById("popupInvalidArena");
     default:
       return null;
   }

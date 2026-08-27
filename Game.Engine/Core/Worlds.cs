@@ -60,13 +60,26 @@ namespace Game.Engine.Core
 
         public static void AddWorld(World world)
         {
+            EnsureUniqueArenaID(world);
             AllWorlds.Add(world.WorldKey, world);
         }
 
         public static void AddWorld(string worldKey, World world)
         {
             world.WorldKey = worldKey;
+            EnsureUniqueArenaID(world);
             AllWorlds.Add(world.WorldKey, world);
+        }
+
+        private static void EnsureUniqueArenaID(World world)
+        {
+            if (string.IsNullOrWhiteSpace(world.ArenaID))
+                world.ArenaID = World.GenerateArenaID();
+
+            while (AllWorlds.Values.Any(w => w != world && string.Equals(w.ArenaID, world.ArenaID, StringComparison.OrdinalIgnoreCase)))
+            {
+                world.ArenaID = World.GenerateArenaID();
+            }
         }
 
         private static World WorldDefault()
@@ -322,12 +335,53 @@ namespace Game.Engine.Core
             return new World(hook, GameConfiguration);
         }
 
+        public static World FindExact(string world = null)
+        {
+            if (string.IsNullOrWhiteSpace(world))
+                return null;
+
+            if (AllWorlds.TryGetValue(world, out var exactWorld))
+                return exactWorld;
+
+            // Check if world string is in format "host/worldKeyOrArenaID"
+            var slashIndex = world.LastIndexOf('/');
+            if (slashIndex >= 0 && slashIndex < world.Length - 1)
+            {
+                var subKey = world.Substring(slashIndex + 1);
+                if (AllWorlds.TryGetValue(subKey, out var subWorld))
+                    return subWorld;
+
+                var byArenaInSub = AllWorlds.Values.FirstOrDefault(w => string.Equals(w.ArenaID, subKey, StringComparison.OrdinalIgnoreCase));
+                if (byArenaInSub != null)
+                    return byArenaInSub;
+            }
+
+            // Check by ArenaID
+            var byArena = AllWorlds.Values.FirstOrDefault(w => string.Equals(w.ArenaID, world, StringComparison.OrdinalIgnoreCase));
+            if (byArena != null)
+                return byArena;
+
+            return null;
+        }
+
+        public static World FindByArenaID(string arenaId)
+        {
+            if (string.IsNullOrWhiteSpace(arenaId))
+                return null;
+
+            return AllWorlds.Values.FirstOrDefault(w => string.Equals(w.ArenaID, arenaId, StringComparison.OrdinalIgnoreCase));
+        }
+
         public static World Find(string world = null)
         {
-            if (world != null && AllWorlds.ContainsKey(world))
-                return AllWorlds[world];
-            else
-                return Default;
+            if (world != null)
+            {
+                var exact = FindExact(world);
+                if (exact != null)
+                    return exact;
+            }
+
+            return Default;
         }
     }
 }

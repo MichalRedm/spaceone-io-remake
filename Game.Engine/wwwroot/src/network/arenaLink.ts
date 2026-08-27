@@ -3,114 +3,111 @@ import { show, fadeOut } from "../ui/domUtils";
 const arenaLinkInput = document.getElementById(
   "arena-link-input",
 ) as HTMLInputElement | null;
-const getUrl = window.location;
-const baseUrl = `${getUrl.protocol}//${getUrl.host}/${getUrl.pathname.split("/")[1] ?? ""}`;
-const chars = "0123456789abcdefghijklmnopqrstuwvxyzABCDEFGHIJKLMNOPQRSTUWVXYZ";
-const base = chars.length;
-const arenas: string[] = [
-  "us.daud.io/default",
-  "de.daud.io/default",
-  "localhost:5000/default",
-  "de.daud.io:81/default",
-];
-const timeZero = 1400000000;
 
 export class ArenaLink {
-  public generated: boolean;
+  public currentArenaID: string | null = null;
 
-  public constructor() {
-    this.generated = false;
-  }
+  public generate(arenaId?: string): void {
+    if (!arenaId) return;
 
-  public generate(worldKey?: string): void {
-    if (worldKey !== undefined) {
-      console.log(`World key: ${worldKey}`);
-      const d = new Date();
-      const time = Math.floor(d.getTime() / 1000) - timeZero;
-      const arenaIndex = arenas.indexOf(worldKey);
-      if (arenaIndex !== -1 && arenaLinkInput) {
-        const arenaLink = `${baseUrl}#${this.encode(Number(`${time}${arenaIndex}`))}`;
-        arenaLinkInput.value = arenaLink;
-        console.log(`Arena link generated: ${arenaLink}`);
-      } else if (arenaLinkInput) {
-        arenaLinkInput.value = getUrl.href;
-      }
-      this.generated = true;
+    this.currentArenaID = arenaId;
+    const origin = window.location.origin;
+    const fullLink = `${origin}/#${arenaId}`;
+
+    if (arenaLinkInput) {
+      arenaLinkInput.value = fullLink;
     }
-  }
-
-  public encode(num: number): string {
-    let encoded = "";
-    let current = num;
-    while (current > 0) {
-      const remainder = current % base;
-      current = Math.floor(current / base);
-      encoded = (chars[remainder] ?? "").toString() + encoded;
-    }
-    return encoded;
-  }
-
-  public decode(str?: string): number {
-    if (!str) return 0;
-    let decoded = 0;
-    let remaining = str;
-    while (remaining.length > 0) {
-      const index = chars.indexOf(remaining[0] ?? "");
-      const power = remaining.length - 1;
-      decoded += index * Math.pow(base, power);
-      remaining = remaining.substring(1);
-    }
-    return decoded;
   }
 
   public copy(): void {
     if (!arenaLinkInput) return;
-    // Select the text field
-    arenaLinkInput.select();
-    arenaLinkInput.setSelectionRange(0, 99999); // For mobile devices
 
-    // Copy the text inside the text field
-    document.execCommand("copy");
+    const textToCopy = arenaLinkInput.value;
+    if (!textToCopy) return;
 
-    // remove selection
-    arenaLinkInput.setSelectionRange(0, 0);
+    // Use Modern Clipboard API with fallback to execCommand
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(textToCopy).catch((err: unknown) => {
+        console.warn(
+          "Clipboard API write failed, falling back to execCommand",
+          err,
+        );
+        this.fallbackCopy();
+      });
+    } else {
+      this.fallbackCopy();
+    }
 
     show("#arena-link-success");
-    setTimeout(function () {
+    setTimeout(() => {
       fadeOut("#arena-link-success", 1000);
     }, 3000);
   }
 
-  public getLinkFromURL(): string {
-    let linkInURL = "";
-    let actualWindow: Window;
+  private fallbackCopy(): void {
+    if (!arenaLinkInput) return;
+    arenaLinkInput.select();
+    arenaLinkInput.setSelectionRange(0, 99999);
+    try {
+      document.execCommand("copy");
+    } catch (err: unknown) {
+      console.error("Failed to copy link using execCommand:", err);
+    }
+    arenaLinkInput.setSelectionRange(0, 0);
+  }
 
+  public getArenaIDFromURL(): string {
+    let actualWindow: Window;
     if (this.iframeDetection()) {
       actualWindow = parent.window;
     } else {
       actualWindow = window;
     }
 
-    if (actualWindow.location.hash.length > 1) {
-      linkInURL = this.readArenaLinkFromURL(actualWindow.location.hash);
+    // 1. Check URL Hash: '#4esGhl' or '#/4esGhl'
+    const hash = actualWindow.location.hash;
+    if (hash && hash.length > 1) {
+      const cleanHash = hash.replace(/^#\/?/, "").trim();
+      if (cleanHash.length > 0) {
+        return cleanHash;
+      }
     }
 
-    if (!linkInURL) return "";
-    return this.decode(linkInURL).toString();
+    // 2. Check Query Parameters: '?arena=4esGhl' or '?world=4esGhl'
+    try {
+      const url = new URL(actualWindow.location.href);
+      const arenaParam =
+        url.searchParams.get("arena") || url.searchParams.get("world");
+      if (arenaParam) return arenaParam.trim();
+    } catch {
+      // ignore URL parse errors
+    }
+
+    return "";
   }
 
-  public getArena(): string | undefined {
-    const link = this.getLinkFromURL();
-    if (!link) return undefined;
-    const lastChar = Number(link.substring(link.length - 1, link.length));
-    if (isNaN(lastChar) || lastChar < 0 || lastChar >= arenas.length)
-      return undefined;
-    const arena = arenas[lastChar];
-    return arena;
+  public updateURLHash(arenaId?: string): void {
+    if (!arenaId) return;
+    try {
+      const currentHash = window.location.hash.replace(/^#\/?/, "");
+      if (currentHash !== arenaId) {
+        history.replaceState(null, "", `#${arenaId}`);
+      }
+    } catch (err: unknown) {
+      console.warn("Could not update URL hash:", err);
+    }
   }
 
-  public readArenaLinkFromURL(hashUrl: string): string {
-    return hashUrl.substring(1);
+  public clearURLHash(): void {
+    try {
+      history.replaceState(
+        null,
+        "",
+        window.location.pathname + window.location.search,
+      );
+    } catch (err: unknown) {
+      console.warn("Could not clear URL hash:", err);
+    }
   }
 
   public iframeDetection(): boolean {

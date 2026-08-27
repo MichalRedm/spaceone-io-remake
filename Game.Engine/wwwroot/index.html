@@ -235,13 +235,26 @@
                                     <span>'S' to Split &amp; Dash</span>
                                 </span>
                             </div>
-                        </div>
                         <div id="dev-notice" class="blue-box-border visibility" style="display: inline-block; font-size: 1em; padding: 1em; margin-top: 3em;">
                             <i class="fa fa-info-circle" style="margin-right: 0.3em;"></i>
                             <span>This remake is still in development. <a href="https://discord.gg/5ak5FsU" target="_blank" style="color: #3d78ff;">Join here</a> for more info.</span>
                         </div>
                     </div>
                     <input type="button" id="arenas" class="button1" value="Game Modes" hidden />
+                </div>
+            </div>
+            <div id="popupInvalidArena" class="change-log-overlay" hidden style="z-index:20">
+                <div id="invalidArenaBack" class="invisible-change-log-back"></div>
+                <div id="invalidArenaPopup" class="arena-modal-popup">
+                    <div class="header">
+                        <div id="invalidArenaClose" class="close">✕</div>
+                        <div class="title">Arena Not Found</div>
+                    </div>
+                    <div class="arena-modal-body">
+                        <p class="modal-text">The arena link you followed does not exist or has expired.</p>
+                        <p class="modal-text modal-subtext">You have been connected to the default arena.</p>
+                        <button id="invalidArenaOk" class="modal-btn">OK</button>
+                    </div>
                 </div>
             </div>
             <div id="error" style="visibility:hidden"><div id="toast-container" class="toast-bottom-left"><div class="toast toast-error" aria-live="assertive"><div class="toast-message">Couldn't connect to an arena. Please try again</div></div></div></div>
