@@ -18,7 +18,7 @@ namespace Game.Engine.Core.SystemActors.CTF
             this.Position = position;
             this.Sprite = Sprites.ctf_base;
             this.AngularVelocity = SPEED_STOPPED;
-            this.Size = 200;
+            this.Size = 80;
             this.CaptureTheFlag = captureTheFlag;
             CausesCollisions = true;
 

@@ -10,11 +10,13 @@ namespace Game.Engine.Core.SystemActors
                     switch (player.ShipSprite)
                     {
                         case API.Common.Sprites.ship0:
+                        case API.Common.Sprites.ship_blue:
+                        case API.Common.Sprites.ship_cyan:
                         case API.Common.Sprites.ship_green:
                         case API.Common.Sprites.ship_yellow:
                         case API.Common.Sprites.ship_secret:
-                            player.ShipSprite = API.Common.Sprites.ship_cyan;
-                            player.Color = "cyan";
+                            player.ShipSprite = API.Common.Sprites.ship_blue;
+                            player.Color = "blue";
                             break;
                         case API.Common.Sprites.ship_orange:
                         case API.Common.Sprites.ship_pink:

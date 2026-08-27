@@ -116,9 +116,14 @@ namespace Game.Engine.Core
             var hook = Hook.Default;
             hook.Name = "Robo Trainer";
             hook.Description = "Battle against bots of different difficulty levels";
+            hook.WorldSize = Hook.Default.WorldSize / 2;
+            hook.Fishes = Hook.Default.Fishes / 4;
+            hook.Obstacles = 0;
+            hook.PickupSeekers = 0;
+            hook.PickupShields = 0;
             hook.AllowedColors = Hook.AllColors;
             hook.Weight = 100;
-            hook.BotBase = 0;
+            hook.BotBase = 2;
 
             hook.WorldResizeEnabled = false;
 
@@ -177,10 +182,10 @@ namespace Game.Engine.Core
         {
             var hook = Hook.Default;
             hook.BotBase = 0;
-            hook.WorldSize = 4200;
-            hook.Obstacles = 3;
-            hook.Fishes = 7;
-            hook.PickupSeekers = 3;
+            hook.WorldSize = Hook.Default.WorldSize / 2;
+            hook.Fishes = Hook.Default.Fishes / 4;
+            hook.Obstacles = 0;
+            hook.PickupSeekers = 0;
             hook.PickupShields = 0;
             hook.PointsPerKillFleet = 1;
             hook.PointsPerKillShip = 0;
@@ -190,6 +195,7 @@ namespace Game.Engine.Core
 
             hook.Name = "Dueling Room";
             hook.Description = "1 vs. 1";
+            hook.AllowedColors = Hook.AllColors;
 
             hook.WorldResizeEnabled = false;
 
@@ -200,12 +206,16 @@ namespace Game.Engine.Core
         {
             var hook = Hook.Default;
             hook.BotBase = 0;
-            hook.Obstacles = 3;
+            hook.WorldSize = Hook.Default.WorldSize;
+            hook.Fishes = Hook.Default.Fishes;
+            hook.Obstacles = 0;
+            hook.PickupSeekers = 0;
+            hook.PickupShields = 0;
             hook.TeamMode = true;
             hook.Weight = 20;
 
             hook.Name = "Team";
-            hook.Description = "Cyan vs. Red";
+            hook.Description = "Blue vs. Red";
             hook.AllowedColors = Hook.TeamColors;
 
             hook.WorldResizeEnabled = false;
@@ -217,8 +227,13 @@ namespace Game.Engine.Core
         {
             var hook = Hook.Default;
             hook.BotBase = 0;
-            hook.Obstacles = 7;
+            hook.WorldSize = Hook.Default.WorldSize;
+            hook.Fishes = Hook.Default.Fishes;
+            hook.Obstacles = 0;
+            hook.PickupSeekers = 0;
+            hook.PickupShields = 0;
             hook.CTFMode = true;
+            hook.TeamMode = true;
             hook.PointsPerKillFleet = 1;
             hook.PointsPerKillShip = 0;
             hook.PointsPerUniverseDeath = -1;
@@ -227,12 +242,12 @@ namespace Game.Engine.Core
             hook.SpawnLocationMode = "CTF";
 
             hook.Name = "Capture the Flag";
-            hook.Description = "Cyan vs. Red - Capture the Flag. First to 5 wins!";
-            hook.Instructions = @"<p>features two teams,cyan and red, 
+            hook.Description = "Blue vs. Red - Capture the Flag. First to 5 wins!";
+            hook.Instructions = @"<p>features two teams, blue and red, 
                     who each try to steal the other team's
                     flag and bring it back to their own 
                     base to 'capture'.</p>
-                    <p>each team will have their own base and flag to defend.In order to score, your team's flag must still be 
+                    <p>each team will have their own base and flag to defend. In order to score, your team's flag must still be 
                     at your base, which means you'll have to have some good defense to keep
                     the other team from running off with your flag.</p>
                     <p>If someone makes off with your flag, frag them and they'll drop your flag -- 
