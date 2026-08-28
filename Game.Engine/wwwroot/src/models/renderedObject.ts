@@ -55,6 +55,23 @@ class GroupParticle extends particles.Particle {
 
     var ret = super.update(delta);
 
+    if (this.isBoostParticle && this.renderedObject) {
+      const now = performance.now();
+      if (!this.renderedObject.isBoosting) {
+        this.alpha = 0.0;
+      } else {
+        const boostElapsed = now - this.renderedObject.boostStartTime;
+        if (boostElapsed >= WorldConfig.boostPhase2BurnMs) {
+          const phase3Elapsed = boostElapsed - WorldConfig.boostPhase2BurnMs;
+          const phase3Progress = Math.min(
+            1.0,
+            Math.max(0.0, phase3Elapsed / WorldConfig.boostPhase3DurationMs),
+          );
+          this.alpha *= 1.0 - phase3Progress;
+        }
+      }
+    }
+
     const spriteStr = String(this.body?.Sprite || "");
     if (
       this.body &&

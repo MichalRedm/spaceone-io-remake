@@ -666,7 +666,7 @@ body {
   transform: scale(0.98);
 }
 
-#iluminati-button>img {
+#iluminati-button > img {
   position: absolute;
   left: 300px;
   top: 18px;
@@ -707,13 +707,13 @@ body {
   outline: none;
 }
 
-.social-button>img {
+.social-button > img {
   cursor: pointer;
   height: 35px;
   width: 35px;
 }
 
-#reddit-button>img {
+#reddit-button > img {
   position: absolute;
   left: 10px;
   bottom: 10px;
@@ -721,7 +721,7 @@ body {
   z-index: 1;
 }
 
-#discord-button>img {
+#discord-button > img {
   position: absolute;
   left: 60px;
   bottom: 2px;
@@ -729,7 +729,7 @@ body {
   z-index: 1;
 }
 
-#youtube-button>img {
+#youtube-button > img {
   position: absolute;
   right: 10px;
   bottom: 10px;
@@ -737,7 +737,7 @@ body {
   z-index: 1;
 }
 
-#twitter-button>img {
+#twitter-button > img {
   position: absolute;
   right: 70px;
   bottom: 10px;
@@ -818,7 +818,7 @@ body {
   transform: scale(0.8);
 }
 
-.container #selection-container .arrow>img {
+.container #selection-container .arrow > img {
   width: 70%;
 }
 
@@ -1025,7 +1025,7 @@ input#nick:focus {
   box-shadow: 0px 0px 10px 0px #0052ff;
 }
 
-.main-ui>.blue-box-border,
+.main-ui > .blue-box-border,
 #dev-notice {
   display: inline-block;
   width: auto;
@@ -1041,12 +1041,12 @@ input#nick:focus {
   min-width: 250px;
 }
 
-#arena-link>span {
+#arena-link > span {
   position: relative;
   top: 10px;
 }
 
-#arena-link>input {
+#arena-link > input {
   box-sizing: border-box;
   font-family: "Exo 2", sans-serif;
   border-radius: 5px;
