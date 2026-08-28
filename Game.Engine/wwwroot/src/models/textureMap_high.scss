@@ -44,30 +44,37 @@ food_red,
 food_yellow {
   size: 1.2;
 }
+
 food_cyan,
 fish_cyan {
   file: "food_cyan";
 }
+
 food_blue,
 fish_blue {
   file: "food_blue";
 }
+
 food_green,
 fish_green {
   file: "food_green";
 }
+
 food_orange,
 fish_orange {
   file: "food_orange";
 }
+
 food_pink,
 fish_pink {
   file: "food_pink";
 }
+
 food_red,
 fish_red {
   file: "food_red";
 }
+
 food_yellow,
 fish_yellow {
   file: "food_yellow";
@@ -84,24 +91,31 @@ food_yellow_glow {
   size: 6;
   blend-mode: "screen";
 }
+
 food_blue_glow {
   file: "food_blue_glow";
 }
+
 food_cyan_glow {
   file: "food_cyan_glow";
 }
+
 food_green_glow {
   file: "food_green_glow";
 }
+
 food_orange_glow {
   file: "food_orange_glow";
 }
+
 food_pink_glow {
   file: "food_pink_glow";
 }
+
 food_red_glow {
   file: "food_red_glow";
 }
+
 food_yellow_glow {
   file: "food_yellow_glow";
 }
@@ -116,24 +130,31 @@ particle_red,
 particle_yellow {
   size: 1;
 }
+
 particle_blue {
   file: "particle_blue";
 }
+
 particle_cyan {
   file: "particle_cyan";
 }
+
 particle_green {
   file: "particle_green";
 }
+
 particle_orange {
   file: "particle_orange";
 }
+
 particle_pink {
   file: "particle_pink";
 }
+
 particle_red {
   file: "particle_red";
 }
+
 particle_yellow {
   file: "particle_yellow";
 }
@@ -148,24 +169,31 @@ particle_ship_red,
 particle_ship_yellow {
   size: 2.2;
 }
+
 particle_ship_blue {
   file: "particle_ship_blue";
 }
+
 particle_ship_cyan {
   file: "particle_ship_cyan";
 }
+
 particle_ship_green {
   file: "particle_ship_green";
 }
+
 particle_ship_orange {
   file: "particle_ship_orange";
 }
+
 particle_ship_pink {
   file: "particle_ship_pink";
 }
+
 particle_ship_red {
   file: "particle_ship_red";
 }
+
 particle_ship_yellow {
   file: "particle_ship_yellow";
 }
@@ -180,24 +208,31 @@ particle_food_red,
 particle_food_yellow {
   size: 1;
 }
+
 particle_food_blue {
   file: "particle_food_blue";
 }
+
 particle_food_cyan {
   file: "particle_food_cyan";
 }
+
 particle_food_green {
   file: "particle_food_green";
 }
+
 particle_food_orange {
   file: "particle_food_orange";
 }
+
 particle_food_pink {
   file: "particle_food_pink";
 }
+
 particle_food_red {
   file: "particle_food_red";
 }
+
 particle_food_yellow {
   file: "particle_food_yellow";
 }
@@ -212,29 +247,37 @@ dash_trail_red,
 dash_trail_yellow {
   size: 4.3;
   rotate: -1.5707963;
+
   offset: {
     x: -75;
     y: 0;
   }
 }
+
 dash_trail_blue {
   file: "dash_trail_blue";
 }
+
 dash_trail_cyan {
   file: "dash_trail_cyan";
 }
+
 dash_trail_green {
   file: "dash_trail_green";
 }
+
 dash_trail_orange {
   file: "dash_trail_orange";
 }
+
 dash_trail_pink {
   file: "dash_trail_pink";
 }
+
 dash_trail_red {
   file: "dash_trail_red";
 }
+
 dash_trail_yellow {
   file: "dash_trail_yellow";
 }
@@ -249,24 +292,31 @@ dead_ship_red,
 dead_ship_yellow {
   size: 3.1;
 }
+
 dead_ship_blue {
   file: "dead_ship_blue";
 }
+
 dead_ship_cyan {
   file: "dead_ship_cyan";
 }
+
 dead_ship_green {
   file: "dead_ship_green";
 }
+
 dead_ship_orange {
   file: "dead_ship_orange";
 }
+
 dead_ship_pink {
   file: "dead_ship_pink";
 }
+
 dead_ship_red {
   file: "dead_ship_red";
 }
+
 dead_ship_yellow {
   file: "dead_ship_yellow";
 }
@@ -298,75 +348,99 @@ ship_grey_upgrade_2,
 ship_grey_upgrade_3 {
   size: 3.1;
 }
+
 ship_blue_upgrade_1 {
   file: "ship_blue_upgrade_1";
 }
+
 ship_blue_upgrade_2 {
   file: "ship_blue_upgrade_2";
 }
+
 ship_blue_upgrade_3 {
   file: "ship_blue_upgrade_3";
 }
+
 ship_cyan_upgrade_1 {
   file: "ship_cyan_upgrade_1";
 }
+
 ship_cyan_upgrade_2 {
   file: "ship_cyan_upgrade_2";
 }
+
 ship_cyan_upgrade_3 {
   file: "ship_cyan_upgrade_3";
 }
+
 ship_green_upgrade_1 {
   file: "ship_green_upgrade_1";
 }
+
 ship_green_upgrade_2 {
   file: "ship_green_upgrade_2";
 }
+
 ship_green_upgrade_3 {
   file: "ship_green_upgrade_3";
 }
+
 ship_orange_upgrade_1 {
   file: "ship_orange_upgrade_1";
 }
+
 ship_orange_upgrade_2 {
   file: "ship_orange_upgrade_2";
 }
+
 ship_orange_upgrade_3 {
   file: "ship_orange_upgrade_3";
 }
+
 ship_pink_upgrade_1 {
   file: "ship_pink_upgrade_1";
 }
+
 ship_pink_upgrade_2 {
   file: "ship_pink_upgrade_2";
 }
+
 ship_pink_upgrade_3 {
   file: "ship_pink_upgrade_3";
 }
+
 ship_red_upgrade_1 {
   file: "ship_red_upgrade_1";
 }
+
 ship_red_upgrade_2 {
   file: "ship_red_upgrade_2";
 }
+
 ship_red_upgrade_3 {
   file: "ship_red_upgrade_3";
 }
+
 ship_yellow_upgrade_1 {
   file: "ship_yellow_upgrade_1";
 }
+
 ship_yellow_upgrade_2 {
   file: "ship_yellow_upgrade_2";
 }
+
 ship_yellow_upgrade_3 {
   file: "ship_yellow_upgrade_3";
 }
+
 ship_grey_upgrade_1 {
   file: "ship_grey_upgrade_1";
 }
+
 ship_grey_upgrade_2 {
   file: "ship_grey_upgrade_2";
 }
+
 ship_grey_upgrade_3 {
   file: "ship_grey_upgrade_3";
 }
@@ -375,79 +449,92 @@ ship_grey {
   file: "ship_grey";
   size: 3.1;
 }
+
 ship_purple {
   file: "ship_purple";
   size: 3.1;
 }
 
 bullet_emitter_blue {
-  emitter: "bullet_blue";
+  emitter: "bullet";
   particle: "particle_blue";
   size: 0.01;
 }
+
 bullet_emitter_cyan {
-  emitter: "bullet_cyan";
+  emitter: "bullet";
   particle: "particle_cyan";
   size: 0.01;
 }
+
 bullet_emitter_green {
-  emitter: "bullet_green";
+  emitter: "bullet";
   particle: "particle_green";
   size: 0.01;
 }
+
 bullet_emitter_orange {
-  emitter: "bullet_orange";
+  emitter: "bullet";
   particle: "particle_orange";
   size: 0.01;
 }
+
 bullet_emitter_pink {
-  emitter: "bullet_pink";
+  emitter: "bullet";
   particle: "particle_pink";
   size: 0.01;
 }
+
 bullet_emitter_red {
-  emitter: "bullet_red";
+  emitter: "bullet";
   particle: "particle_red";
   size: 0.01;
 }
+
 bullet_emitter_yellow {
-  emitter: "bullet_yellow";
+  emitter: "bullet";
   particle: "particle_yellow";
   size: 0.01;
 }
 
 boost_emitter_blue {
-  emitter: "boost_blue";
+  emitter: "boost";
   particle: "particle_blue";
   size: 0.01;
 }
+
 boost_emitter_cyan {
-  emitter: "boost_cyan";
+  emitter: "boost";
   particle: "particle_cyan";
   size: 0.01;
 }
+
 boost_emitter_green {
-  emitter: "boost_green";
+  emitter: "boost";
   particle: "particle_green";
   size: 0.01;
 }
+
 boost_emitter_orange {
-  emitter: "boost_orange";
+  emitter: "boost";
   particle: "particle_orange";
   size: 0.01;
 }
+
 boost_emitter_pink {
-  emitter: "boost_pink";
+  emitter: "boost";
   particle: "particle_pink";
   size: 0.01;
 }
+
 boost_emitter_red {
-  emitter: "boost_red";
+  emitter: "boost";
   particle: "particle_red";
   size: 0.01;
 }
+
 boost_emitter_yellow {
-  emitter: "boost_yellow";
+  emitter: "boost";
   particle: "particle_yellow";
   size: 0.01;
 }
@@ -485,34 +572,43 @@ ship_zed {
 ship0 {
   file: "ship0";
 }
+
 // abandoned ships
 ship_gray {
   file: "ship_gray";
   rotate: 0;
 }
+
 ship_flash {
   file: "ship_flash";
   rotate: 0;
 }
+
 // default selectable ships
 ship_cyan {
   file: "ship_cyan";
 }
+
 ship_blue {
   file: "ship_blue";
 }
+
 ship_green {
   file: "ship_green";
 }
+
 ship_orange {
   file: "ship_orange";
 }
+
 ship_pink {
   file: "ship_pink";
 }
+
 ship_red {
   file: "ship_red";
 }
+
 ship_yellow {
   file: "ship_yellow";
 }
@@ -534,34 +630,42 @@ ship_red_boost,
 ship_yellow_boost {
   size: 2.8;
 }
+
 particle_ship_cyan,
 ship_cyan_boost {
   file: "particle_ship_cyan";
 }
+
 particle_ship_blue,
 ship_blue_boost {
   file: "particle_ship_blue";
 }
+
 particle_ship_green,
 ship_green_boost {
   file: "particle_ship_green";
 }
+
 particle_ship_orange,
 ship_orange_boost {
   file: "particle_ship_orange";
 }
+
 particle_ship_pink,
 ship_pink_boost {
   file: "particle_ship_pink";
 }
+
 particle_ship_red,
 ship_red_boost {
   file: "particle_ship_red";
 }
+
 particle_ship_yellow,
 ship_yellow_boost {
   file: "particle_ship_yellow";
 }
+
 // abandoned ships
 dead_ship_cyan,
 dead_ship_blue,
@@ -572,24 +676,31 @@ dead_ship_red,
 dead_ship_yellow {
   size: 3.1;
 }
+
 dead_ship_cyan {
   file: "dead_ship_cyan";
 }
+
 dead_ship_blue {
   file: "dead_ship_blue";
 }
+
 dead_ship_green {
   file: "dead_ship_green";
 }
+
 dead_ship_orange {
   file: "dead_ship_orange";
 }
+
 dead_ship_pink {
   file: "dead_ship_pink";
 }
+
 dead_ship_red {
   file: "dead_ship_red";
 }
+
 dead_ship_yellow {
   file: "dead_ship_yellow";
 }
@@ -605,36 +716,46 @@ ship_ab_yellow {
   loop: false;
   animation-speed: 0.3;
   rotate: 0;
+
   tile: {
     size: 128;
     count: 30;
   }
 }
+
 ship_ab_cyan {
   file: "ship_ab_cyan_ani";
 }
+
 ship_ab_blue {
   file: "ship_ab_blue_ani";
 }
+
 ship_ab_green {
   file: "ship_ab_green_ani";
 }
+
 ship_ab_orange {
   file: "ship_ab_orange_ani";
 }
+
 ship_ab_pink {
   file: "ship_ab_pink_ani";
 }
+
 ship_ab_red {
   file: "ship_ab_red_ani";
 }
+
 ship_ab_yellow {
   file: "ship_ab_yellow_ani";
 }
+
 // premium ships
 ship_secret {
   file: "ship_secret";
 }
+
 ship_zed {
   file: "ship_zed";
 }
@@ -649,27 +770,35 @@ bullet_red,
 bullet_yellow {
   size: 2.5;
 }
+
 bullet {
   file: "bullet";
 }
+
 bullet_cyan {
   file: "laser_cyan";
 }
+
 bullet_blue {
   file: "laser_blue";
 }
+
 bullet_green {
   file: "laser_green";
 }
+
 bullet_orange {
   file: "laser_orange";
 }
+
 bullet_pink {
   file: "laser_pink";
 }
+
 bullet_red {
   file: "laser_red";
 }
+
 bullet_yellow {
   file: "laser_yellow";
 }
@@ -683,29 +812,37 @@ laser_red_trail,
 laser_yellow_trail {
   size: 12.5;
   rotate: -1.5707963;
+
   offset: {
     x: -93;
     y: 0;
   }
 }
+
 laser_blue_trail {
   file: "laser_blue_trail";
 }
+
 laser_cyan_trail {
   file: "laser_cyan_trail";
 }
+
 laser_green_trail {
   file: "laser_green_trail";
 }
+
 laser_orange_trail {
   file: "laser_orange_trail";
 }
+
 laser_pink_trail {
   file: "laser_pink_trail";
 }
+
 laser_red_trail {
   file: "laser_red_trail";
 }
+
 laser_yellow_trail {
   file: "laser_yellow_trail";
 }
@@ -714,10 +851,12 @@ obstacle {
   file: "obstacle";
   size: 2.8672;
 }
+
 seeker {
   file: "seeker";
   size: 0.64;
 }
+
 seeker_pickup {
   file: "seeker_pickup";
   size: 1.28;
@@ -730,6 +869,7 @@ invulnerable {
   loop: true;
   animation-speed: 0.5;
   size: 2.56;
+
   tile: {
     size: 64;
     count: 90;
@@ -742,6 +882,7 @@ shield_pickup {
   loop: true;
   animation-speed: 0.5;
   size: 2.56;
+
   tile: {
     size: 64;
     count: 30;
@@ -754,6 +895,7 @@ wormhole {
   loop: true;
   animation-speed: 0.5;
   size: 5.12;
+
   tile: {
     size: 128;
     count: 90;
@@ -771,10 +913,12 @@ thruster_yellow {
   loop: false;
   animation-speed: 0.85;
   size: 4;
+
   offset: {
     x: -20;
     y: 0;
   }
+
   tile: {
     size: 128;
     count: 40;
@@ -784,24 +928,31 @@ thruster_yellow {
 thruster_cyan {
   file: "boost_trail_cyan_ani";
 }
+
 thruster_blue {
   file: "boost_trail_blue_ani";
 }
+
 thruster_green {
   file: "boost_trail_green_ani";
 }
+
 thruster_orange {
   file: "boost_trail_orange_ani";
 }
+
 thruster_pink {
   file: "boost_trail_pink_ani";
 }
+
 thruster_red {
   file: "boost_trail_red_ani";
 }
+
 thruster_yellow {
   file: "boost_trail_yellow_ani";
 }
+
 offenseupgrade,
 defenseupgrade {
   file: "circles";
@@ -836,87 +987,109 @@ ctf_base {
   file: "ctf_base";
   size: 3.072;
 }
+
 ctf_flag_red,
 ctf_flag_blue {
   animated: true;
+
   tile: {
     size: 128;
     count: 6;
   }
+
   animation-speed: 0.1;
   size: 1.92;
   loop: true;
 }
+
 ctf_flag_blue {
   file: "ctf_flag_blue";
 }
+
 ctf_flag_red {
   file: "ctf_flag_red";
 }
+
 ctf_score_final {
   file: "ctf_score_final";
   size: 100%;
 }
+
 ctf_score_final_blue {
   file: "ctf_score_final_blue";
   size: 100%;
 }
+
 ctf_score_final_red {
   file: "ctf_score_final_red";
   size: 100%;
 }
+
 ctf_score_left_0 {
   file: "ctf_score_left_0";
   size: 100%;
 }
+
 ctf_score_left_1 {
   file: "ctf_score_left_1";
   size: 100%;
 }
+
 ctf_score_left_2 {
   file: "ctf_score_left_2";
   size: 100%;
 }
+
 ctf_score_left_3 {
   file: "ctf_score_left_3";
   size: 100%;
 }
+
 ctf_score_left_4 {
   file: "ctf_score_left_4";
   size: 100%;
 }
+
 ctf_score_right_0 {
   file: "ctf_score_right_0";
   size: 100%;
 }
+
 ctf_score_right_1 {
   file: "ctf_score_right_1";
   size: 100%;
 }
+
 ctf_score_right_2 {
   file: "ctf_score_right_2";
   size: 100%;
 }
+
 ctf_score_right_3 {
   file: "ctf_score_right_3";
   size: 100%;
 }
+
 ctf_score_right_4 {
   file: "ctf_score_right_4";
   size: 100%;
 }
+
 ctf_score_stripes {
   file: "ctf_score_stripes";
   size: 100%;
 }
+
 ctf_arrow_red {
   file: "ctf_arrow_red";
   size: 25.6;
 }
+
 ctf_arrow_blue {
   file: "ctf_arrow_blue";
   size: 25.6;
 }
+
 ctf_arrow_trans_flag {
   file: "ctf_arrow_trans_flag";
   size: 51.2;
@@ -932,39 +1105,49 @@ map_beach {
   image-height: 416;
   size: 27.248;
 }
+
 map_wilds {
   file: "buch-outdoor";
   map: true;
+
   tile: {
     width: 16;
     height: 16;
     count: 288;
+
     space: {
       height: 400;
       width: 400;
     }
   }
+
   image: {
     width: 384;
     height: 192;
   }
+
   size: 33.536;
 }
+
 map {
   file: "spritesheet";
   map: true;
+
   tile: {
     width: 64;
     height: 64;
     count: 81;
+
     space: {
       height: 400;
       width: 400;
     }
   }
+
   image: {
     width: 1024;
     height: 1024;
   }
+
   size: 67.072;
 }
