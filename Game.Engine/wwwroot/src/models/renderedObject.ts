@@ -55,6 +55,23 @@ class GroupParticle extends particles.Particle {
 
     var ret = super.update(delta);
 
+    if (this.isBoostParticle && this.renderedObject) {
+      const now = performance.now();
+      if (!this.renderedObject.isBoosting) {
+        this.alpha = 0.0;
+      } else {
+        const boostElapsed = now - this.renderedObject.boostStartTime;
+        if (boostElapsed >= WorldConfig.boostPhase2BurnMs) {
+          const phase3Elapsed = boostElapsed - WorldConfig.boostPhase2BurnMs;
+          const phase3Progress = Math.min(
+            1.0,
+            Math.max(0.0, phase3Elapsed / WorldConfig.boostPhase3DurationMs)
+          );
+          this.alpha *= (1.0 - phase3Progress);
+        }
+      }
+    }
+
     const spriteStr = String(this.body?.Sprite || "");
     if (
       this.body &&
@@ -386,11 +403,11 @@ export class RenderedObject {
         textureDefinition["size"][textureDefinition["size"].length - 1] === "%";
       spriteSize = spriteSizeIsPercent
         ? parseFloat(
-            textureDefinition["size"].slice(
-              0,
-              textureDefinition["size"].length - 1,
-            ),
-          ) / 100
+          textureDefinition["size"].slice(
+            0,
+            textureDefinition["size"].length - 1,
+          ),
+        ) / 100
         : parseFloat(textureDefinition["size"]) / pixiTex.height;
     }
     if (textureDefinition["scale"]) {
@@ -407,11 +424,11 @@ export class RenderedObject {
         textureDefinition["size"][textureDefinition["size"].length - 1] === "%";
       spriteSize = spriteSizeIsPercent
         ? parseFloat(
-            textureDefinition["size"].slice(
-              0,
-              textureDefinition["size"].length - 1,
-            ),
-          ) / 100
+          textureDefinition["size"].slice(
+            0,
+            textureDefinition["size"].length - 1,
+          ),
+        ) / 100
         : parseFloat(textureDefinition["size"]) / height;
     }
     if (textureDefinition["scale"]) {
@@ -896,7 +913,7 @@ export class RenderedObject {
               const flicker =
                 0.92 +
                 0.12 *
-                  Math.sin(now * 0.035 + ((this.body?.ID || 0) % 10) * 1.5);
+                Math.sin(now * 0.035 + ((this.body?.ID || 0) % 10) * 1.5);
               layer.scale.set(scale, scale * flicker);
               layer.alpha =
                 0.85 +
@@ -917,13 +934,13 @@ export class RenderedObject {
               const flicker =
                 0.92 +
                 0.12 *
-                  Math.sin(now * 0.035 + ((this.body?.ID || 0) % 10) * 1.5);
+                Math.sin(now * 0.035 + ((this.body?.ID || 0) % 10) * 1.5);
               layer.scale.set(scale, scale * flicker);
               layer.alpha =
                 fadeAlpha *
                 (0.85 +
                   0.15 *
-                    Math.cos(now * 0.05 + ((this.body?.ID || 0) % 10) * 1.5));
+                  Math.cos(now * 0.05 + ((this.body?.ID || 0) % 10) * 1.5));
               layer.visible = layer.alpha > 0.01;
             }
           }
