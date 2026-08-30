@@ -506,9 +506,18 @@ export class RenderedObject {
         const textureName = layers[i];
         if (!textureName) continue;
 
-        if (this.activeTextures[textureName])
+        if (this.activeTextures[textureName]) {
           spriteLayer = this.activeTextures[textureName];
-        else {
+          // Restart any cached one-shot animated sprites so they always
+          // play from frame 0 on reuse (prevents first-frame flash on new boost).
+          if (
+            spriteLayer instanceof PIXI.AnimatedSprite &&
+            !spriteLayer.loop &&
+            !spriteLayer.playing
+          ) {
+            spriteLayer.gotoAndPlay(0);
+          }
+        } else {
           spriteLayer = this.buildSprite(textureName, spriteName || "");
         }
 
@@ -1042,6 +1051,18 @@ export class RenderedObject {
             remaining < 56.25 ? Math.max(0.0, remaining / 56.25) : 1.0;
           layer.alpha = fadeIn * fadeOut;
           layer.visible = layer.alpha > 0.01;
+        }
+
+        // Final guard: hide any one-shot (loop: false) AnimatedSprite that has
+        // finished playing. This prevents the frozen last-frame from remaining
+        // visible after the animation completes (e.g. boost thruster, ship_ab).
+        if (
+          layer instanceof PIXI.AnimatedSprite &&
+          !layer.loop &&
+          !layer.playing
+        ) {
+          layer.alpha = 0;
+          layer.visible = false;
         }
       }
     }
