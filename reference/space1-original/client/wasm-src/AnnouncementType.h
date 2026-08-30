@@ -1,0 +1,1 @@
+enum AnnouncementType {DANGER, MESSAGE, POINTS_GAIN};
