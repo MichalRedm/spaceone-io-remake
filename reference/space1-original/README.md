@@ -15,6 +15,13 @@ reference/space1-original/
 │
 ├── client/
 │   ├── wasm/                     # Original compiled WebAssembly client (spaceone.io_wasm.js & .wasm)
+│   ├── wasm-src/                 # Uncompiled C++ source that was compiled into the WASM binary above
+│   │   ├── *.cpp / *.h           # Game source files (rendering, networking, cells, fleets, particles, UI)
+│   │   ├── pixi/                 # Early Pixi.js integration stub (Pixi.cpp)
+│   │   └── libs/
+│   │       ├── mc5/              # NanoVG/canvas graphics abstraction layer + cp5 canvas backend
+│   │       ├── maestro_cpp_client_sdk/  # Maestro server networking SDK (protobuf-compiled headers)
+│   │       └── protobuf-2.5.0/  # Subset of protobuf 2.5.0 headers used by the SDK
 │   ├── js/                       # Client UI utilities (graphics settings, arena links, popups, carousel)
 │   ├── pages/                    # Game and playback HTML interfaces (index, playback, spectate, bot, fullgame)
 │   ├── inject/                   # Client-side network interceptors and packet hooks
@@ -42,3 +49,5 @@ reference/space1-original/
    - `recordings/complete.csv` and `recordings/tourney.csv` serve as the ground truth for player kinematics, bullet speeds, turning rates, drag forces, and fleet formation physics.
 3. **Protocol & Replay Verification**:
    - `server-ansible/` contains packet decoders and websocket playback tools to replay original packet captures against client implementations.
+4. **Rendering Source Reference**:
+   - `client/wasm-src/` is the uncompiled C++ source for the original WebAssembly client. Cross-reference `GameRendering.cpp` for exact sprite-draw order, camera zoom math, and UI layout logic. `Cell.cpp` and `Fleet.cpp` document entity models. `libs/mc5/` is the NanoVG graphics abstraction layer compiled on top of Emscripten canvas.
