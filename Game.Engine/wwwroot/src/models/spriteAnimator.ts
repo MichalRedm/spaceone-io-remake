@@ -351,21 +351,19 @@ export class SpriteAnimator {
     const decelEndMs = totalBoostMs; // 5..25 ticks (remaining 80%)
 
     if (boostElapsed < accelEndMs) {
-      // Phase 1 (0..5 ticks / Acceleration Surge): expanding cone, alpha ramps 0 -> 1 (smooth, no flicker)
+      // Phase 1 (0..5 ticks / Acceleration Surge): flame ignites, alpha ramps 0 -> 1 locked to engine nozzle
       const progress = Math.min(1.0, Math.max(0.0, boostElapsed / accelEndMs));
-      const coneScale = 0.6 + 0.4 * progress;
-      layer.scale.set(scale, scale * coneScale);
+      layer.scale.set(scale, scale);
       layer.alpha = progress * AC.DASH_TRAIL_BASE_ALPHA;
       layer.visible = layer.alpha > 0.01;
     } else if (boostElapsed < decelEndMs) {
-      // Phase 2 & 3 (5..25 ticks / Deceleration & Decay): contracting cone, alpha fades 1 -> 0 (smooth, no flicker)
+      // Phase 2 & 3 (5..25 ticks / Deceleration & Decay): flame burns out, alpha fades 1 -> 0 locked to engine nozzle
       const progress = Math.min(
         1.0,
         Math.max(0.0, (boostElapsed - accelEndMs) / (decelEndMs - accelEndMs)),
       );
-      const coneScale = 1.0 - 0.4 * progress;
       const fadeAlpha = 1.0 - progress;
-      layer.scale.set(scale, scale * coneScale);
+      layer.scale.set(scale, scale);
       layer.alpha = fadeAlpha * AC.DASH_TRAIL_BASE_ALPHA;
       layer.visible = layer.alpha > 0.01;
     } else {
