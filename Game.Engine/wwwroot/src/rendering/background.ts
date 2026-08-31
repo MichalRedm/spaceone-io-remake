@@ -1,5 +1,6 @@
 import { Settings } from "../ui/settings";
-import { RenderedObject } from "../models/renderedObject";
+import { RenderedObject, loadTexture } from "../models/renderedObject";
+import { calculateScaleWithHeight } from "./atlasLoader";
 import * as PIXI from "pixi.js";
 import { Vector2 } from "../math/vector2";
 import type { CustomContainer } from "./customContainer";
@@ -74,7 +75,7 @@ export class Background extends RenderedObject {
       if (i >= this.backgroundSprites.length) {
         this.backgroundSprites.push(null);
       }
-      const textures = RenderedObject.loadTexture(
+      const textures = loadTexture(
         allLayersTextures[i],
         allLayersTextureNames[i] ?? "",
       );
@@ -84,10 +85,11 @@ export class Background extends RenderedObject {
           backgroundSprite = new PIXI.TilingSprite(textures[0], 200000, 200000);
           backgroundSprite.parentGroup = this.container.backgroundGroup;
           this.container.addChild(backgroundSprite);
-          backgroundSprite.tileScale.set(
-            RenderedObject.getScale(allLayersTextures[i], textures[0]),
-            RenderedObject.getScale(allLayersTextures[i], textures[0]),
+          const scale = calculateScaleWithHeight(
+            allLayersTextures[i],
+            textures[0].height,
           );
+          backgroundSprite.tileScale.set(scale, scale);
           backgroundSprite.rotation = Math.random() - 0.5;
           backgroundSprite.position.x =
             -100000 *
