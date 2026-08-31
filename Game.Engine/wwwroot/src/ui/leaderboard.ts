@@ -133,11 +133,14 @@ function getOut(
   }
 
   const rankStr = rank === undefined ? "" : `${rank}.`;
-  const color = toSafeCssColor(entry.Color);
-  const begin = !entryIsSelf ? `<tr>` : `<tr style="color:${color}">`;
+  const colorClass = entry.Color ? `leaderboard__row--${entry.Color}` : "";
+  const selfClass = entryIsSelf ? "leaderboard__row--self" : "";
+  const rowClass = ["leaderboard__row", selfClass, colorClass]
+    .filter(Boolean)
+    .join(" ");
 
   return (
-    begin +
+    `<tr class="${rowClass}">` +
     `<td class="name">${rankStr} ${escapeHtml(entry.Name) || "Unknown Squadron"}</td>` +
     `<td class="score">${entry.Score ?? 0}</td>` +
     `</tr>`
@@ -150,16 +153,15 @@ export class Leaderboard {
     position: Vector2,
     fleetID?: number,
   ): void {
-    if (Settings.leaderboardEnabled) {
-      if (record) record.style.visibility = "visible";
-      if (leaderboard) leaderboard.style.visibility = "visible";
-      if (leaderboardLeft) leaderboardLeft.style.visibility = "visible";
-      if (leaderboardCenter) leaderboardCenter.style.visibility = "visible";
-    } else {
-      if (record) record.style.visibility = "hidden";
-      if (leaderboard) leaderboard.style.visibility = "hidden";
-      if (leaderboardLeft) leaderboardLeft.style.visibility = "hidden";
-      if (leaderboardCenter) leaderboardCenter.style.visibility = "hidden";
+    const isEnabled = Settings.leaderboardEnabled;
+    if (record) record.classList.toggle("is-hidden", !isEnabled);
+    if (leaderboard) leaderboard.classList.toggle("is-hidden", !isEnabled);
+    if (leaderboardLeft)
+      leaderboardLeft.classList.toggle("is-hidden", !isEnabled);
+    if (leaderboardCenter)
+      leaderboardCenter.classList.toggle("is-hidden", !isEnabled);
+
+    if (!isEnabled) {
       return;
     }
 

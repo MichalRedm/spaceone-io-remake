@@ -19,15 +19,13 @@ export class Cooldown {
    */
   setCooldown(prog: number): void {
     if (progress) {
-      if (Settings.showCooldown) {
-        progress.style.visibility = "visible";
-      } else {
-        progress.style.visibility = "hidden";
-      }
+      progress.classList.toggle("is-hidden", !Settings.showCooldown);
     }
 
     if (progressVal) {
-      progressVal.style.width = (prog / 255) * 100 + "%";
+      const percentage = Math.min(100, Math.max(0, (prog / 255) * 100));
+      progressVal.style.width = `${percentage}%`;
+      progressVal.classList.toggle("cooldown-bar__fill--ready", prog >= 255);
     }
   }
 
@@ -36,7 +34,7 @@ export class Cooldown {
    */
   hide(): void {
     if (progress) {
-      progress.style.visibility = "hidden";
+      progress.classList.add("is-hidden");
     }
   }
 }

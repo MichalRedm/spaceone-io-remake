@@ -33,8 +33,8 @@ export class HUD {
    */
   update(): void {
     if (!hudh) return;
-    if (Settings.hudEnabled) hudh.style.visibility = "visible";
-    else hudh.style.visibility = "hidden";
+    hudh.hidden = !Settings.hudEnabled;
+    hudh.classList.toggle("is-hidden", !Settings.hudEnabled);
 
     hudh.style.fontFamily = Settings.font;
 

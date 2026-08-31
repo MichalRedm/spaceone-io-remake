@@ -74,11 +74,11 @@ export class Log {
     for (const slot of this.data) {
       out +=
         "<tr>" +
-        `<td><b style="color:gray">${slot.time.toLocaleTimeString()}</b></td>` +
+        `<td><b class="game-log__timestamp">${slot.time.toLocaleTimeString()}</b></td>` +
         `<td>${escapeHtml(slot.entry.text)}</td>`;
 
       if (slot.entry.extraData && slot.entry.extraData.ping)
-        out += `<td><b style="color:gray">${slot.entry.extraData.ping.you}ms/${slot.entry.extraData.ping.them}ms</b></td>`;
+        out += `<td><b class="game-log__stat">${slot.entry.extraData.ping.you}ms/${slot.entry.extraData.ping.them}ms</b></td>`;
       else out += "<td></td>";
 
       if (
@@ -86,7 +86,7 @@ export class Log {
         slot.entry.extraData.stats &&
         slot.entry.extraData.stats.deaths > 0
       )
-        out += `<td><b style="color:gray">k/d: ${slot.entry.extraData.stats.kills / slot.entry.extraData.stats.deaths}</b></td>`;
+        out += `<td><b class="game-log__stat">k/d: ${slot.entry.extraData.stats.kills / slot.entry.extraData.stats.deaths}</b></td>`;
       else out += "<td></td>";
 
       out += "</tr>";
@@ -106,7 +106,7 @@ export class Log {
       if (scoreCon) {
         scoreCon.insertAdjacentHTML(
           "beforeend",
-          "<div class='plusScore'>+" +
+          "<div class='score-popup plusScore'>+" +
             escapeHtml(String(lastData.pointsDelta ?? "")) +
             "</div>",
         );
@@ -144,7 +144,10 @@ export class Log {
  */
 function deathStats(lastData: LogEntry): void {
   const deathScreen = document.getElementById("deathScreen");
-  if (deathScreen) deathScreen.style.visibility = "visible";
+  if (deathScreen) {
+    deathScreen.hidden = false;
+    deathScreen.classList.add("death-screen--visible");
+  }
   const score = lastData.extraData?.score ?? 0;
   const scoreEl = document.getElementById("deathScreenScore");
   if (scoreEl) scoreEl.textContent = String(score);

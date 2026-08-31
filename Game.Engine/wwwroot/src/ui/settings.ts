@@ -248,7 +248,10 @@ export function load(): void {
   if (background) background.value = Settings.background;
 
   const graphicsElem = document.getElementById(`graphics-${Settings.graphics}`);
-  graphicsElem?.classList.add("setting-selected");
+  graphicsElem?.classList.add(
+    "graphics-bar__option--selected",
+    "setting-selected",
+  );
 }
 
 (window as any).getTextureMapRules = function () {
