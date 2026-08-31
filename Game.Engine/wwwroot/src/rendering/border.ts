@@ -66,9 +66,22 @@ export class Border extends RenderedObject {
     this.graphics.endFill();
 
     const redColor = 0xff0000;
+    const isLow = Settings.graphics === "low";
 
-    // Clean, crisp boundary stroke matching original game (GameRendering.cpp:1023)
-    const lineWidth = Settings.graphics === "low" ? 3 : 4;
+    if (!isLow) {
+      // Soft, subtle concentric halo centered directly on the perimeter line (original shadowBlur effect)
+      this.graphics.lineStyle(28, redColor, 0.04);
+      this.graphics.drawRect(-size, -size, size * 2, size * 2);
+
+      this.graphics.lineStyle(18, redColor, 0.09);
+      this.graphics.drawRect(-size, -size, size * 2, size * 2);
+
+      this.graphics.lineStyle(10, redColor, 0.18);
+      this.graphics.drawRect(-size, -size, size * 2, size * 2);
+    }
+
+    // Core crisp boundary line (4px on high/medium, 3px on low matching GameRendering.cpp:1023)
+    const lineWidth = isLow ? 3 : 4;
     this.graphics.lineStyle(lineWidth, redColor, 1.0);
     this.graphics.drawRect(-size, -size, size * 2, size * 2);
 
