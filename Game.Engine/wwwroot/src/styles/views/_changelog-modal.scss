@@ -13,21 +13,25 @@
   border-radius: 20px / 50px;
   text-decoration: none;
   cursor: pointer;
-  position: absolute;
+  position: fixed;
   bottom: 60px;
   left: 10px;
   transition: all $transition-slow;
-  z-index: 10;
+  z-index: 100;
   user-select: none;
+  display: block;
 
   h4 {
-    margin-bottom: 4px;
+    margin: 0 0 4px 0;
     color: $color-blue-accent;
+    font-size: 1.1em;
+    font-weight: bold;
   }
 
   span {
     font-size: 0.85em;
     color: $color-text-muted;
+    line-height: 1.4;
   }
 
   &:hover {
@@ -42,25 +46,78 @@
 #popupInstructions {
   .modal-dialog,
   #instructionsPopup {
-    width: 340px;
-    height: 220px;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
     margin: auto;
-    padding: 0 20px 20px 20px;
-    background: $color-bg-dark;
+    width: 340px;
+    height: 240px;
+    background: #000;
     color: $color-text-main;
-    overflow-y: auto;
     font-family: $font-family-main;
-    border: 2px $color-text-main solid;
-    text-align: center;
+    border: 2px solid $color-text-main;
     border-radius: 8px;
-    box-shadow: 0 0 10px 0 $color-text-main;
+    box-shadow: 0 0 15px 0 $color-text-main;
+    padding: 16px 20px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .modal-dialog__header,
+  .header {
+    position: static;
+    width: 100%;
+    height: auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 0 10px 0;
+    background: transparent;
+  }
+
+  .modal-dialog__title,
+  .title {
+    font-size: 1.5em;
+    font-weight: bold;
+    padding: 0;
+    margin: 0;
+  }
+
+  .modal-dialog__close,
+  .close {
+    cursor: pointer;
+    font-size: 24px;
+    font-weight: bold;
+    color: $color-text-main;
+    padding: 0;
+    line-height: 1;
+    transition: color $transition-fast;
+
+    &:hover {
+      color: $color-blue-accent;
+    }
   }
 
   &__content,
   #instructionsContent {
-    position: relative;
-    top: 60px;
-    font-size: 0.9em;
-    line-height: 1.6;
+    position: static;
+    top: auto;
+    font-size: 0.95em;
+    line-height: 1.8;
+    text-align: center;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0;
+
+    span {
+      display: block;
+      margin: 4px 0;
+    }
   }
 }

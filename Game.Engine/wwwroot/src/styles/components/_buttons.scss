@@ -48,20 +48,21 @@
     font-size: 1.2em;
     font-weight: 900;
     margin: 20px 0;
-    padding: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
+    padding: 7px 0 0 15px;
+    box-sizing: border-box;
+    display: block;
+    text-align: left;
+    cursor: pointer;
     z-index: $z-index-base;
 
     &__icon,
     #spectate-eye {
-      width: 28px;
+      width: 32px;
       height: auto;
-      margin: 0;
-      padding: 0;
-      position: static;
+      padding: 0 0 0 20px;
+      position: relative;
+      top: 2px;
+      vertical-align: middle;
       display: inline-block;
     }
   }
@@ -87,16 +88,18 @@
     font-size: 1.2em;
     font-weight: 900;
     margin: 20px 0;
-    padding: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
+    padding: 7px 0 0 15px;
+    box-sizing: border-box;
+    display: block;
+    text-align: left;
+    cursor: pointer;
     z-index: $z-index-controls;
 
     i {
       font-size: 1.1em;
-      margin: 0;
+      position: relative;
+      top: 0;
+      padding-left: 20px;
     }
   }
 
