@@ -29,13 +29,13 @@ function getGlowTextures(): {
   const ctxH = canvasH.getContext("2d")!;
   const gradH = ctxH.createLinearGradient(0, 0, size, 0);
   gradH.addColorStop(0.0, "rgba(255, 0, 0, 0)");
-  gradH.addColorStop(0.2, "rgba(255, 0, 0, 0.02)");
-  gradH.addColorStop(0.35, "rgba(255, 0, 0, 0.07)");
-  gradH.addColorStop(0.46, "rgba(255, 0, 0, 0.20)");
-  gradH.addColorStop(0.5, "rgba(255, 0, 0, 0.35)");
-  gradH.addColorStop(0.54, "rgba(255, 0, 0, 0.20)");
-  gradH.addColorStop(0.65, "rgba(255, 0, 0, 0.07)");
-  gradH.addColorStop(0.8, "rgba(255, 0, 0, 0.02)");
+  gradH.addColorStop(0.1, "rgba(255, 0, 0, 0.01)");
+  gradH.addColorStop(0.25, "rgba(255, 0, 0, 0.08)");
+  gradH.addColorStop(0.4, "rgba(255, 0, 0, 0.30)");
+  gradH.addColorStop(0.5, "rgba(255, 0, 0, 0.75)");
+  gradH.addColorStop(0.6, "rgba(255, 0, 0, 0.30)");
+  gradH.addColorStop(0.75, "rgba(255, 0, 0, 0.08)");
+  gradH.addColorStop(0.9, "rgba(255, 0, 0, 0.01)");
   gradH.addColorStop(1.0, "rgba(255, 0, 0, 0)");
   ctxH.fillStyle = gradH;
   ctxH.fillRect(0, 0, size, 2);
@@ -47,23 +47,28 @@ function getGlowTextures(): {
   const ctxV = canvasV.getContext("2d")!;
   const gradV = ctxV.createLinearGradient(0, 0, 0, size);
   gradV.addColorStop(0.0, "rgba(255, 0, 0, 0)");
-  gradV.addColorStop(0.2, "rgba(255, 0, 0, 0.02)");
-  gradV.addColorStop(0.35, "rgba(255, 0, 0, 0.07)");
-  gradV.addColorStop(0.46, "rgba(255, 0, 0, 0.20)");
-  gradV.addColorStop(0.5, "rgba(255, 0, 0, 0.35)");
-  gradV.addColorStop(0.54, "rgba(255, 0, 0, 0.20)");
-  gradV.addColorStop(0.65, "rgba(255, 0, 0, 0.07)");
-  gradV.addColorStop(0.8, "rgba(255, 0, 0, 0.02)");
+  gradV.addColorStop(0.1, "rgba(255, 0, 0, 0.01)");
+  gradV.addColorStop(0.25, "rgba(255, 0, 0, 0.08)");
+  gradV.addColorStop(0.4, "rgba(255, 0, 0, 0.30)");
+  gradV.addColorStop(0.5, "rgba(255, 0, 0, 0.75)");
+  gradV.addColorStop(0.6, "rgba(255, 0, 0, 0.30)");
+  gradV.addColorStop(0.75, "rgba(255, 0, 0, 0.08)");
+  gradV.addColorStop(0.9, "rgba(255, 0, 0, 0.01)");
   gradV.addColorStop(1.0, "rgba(255, 0, 0, 0)");
   ctxV.fillStyle = gradV;
   ctxV.fillRect(0, 0, 2, size);
 
-  _glowTextureH = PIXI.Texture.from(canvasH, {
+  const baseTexH = new PIXI.BaseTexture(canvasH, {
     scaleMode: PIXI.SCALE_MODES.LINEAR,
+    wrapMode: PIXI.WRAP_MODES.REPEAT,
   });
-  _glowTextureV = PIXI.Texture.from(canvasV, {
+  _glowTextureH = new PIXI.Texture(baseTexH);
+
+  const baseTexV = new PIXI.BaseTexture(canvasV, {
     scaleMode: PIXI.SCALE_MODES.LINEAR,
+    wrapMode: PIXI.WRAP_MODES.REPEAT,
   });
+  _glowTextureV = new PIXI.Texture(baseTexV);
 
   return { horizontal: _glowTextureH, vertical: _glowTextureV };
 }
@@ -78,13 +83,11 @@ function getGlowTextures(): {
 export class Border extends RenderedObject {
   /** Underlying PixiJS Graphics display instance for fog and crisp line. */
   graphics: PIXI.Graphics;
-  /** Container holding smooth gradient glow border strips. */
-  glowContainer: PIXI.Container;
-  /** Four boundary glow sprites. */
-  topGlow: PIXI.Sprite;
-  bottomGlow: PIXI.Sprite;
-  leftGlow: PIXI.Sprite;
-  rightGlow: PIXI.Sprite;
+  /** Four boundary glow tiling sprites. */
+  topGlow: PIXI.TilingSprite;
+  bottomGlow: PIXI.TilingSprite;
+  leftGlow: PIXI.TilingSprite;
+  rightGlow: PIXI.TilingSprite;
   /** World half-width / radius extent in world units. */
   worldSize = 6000;
 
@@ -98,31 +101,33 @@ export class Border extends RenderedObject {
 
     const { horizontal, vertical } = getGlowTextures();
 
-    this.glowContainer = new PIXI.Container();
-    this.glowContainer.parentGroup = this.container.backgroundGroup;
+    // 1. Graphics for deadzone dark red fog
+    this.graphics = new PIXI.Graphics();
+    this.graphics.parentGroup = this.container.backgroundGroup;
+    this.container.addChild(this.graphics);
 
-    this.topGlow = new PIXI.Sprite(vertical);
-    this.bottomGlow = new PIXI.Sprite(vertical);
-    this.leftGlow = new PIXI.Sprite(horizontal);
-    this.rightGlow = new PIXI.Sprite(horizontal);
+    // 2. Tiling sprites for smooth continuous Gaussian halo glow (rendered in front of fog)
+    this.topGlow = new PIXI.TilingSprite(vertical, 1, 1);
+    this.bottomGlow = new PIXI.TilingSprite(vertical, 1, 1);
+    this.leftGlow = new PIXI.TilingSprite(horizontal, 1, 1);
+    this.rightGlow = new PIXI.TilingSprite(horizontal, 1, 1);
+
+    this.topGlow.parentGroup = this.container.backgroundGroup;
+    this.bottomGlow.parentGroup = this.container.backgroundGroup;
+    this.leftGlow.parentGroup = this.container.backgroundGroup;
+    this.rightGlow.parentGroup = this.container.backgroundGroup;
 
     this.topGlow.blendMode = PIXI.BLEND_MODES.ADD;
     this.bottomGlow.blendMode = PIXI.BLEND_MODES.ADD;
     this.leftGlow.blendMode = PIXI.BLEND_MODES.ADD;
     this.rightGlow.blendMode = PIXI.BLEND_MODES.ADD;
 
-    this.glowContainer.addChild(
+    this.container.addChild(
       this.topGlow,
       this.bottomGlow,
       this.leftGlow,
       this.rightGlow,
     );
-
-    this.graphics = new PIXI.Graphics();
-    this.graphics.parentGroup = this.container.backgroundGroup;
-
-    this.container.addChild(this.glowContainer);
-    this.container.addChild(this.graphics);
 
     this.updateWorldSize(6000);
   }
@@ -156,11 +161,21 @@ export class Border extends RenderedObject {
     );
     this.graphics.endFill();
 
+    // Core crisp boundary line (4px on high/medium, 3px on low matching GameRendering.cpp:1023)
+    const redColor = 0xff0000;
+    const lineWidth = isLow ? 3 : 4;
+    this.graphics.lineStyle(lineWidth, redColor, 1.0);
+    this.graphics.drawRect(-size, -size, size * 2, size * 2);
+
     // Smooth continuous Gaussian gradient glow strips
     if (!isLow) {
-      this.glowContainer.visible = true;
-      const glowThickness = 32;
+      const glowThickness = 48;
       const half = glowThickness / 2;
+
+      this.topGlow.visible = true;
+      this.bottomGlow.visible = true;
+      this.leftGlow.visible = true;
+      this.rightGlow.visible = true;
 
       this.topGlow.x = -size - half;
       this.topGlow.y = -size - half;
@@ -182,14 +197,11 @@ export class Border extends RenderedObject {
       this.rightGlow.width = glowThickness;
       this.rightGlow.height = 2 * size + glowThickness;
     } else {
-      this.glowContainer.visible = false;
+      this.topGlow.visible = false;
+      this.bottomGlow.visible = false;
+      this.leftGlow.visible = false;
+      this.rightGlow.visible = false;
     }
-
-    // Core crisp boundary line (4px on high/medium, 3px on low matching GameRendering.cpp:1023)
-    const redColor = 0xff0000;
-    const lineWidth = isLow ? 3 : 4;
-    this.graphics.lineStyle(lineWidth, redColor, 1.0);
-    this.graphics.drawRect(-size, -size, size * 2, size * 2);
 
     this.worldSize = size;
   }
