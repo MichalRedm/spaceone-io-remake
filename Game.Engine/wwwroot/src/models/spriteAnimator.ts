@@ -26,17 +26,17 @@ export const ANIMATION_CONSTANTS = {
   /** Alpha applied to the ship body/aura during an invulnerability blink-off period while also boosting. */
   INVULN_BLINK_DIM_ALPHA: 0.25,
 
-  /** Bullet/laser fade-in ramp duration in milliseconds. */
-  BULLET_FADE_IN_MS: 56.25,
+  /** Bullet and laser trail fade-in ramp duration in milliseconds (original 8-tick threshold ~180ms). */
+  BULLET_FADE_IN_MS: 180,
 
-  /** Bullet/laser fade-out ramp duration in milliseconds. */
-  BULLET_FADE_OUT_MS: 56.25,
+  /** Bullet and laser trail fade-out ramp duration in milliseconds (original 8-tick threshold ~180ms). */
+  BULLET_FADE_OUT_MS: 180,
 
-  /** Laser trail fade-in ramp duration in milliseconds (slower than core beam). */
+  /** Laser trail fade-in ramp duration in milliseconds. */
   LASER_TRAIL_FADE_IN_MS: 180,
 
   /** Laser trail fade-out ramp duration in milliseconds. */
-  LASER_TRAIL_FADE_OUT_MS: 112.5,
+  LASER_TRAIL_FADE_OUT_MS: 180,
 
   /** Base opacity for the dash trail flame. */
   DASH_TRAIL_BASE_ALPHA: 1.0,
