@@ -684,6 +684,7 @@ app.ticker.add(() => {
   background.updateFocus(position);
   background.draw();
   minimap.checkDisplay();
+  leaderboard.renderLeaderArrow(position, cache, interpolator, gameTime);
 
   if (lastPosition) {
     lastPosition.x = position.x;
