@@ -11,18 +11,10 @@ import * as particles from "pixi-particles";
 import { WorldConfig } from "./worldConfig";
 import type { RenderedObject } from "./renderedObject";
 
-// ---------------------------------------------------------------------------
-// Animation constants used by the particle fade curves
-// ---------------------------------------------------------------------------
-
 /** Time window in milliseconds over which a bullet/laser particle fades in at spawn. */
 const BULLET_FADE_IN_MS = 180;
 /** Time window in milliseconds over which a bullet/laser particle fades out before expiry. */
 const BULLET_FADE_OUT_MS = 112.5;
-
-// ---------------------------------------------------------------------------
-// GroupParticle
-// ---------------------------------------------------------------------------
 
 /**
  * Group-aware particle controller.

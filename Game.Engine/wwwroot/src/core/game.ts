@@ -66,9 +66,7 @@ const canvas = document.getElementById("gameCanvas") as HTMLCanvasElement;
 const zoom = 1000;
 const cameraDrag = 0.8;
 
-//PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
 PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.LINEAR;
-//PIXI.settings.RESOLUTION = window.devicePixelRatio || 1;
 const app = new PIXI.Application(<any>{
   view: canvas,
   transparent: true,
@@ -150,8 +148,6 @@ let currentWorld: WorldInfo | false = false;
 Controls.registerCanvas(canvas);
 
 const connection = new Connection();
-/*if (window.location.hash) connection.connect(window.location.hash.substring(1));
-else connection.connect();*/
 
 window.Game.primaryConnection = connection;
 window.Game.isBackgrounded = false;
@@ -619,7 +615,6 @@ function doPing() {
   hud.latency = connection.latency;
 
   if (frameCounter === 0) {
-    //console.log("backgrounded");
     window.Game.isBackgrounded = true;
   } else window.Game.isBackgrounded = false;
   frameCounter = 0;
@@ -705,7 +700,6 @@ app.ticker.add(() => {
   }
 
   log.check();
-  // cooldown.draw();
 
   if (Controls.mouseX) {
     if (
@@ -774,30 +768,6 @@ app.ticker.add(() => {
     }
 
     spotSprites = [];
-
-    //graphics.clear();
-
-    if (CustomData) {
-      const data = JSON.parse(CustomData);
-      /*if (data.spots)
-            {
-                for (let i=0; i<data.spots.length; i++)
-                {
-                    let spot = data.spots[i];
-                    let texture = textures["obstacle"];
-                    if (texture) {
-                        let sprite = new PIXI.Sprite(texture);
-                        sprite.position.x = spot.X;
-                        sprite.position.y = spot.Y;
-                        sprite.scale.set(0.1, 0.1);
-
-                        container.addChild(sprite);
-
-                        spotSprites.push(sprite);
-                    } else console.log("cannot find texture");
-                }
-            }*/
-    }
   }
 });
 

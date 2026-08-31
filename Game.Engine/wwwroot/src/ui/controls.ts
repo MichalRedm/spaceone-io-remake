@@ -676,18 +676,21 @@ if (savedEmoji !== undefined) {
   if (emojiTrigger) emojiTrigger.innerText = savedEmoji;
 }
 
+/**
+ * Shuffles an array in-place using the Fisher-Yates algorithm.
+ *
+ * @param array - Array to shuffle.
+ * @returns Shuffled array reference.
+ */
 function shuffle<T>(array: T[]): T[] {
-  let currentIndex = array.length,
-    temporaryValue: T,
-    randomIndex: number;
+  let currentIndex = array.length;
+  let temporaryValue: T;
+  let randomIndex: number;
 
-  // While there remain elements to shuffle...
   while (0 !== currentIndex) {
-    // Pick a remaining element...
     randomIndex = Math.floor(Math.random() * currentIndex);
     currentIndex -= 1;
 
-    // And swap it with the current element.
     const currentElem = array[currentIndex];
     const randomElem = array[randomIndex];
     if (currentElem !== undefined && randomElem !== undefined) {

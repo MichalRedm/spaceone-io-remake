@@ -40,10 +40,6 @@ import {
   type TextureDefinition,
 } from "./textureUtils";
 
-// ---------------------------------------------------------------------------
-// Module-level service singletons
-// ---------------------------------------------------------------------------
-
 const _textureMapRules = getDefaultTextureMapRules(Settings.graphics);
 const _spriteModeMapRules = getDefaultSpriteModeMapRules(Settings.graphics);
 
@@ -59,10 +55,6 @@ const _loader = new TextureLoader(_textureMapRules, _spriteModeMapRules);
 /** Module-level singleton for per-frame animation. */
 const _animator = new SpriteAnimator();
 
-// ---------------------------------------------------------------------------
-// CustomSpriteLayer
-// ---------------------------------------------------------------------------
-
 /**
  * A PIXI.Sprite augmented with the cached metadata from its texture definition.
  * The extra fields are written once at sprite creation time and read each frame
@@ -75,10 +67,6 @@ export interface CustomSpriteLayer extends PIXI.Sprite {
   baseRotation?: number;
   zOrder?: number;
 }
-
-// ---------------------------------------------------------------------------
-// Z-index helpers (extracted from buildSpriteLayers / buildEmitterLayers)
-// ---------------------------------------------------------------------------
 
 /**
  * Determines the effective rendering z-order for a sprite given the entity's
@@ -104,10 +92,6 @@ function resolveEffectiveZ(
   }
   return effectiveZ + layerIndex + bodyID / 100000;
 }
-
-// ---------------------------------------------------------------------------
-// RenderedObject — thin Facade / View Controller
-// ---------------------------------------------------------------------------
 
 export class RenderedObject {
   // ── Public state (read by SpriteAnimator via AnimationContext) ─────────────
