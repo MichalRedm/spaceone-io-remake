@@ -325,7 +325,7 @@ export class SpriteAnimator {
     } else if (fileStr.startsWith("food") || fileStr.startsWith("fish")) {
       this._applyFoodAlpha(layer, ctx, now, AC);
     } else if (fileStr.includes("laser") && fileStr.includes("trail")) {
-      this._applyLaserTrailAlpha(layer, ctx, scale, now, AC);
+      this._applyLaserTrailAlpha(layer, ctx, position, angle, scale, now, AC);
     } else if (fileStr.startsWith("laser") || fileStr.startsWith("bullet")) {
       this._applyBulletAlpha(layer, ctx, now, AC);
     }
@@ -476,15 +476,33 @@ export class SpriteAnimator {
   private _applyLaserTrailAlpha(
     layer: CustomSpriteLayer,
     ctx: AnimationContext,
+    position: ProjectedPoint,
+    angle: number,
     scale: number,
     now: number,
     AC: typeof ANIMATION_CONSTANTS,
   ): void {
     const age = now - ctx.spawnTime;
     const remaining = ctx.bulletLifetime - age;
+    const normLife = Math.min(1.0, Math.max(0.0, age / ctx.bulletLifetime));
 
-    // Keep trail locked firmly to bullet head
-    layer.scale.set(scale, scale);
+    // Parabolic length factor matching original Cell.cpp:459-462:
+    // Starts at 0 upon firing, grows to full length mid-flight, contracts back to 0 at expiry
+    const rawLength = 4.0 * normLife * (1.0 - normLife);
+    const lengthFactor = Math.min(1.0, rawLength);
+
+    // Scale along the length axis
+    layer.scale.set(scale, scale * Math.max(0.05, lengthFactor));
+
+    // Shift position so front tip remains locked to bullet origin (0, 0)
+    const baseOffX = (layer.baseOffset?.x ?? -93) * scale;
+    const offX = baseOffX * lengthFactor;
+    const offY = (layer.baseOffset?.y ?? 0) * scale;
+
+    layer.position.x =
+      position.x + offX * Math.cos(angle) - offY * Math.sin(angle);
+    layer.position.y =
+      position.y + offY * Math.cos(angle) + offX * Math.sin(angle);
 
     const fadeIn = Math.min(1.0, age / AC.LASER_TRAIL_FADE_IN_MS);
     const fadeOut =
@@ -492,7 +510,7 @@ export class SpriteAnimator {
         ? Math.max(0.0, remaining / AC.LASER_TRAIL_FADE_OUT_MS)
         : 1.0;
     layer.alpha = fadeIn * fadeOut;
-    layer.visible = layer.alpha > 0.01;
+    layer.visible = layer.alpha > 0.01 && lengthFactor > 0.01;
   }
 
   private _applyBulletAlpha(
