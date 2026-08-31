@@ -40,6 +40,14 @@ import { Settings } from "../ui/settings";
 export class TextureLoader {
   private readonly textureMapRules: ThemeRule[];
   private readonly spriteModeMapRules: ThemeRule[];
+  private readonly _textureDefCache = new Map<
+    string,
+    TextureDefinition | null
+  >();
+  private readonly _spriteDefCache = new Map<
+    string,
+    Record<string, unknown> | null
+  >();
 
   /**
    * Constructs a TextureLoader service bound to theme rules.
@@ -63,13 +71,16 @@ export class TextureLoader {
    * @returns Parsed `TextureDefinition` or `null` if no rule matches.
    */
   getTextureDefinition(textureName: string): TextureDefinition | null {
+    const cached = this._textureDefCache.get(textureName);
+    if (cached !== undefined) return cached;
+
     const mapKey = parseMapKey(textureName);
-    if (mapKey) textureName = mapKey.name;
+    const lookupKey = mapKey ? mapKey.name : textureName;
 
     let textureDefinition: TextureDefinition | null = null;
     try {
       const raw = queryProperties(
-        { element: textureName },
+        { element: lookupKey },
         this.textureMapRules,
       ) as Record<string, string[]>;
 
@@ -78,6 +89,8 @@ export class TextureLoader {
       console.log("TEXTURE FAILED:", e);
     }
     if (!textureDefinition) console.log(`cannot load texture '${textureName}'`);
+
+    this._textureDefCache.set(textureName, textureDefinition);
     return textureDefinition;
   }
 
@@ -89,15 +102,19 @@ export class TextureLoader {
     spriteName: string,
     additional: string[] = [],
   ): Record<string, unknown> | null {
+    const cacheKey = `${spriteName}__${additional.join("_")}`;
+    const cached = this._spriteDefCache.get(cacheKey);
+    if (cached !== undefined) return cached;
+
     const mapKey = parseMapKey(spriteName);
-    if (mapKey) spriteName = mapKey.name;
+    const lookupName = mapKey ? mapKey.name : spriteName;
 
     let spriteDefinition: Record<string, unknown> | null = null;
     try {
       const raw = queryProperties(
         {
-          element: spriteName.split("_")[0],
-          class: spriteName.split("_").join(" ") + " " + additional.join(" "),
+          element: lookupName.split("_")[0],
+          class: lookupName.split("_").join(" ") + " " + additional.join(" "),
         },
         this.spriteModeMapRules,
       ) as Record<string, string[]>;
@@ -112,6 +129,8 @@ export class TextureLoader {
       console.log("SPRITE FAILED:", e);
     }
     if (!spriteDefinition) console.log(`Cannot find sprite: ${spriteName}`);
+
+    this._spriteDefCache.set(cacheKey, spriteDefinition);
     return spriteDefinition;
   }
 

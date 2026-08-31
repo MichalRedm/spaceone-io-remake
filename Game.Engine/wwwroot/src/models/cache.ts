@@ -199,19 +199,23 @@ export class Cache {
     for (i = 0; i < deletes.length; i++) {
       const deleteKey = deletes[i];
       if (deleteKey === undefined) continue;
-      const key = `b-${deleteKey}`;
 
-      const body = this.bodiesMap.get(deleteKey) ?? this.bodies[key];
+      const body = this.bodiesMap.get(deleteKey);
       if (body) {
         this.removeBodyFromGroup(body, body.Group || 0);
         this.bodiesMap.delete(deleteKey);
-        delete this.bodies[key];
         Cache.count--;
 
         const spriteStr = String(body.Sprite || "");
         const renderer = body.renderer as RenderedObject | undefined;
-        const x = renderer?.lastPosition?.x ?? body.OriginalPosition?.x ?? 0;
-        const y = renderer?.lastPosition?.y ?? body.OriginalPosition?.y ?? 0;
+        const pos =
+          body.Position ??
+          (renderer?.lastPosition &&
+          (renderer.lastPosition.x !== 0 || renderer.lastPosition.y !== 0)
+            ? renderer.lastPosition
+            : body.OriginalPosition);
+        const x = pos?.x ?? 0;
+        const y = pos?.y ?? 0;
 
         if (spriteStr.startsWith("fish")) {
           const color = spriteStr.split("_")[1] || "cyan";
@@ -240,14 +244,12 @@ export class Cache {
     for (i = 0; i < groupDeletes.length; i++) {
       const deleteKey = groupDeletes[i];
       if (deleteKey === undefined) continue;
-      const key = `g-${deleteKey}`;
-      const group = this.groupsMap.get(deleteKey) ?? this.groups[key];
+      const group = this.groupsMap.get(deleteKey);
 
       if (group) {
         if (group.renderer) group.renderer.destroy();
         this.groupsMap.delete(deleteKey);
         this.bodiesByGroup.delete(deleteKey);
-        delete this.groups[key];
         this.groupsDirty = true;
       }
     }
@@ -256,8 +258,7 @@ export class Cache {
     for (i = 0; i < groups.length; i++) {
       const group = groups[i];
       if (!group) continue;
-      let existing =
-        this.groupsMap.get(group.ID) ?? this.groups[`g-${group.ID}`];
+      let existing = this.groupsMap.get(group.ID);
 
       if (!existing) {
         if (group.Type == 1) group.renderer = new Fleet(this.container, this);
@@ -278,18 +279,15 @@ export class Cache {
       if (existing.renderer) existing.renderer.update(existing, myFleetID);
 
       this.groupsMap.set(group.ID, existing);
-      this.groups[`g-${group.ID}`] = existing;
     }
 
     // update objects that should be here
     for (i = 0; i < updates.length; i++) {
       const update = updates[i];
       if (!update) continue;
-      const key = `b-${update.ID}`;
-      let existing = this.bodiesMap.get(update.ID) ?? this.bodies[key];
+      let existing = this.bodiesMap.get(update.ID);
 
       this.bodiesMap.set(update.ID, update);
-      this.bodies[key] = update;
 
       if (existing) {
         if (existing.Group !== update.Group) {
@@ -462,6 +460,16 @@ export class Cache {
    * @returns `GroupState` or `undefined` if not present.
    */
   getGroup(groupID: number): GroupState | undefined {
-    return this.groupsMap.get(groupID) ?? this.groups[`g-${groupID}`];
+    return this.groupsMap.get(groupID);
+  }
+
+  /**
+   * Retrieves a cached body state object by its authoritative body ID.
+   *
+   * @param bodyID - Body identifier.
+   * @returns `BodyState` or `undefined` if not present.
+   */
+  getBody(bodyID: number): BodyState | undefined {
+    return this.bodiesMap.get(bodyID);
   }
 }

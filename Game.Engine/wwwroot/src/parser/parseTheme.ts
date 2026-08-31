@@ -218,6 +218,11 @@ export function selectorMatches(
   }
 }
 
+const _queryCache = new WeakMap<
+  ThemeRule[],
+  Map<string, Record<string, string[]>>
+>();
+
 /**
  * Queries and merges all matching CSS properties for an element descriptor from a list of theme rules.
  *
@@ -229,8 +234,21 @@ export function queryProperties(
   element: ElementQueryProps,
   ruleList?: ThemeRule[],
 ): Record<string, string[]> {
+  if (!ruleList || ruleList.length === 0) return {};
+
+  let cacheForRules = _queryCache.get(ruleList);
+  if (!cacheForRules) {
+    cacheForRules = new Map<string, Record<string, string[]>>();
+    _queryCache.set(ruleList, cacheForRules);
+  }
+
+  const cacheKey = `${element.element ?? ""}|${element.id ?? ""}|${element.class ?? ""}`;
+  const cached = cacheForRules.get(cacheKey);
+  if (cached !== undefined) {
+    return cached;
+  }
+
   const res: Record<string, string[]> = {};
-  if (!ruleList) return res;
   for (let i = 0; i < ruleList.length; i++) {
     const rule = ruleList[i];
     if (rule && selectorMatches(rule.selector, element)) {
@@ -246,5 +264,7 @@ export function queryProperties(
       }
     }
   }
+
+  cacheForRules.set(cacheKey, res);
   return res;
 }
