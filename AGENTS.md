@@ -17,7 +17,7 @@ Before writing or modifying any code, identify your target area and **read the c
 | When working on / modifying... | Target Paths / Globs | Mandatory File to Read FIRST | Key Invariants & Pitfalls to Check |
 | :--- | :--- | :--- | :--- |
 | **Game Server & Physics Engine** | `Game.Engine/**`, `Game.API.*/**` | [`.agents/rules/game_engine_standards.md`](.agents/rules/game_engine_standards.md)<br>[`.agents/context/physics_model.md`](.agents/context/physics_model.md) | • Fixed-timestep tick loop invariants<br>• Thread safety & spatial partitioning (RBush)<br>• FlatBuffers protocol synchronization |
-| **Web Client & Rendering** | `Game.Engine/wwwroot/**` | [`.agents/rules/client_web_standards.md`](.agents/rules/client_web_standards.md)<br>[`.agents/rules/typescript_standards.md`](.agents/rules/typescript_standards.md) | • Pixi.js sprite atlas coordinate mapping<br>• Render interpolation & smooth camera lag<br>• Strict TS & zero implicit any |
+| **Web Client, UI & Rendering** | `Game.Engine/wwwroot/**` | [`.agents/rules/client_web_standards.md`](.agents/rules/client_web_standards.md)<br>[`.agents/rules/design_standards.md`](.agents/rules/design_standards.md)<br>[`.agents/rules/typescript_standards.md`](.agents/rules/typescript_standards.md) | • 7-1 SCSS & BEM styling architecture<br>• Pixel-perfect arcade UI visual parity<br>• Pixi.js sprite atlas coordinate mapping<br>• Render interpolation & smooth camera lag<br>• Strict TS & zero implicit any |
 | **Robots & AI Behaviors** | `Game.Robots/**` | [`.agents/rules/robot_ai_standards.md`](.agents/rules/robot_ai_standards.md) | • Context-steering vector arithmetic<br>• Flocking & fleet avoidance heuristics<br>• Genetic algorithm controller constraints |
 | **Physics Analysis & ML Tuning** | `analysis/**` | [`.agents/rules/physics_tuning_standards.md`](.agents/rules/physics_tuning_standards.md) | • Ground-truth telemetry loss metrics<br>• Kinematic feature extraction & curve fitting<br>• Isolated dataset generation scripts |
 | **CI & Local Verification** | Monorepo root / CI scripts | [`.agents/rules/ci_standards.md`](.agents/rules/ci_standards.md) | • Multi-toolchain build checks (`dotnet`, `npm`)<br>• Clean output verification before pushing |
@@ -90,6 +90,6 @@ Always run these commands from their respective working directories:
 - `reference/space1-original/`: Original Spaceone.io assets, wasm client, decoders & telemetry recordings
 - `analysis/`: Kinematic analysis scripts, physics experiments & ML parameter optimization
 - `.agents/`: Agent configuration schema, rules, architectural context, and maintenance skills
-  - `rules/`: Modular standards (`game_engine`, `client_web`, `robot_ai`, `physics_tuning`, `ci`, `git_and_pr`, `agent_maintenance`)
+  - `rules/`: Modular standards (`game_engine`, `client_web`, `design_standards`, `robot_ai`, `physics_tuning`, `ci`, `git_and_pr`, `agent_maintenance`)
   - `context/`: Deep domain context (`architecture_overview`, `physics_model`, `network_protocol`)
   - `skills/`: Project-specific skills (`git-pr-workflow`, `agent-maintenance`)
