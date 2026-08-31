@@ -208,8 +208,14 @@ export class Cache {
 
         const spriteStr = String(body.Sprite || "");
         const renderer = body.renderer as RenderedObject | undefined;
-        const x = renderer?.lastPosition?.x ?? body.OriginalPosition?.x ?? 0;
-        const y = renderer?.lastPosition?.y ?? body.OriginalPosition?.y ?? 0;
+        const pos =
+          body.Position ??
+          (renderer?.lastPosition &&
+          (renderer.lastPosition.x !== 0 || renderer.lastPosition.y !== 0)
+            ? renderer.lastPosition
+            : body.OriginalPosition);
+        const x = pos?.x ?? 0;
+        const y = pos?.y ?? 0;
 
         if (spriteStr.startsWith("fish")) {
           const color = spriteStr.split("_")[1] || "cyan";

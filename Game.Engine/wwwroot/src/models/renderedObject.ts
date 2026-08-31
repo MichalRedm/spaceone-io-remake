@@ -328,6 +328,7 @@ export class RenderedObject {
         layer.destroy();
       }
       this.emitterLayers = false;
+      this.activeEmitters = {};
     }
   }
 
@@ -411,28 +412,40 @@ export class RenderedObject {
       const isVisible =
         !camera || camera.isWorldPointInView(newPosition.x, newPosition.y, 350);
 
-      if (this.spriteLayers && this.spriteLayers.length) {
-        if (!isVisible) {
+      if (!isVisible) {
+        if (this.spriteLayers && this.spriteLayers.length) {
           for (let i = 0; i < this.spriteLayers.length; i++) {
             const layer = this.spriteLayers[i];
             if (layer && layer.renderable) {
               layer.renderable = false;
             }
           }
-        } else {
+        }
+        if (this.emitterLayers && this.emitterLayers.length) {
+          for (let i = 0; i < this.emitterLayers.length; i++) {
+            const emitter = this.emitterLayers[i];
+            if (emitter && emitter.emit) {
+              emitter.emit = false;
+            }
+          }
+        }
+      } else {
+        if (this.spriteLayers && this.spriteLayers.length) {
           for (let i = 0; i < this.spriteLayers.length; i++) {
             const layer = this.spriteLayers[i];
             if (layer && !layer.renderable) {
               layer.renderable = true;
             }
           }
-          const ctx = this._buildAnimationContext();
-          _animator.animate(
-            ctx,
-            newPosition,
-            this.body.Size,
-            performance.now(),
-          );
+        }
+        const ctx = this._buildAnimationContext();
+        _animator.animate(ctx, newPosition, this.body.Size, performance.now());
+      }
+    } else if (this.emitterLayers && this.emitterLayers.length) {
+      for (let i = 0; i < this.emitterLayers.length; i++) {
+        const emitter = this.emitterLayers[i];
+        if (emitter && emitter.emit) {
+          emitter.emit = false;
         }
       }
     }
