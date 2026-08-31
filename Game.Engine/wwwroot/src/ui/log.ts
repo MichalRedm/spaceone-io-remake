@@ -1,37 +1,73 @@
+/**
+ * @file Combat event log, kill notifications, floating points, and death screen statistics.
+ * @module ui/log
+ */
+
 import Cookies from "js-cookie";
 import { Settings } from "./settings";
 import { escapeHtml } from "./leaderboard";
+
 const log = document.getElementById("log");
 const bigLog = document.getElementById("bigLog");
 const scoreCon = document.getElementById("plusScoreContainer");
 const comboMsg = document.getElementById("comboMessage");
 
+/**
+ * Metadata payload attached to combat log events.
+ */
 export interface LogEntryExtraData {
+  /** Round-trip ping comparisons between killer and victim. */
   ping?: { you: number; them: number };
+  /** Kill/death stats summary. */
   stats?: { kills: number; deaths: number };
+  /** Total score achieved. */
   score?: number;
+  /** Total ships destroyed. */
   kills?: number;
+  /** Active session duration in milliseconds. */
   gameTime?: number;
+  /** Maximum kill streak combo achieved. */
   maxCombo?: number;
+  /** Kill streak banner text and score bonus. */
   combo?: { text: string; score: number };
 }
 
+/**
+ * Combat event log entry descriptor.
+ */
 export interface LogEntry {
+  /** Event category (e.g. `'kill'`, `'killed'`, `'universeDeath'`). */
   type?: string;
+  /** Event description text. */
   text?: string;
+  /** Score delta awarded for the event. */
   pointsDelta?: number | string;
+  /** Additional diagnostic metadata. */
   extraData?: LogEntryExtraData;
 }
 
+/**
+ * Combat kill feed and session stats manager.
+ */
 export class Log {
+  /** History buffer of recent log entries. */
   data: Array<{ time: Date; entry: LogEntry }>;
+  /** Timestamp when log feed was last updated in milliseconds. */
   lastDisplay: number;
 
+  /**
+   * Constructs an empty combat log manager.
+   */
   constructor() {
     this.data = [];
     this.lastDisplay = 0;
   }
 
+  /**
+   * Appends an event entry to the combat log, triggers floating score indicators, and updates kill streak messages.
+   *
+   * @param entry - Combat log event descriptor.
+   */
   addEntry(entry: LogEntry): void {
     this.data.push({ time: new Date(), entry });
     while (this.data.length > Settings.logLength) this.data.shift();
@@ -100,6 +136,9 @@ export class Log {
     }
   }
 
+  /**
+   * Periodic check called per frame to auto-fade stale combat messages.
+   */
   check(): void {
     const time = performance.now() - this.lastDisplay;
     if (time > 6000 && log) {
@@ -116,6 +155,11 @@ export class Log {
   }
 }
 
+/**
+ * Populates death screen stats modal (score, kills, game duration, highscore) upon player death.
+ *
+ * @param lastData - Death event log entry.
+ */
 function deathStats(lastData: LogEntry): void {
   const deathScreen = document.getElementById("deathScreen");
   if (deathScreen) deathScreen.style.visibility = "visible";
@@ -144,6 +188,11 @@ function deathStats(lastData: LogEntry): void {
 
 updateHighscore(0);
 
+/**
+ * Updates personal best highscore in cookies and DOM.
+ *
+ * @param score - Achieved score.
+ */
 function updateHighscore(score: number): void {
   const currentHighscore = Number(Cookies.get("highscore") ?? 0);
   if (score >= currentHighscore) {

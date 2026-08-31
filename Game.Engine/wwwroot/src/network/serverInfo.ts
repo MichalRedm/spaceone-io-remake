@@ -1,15 +1,23 @@
+/**
+ * @file Server administration parameter tuning GUI and hook synchronization.
+ * @module network/serverInfo
+ */
+
 import * as dat from "dat.gui";
 
+/** Dat.gui panel instance for server hook modification. */
 export const gui = new dat.GUI({ width: 500 });
 
 const hooks: Record<string, number | boolean | string> = {};
 
+/** REST API response format for admin authentication. */
 interface AuthResponse {
   response: {
     token: string;
   };
 }
 
+/** REST API response format for server hook retrieval. */
 interface HookResponse {
   response: string;
 }
@@ -81,6 +89,11 @@ const token: Promise<string> = fetch("/api/v1/user/authenticate", {
     return r;
   });
 
+/**
+ * Transmits an updated server hook configuration value to the backend REST API.
+ *
+ * @param attr - Property key to modify.
+ */
 export async function sendHook(attr: string): Promise<void> {
   const changer: Record<string, any> = {};
   changer[attr] = hooks[attr];
@@ -94,6 +107,12 @@ export async function sendHook(attr: string): Promise<void> {
   });
 }
 
+/**
+ * Creates an event handler closure binding a property key to `sendHook`.
+ *
+ * @param a - Property key.
+ * @returns Async callback function.
+ */
 export function bindParam(a: string): () => Promise<void> {
   return () => sendHook(a);
 }

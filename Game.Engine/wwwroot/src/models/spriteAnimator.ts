@@ -1,17 +1,14 @@
 /**
- * spriteAnimator.ts
+ * @file Entity sprite animation service for per-frame alpha, scaling, and boost/invulnerability transitions.
+ * @module models/spriteAnimator
  *
+ * @remarks
  * Service responsible for all per-frame visual animation applied to the PIXI
- * display objects owned by a `RenderedObject`.  This is where all boost-phase
+ * display objects owned by a `RenderedObject`. This is where all boost-phase
  * state machines, invulnerability blink logic, abandoned-ship fades, and
  * per-layer alpha/visibility curves live.
  *
- * Previously the entirety of `RenderedObject.moveSprites()` (250+ lines of
- * inline math) plus the duplicate boost/invulnerability state machine in
- * `RenderedObject.update()`.  Centralising them here:
- *  - Satisfies Rule 13 (SRP / no pure statics on classes)
- *  - Satisfies Rule 14 (RenderedObject as thin View controller / Facade)
- *  - Makes every magic number traceable via Rule 12 (named constants)
+ * All client-side visual constants are parameterized in `ANIMATION_CONSTANTS`.
  */
 
 import * as PIXI from "pixi.js";
@@ -21,12 +18,10 @@ import type { CustomSpriteLayer } from "./renderedObject";
 import type { BodyState } from "./cache";
 import type { ProjectedPoint } from "../rendering/interpolator";
 
-// ---------------------------------------------------------------------------
-// Animation constants (Rule 12)
-// All client-side visual constants live here.  Server-driven timing values
-// (boost duration, invulnerability period, bullet lifetime) live in WorldConfig.
-// ---------------------------------------------------------------------------
-
+/**
+ * Client-side visual animation constants.
+ * Server-driven timing values (boost duration, invulnerability period, bullet lifetime) live in WorldConfig.
+ */
 export const ANIMATION_CONSTANTS = {
   /** Alpha applied to the ship body/aura during an invulnerability blink-off period while also boosting. */
   INVULN_BLINK_DIM_ALPHA: 0.25,
@@ -45,6 +40,21 @@ export const ANIMATION_CONSTANTS = {
 
   /** Base opacity for the dash trail during phase-2 steady burn. */
   DASH_TRAIL_BASE_ALPHA: 0.85,
+
+  /** Dash trail fade-out ramp duration in milliseconds (phase-3 expiry). */
+  DASH_TRAIL_FADE_OUT_MS: 450,
+
+  /** Invulnerability cycle duration in milliseconds (full blink-on + blink-off period). */
+  INVULN_CYCLE_MS: 100,
+
+  /** Fraction of `INVULN_CYCLE_MS` during which the ship is in the dimmed state. */
+  INVULN_DIM_FRACTION: 0.5,
+
+  /** Alpha applied to the ship body during the dimmed phase of an invulnerability cycle. */
+  INVULN_BLINK_ALPHA: 0.5,
+
+  /** Ship abandonment fade-out duration in milliseconds. */
+  ABANDON_FADE_MS: 1000,
 
   /** Amplitude of the sinusoidal flicker layered on the dash trail base opacity. */
   DASH_TRAIL_FLICKER_AMP: 0.15,
@@ -79,10 +89,6 @@ export const ANIMATION_CONSTANTS = {
   /** Boost emitter begins emitting this many milliseconds into the boost (phase-2 start). */
   BOOST_EMITTER_START_MS: 160,
 } as const;
-
-// ---------------------------------------------------------------------------
-// Static group state (previously on RenderedObject)
-// ---------------------------------------------------------------------------
 
 /**
  * Maps fleet group IDs to the timestamp when that group first started boosting.
@@ -135,10 +141,6 @@ export function pruneStaticState(now: number): void {
   }
 }
 
-// ---------------------------------------------------------------------------
-// AnimationContext
-// ---------------------------------------------------------------------------
-
 /**
  * Data contract passed from `RenderedObject` to `SpriteAnimator.animate()`.
  * Contains all the state the animator needs to compute alpha, visibility, and
@@ -158,10 +160,6 @@ export interface AnimationContext {
   bulletLifetime: number;
   positionDelta: { x: number; y: number };
 }
-
-// ---------------------------------------------------------------------------
-// SpriteAnimator
-// ---------------------------------------------------------------------------
 
 /**
  * Stateless per-frame animation service for game entities.

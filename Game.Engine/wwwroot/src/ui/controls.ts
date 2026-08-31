@@ -1,8 +1,14 @@
+/**
+ * @file Player input controls coordinator (mouse, touch joystick nipple.js, keyboard bindings, emoji picker).
+ * @module ui/controls
+ */
+
 import Cookies from "js-cookie";
 import nipplejs from "nipplejs";
 import { Settings } from "./settings";
 import { Ship } from "../models/ship";
 import { fadeIn } from "./domUtils";
+
 const DEFAULT_EMOJIS = [
   "👋",
   "🚀",
@@ -279,37 +285,71 @@ function getUnicodeCharacter(cp: number): string {
   return "";
 }
 
+/**
+ * Unified player input state schema.
+ */
 export interface ControlsType {
+  /** Selected nametag emoji symbol. */
   emoji: string;
+  /** Player nickname text. */
   nick: string;
+  /** Digital left direction. */
   left: boolean;
+  /** Digital up direction. */
   up: boolean;
+  /** Digital right direction. */
   right: boolean;
+  /** Digital down direction. */
   down: boolean;
+  /** Numpad 8. */
   numUp: boolean;
+  /** Numpad 9. */
   numUpRight: boolean;
+  /** Numpad 6. */
   numRight: boolean;
+  /** Numpad 3. */
   numDownRight: boolean;
+  /** Numpad 2. */
   numDown: boolean;
+  /** Numpad 1. */
   numDownLeft: boolean;
+  /** Numpad 4. */
   numLeft: boolean;
+  /** Numpad 7. */
   numUpLeft: boolean;
+  /** Whether boost is held down. */
   boost: boolean;
+  /** Whether primary fire is held down. */
   shoot: boolean;
+  /** Whether autofire toggle is enabled. */
   autofire: boolean;
+  /** Timestamp when shoot button was pressed down in milliseconds. */
   downSince: number | false;
+  /** Custom JSON data payload transmitted with control frame. */
   customData: any;
+  /** Current mouse cursor screen X position. */
   mouseX: number;
+  /** Current mouse cursor screen Y position. */
   mouseY: number;
+  /** Calculated steering aim angle in radians. */
   angle: number;
+  /** Target HTML canvas element. */
   canvas: HTMLCanvasElement | null;
+  /** Selected ship skin color theme. */
   color: string | null;
+  /** Selected ship skin sprite symbol (e.g. `'ship_cyan'`). */
   ship: string;
+  /** Attaches event listeners to the canvas element. */
   registerCanvas(canvas: HTMLCanvasElement): void;
+  /** Initializes ship color picker options according to world configuration. */
   initializeWorld(world?: any): void;
+  /** Unlocks Discord-exclusive secret ship skins. */
   addSecretShips(discord?: any): void;
 }
 
+/**
+ * Singleton managing player steering inputs, aim vectors, and key listeners.
+ */
 export const Controls: ControlsType = {
   emoji: "👋",
   nick: "",
@@ -636,18 +676,21 @@ if (savedEmoji !== undefined) {
   if (emojiTrigger) emojiTrigger.innerText = savedEmoji;
 }
 
+/**
+ * Shuffles an array in-place using the Fisher-Yates algorithm.
+ *
+ * @param array - Array to shuffle.
+ * @returns Shuffled array reference.
+ */
 function shuffle<T>(array: T[]): T[] {
-  let currentIndex = array.length,
-    temporaryValue: T,
-    randomIndex: number;
+  let currentIndex = array.length;
+  let temporaryValue: T;
+  let randomIndex: number;
 
-  // While there remain elements to shuffle...
   while (0 !== currentIndex) {
-    // Pick a remaining element...
     randomIndex = Math.floor(Math.random() * currentIndex);
     currentIndex -= 1;
 
-    // And swap it with the current element.
     const currentElem = array[currentIndex];
     const randomElem = array[randomIndex];
     if (currentElem !== undefined && randomElem !== undefined) {

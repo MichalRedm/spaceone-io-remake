@@ -1,3 +1,12 @@
+/**
+ * @file Visual sprite and particle parameter calibration tuner workbench.
+ * @module ui/tuner
+ *
+ * @remarks
+ * Interactive sandbox tool allowing live preview and calibration of ship models, dash trails,
+ * laser trails, food glows, and explosion particle effects.
+ */
+
 import "../core/bootstrap";
 import * as PIXI from "pixi.js";
 import { initializeAtlasTextures } from "../rendering/atlasLoader";

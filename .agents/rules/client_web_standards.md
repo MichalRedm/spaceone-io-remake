@@ -34,3 +34,20 @@ shipSprite.anchor.set(0.5, 0.5);
 | **Loading loose images individually** | Increases HTTP requests and breaks batch rendering in WebGL. | Pack textures into consolidated sprite atlases (`.json` + `.png`) and load via cache. |
 | **Direct DOM manipulation inside render loop** | Forces layout reflows on every 60 FPS frame, degrading framerate. | Update canvas UI via Pixi.js display objects; keep HTML DOM changes to out-of-loop events. |
 | **Using raw network `fleetID` directly for own-fleet visibility checks** | When a player dies, network `fleetID` resets to 0 while dying ships linger in cache, causing the player's own username to briefly flash on screen. | Track `ownFleetID` separately, retaining the player's last alive fleet ID through death until respawning or explicitly spectating. |
+
+---
+
+## 4. Code Documentation & Coordinate Clarity Standards
+
+All rendering, networking, physics interpolation, and UI modules in `Game.Engine/wwwroot/src` must adhere to [`.agents/rules/typescript_standards.md`](./typescript_standards.md) Section 15.
+
+### Key Documentation Guidelines for Client Modules:
+1. **Coordinate System Disambiguation**:
+   - Always state whether positions/velocities are in **World Coordinates** (game arena coordinates, center $(0,0)$, boundary $\pm \text{worldSize}$) or **Screen / Viewport Coordinates** (canvas pixel space $[0, \text{width}] \times [0, \text{height}]$).
+2. **Kinematic Projection Units**:
+   - Document time units (e.g. `performance.now()` in ms, FlatBuffers `DefinitionTime` in ms), velocities (pixels per ms), and angular velocities (radians per ms).
+3. **Display Object & Memory Lifecycles**:
+   - Document container attachment (`customContainer.addChild`), display layer assignment (`parentGroup`), and explicit teardown (`destroy({ children: true, texture: false })`).
+4. **Theme & Atlas Mapping**:
+   - Document SCSS selector matching semantics and atlas texture frame retrieval paths (`PIXI.Texture.from(...)`).
+

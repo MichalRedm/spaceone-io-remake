@@ -1,3 +1,8 @@
+/**
+ * @file Discord OAuth2 authentication and user token management.
+ * @module network/discord
+ */
+
 import Cookies from "js-cookie";
 
 const dauth = document.getElementById("dauth");
@@ -11,6 +16,12 @@ if (dauth) {
 
 const secondsToDays = 60 * 60 * 24;
 const sp = new URLSearchParams(window.location.hash.substr(1));
+
+/**
+ * Retrieves the current player's Discord authentication token from URL or cookies.
+ *
+ * @returns Active bearer token string, or undefined if unauthenticated.
+ */
 export function getToken() {
   return token;
 }

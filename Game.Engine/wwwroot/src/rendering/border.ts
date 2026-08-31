@@ -1,12 +1,30 @@
+/**
+ * @file Outer world map boundary and danger zone visual graphic.
+ * @module rendering/border
+ */
+
 import * as PIXI from "pixi.js";
 import type { CustomContainer } from "./customContainer";
 import { RenderedObject } from "../models/renderedObject";
 import { hexToRGB } from "../math/hexColor";
 
+/**
+ * Visual display controller rendering world perimeter boundary lines and outer deadzone fog.
+ *
+ * @remarks
+ * Draws a prominent red perimeter bounding box and darkened off-map border quads on `CustomContainer.backgroundGroup`.
+ */
 export class Border extends RenderedObject {
+  /** Underlying PixiJS Graphics display instance. */
   graphics: PIXI.Graphics;
+  /** World half-width / radius extent in world units. */
   worldSize = 6000;
 
+  /**
+   * Constructs a Border display object attached to the background group.
+   *
+   * @param container - Root game rendering container.
+   */
   constructor(container: CustomContainer) {
     super(container);
 
@@ -17,6 +35,11 @@ export class Border extends RenderedObject {
     this.container.addChild(this.graphics);
   }
 
+  /**
+   * Re-draws outer boundary fog and perimeter lines matching the server-configured arena radius.
+   *
+   * @param size - Arena boundary half-width in world units.
+   */
   updateWorldSize(size: number): void {
     const edgeWidth = 4000;
     this.graphics.clear();

@@ -1,3 +1,16 @@
+/**
+ * @file Server sprite ID to client asset string mapping table.
+ * @module models/spriteIndices
+ */
+
+/**
+ * Ordered mapping from FlatBuffers integer sprite index to texture name string.
+ *
+ * @remarks
+ * Used in `core/game.ts` to decode `NetBody.sprite()` into a symbolic texture name
+ * (e.g. `1` -\> `'ship0'`, `7` -\> `'ship_cyan'`).
+ * Sprite indices $\ge 1000$ are reserved for dynamic map tile indices (`map[N]`).
+ */
 export const spriteIndices = [
   "none",
   "ship0",

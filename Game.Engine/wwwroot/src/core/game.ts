@@ -1,3 +1,18 @@
+/**
+ * @file Primary client orchestration module for Spaceone.io Remake.
+ * @module core/game
+ *
+ * @remarks
+ * Orchestrates all client-side subsystems:
+ * - PixiJS WebGL canvas application and layered rendering container.
+ * - FlatBuffers WebSocket network snapshot ingestion (`NetWorldView`).
+ * - Entity state cache (`Cache`) synchronization and kinematic extrapolation.
+ * - Smooth camera tracking with lag-decay physics.
+ * - 60 FPS animation ticker loop (`app.ticker`).
+ * - Player input aggregation and 100Hz control packet transmission.
+ * - HUD, minimap, leaderboard, log notifications, and UI modal bindings.
+ */
+
 import "./bootstrap";
 import * as PIXI from "pixi.js";
 import { Game as FBGame } from "../network/game_generated";
@@ -51,9 +66,7 @@ const canvas = document.getElementById("gameCanvas") as HTMLCanvasElement;
 const zoom = 1000;
 const cameraDrag = 0.8;
 
-//PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
 PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.LINEAR;
-//PIXI.settings.RESOLUTION = window.devicePixelRatio || 1;
 const app = new PIXI.Application(<any>{
   view: canvas,
   transparent: true,
@@ -107,9 +120,15 @@ let d = 500; // for steering with arrows
 let keyboardSteering = false;
 let keyboardSteeringSpeed = 0.075;
 
+/**
+ * Current snapshot metadata of the active server world view.
+ */
 interface GameViewState {
+  /** Authoritative server timestamp of the view packet in milliseconds. */
   time: number;
+  /** Whether the local player currently has an active living fleet. */
   isAlive: boolean;
+  /** Optional camera focus target entity (e.g. spectated fleet or player ship). */
   camera?: BodyState;
 }
 
@@ -129,8 +148,6 @@ let currentWorld: WorldInfo | false = false;
 Controls.registerCanvas(canvas);
 
 const connection = new Connection();
-/*if (window.location.hash) connection.connect(window.location.hash.substring(1));
-else connection.connect();*/
 
 window.Game.primaryConnection = connection;
 window.Game.isBackgrounded = false;
@@ -151,6 +168,13 @@ document
     arenaLink.copy();
   });
 
+/**
+ * Deserializes a FlatBuffers `NetBody` network buffer into a strongly-typed `BodyState` object.
+ *
+ * @param _cache - Entity cache instance.
+ * @param body - Raw FlatBuffers NetBody pointer.
+ * @returns Deserialized BodyState object, or `null` if body pointer is null.
+ */
 function bodyFromServer(
   _cache: Cache,
   body: FBGame.Engine.Networking.FlatBuffers.NetBody | null,
@@ -183,6 +207,13 @@ function bodyFromServer(
   };
 }
 
+/**
+ * Deserializes a FlatBuffers `NetGroup` network buffer into a strongly-typed `GroupState` object.
+ *
+ * @param _cache - Entity cache instance.
+ * @param group - Raw FlatBuffers NetGroup pointer.
+ * @returns Deserialized GroupState object, or `null` if group pointer is null.
+ */
 function groupFromServer(
   _cache: Cache,
   group: FBGame.Engine.Networking.FlatBuffers.NetGroup | null,
@@ -459,6 +490,9 @@ LobbyCallbacks.onWorldJoin = function (worldKey: string, world?: WorldInfo) {
   Controls.initializeWorld(world);
 };
 
+/**
+ * Initiates local player fleet spawning request to the connected server.
+ */
 function doSpawn(): void {
   isSpectating = false;
   Events.Spawn();
@@ -479,6 +513,11 @@ function doSpawn(): void {
 document.getElementById("spawn")?.addEventListener("click", doSpawn);
 document.getElementById("spawnSpectate")?.addEventListener("click", doSpawn);
 
+/**
+ * Transitions the client into spectator camera mode.
+ *
+ * @param hideButton - Whether to hide the spectate toggle button (e.g. when launched via URL query).
+ */
 function startSpectate(hideButton = false) {
   isSpectating = true;
   ownFleetID = 0;
@@ -502,6 +541,9 @@ document.getElementById("spectate")?.addEventListener("click", () => {
   startSpectate();
 });
 
+/**
+ * Exits spectating mode and returns to dead/lobby state.
+ */
 function stopSpectate() {
   isSpectating = false;
   ownFleetID = 0;
@@ -529,6 +571,9 @@ document.addEventListener("keydown", ({ keyCode, which }) => {
   }
 });
 
+/**
+ * Recalculates canvas dimensions and Pixi stage scaling to maintain a 16:9 aspect ratio.
+ */
 const sizeCanvas = () => {
   let width;
   let height;
@@ -558,6 +603,9 @@ let viewCounter = 0;
 let updateCounter = 0;
 let lastCamera = new Vector2(0, 0);
 
+/**
+ * Periodically reports FPS, update rates, and round-trip latency to HUD and Connection models.
+ */
 function doPing() {
   hud.framesPerSecond = frameCounter;
   connection.framesPerSecond = frameCounter;
@@ -567,7 +615,6 @@ function doPing() {
   hud.latency = connection.latency;
 
   if (frameCounter === 0) {
-    //console.log("backgrounded");
     window.Game.isBackgrounded = true;
   } else window.Game.isBackgrounded = false;
   frameCounter = 0;
@@ -653,7 +700,6 @@ app.ticker.add(() => {
   }
 
   log.check();
-  // cooldown.draw();
 
   if (Controls.mouseX) {
     if (
@@ -722,35 +768,17 @@ app.ticker.add(() => {
     }
 
     spotSprites = [];
-
-    //graphics.clear();
-
-    if (CustomData) {
-      const data = JSON.parse(CustomData);
-      /*if (data.spots)
-            {
-                for (let i=0; i<data.spots.length; i++)
-                {
-                    let spot = data.spots[i];
-                    let texture = textures["obstacle"];
-                    if (texture) {
-                        let sprite = new PIXI.Sprite(texture);
-                        sprite.position.x = spot.X;
-                        sprite.position.y = spot.Y;
-                        sprite.scale.set(0.1, 0.1);
-
-                        container.addChild(sprite);
-
-                        spotSprites.push(sprite);
-                    } else console.log("cannot find texture");
-                }
-            }*/
-    }
   }
 });
 
 document.body.classList.remove("loading");
 
+/**
+ * Parses URL query parameters from a search string into key-value map.
+ *
+ * @param queryString - Raw query string (e.g. `window.location.search`).
+ * @returns Map of decoded parameter keys and values.
+ */
 function parseQuery(queryString: string): Record<string, string> {
   const query: Record<string, string> = {};
   const pairs = (
@@ -809,6 +837,14 @@ document.getElementById("wcancel")?.addEventListener("click", function () {
   worlds?.classList.add("closed");
 });
 
+/**
+ * Computes an iterative weighted average angle across multiple keyboard directional inputs.
+ *
+ * @param a0 - Running accumulator angle in radians.
+ * @param a - New target direction angle in radians.
+ * @param i - Number of accumulated directions so far.
+ * @returns Merged angle in radians.
+ */
 function mergeSet(a0: number, a: number, i: number): number {
   let ret = (a0 * i + a) / (i + 1);
   if (Math.abs(a - a0) > Math.PI) {
@@ -819,6 +855,13 @@ function mergeSet(a0: number, a: number, i: number): number {
 
 const shakingElements: HTMLElement[] = [];
 
+/**
+ * Animates a physical shake / vibration effect on a DOM element.
+ *
+ * @param element - Target HTML element to shake.
+ * @param magnitude - Maximum displacement in pixels or degrees (default: 16).
+ * @param angular - Whether to apply rotational shake instead of translational shake.
+ */
 export function shake(
   element: HTMLElement,
   magnitude = 16,

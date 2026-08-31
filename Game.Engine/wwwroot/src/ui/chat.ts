@@ -1,8 +1,19 @@
+/**
+ * @file In-game quick emoji chat hotkey menu and active speech dispatcher.
+ * @module ui/chat
+ */
+
+/**
+ * Active chat message payload.
+ */
 export interface ChatMessage {
+  /** Chat message text or emoji string. */
   txt: string;
+  /** Timestamp when message was triggered in milliseconds. */
   time: number;
 }
 
+/** Active outbound chat message state transmitted in control frames. */
 export const message: ChatMessage = {
   txt: "",
   time: Date.now(),

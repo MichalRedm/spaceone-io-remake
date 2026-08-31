@@ -1,3 +1,13 @@
+/**
+ * @file Spatial entity and hierarchical group cache.
+ * @module models/cache
+ *
+ * @remarks
+ * Maintains client-side state for all active bodies (`BodyState`) and groupings (`GroupState`)
+ * synced from authoritative server snapshots. Performs delta updates, object pooling, visual controller
+ * instantiation (`Ship`, `Bullet`, `Tile`, `RenderedObject`), and z-ordered iteration passes.
+ */
+
 import { Bullet } from "./bullet";
 import { Ship } from "./ship";
 import { RenderedObject } from "./renderedObject";
@@ -7,37 +17,67 @@ import { CustomContainer } from "../rendering/customContainer";
 import { FX } from "./fx";
 import type { Vector2 } from "../math/vector2";
 
+/**
+ * State representing a logical grouping of entities (e.g. a player fleet).
+ */
 export interface GroupState {
+  /** Authoritative unique group identifier. */
   ID: number;
+  /** Fleet caption or player display name. */
   Caption?: string;
+  /** Group type index (e.g. 1 = Fleet). */
   Type?: number;
+  /** Vertical z-index layering order. */
   ZIndex?: number;
+  /** Custom JSON string or parsed object attached by the server. */
   CustomData?: string;
   /** Renderer is a Fleet instance when a group has an active fleet. */
   renderer?: Fleet;
 }
 
+/**
+ * State snapshot of an individual kinematic entity (ship, projectile, food, obstacle).
+ */
 export interface BodyState {
+  /** Authoritative unique entity identifier. */
   ID: number;
+  /** Timestamp when original kinematics were defined in milliseconds. */
   DefinitionTime: number;
+  /** Heading angle at definition time in radians. */
   OriginalAngle: number;
+  /** Angular velocity in radians per millisecond. */
   AngularVelocity: number;
+  /** World position coordinates at definition time. */
   OriginalPosition: { x: number; y: number };
+  /** Linear momentum / velocity vector in world units per millisecond. */
   Momentum: { x: number; y: number };
+  /** Collision radius or visual scale size. */
   Size: number;
+  /** Texture or sprite name symbol (e.g. `'ship_red'`, `'bullet_cyan'`). */
   Sprite: string | null;
+  /** Bitmask mode flags (boost, shields, upgrades). */
   Mode: number;
+  /** Parent group identifier (0 if unassociated). */
   Group: number;
+  /** Current interpolated angle in radians. */
   Angle?: number;
+  /** Current interpolated world position. */
   Position?: Vector2 | { x: number; y: number };
+  /** Previous snapshot state for kinematic projection. */
   previous?: BodyState | false;
-  /** Renderer is the visual controller for this body (ship, bullet, tile, etc.). */
+  /** Visual controller responsible for display list management. */
   renderer?: RenderedObject | Ship | Bullet | Tile;
+  /** Parent group state reference. */
   group?: GroupState | null;
+  /** Computed display z-index. */
   zIndex?: number;
+  /** Timestamp when entity was marked obsolete. */
   obsolete?: number;
 }
 
+/**
+ * High-performance spatial entity cache and delta-sync manager.
+ */
 export class Cache {
   container: CustomContainer;
   bodies: Record<string, BodyState>;
@@ -50,6 +90,11 @@ export class Cache {
   private defaultGroup: GroupState;
   static count = 0;
 
+  /**
+   * Constructs an empty entity cache bound to a rendering container.
+   *
+   * @param container - Root game rendering container.
+   */
   constructor(container: CustomContainer) {
     this.container = container;
     this.bodies = {};
@@ -88,6 +133,9 @@ export class Cache {
     this.groupsDirty = false;
   }
 
+  /**
+   * Destroys all visual controllers and clears all cached entities and groups.
+   */
   clear(): void {
     this.foreach((body) => {
       if (body?.renderer) body.renderer.destroy();
@@ -107,16 +155,36 @@ export class Cache {
     Cache.count = 0;
   }
 
+  /**
+   * Alias for `clear()`.
+   */
   empty(): void {
     this.clear();
   }
 
+  /**
+   * Triggers sprite and texture reload across all active body renderers.
+   */
   refreshSprites(): void {
     this.foreach((body) => {
       if (body?.renderer) body.renderer.refreshSprite();
     }, this);
   }
 
+  /**
+   * Applies a delta snapshot update received from the server.
+   *
+   * @remarks
+   * Handles deletion of removed entities and groups, triggers explosion effects for destroyed
+   * bullets/food/ships, registers newly spawned objects, and updates existing kinematic records.
+   *
+   * @param updates - Array of updated body states.
+   * @param deletes - Array of deleted body IDs.
+   * @param groups - Array of updated group states.
+   * @param groupDeletes - Array of deleted group IDs.
+   * @param time - Authoritative server snapshot timestamp in milliseconds.
+   * @param myFleetID - Local player's own fleet group ID.
+   */
   update(
     updates: BodyState[],
     deletes: number[],
@@ -335,6 +403,12 @@ export class Cache {
     }
   }
 
+  /**
+   * Iterates through all active bodies in ascending group z-index order.
+   *
+   * @param action - Callback invoked for each body.
+   * @param thisObj - Optional `this` context for callback execution.
+   */
   foreach(action: (body: BodyState) => void, thisObj?: unknown): void {
     if (this.groupsDirty) {
       this.sortGroups();
@@ -360,6 +434,12 @@ export class Cache {
     }
   }
 
+  /**
+   * Iterates through all active groups in ascending z-index order.
+   *
+   * @param action - Callback invoked for each group.
+   * @param thisObj - Optional `this` context for callback execution.
+   */
   foreachGroup(action: (group: GroupState) => void, thisObj?: unknown): void {
     if (this.groupsDirty) {
       this.sortGroups();
@@ -375,6 +455,12 @@ export class Cache {
     }
   }
 
+  /**
+   * Retrieves a cached group state object by its authoritative group ID.
+   *
+   * @param groupID - Group identifier.
+   * @returns `GroupState` or `undefined` if not present.
+   */
   getGroup(groupID: number): GroupState | undefined {
     return this.groupsMap.get(groupID) ?? this.groups[`g-${groupID}`];
   }

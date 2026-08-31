@@ -1,3 +1,8 @@
+/**
+ * @file Rotating controls hint box ticker for beginner players.
+ * @module ui/hintBox
+ */
+
 import { Settings } from "./settings";
 import { fadeIn, fadeOut } from "./domUtils";
 

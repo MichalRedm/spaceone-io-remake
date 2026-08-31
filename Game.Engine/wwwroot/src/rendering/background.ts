@@ -1,3 +1,8 @@
+/**
+ * @file Parallax scrolling starfield and multi-layer background texture manager.
+ * @module rendering/background
+ */
+
 import { Settings } from "../ui/settings";
 import { RenderedObject, loadTexture } from "../models/renderedObject";
 import { calculateScaleWithHeight } from "./atlasLoader";
@@ -6,11 +11,26 @@ import { Vector2 } from "../math/vector2";
 import type { CustomContainer } from "./customContainer";
 import type { BodyState } from "../models/cache";
 
+/**
+ * Visual controller for multi-layer tiling parallax space backgrounds.
+ *
+ * @remarks
+ * Instantiates `PIXI.TilingSprite` objects per configured background layer and scrolls them
+ * at distinct parallax speed ratios based on the active camera focus coordinates.
+ */
 export class Background extends RenderedObject {
+  /** Focus position vector tracking camera center. */
   focus: Vector2;
+  /** Speed multipliers for each parallax layer. */
   speeds: number[];
+  /** Instantiated tiling sprite layers. */
   backgroundSprites: (PIXI.TilingSprite | null)[] = [];
 
+  /**
+   * Constructs a Background renderer attached to `CustomContainer.backgroundGroup`.
+   *
+   * @param container - Root game rendering container.
+   */
   constructor(container: CustomContainer) {
     super(container);
     this.focus = new Vector2(0, 0);
@@ -18,6 +38,9 @@ export class Background extends RenderedObject {
     this.refreshSprite();
   }
 
+  /**
+   * Updates parallax scroll offsets for all active tiling background layers according to camera focus.
+   */
   draw(): void {
     if (this.backgroundSprites) {
       for (let i = 0; i < this.backgroundSprites.length; i++) {
@@ -46,11 +69,19 @@ export class Background extends RenderedObject {
     }
   }
 
+  /**
+   * Updates the focus tracking coordinate.
+   *
+   * @param focus - World-space position vector.
+   */
   updateFocus(focus: Vector2): void {
     this.focus = focus;
   }
 
-  refreshSprite(): void {
+  /**
+   * Reloads and reconstructs tiling sprites matching the active theme definition.
+   */
+  override refreshSprite(): void {
     const spriteDefinition = RenderedObject.getSpriteDefinition("bg");
     if (!spriteDefinition) return;
 
@@ -101,6 +132,9 @@ export class Background extends RenderedObject {
     }
   }
 
+  /**
+   * Destroys all tiling sprite layers from the container.
+   */
   override destroy(): void {
     if (this.backgroundSprites) {
       for (let i = 0; i < this.backgroundSprites.length; i++) {
@@ -112,6 +146,11 @@ export class Background extends RenderedObject {
     this.backgroundSprites = [];
   }
 
+  /**
+   * Ingests body state update from server snapshot.
+   *
+   * @param updateData - Updated kinematic state.
+   */
   override update(updateData: BodyState): void {
     super.update(updateData);
   }

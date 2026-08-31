@@ -1,23 +1,13 @@
 /**
- * renderedObject.ts — Facade / View Controller
+ * @file Base entity visual controller (Facade / View Controller) for cached world objects.
+ * @module models/renderedObject
  *
- * `RenderedObject` is the public-facing API that the rest of the game engine
- * uses to attach, update, and destroy the visual representation of a game
- * entity.  It owns the PIXI display objects but does NOT compute their
- * animation values inline.
- *
- * Responsibilities (Rule 14 — RenderedObject as View Controller):
- *  ✅ Add / remove sprite layers and emitters to the PIXI scene graph
- *  ✅ Maintain per-entity state (isBoosting, spawnTime, bulletLifetime …)
- *  ✅ Delegate per-frame animation to SpriteAnimator
- *  ✅ Delegate texture/sprite resolution to TextureLoader
- *
- * Responsibilities moved OUT:
- *  ❌ Animation math (alpha curves, invulnerability blink) → spriteAnimator.ts
- *  ❌ Texture/SCSS querying                               → textureLoader.ts
- *  ❌ Group-state caches (groupBoostTimes …)              → spriteAnimator.ts
- *  ❌ Particle class (GroupParticle)                      → groupParticle.ts
- *  ❌ Pure math helpers (parseMapKey, getScale)           → textureUtils.ts
+ * @remarks
+ * `RenderedObject` is the primary display object lifecycle manager:
+ * - Owns and manages PIXI.Sprite, AnimatedSprite, and Emitter layers in the scene graph.
+ * - Ingests server snapshot updates (`update`) and tracks boost, invulnerability, and decay timings.
+ * - Delegates per-frame kinematic transforms and alpha curves to `SpriteAnimator`.
+ * - Delegates texture asset lookup to `TextureLoader`.
  */
 
 import * as PIXI from "pixi.js";
@@ -50,10 +40,6 @@ import {
   type TextureDefinition,
 } from "./textureUtils";
 
-// ---------------------------------------------------------------------------
-// Module-level service singletons
-// ---------------------------------------------------------------------------
-
 const _textureMapRules = getDefaultTextureMapRules(Settings.graphics);
 const _spriteModeMapRules = getDefaultSpriteModeMapRules(Settings.graphics);
 
@@ -69,10 +55,6 @@ const _loader = new TextureLoader(_textureMapRules, _spriteModeMapRules);
 /** Module-level singleton for per-frame animation. */
 const _animator = new SpriteAnimator();
 
-// ---------------------------------------------------------------------------
-// CustomSpriteLayer
-// ---------------------------------------------------------------------------
-
 /**
  * A PIXI.Sprite augmented with the cached metadata from its texture definition.
  * The extra fields are written once at sprite creation time and read each frame
@@ -85,10 +67,6 @@ export interface CustomSpriteLayer extends PIXI.Sprite {
   baseRotation?: number;
   zOrder?: number;
 }
-
-// ---------------------------------------------------------------------------
-// Z-index helpers (extracted from buildSpriteLayers / buildEmitterLayers)
-// ---------------------------------------------------------------------------
 
 /**
  * Determines the effective rendering z-order for a sprite given the entity's
@@ -114,10 +92,6 @@ function resolveEffectiveZ(
   }
   return effectiveZ + layerIndex + bodyID / 100000;
 }
-
-// ---------------------------------------------------------------------------
-// RenderedObject — thin Facade / View Controller
-// ---------------------------------------------------------------------------
 
 export class RenderedObject {
   // ── Public state (read by SpriteAnimator via AnimationContext) ─────────────

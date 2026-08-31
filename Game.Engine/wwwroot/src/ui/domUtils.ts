@@ -1,5 +1,13 @@
 /**
- * Resolves element(s) from a selector, element, or NodeList.
+ * @file DOM animation, CSS transition helpers, and element visibility utilities.
+ * @module ui/domUtils
+ */
+
+/**
+ * Resolves element(s) from a CSS selector string, HTMLElement instance, or NodeList.
+ *
+ * @param target - Target selector string, HTMLElement, or NodeList.
+ * @returns Array of resolved HTML elements.
  */
 function resolveElements(
   target: HTMLElement | string | NodeListOf<HTMLElement> | null | undefined,
@@ -18,7 +26,11 @@ function resolveElements(
 }
 
 /**
- * Determines the target display property for an element when making it visible.
+ * Determines the default display CSS property when showing an element.
+ *
+ * @param el - HTML element.
+ * @param defaultDisplay - Default fallback display style.
+ * @returns Target CSS display string (e.g. `'block'`, `'inline-block'`, `'table-row'`).
  */
 function getTargetDisplay(el: HTMLElement, defaultDisplay = "block"): string {
   if (el.dataset.originalDisplay && el.dataset.originalDisplay !== "none") {
@@ -52,6 +64,10 @@ function getTargetDisplay(el: HTMLElement, defaultDisplay = "block"): string {
 
 /**
  * Fades in element(s) smoothly via CSS opacity transition.
+ *
+ * @param target - Element, selector, or NodeList.
+ * @param duration - Transition duration in milliseconds.
+ * @param callback - Optional callback invoked after transition ends.
  */
 export function fadeIn(
   target: HTMLElement | string | NodeListOf<HTMLElement> | null | undefined,
@@ -84,6 +100,10 @@ export function fadeIn(
 
 /**
  * Fades out element(s) smoothly and sets display: none after completion.
+ *
+ * @param target - Element, selector, or NodeList.
+ * @param duration - Transition duration in milliseconds.
+ * @param callback - Optional callback invoked after fade completes.
  */
 export function fadeOut(
   target: HTMLElement | string | NodeListOf<HTMLElement> | null | undefined,
@@ -113,7 +133,10 @@ export function fadeOut(
 }
 
 /**
- * Shows element(s) immediately by setting display style.
+ * Shows element(s) immediately by applying display and opacity styles.
+ *
+ * @param target - Element, selector, or NodeList.
+ * @param displayStyle - Optional explicit display style.
  */
 export function show(
   target: HTMLElement | string | NodeListOf<HTMLElement> | null | undefined,
@@ -128,6 +151,8 @@ export function show(
 
 /**
  * Hides element(s) immediately with display: none.
+ *
+ * @param target - Element, selector, or NodeList.
  */
 export function hide(
   target: HTMLElement | string | NodeListOf<HTMLElement> | null | undefined,
@@ -146,6 +171,10 @@ export function hide(
 
 /**
  * Smoothly animates the opacity of an element over a specified duration.
+ *
+ * @param target - Element, selector, or NodeList.
+ * @param opacity - Target opacity level $[0.0, 1.0]$.
+ * @param duration - Transition duration in milliseconds.
  */
 export function animateOpacity(
   target: HTMLElement | string | null | undefined,

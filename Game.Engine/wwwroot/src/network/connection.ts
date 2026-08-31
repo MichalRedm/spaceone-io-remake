@@ -1,3 +1,15 @@
+/**
+ * @file FlatBuffers WebSocket networking client and telemetry pipeline.
+ * @module network/connection
+ *
+ * @remarks
+ * Coordinates binary FlatBuffers message encoding/decoding over WebSockets:
+ * - Emits parsed world views (`NetWorldView`) to `Game`.
+ * - Emits leaderboard updates (`NetLeaderboard`) to `Leaderboard`.
+ * - Handles automated jittered exponential reconnects.
+ * - Tracks network latency (RTT), bandwidth uplink/downlink, and ping intervals.
+ */
+
 import { flatbuffers } from "flatbuffers";
 import { Game } from "./game_generated";
 import { Cache } from "../models/cache";
@@ -10,35 +22,68 @@ import { WorldConfig } from "../models/worldConfig";
 
 type NetFB = typeof Game.Engine.Networking.FlatBuffers;
 
+/**
+ * Authoritative WebSocket networking controller.
+ */
 export class Connection {
+  /** Callback fired when a new binary world view snapshot arrives. */
   onView: (view: Game.Engine.Networking.FlatBuffers.NetWorldView) => void;
+  /** Callback fired when a new leaderboard snapshot arrives. */
   onLeaderboard: (leaderboard: LeaderboardData) => void;
+  /** Callback fired upon successful WebSocket connection establishment. */
   onConnected: () => void;
+  /** Whether client is in reload transition. */
   reloading: boolean;
+  /** Whether disconnection was intentional. */
   disconnecting: boolean;
+  /** Active connection state. */
   connected: boolean;
+  /** Calculated render frame rate. */
   framesPerSecond = 0;
+  /** Inbound world view updates per second. */
   viewsPerSecond = 0;
+  /** Inbound delta entity updates per second. */
   updatesPerSecond = 0;
+  /** Total bytes uploaded in current window. */
   statBytesUp: number;
+  /** Total bytes downloaded in current window. */
   statBytesDown: number;
+  /** Bandwidth download rate in bytes per second. */
   statBytesDownPerSecond: number;
+  /** Bandwidth upload rate in bytes per second. */
   statBytesUpPerSecond: number;
+  /** Whether the browser tab is hidden in the background. */
   isBackgrounded = false;
+  /** FlatBuffers schema namespace. */
   fb: NetFB;
+  /** Current round-trip latency in milliseconds. */
   latency: number;
+  /** Minimum recorded round-trip latency in milliseconds. */
   minLatency: number;
+  /** Artificial latency delay for local simulation in milliseconds. */
   simulateLatency: number;
+  /** Underlying browser WebSocket instance. */
   socket?: WebSocket;
+  /** Timestamp when last ping packet was dispatched. */
   pingSent = 0;
+  /** Current bandwidth throttle setting. */
   bandwidthThrottle: number;
+  /** Whether to automatically reconnect on unexpected socket close. */
   autoReload: boolean;
+  /** Total pong responses received. */
   statPongCount: number;
+  /** Whether connection status UI reporting is enabled. */
   connectionStatusReporting: boolean;
+  /** Consecutive failed reconnect attempts. */
   reconnectAttempts = 0;
+  /** Reconnect timeout handle. */
   reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
+  /** Last targeted world key string. */
   lastWorldKey?: string;
 
+  /**
+   * Initializes the networking connection manager and starts background ping and bandwidth intervals.
+   */
   constructor() {
     this.onView = () => {};
     this.onLeaderboard = () => {};
@@ -77,6 +122,10 @@ export class Connection {
       self.statBytesDown = 0;
     }, 1000);
   }
+
+  /**
+   * Closes the active WebSocket connection and cancels any scheduled reconnect attempts.
+   */
   disconnect(): void {
     if (this.reconnectTimeout) {
       clearTimeout(this.reconnectTimeout);
@@ -87,6 +136,12 @@ export class Connection {
       this.socket.close();
     }
   }
+
+  /**
+   * Establishes a WebSocket connection to the designated game world.
+   *
+   * @param worldKey - World or arena identifier string (e.g. `'us.spaceone.io/default'`).
+   */
   connect(worldKey?: string): void {
     if (this.reconnectTimeout) {
       clearTimeout(this.reconnectTimeout);
@@ -164,6 +219,10 @@ export class Connection {
       self.onClose(event);
     };
   }
+
+  /**
+   * Encodes and sends a `NetPing` message with client telemetry stats (FPS, VPS, latency, cache count).
+   */
   sendPing(): void {
     const builder = new flatbuffers.Builder(0);
 
@@ -190,6 +249,9 @@ export class Connection {
     this.send(builder.asUint8Array());
   }
 
+  /**
+   * Transmits an exit signal (`NetExit`) notifying the server of client departure.
+   */
   sendExit(): void {
     const builder = new flatbuffers.Builder(0);
 
@@ -208,6 +270,11 @@ export class Connection {
     this.send(builder.asUint8Array());
   }
 
+  /**
+   * Sends an authentication bearer token (`NetAuthenticate`) to the server.
+   *
+   * @param token - Auth token string.
+   */
   sendAuthenticate(token: string): void {
     const builder = new flatbuffers.Builder(0);
 
@@ -231,19 +298,34 @@ export class Connection {
     console.log("sent auth");
   }
 
-  sendSpawn(name: string, color: string, ship: string, token: string): void {
+  /**
+   * Transmits player spawn request (`NetSpawn`) with ship customization preferences.
+   *
+   * @param name - Player display name.
+   * @param sprite - Chosen ship skin sprite key.
+   * @param color - Ship color name.
+   * @param token - Optional auth token.
+   */
+  sendSpawn(
+    name: string,
+    sprite: string,
+    color: string,
+    token?: string | null,
+  ): void {
     const builder = new flatbuffers.Builder(0);
 
+    const stringName = builder.createString(name || "unknown");
+    const stringSprite = builder.createString(sprite || "ship_gray");
     const stringColor = builder.createString(color || "gray");
-    const stringName = builder.createString(name || "");
-    const stringShip = builder.createString(ship || "ship_gray");
-    const stringToken = builder.createString(token || "");
+    let stringToken: flatbuffers.Offset | null = null;
+
+    if (token) stringToken = builder.createString(token);
 
     this.fb.NetSpawn.startNetSpawn(builder);
-    this.fb.NetSpawn.addColor(builder, stringColor);
     this.fb.NetSpawn.addName(builder, stringName);
-    this.fb.NetSpawn.addShip(builder, stringShip);
-    this.fb.NetSpawn.addToken(builder, stringToken);
+    this.fb.NetSpawn.addShip(builder, stringSprite);
+    this.fb.NetSpawn.addColor(builder, stringColor);
+    if (stringToken !== null) this.fb.NetSpawn.addToken(builder, stringToken);
     const spawn = this.fb.NetSpawn.endNetSpawn(builder);
 
     this.fb.NetQuantum.startNetQuantum(builder);
@@ -257,6 +339,17 @@ export class Connection {
     console.log("spawned");
   }
 
+  /**
+   * Encodes and transmits the player's steering input frame (`NetControlInput`).
+   *
+   * @param angle - Desired heading angle in radians.
+   * @param boost - Whether boost button is active.
+   * @param shoot - Whether shooting button is active.
+   * @param x - Steering aim X vector or position coordinate.
+   * @param y - Steering aim Y vector or position coordinate.
+   * @param spectateControl - Optional spectate target command string.
+   * @param customDataJson - Optional custom JSON payload (e.g. chat messages).
+   */
   sendControl(
     angle: number,
     boost: boolean,
@@ -301,6 +394,11 @@ export class Connection {
     this.send(builder.asUint8Array());
   }
 
+  /**
+   * Transmits raw binary buffer over WebSocket with latency simulation support.
+   *
+   * @param databuffer - Serialized binary byte array.
+   */
   send(databuffer: Uint8Array): void {
     if (this.socket && this.socket.readyState === 1) {
       const self = this;
@@ -314,6 +412,9 @@ export class Connection {
     }
   }
 
+  /**
+   * Internal WebSocket open event handler.
+   */
   onOpen(_event: Event): void {
     this.connected = true;
     this.reconnectAttempts = 0;
@@ -331,6 +432,9 @@ export class Connection {
     }
   }
 
+  /**
+   * Internal WebSocket close event handler scheduling exponential backoff reconnects.
+   */
   onClose(event: CloseEvent): void {
     console.log("disconnected");
     this.connected = false;
@@ -359,6 +463,9 @@ export class Connection {
     this.disconnecting = false;
   }
 
+  /**
+   * Internal WebSocket binary message dispatcher decoding FlatBuffers `NetQuantum` roots.
+   */
   onMessage(event: MessageEvent): void {
     const data = new Uint8Array(event.data);
     const buf = new flatbuffers.ByteBuffer(data);
