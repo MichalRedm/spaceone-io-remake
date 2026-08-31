@@ -1,0 +1,40 @@
+// -----------------------------------------------------------------------------
+// COMPONENTS: SUPPORT & PROMO PANEL
+// -----------------------------------------------------------------------------
+
+@use "../abstracts" as *;
+
+.support-panel,
+#support-game {
+  position: absolute;
+  right: 10px;
+  bottom: 55px;
+  min-width: 290px;
+  text-align: center;
+  z-index: $z-index-floating;
+
+  &__text,
+  #support-game-text {
+    padding: 10px 0;
+    font-size: 0.95em;
+    line-height: 1.4;
+  }
+
+  &__video,
+  #player {
+    margin: 5px;
+    border-radius: 10px;
+  }
+
+  &__promo-image,
+  #promo-image {
+    border-radius: 10px;
+  }
+
+  &__buttons,
+  #support-game-buttons {
+    position: absolute;
+    bottom: 7px;
+    right: 10px;
+  }
+}

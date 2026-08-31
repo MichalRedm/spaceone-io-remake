@@ -1,0 +1,69 @@
+// -----------------------------------------------------------------------------
+// COMPONENTS: SOCIAL LINKS & BADGES
+// -----------------------------------------------------------------------------
+
+@use "../abstracts" as *;
+
+.social-links,
+#cross-promo {
+  &__item,
+  .social-button {
+    img {
+      cursor: pointer;
+      height: 35px;
+      width: 35px;
+    }
+  }
+
+  &__item--reddit,
+  #reddit-button {
+    img {
+      position: absolute;
+      left: 10px;
+      bottom: 10px;
+      height: 34px;
+      z-index: $z-index-base;
+    }
+  }
+
+  &__item--discord,
+  #discord-button {
+    img {
+      position: absolute;
+      left: 60px;
+      bottom: 2px;
+      height: 46px;
+      z-index: $z-index-base;
+    }
+  }
+
+  &__item--youtube,
+  #youtube-button {
+    img {
+      position: absolute;
+      right: 10px;
+      bottom: 10px;
+      height: 36px;
+      z-index: $z-index-base;
+    }
+  }
+
+  &__item--twitter,
+  #twitter-button {
+    img {
+      position: absolute;
+      right: 70px;
+      bottom: 10px;
+      height: 36px;
+      z-index: $z-index-base;
+    }
+  }
+}
+
+#iluminati-button > img {
+  position: absolute;
+  left: 300px;
+  top: 18px;
+  width: 25px;
+  height: 25px;
+}

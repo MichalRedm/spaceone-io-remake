@@ -1,0 +1,49 @@
+// -----------------------------------------------------------------------------
+// COMPONENTS: CTF (CAPTURE THE FLAG) HUD
+// -----------------------------------------------------------------------------
+
+@use "../abstracts" as *;
+
+.ctf-hud,
+#ctf_arena {
+  position: fixed;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 16pt;
+  font-weight: 700;
+  display: flex;
+  gap: 30px;
+  z-index: $z-index-base;
+
+  &.hide {
+    display: none;
+  }
+
+  &__team {
+    display: inline-flex;
+    align-items: center;
+
+    &--cyan {
+      color: #00ffff;
+    }
+
+    &--red {
+      color: #ff0000;
+    }
+  }
+
+  &__flag-status,
+  .flag_status {
+    margin: 0 10px;
+    font-size: 12pt;
+
+    .home {
+      color: $color-green-lime;
+    }
+
+    .taken {
+      color: $color-yellow-primary;
+    }
+  }
+}

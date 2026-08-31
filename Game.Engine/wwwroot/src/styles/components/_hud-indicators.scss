@@ -1,0 +1,142 @@
+// -----------------------------------------------------------------------------
+// COMPONENTS: IN-GAME HUD INDICATORS & TICKERS
+// -----------------------------------------------------------------------------
+
+@use "../abstracts" as *;
+
+.autofire-indicator,
+#autofireContainer {
+  position: fixed;
+  right: 8px;
+  bottom: 14px;
+  font-size: 14pt;
+  color: $color-text-muted;
+  transition: color $transition-fast;
+
+  &--active {
+    color: $color-text-main;
+  }
+}
+
+.fleet-size,
+#fleetSizeContainer {
+  position: absolute;
+  top: 32px;
+  left: 16px;
+  font-size: 14pt;
+}
+
+.player-name-hud,
+#selfNickContainer {
+  position: absolute;
+  bottom: calc(5vh + 30px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 14pt;
+}
+
+.leader-arrow,
+#leader-arrow {
+  position: fixed;
+  width: 160px;
+  filter: hue-rotate(235deg);
+}
+
+.score-popup-container,
+#plusScoreContainer {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.score-popup,
+.plusScore {
+  font-size: 40px;
+  opacity: 0;
+  animation: plusScore 2.5s;
+  position: absolute;
+}
+
+.kill-banner,
+#bigLog {
+  position: absolute;
+  top: 4em;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 32px;
+  font-weight: 700;
+}
+
+.combo-banner,
+#comboMessage {
+  position: absolute;
+  top: 6em;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 24px;
+  font-weight: 700;
+  color: $color-yellow-primary;
+  text-shadow: 0 0 10px $color-yellow-primary;
+}
+
+.danger-zone-warning,
+#dangerZoneWarning {
+  position: absolute;
+  top: 10em;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 128px;
+  display: none;
+
+  &--visible {
+    display: block;
+  }
+}
+
+.fullscreen-clock,
+#clock {
+  display: none;
+  color: rgba(176, 0, 0, 0.75);
+  position: fixed;
+  top: 0;
+  left: 0;
+  font-family: $font-family-clock;
+
+  :fullscreen &,
+  :-webkit-full-screen &,
+  :-moz-full-screen &,
+  :-ms-fullscreen & {
+    display: block;
+  }
+}
+
+.debug-hud,
+#hud {
+  position: fixed;
+  bottom: 8px;
+  left: 8px;
+  font-size: 11pt;
+  color: $color-text-muted;
+}
+
+.game-log,
+#log {
+  position: fixed;
+  top: 60px;
+  left: 16px;
+  font-size: 11pt;
+
+  table {
+    border-collapse: collapse;
+
+    td {
+      padding: 2px 6px;
+    }
+  }
+
+  &__timestamp,
+  &__stat {
+    color: gray;
+  }
+}

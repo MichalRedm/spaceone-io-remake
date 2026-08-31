@@ -1,0 +1,157 @@
+// -----------------------------------------------------------------------------
+// COMPONENTS: BUTTONS
+// -----------------------------------------------------------------------------
+
+@use "../abstracts" as *;
+
+.btn {
+  @include button-base;
+
+  // Primary Spawn / Play Button
+  &--spawn,
+  &#spawn {
+    @include button-variant(
+      $text-color: $color-green-text,
+      $border-color: $color-yellow-primary,
+      $gradient-top: $color-green-light,
+      $gradient-bottom: $color-green-dark,
+      $text-shadow-color: $color-yellow-primary,
+      $glow-color: $color-yellow-primary,
+      $glow-radius: 30px,
+      $hover-pulse-animation: pulse-yellow
+    );
+    width: 350px;
+    height: 55px;
+    font-size: 1.6em;
+    font-weight: 600;
+    margin: 20px 0;
+  }
+
+  // Spectate Button
+  &--spectate,
+  &#spectate {
+    @include button-variant(
+      $text-color: $color-text-main,
+      $border-color: #3893f7,
+      $gradient-top: $color-blue-button-start,
+      $gradient-bottom: $color-blue-button-end,
+      $text-shadow-color: #3893f7,
+      $glow-color: $color-blue-glow,
+      $glow-radius: 50px,
+      $hover-pulse-animation: pulse-blue
+    );
+    position: absolute;
+    top: 45px;
+    right: 10px;
+    width: 180px;
+    height: 45px;
+    font-size: 1.2em;
+    font-weight: 900;
+    margin: 20px 0;
+    padding: 7px 0 0 15px;
+    z-index: $z-index-base;
+
+    &__icon {
+      width: 32px;
+      padding-left: 20px;
+      position: relative;
+      top: 2px;
+    }
+  }
+
+  // Fullscreen Button
+  &--fullscreen,
+  &#fullscreenButton {
+    @include button-variant(
+      $text-color: $color-text-main,
+      $border-color: $color-purple-border,
+      $gradient-top: $color-purple-primary,
+      $gradient-bottom: $color-purple-dark,
+      $text-shadow-color: $color-purple-shadow,
+      $glow-color: $color-purple-glow,
+      $glow-radius: 30px,
+      $hover-pulse-animation: pulse-purple
+    );
+    position: absolute;
+    top: 100px;
+    right: 10px;
+    width: 180px;
+    height: 45px;
+    font-size: 1.2em;
+    font-weight: 900;
+    margin: 20px 0;
+    padding: 7px 0 0 15px;
+    z-index: $z-index-controls;
+  }
+
+  // Pink Action Button
+  &--pink,
+  &.buttonPink {
+    @include button-variant(
+      $text-color: $color-text-main,
+      $border-color: $color-pink-border,
+      $gradient-top: $color-pink-primary,
+      $gradient-bottom: $color-pink-dark,
+      $text-shadow-color: $color-pink-primary,
+      $glow-color: $color-pink-glow,
+      $glow-radius: 30px
+    );
+    width: 170px;
+    height: 46px;
+    font-size: 1em;
+    font-weight: 600;
+    margin: 20px 0;
+  }
+
+  // Gold / Modal Primary Button
+  &--gold,
+  .modal-btn,
+  #generate-link-button {
+    @include button-variant(
+      $text-color: $color-bg-dark,
+      $border-color: $color-yellow-border,
+      $gradient-top: $color-yellow-primary,
+      $gradient-bottom: $color-yellow-dark,
+      $text-shadow-color: $color-yellow-border,
+      $glow-color: $color-yellow-dark,
+      $glow-radius: 30px
+    );
+    border-radius: 8px;
+    min-width: 140px;
+    padding: 7px 16px;
+    margin: 10px auto 0;
+    font-size: 1.1em;
+    font-weight: 900;
+
+    &:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 35px 0 $color-yellow-bright;
+    }
+  }
+
+  // Discord Login Button
+  &--discord,
+  &#dauth {
+    @extend .btn--pink;
+  }
+
+  // Toastr / Notification Button
+  &--toast,
+  &.toastr-button {
+    cursor: pointer;
+    border: 1px $color-bg-dark solid;
+    border-radius: 5px;
+    font-family: $font-family-main;
+    background-color: $color-text-main;
+    float: right;
+    width: 70px;
+    height: 25px;
+    margin: 10px 5px 0 0;
+    font-weight: 800;
+  }
+
+  // Legacy .button1 alias for compatibility
+  &.button1 {
+    cursor: pointer;
+  }
+}

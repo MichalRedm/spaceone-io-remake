@@ -1,0 +1,69 @@
+// -----------------------------------------------------------------------------
+// COMPONENTS: EMOJI PICKER
+// -----------------------------------------------------------------------------
+
+@use "../abstracts" as *;
+
+.emoji-picker,
+#emoji-container {
+  display: none;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: $z-index-top;
+  margin-top: 5px;
+
+  &.open,
+  &--open {
+    display: block;
+  }
+
+  &__panel,
+  .emoji-picker-panel {
+    @include glassmorphism(
+      $bg: $color-panel-glass,
+      $border: $color-blue-border,
+      $blur: 8px
+    );
+    box-shadow: 0 0 20px 0 $color-blue-primary;
+    padding: 10px;
+    width: 320px;
+    max-height: 220px;
+    overflow-y: auto;
+  }
+
+  &__grid,
+  .emoji-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 6px;
+  }
+
+  &__item,
+  .emoji-item {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid transparent;
+    border-radius: 8px;
+    font-size: 1.5em;
+    padding: 6px 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition:
+      transform $transition-fast,
+      background $transition-fast,
+      border-color $transition-fast;
+    line-height: 1;
+
+    &:hover {
+      background: $color-blue-hover-bg;
+      border-color: $color-blue-accent;
+      transform: scale(1.2);
+    }
+
+    &:active {
+      transform: scale(0.95);
+    }
+  }
+}

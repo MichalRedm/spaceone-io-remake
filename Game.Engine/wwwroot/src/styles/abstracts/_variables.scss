@@ -1,0 +1,103 @@
+// -----------------------------------------------------------------------------
+// ABSTRACTS: VARIABLES
+// -----------------------------------------------------------------------------
+
+// Typography
+$font-family-main: "Exo 2", sans-serif;
+$font-family-clock: "Alarm Clock", monospace;
+
+// Brand & Game Palette
+$color-bg-dark: #000000;
+$color-text-main: #ffffff;
+$color-text-muted: #aaaaaa;
+$color-text-subtle: #7a9cd6;
+$color-text-ice: #dbe8ff;
+
+// Blue Spectrum
+$color-blue-primary: #0052ff;
+$color-blue-navy: #060b19;
+$color-blue-deep: #072562;
+$color-blue-header: rgba(0, 30, 80, 0.6);
+$color-blue-border: #3262d1;
+$color-blue-border-light: rgba(61, 120, 255, 0.4);
+$color-blue-panel-bg: rgba(61, 120, 255, 0.2);
+$color-blue-hover-bg: rgba(61, 120, 255, 0.35);
+$color-blue-glow: #005dfe;
+$color-blue-accent: #3d78ff;
+$color-blue-button-start: #0c5af5;
+$color-blue-button-end: #003ef5;
+
+// Yellow & Gold Spectrum
+$color-yellow-primary: #fae40b;
+$color-yellow-dark: #f5c807;
+$color-yellow-border: #feff00;
+$color-yellow-bright: #ffe600;
+
+// Green Spectrum
+$color-green-light: #b1ff00;
+$color-green-dark: #71ff00;
+$color-green-text: #225500;
+$color-green-lime: lime;
+
+// Pink Spectrum
+$color-pink-primary: #c21a6e;
+$color-pink-dark: #af1763;
+$color-pink-border: #e73f93;
+$color-pink-glow: #c0186f;
+
+// Purple Spectrum
+$color-purple-primary: #8718bb;
+$color-purple-dark: #70139b;
+$color-purple-border: #a42ddb;
+$color-purple-shadow: #ba65e2;
+$color-purple-glow: #a24bca;
+
+// Danger & Feedback
+$color-danger: #ff0000;
+$color-danger-glow: rgba(255, 0, 0, 0.23);
+$color-danger-fill-glow: rgba(255, 0, 0, 0.16);
+
+// Overlays & Backdrop
+$color-overlay-dark: rgba(0, 0, 0, 0.7);
+$color-overlay-heavy: rgba(0, 0, 0, 0.75);
+$color-panel-glass: rgba(10, 25, 55, 0.95);
+
+// Z-Index Layers
+$z-index-canvas: -1;
+$z-index-background: 0;
+$z-index-base: 1;
+$z-index-controls: 2;
+$z-index-floating: 4;
+$z-index-modal: 5;
+$z-index-alert: 20;
+$z-index-top: 100;
+
+// Transitions & Durations
+$transition-fast: 0.15s ease;
+$transition-medium: 0.2s ease;
+$transition-slow: 0.3s ease;
+$transition-fade: 0.5s ease;
+
+// Animation Pulse Colors Map
+$pulse-themes: (
+  "yellow": (
+    glow-color: $color-yellow-primary,
+    blur-radius: 30px,
+    faded-color: rgba($color-yellow-primary, 0.5),
+  ),
+  "blue": (
+    glow-color: $color-blue-primary,
+    blur-radius: 50px,
+    faded-color: rgba($color-blue-primary, 0.5),
+  ),
+  "pink": (
+    glow-color: $color-pink-primary,
+    blur-radius: 30px,
+    faded-color: rgba($color-pink-primary, 0.5),
+  ),
+  "purple": (
+    glow-color: $color-purple-glow,
+    blur-radius: 30px,
+    faded-color: rgba($color-purple-glow, 0.5),
+  ),
+);

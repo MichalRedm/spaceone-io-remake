@@ -1,0 +1,92 @@
+// -----------------------------------------------------------------------------
+// COMPONENTS: MODAL OVERLAYS & BASE DIALOGS
+// -----------------------------------------------------------------------------
+
+@use "../abstracts" as *;
+
+.modal-overlay,
+.change-log-overlay {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: $color-overlay-dark;
+  display: none;
+  z-index: $z-index-modal;
+
+  &--open,
+  &.is-open {
+    display: block;
+  }
+}
+
+.modal-backdrop,
+.invisible-change-log-back {
+  opacity: 0;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+}
+
+.modal-dialog,
+.change-log-popup {
+  margin: auto;
+  padding: 0 20px 20px 20px;
+  background: $color-bg-dark;
+  color: $color-text-main;
+  border-radius: 8px;
+  width: 600px;
+  height: 80vh;
+  overflow-y: auto;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  left: 0;
+  border: 2px $color-text-main solid;
+  box-shadow: 0 0 10px 0 $color-text-main;
+
+  &__header,
+  .header {
+    background: $color-bg-dark;
+    position: fixed;
+    width: inherit;
+    height: 60px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-right: 20px;
+  }
+
+  &__title,
+  .header .title {
+    font-size: 1.8em;
+    padding-top: 10px;
+  }
+
+  &__close,
+  .header .close {
+    cursor: pointer;
+    font-size: 30px;
+    font-weight: bold;
+    text-decoration: none;
+    padding-top: 10px;
+    color: $color-text-main;
+    transition: color $transition-fast;
+
+    &:hover {
+      color: $color-blue-accent;
+    }
+  }
+
+  &__content,
+  .content {
+    position: fixed;
+    width: inherit;
+    font-size: 1.1em;
+    margin-top: 65px;
+  }
+}

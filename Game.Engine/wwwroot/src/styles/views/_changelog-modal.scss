@@ -1,0 +1,60 @@
+// -----------------------------------------------------------------------------
+// VIEWS: CHANGELOG & INSTRUCTIONS MODALS
+// -----------------------------------------------------------------------------
+
+@use "../abstracts" as *;
+
+.changelog-btn,
+.change-log-button,
+#changelogButton {
+  font-size: 1em;
+  padding: 10px;
+  color: $color-text-main;
+  border-radius: 20px / 50px;
+  text-decoration: none;
+  cursor: pointer;
+  position: absolute;
+  bottom: 60px;
+  left: 10px;
+  transition: all $transition-slow;
+
+  h4 {
+    margin-bottom: 4px;
+    color: $color-blue-accent;
+  }
+
+  span {
+    font-size: 0.85em;
+    color: $color-text-muted;
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    h4 {
+      color: $color-text-main;
+    }
+  }
+}
+
+.instructions-modal,
+#instructionsPopup {
+  margin: auto;
+  padding: 0 20px 20px 20px;
+  background: $color-bg-dark;
+  color: $color-text-main;
+  width: 300px;
+  height: 200px;
+  overflow-y: auto;
+  font-family: $font-family-main;
+  border: 2px $color-text-main solid;
+  text-align: center;
+  border-radius: 8px;
+
+  &__content,
+  #instructionsContent {
+    position: relative;
+    top: 60px;
+    font-size: 0.9em;
+    line-height: 1.6;
+  }
+}

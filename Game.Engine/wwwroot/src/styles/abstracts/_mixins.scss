@@ -1,0 +1,129 @@
+// -----------------------------------------------------------------------------
+// ABSTRACTS: MIXINS
+// -----------------------------------------------------------------------------
+
+@use "variables" as *;
+
+// Reusable glowing panel container border (for HUD panels, modals, settings boxes)
+@mixin glowing-panel(
+  $border-color: $color-blue-border,
+  $bg-color: $color-blue-panel-bg,
+  $glow-color: $color-blue-primary,
+  $radius: 10px,
+  $glow-spread: 10px
+) {
+  background: $bg-color;
+  border-radius: $radius;
+  border: 2px $border-color solid;
+  box-shadow: 0 0 $glow-spread 0 $glow-color;
+}
+
+// Glowing text shadow helper
+@mixin text-glow($glow-color: $color-blue-primary, $blur: 10px) {
+  text-shadow: 0 0 $blur $glow-color;
+}
+
+// Glassmorphism backdrop filter
+@mixin glassmorphism(
+  $bg: $color-panel-glass,
+  $border: $color-blue-border,
+  $blur: 8px
+) {
+  background: $bg;
+  border: 2px solid $border;
+  border-radius: 12px;
+  backdrop-filter: blur($blur);
+}
+
+// Base interactive button styles and resets
+@mixin button-base(
+  $font-size: 1.1em,
+  $font-weight: 900,
+  $radius: 15px,
+  $height: 45px
+) {
+  user-select: none;
+  cursor: pointer;
+  box-sizing: border-box;
+  font-family: $font-family-main;
+  font-weight: $font-weight;
+  font-size: $font-size;
+  height: $height;
+  border-radius: $radius;
+  text-align: center;
+  outline: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  transition:
+    transform $transition-fast,
+    box-shadow $transition-fast;
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+// Button theme generator with linear gradient, border, text-shadow, and glow box-shadow
+@mixin button-variant(
+  $text-color: $color-text-main,
+  $border-color: $color-blue-border,
+  $gradient-top: $color-blue-button-light,
+  $gradient-bottom: $color-blue-button-end,
+  $text-shadow-color: $color-blue-border,
+  $glow-color: $color-blue-primary,
+  $glow-radius: 30px,
+  $hover-pulse-animation: null
+) {
+  color: $text-color;
+  border: 3px $border-color solid;
+  text-shadow: 0 2px 2px $text-shadow-color;
+  background: linear-gradient(
+    to bottom,
+    $gradient-top 50%,
+    $gradient-bottom 50%
+  );
+  box-shadow: 0 0 $glow-radius 0 $glow-color;
+
+  @if $hover-pulse-animation {
+    &:hover {
+      animation: #{$hover-pulse-animation} 2s infinite;
+    }
+  } @else {
+    &:hover {
+      transform: scale(1.03);
+      box-shadow: 0 0 ($glow-radius + 10px) 0 $glow-color;
+    }
+  }
+}
+
+// Flexbox center alignment helper
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// Absolute centering helper
+@mixin absolute-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+// Fixed centering helper
+@mixin fixed-center {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+// Media Query Helpers
+@mixin media-compact-height {
+  @media (min-height: 10px) and (max-height: 600px) {
+    @content;
+  }
+}

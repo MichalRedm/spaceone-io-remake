@@ -1,0 +1,64 @@
+// -----------------------------------------------------------------------------
+// VIEWS: DEATH SCREEN & SESSION SUMMARY
+// -----------------------------------------------------------------------------
+
+@use "../abstracts" as *;
+
+.death-screen,
+#deathScreen {
+  @include fixed-center;
+  @include glassmorphism(
+    $bg: rgba(6, 11, 25, 0.95),
+    $border: $color-blue-primary,
+    $blur: 10px
+  );
+  box-shadow: 0 0 25px 0 $color-blue-primary;
+  padding: 24px 32px;
+  text-align: center;
+  color: $color-text-main;
+  z-index: $z-index-floating;
+  display: none;
+
+  &--visible,
+  &:not([hidden]) {
+    display: block;
+  }
+
+  &[hidden] {
+    display: none;
+  }
+
+  &__table,
+  table {
+    margin: 15px auto;
+    width: 100%;
+    border-collapse: collapse;
+
+    td {
+      padding: 6px 12px;
+      font-size: 1.1em;
+
+      &:first-child {
+        text-align: right;
+        color: $color-text-subtle;
+      }
+
+      &:last-child {
+        text-align: left;
+        font-weight: bold;
+      }
+    }
+  }
+
+  &__value--error {
+    color: $color-danger;
+  }
+
+  &__actions,
+  #spectatecontrols {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 15px;
+  }
+}

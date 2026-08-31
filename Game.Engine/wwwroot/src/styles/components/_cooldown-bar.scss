@@ -1,0 +1,36 @@
+// -----------------------------------------------------------------------------
+// COMPONENTS: COOLDOWN CHARGE BAR
+// -----------------------------------------------------------------------------
+
+@use "../abstracts" as *;
+
+.cooldown-bar,
+#cooldown {
+  position: absolute;
+  bottom: 5vh;
+  left: 50%;
+  width: 22%;
+  height: 8px;
+  transform: translateX(-50%);
+  background-color: $color-bg-dark;
+  border-radius: 4px;
+  padding: 0;
+
+  &__fill,
+  #cooldownValue {
+    margin: 0;
+    background-color: $color-danger;
+    height: 100%;
+    border-radius: 4px;
+    box-shadow: 0 0 15px 10px $color-danger-glow;
+    transition:
+      background-color $transition-medium,
+      box-shadow $transition-medium;
+
+    &--ready,
+    &[style="width: 100%;"] {
+      background-color: $color-green-lime;
+      box-shadow: 0 0 15px 10px rgba(0, 255, 0, 0.23);
+    }
+  }
+}

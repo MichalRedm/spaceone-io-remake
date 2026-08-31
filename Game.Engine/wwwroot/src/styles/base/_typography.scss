@@ -1,0 +1,19 @@
+// -----------------------------------------------------------------------------
+// BASE: TYPOGRAPHY & FONTS
+// -----------------------------------------------------------------------------
+
+@use "../abstracts" as *;
+
+@font-face {
+  font-family: "Alarm Clock";
+  src: url("../../font/alarm_clock.ttf") format("truetype");
+  font-display: swap;
+}
+
+body,
+input,
+button,
+select,
+textarea {
+  font-family: $font-family-main;
+}

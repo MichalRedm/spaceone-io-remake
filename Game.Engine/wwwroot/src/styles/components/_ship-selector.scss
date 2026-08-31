@@ -1,0 +1,93 @@
+// -----------------------------------------------------------------------------
+// COMPONENTS: SHIP SELECTION CAROUSEL
+// -----------------------------------------------------------------------------
+
+@use "../abstracts" as *;
+
+.ship-selector,
+#selection-container {
+  text-align: center;
+  margin: 0 auto;
+  max-width: 854px;
+  position: relative;
+
+  &__arrow,
+  .arrow {
+    display: inline-block;
+    position: relative;
+    bottom: 15px;
+    user-select: none;
+    cursor: pointer;
+    opacity: 0.8;
+    transition:
+      opacity $transition-fast,
+      transform $transition-fast;
+    z-index: $z-index-floating;
+
+    &:hover {
+      opacity: 1;
+    }
+
+    &:active {
+      transform: scale(0.8);
+    }
+
+    > img {
+      width: 70%;
+    }
+
+    &--left,
+    &#left-arrow {
+      float: left;
+    }
+
+    &--right,
+    &#right-arrow {
+      float: right;
+    }
+  }
+
+  &__carousel-wrapper {
+    position: relative;
+    top: 12px;
+  }
+
+  &__indicator,
+  #selection {
+    display: inline-block;
+    position: relative;
+    background-image: url("../../img/main_menu/selection.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+    width: 85px;
+    height: 30px;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin: 0 auto;
+    transition: transform $transition-medium;
+  }
+
+  &__carousel,
+  #shipSelectorSwitch {
+    img,
+    .ship-selector__item {
+      overflow: hidden;
+      white-space: nowrap;
+      display: inline-block;
+      width: 48px;
+      transform: rotate(-90deg) scale(1.5, 1.5);
+      margin: 0 18px;
+      user-select: none;
+      cursor: pointer;
+
+      &--secret {
+        display: none;
+      }
+
+      &--unlocked {
+        display: inline-block;
+      }
+    }
+  }
+}

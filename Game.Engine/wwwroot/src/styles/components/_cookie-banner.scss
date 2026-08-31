@@ -1,0 +1,45 @@
+// -----------------------------------------------------------------------------
+// COMPONENTS: COOKIE CONSENT BANNER
+// -----------------------------------------------------------------------------
+
+@use "../abstracts" as *;
+
+.cookie-banner,
+#cookie {
+  display: none;
+  position: absolute;
+  z-index: $z-index-base;
+  box-sizing: border-box;
+  width: 100%;
+  top: 0;
+  border: 1px solid $color-text-main;
+  background: $color-overlay-heavy;
+  padding: 1px 100px;
+  line-height: 25px;
+  font-weight: bold;
+  font-size: 0.7em;
+  text-align: center;
+  color: $color-text-main;
+
+  &--visible,
+  &.is-visible {
+    display: block;
+  }
+
+  &__btn,
+  #cookie_ok {
+    cursor: pointer;
+    background: transparent;
+    border-radius: 5px;
+    border: 1px solid $color-text-main;
+    padding: 3px 8px;
+    margin: 5px 10px;
+    font-size: 1em;
+    text-align: center;
+    color: $color-text-main;
+
+    &:focus {
+      outline: none;
+    }
+  }
+}

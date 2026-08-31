@@ -1,0 +1,61 @@
+// -----------------------------------------------------------------------------
+// BASE: ROOT & BODY LIFECYCLE
+// -----------------------------------------------------------------------------
+
+@use "../abstracts" as *;
+
+html {
+  height: 100%;
+}
+
+body {
+  background-color: $color-bg-dark;
+  color: $color-text-main;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  user-select: none;
+  overflow: hidden;
+
+  // Background starfield texture
+  &.static_background,
+  &.body--static-bg {
+    background-image: url("../../img/bg.png");
+  }
+
+  // Lifecycle state modifiers
+  &.loading,
+  &.body--loading {
+    cursor: wait;
+  }
+
+  &.alive,
+  &.body--alive {
+    // In-game active state
+  }
+
+  &.dead,
+  &.body--dead {
+    // Spawnscreen or post-death state
+  }
+
+  &.spectating,
+  &.body--spectating {
+    // Spectator view
+  }
+
+  &.spectate_only,
+  &.body--spectate-only {
+    // Hidden spectate controls
+  }
+
+  &.lobby,
+  &.body--lobby {
+    // World/Lobby browser open
+  }
+
+  &.connectionerror,
+  &.body--connection-error {
+    // Connection drop state
+  }
+}

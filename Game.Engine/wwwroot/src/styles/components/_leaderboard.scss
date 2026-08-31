@@ -1,0 +1,83 @@
+// -----------------------------------------------------------------------------
+// COMPONENTS: LEADERBOARD & ARENA RECORD
+// -----------------------------------------------------------------------------
+
+@use "../abstracts" as *;
+
+.leaderboard,
+#leaderboard-container {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 250px;
+
+  &__header,
+  #leaderboard-header {
+    text-align: center;
+    font-size: 22pt;
+    font-weight: lighter;
+    margin-bottom: 6px;
+  }
+
+  &__table,
+  #leaderboard,
+  #leaderboard-left,
+  #leaderboard-center {
+    width: 100%;
+    padding: 0;
+    margin: 0;
+    font-size: 15pt;
+
+    td,
+    tr {
+      height: 24px;
+      margin: 0;
+      padding: 0;
+      border: none;
+    }
+
+    tr td:last-child,
+    .score {
+      text-align: right;
+    }
+  }
+
+  // Safe Color Modifiers for Player Highlight Rows
+  &__row {
+    &--cyan {
+      color: #00ffff;
+    }
+    &--blue {
+      color: #2255ff;
+    }
+    &--green {
+      color: lime;
+    }
+    &--orange {
+      color: orange;
+    }
+    &--pink {
+      color: fuchsia;
+    }
+    &--red {
+      color: red;
+    }
+    &--yellow {
+      color: yellow;
+    }
+    &--gray {
+      color: #aaaaaa;
+    }
+    &--white {
+      color: #ffffff;
+    }
+  }
+}
+
+.arena-record,
+#record {
+  position: fixed;
+  bottom: 16px;
+  left: 16px;
+  font-size: 11pt;
+}

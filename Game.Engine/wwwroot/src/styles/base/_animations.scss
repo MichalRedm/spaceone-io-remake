@@ -1,0 +1,39 @@
+// -----------------------------------------------------------------------------
+// BASE: KEYFRAME ANIMATIONS
+// -----------------------------------------------------------------------------
+
+@use "../abstracts" as *;
+@use "sass:map";
+
+// Generate pulse glow keyframe animations for each theme
+@each $theme-name, $props in $pulse-themes {
+  $glow-color: map.get($props, glow-color);
+  $blur: map.get($props, blur-radius);
+  $faded-color: map.get($props, faded-color);
+
+  @keyframes pulse-#{$theme-name} {
+    0%,
+    100% {
+      box-shadow: 0 0 $blur 0 $glow-color;
+    }
+    50% {
+      box-shadow: 0 0 $blur 0 $faded-color;
+    }
+  }
+}
+
+// In-Game floating score gain indicator animation
+@keyframes plusScore {
+  0% {
+    opacity: 0;
+    transform: translate(-100%, -75%);
+  }
+  25%,
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-100%, calc(-75% - 200px));
+  }
+}

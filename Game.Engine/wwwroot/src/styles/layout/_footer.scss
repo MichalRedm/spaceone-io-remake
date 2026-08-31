@@ -1,0 +1,23 @@
+// -----------------------------------------------------------------------------
+// LAYOUT: FOOTER
+// -----------------------------------------------------------------------------
+
+@use "../abstracts" as *;
+
+footer {
+  text-align: center;
+
+  .div_add_300_250,
+  .footer-ad {
+    padding-bottom: 70px;
+    height: 250px;
+    width: 300px;
+    margin: 0 auto;
+  }
+
+  .div_add_blocked,
+  .footer-ad--blocked {
+    background-image: none;
+    background-repeat: no-repeat;
+  }
+}
