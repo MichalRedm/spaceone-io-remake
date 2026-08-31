@@ -10,7 +10,9 @@
   left: 10px;
   top: 10px;
   text-align: center;
-  min-width: 250px;
+  width: 280px;
+  max-width: 280px;
+  box-sizing: border-box;
   z-index: $z-index-floating;
 
   &__text,
@@ -55,6 +57,8 @@
   &__success,
   #arena-link-success {
     margin: 10px auto;
+    max-width: 90%;
+    height: auto;
     display: none;
 
     &--visible {

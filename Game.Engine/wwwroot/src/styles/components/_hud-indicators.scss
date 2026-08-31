@@ -113,36 +113,10 @@
 
 .debug-hud,
 #hud {
-  position: fixed;
-  bottom: 8px;
-  left: 8px;
-  font-size: 11pt;
-  color: $color-text-muted;
-  display: none;
-
-  body.alive &:not([hidden]):not(.is-hidden),
-  body.spectating &:not([hidden]):not(.is-hidden) {
-    display: block;
-  }
+  display: none !important;
 }
 
 .game-log,
 #log {
-  position: fixed;
-  top: 60px;
-  left: 16px;
-  font-size: 11pt;
-
-  table {
-    border-collapse: collapse;
-
-    td {
-      padding: 2px 6px;
-    }
-  }
-
-  &__timestamp,
-  &__stat {
-    color: gray;
-  }
+  display: none !important;
 }

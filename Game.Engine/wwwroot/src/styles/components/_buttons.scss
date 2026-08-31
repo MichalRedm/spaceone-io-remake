@@ -48,17 +48,20 @@
     font-size: 1.2em;
     font-weight: 900;
     margin: 20px 0;
-    padding: 7px 0 0 15px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
     z-index: $z-index-base;
 
     &__icon,
     #spectate-eye {
-      width: 32px;
+      width: 28px;
       height: auto;
-      margin-left: 15px;
-      position: relative;
-      top: 2px;
-      vertical-align: middle;
+      margin: 0;
+      padding: 0;
+      position: static;
       display: inline-block;
     }
   }
@@ -84,8 +87,17 @@
     font-size: 1.2em;
     font-weight: 900;
     margin: 20px 0;
-    padding: 7px 0 0 15px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
     z-index: $z-index-controls;
+
+    i {
+      font-size: 1.1em;
+      margin: 0;
+    }
   }
 
   // Pink Action Button

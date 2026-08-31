@@ -110,39 +110,10 @@
                 </span>
             </div>
 
-            <div id="spectatecontrols" class="death-screen__actions">
-                <div id="deathScreen" class="death-screen" hidden>
-                    <table class="death-screen__table">
-                        <tr>
-                            <td>High score:</td>
-                            <td id="deathScreenScore">
-                                <span class="death-screen__value--error">ERROR</span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Game time:</td>
-                            <td id="deathScreenGameTime">
-                                <span class="death-screen__value--error">ERROR</span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Kills:</td>
-                            <td id="deathScreenKills">
-                                <span class="death-screen__value--error">ERROR</span>
-                            </td>
-                        </tr>
-                    </table>
-                </div>
-
-                <input type="button" id="stop_spectating" class="btn btn--gold button1" value="Menu" hidden />
-                <input type="button" id="spawnSpectate" class="btn btn--spawn button1" value="Launch" hidden />
-            </div>
-
             <div id="plotly"></div>
 
             <table id="leaderboard-left" class="leaderboard__table" cellspacing="0" hidden></table>
             <table id="leaderboard-center" class="leaderboard__table" cellspacing="0" hidden></table>
-            <div id="log" class="game-log"></div>
 
             <div id="selfNickContainer" class="player-name-hud view-state--alive visibility3"></div>
             <div id="cooldown" class="cooldown-bar view-state--alive visibility3">
@@ -156,7 +127,6 @@
                 </tr>
             </table>
 
-            <div id="hud" class="debug-hud" hidden>fps: 0 - players: 0 - ping: 0</div>
             <div id="nipple-controls" class="touch-controls">
                 <div id="nipple-zone" class="touch-controls__zone"></div>
                 <div id="niple-buttons" class="touch-controls__buttons">
@@ -246,14 +216,12 @@
                     </div>
                 </div>
             </div>
-            <div class="view-state--menu visibility">
-                <a id="changelogButton" class="changelog-btn change-log-button">
-                    <h4>CAPTAIN'S LOG</h4>
-                    <span>19 February 2021</span><br>
-                    <span>- Movement physics reworked</span><br>
-                </a>
-            </div>
-            <div id="popupChangelog" class="modal-overlay change-log-overlay changelog-modal">
+            <a id="changelogButton" class="changelog-btn change-log-button visibility">
+                <h4>CAPTAIN'S LOG</h4>
+                <span>19 February 2021</span><br>
+                <span>- Movement physics reworked</span><br>
+            </a>
+            <div id="popupChangelog" class="modal-overlay change-log-overlay changelog-modal" hidden>
                 <div id="changelogBack" class="modal-backdrop invisible-change-log-back"></div>
                 <div class="modal-dialog change-log-popup">
                     <div class="modal-dialog__header header">

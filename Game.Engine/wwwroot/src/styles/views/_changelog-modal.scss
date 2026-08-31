@@ -17,6 +17,8 @@
   bottom: 60px;
   left: 10px;
   transition: all $transition-slow;
+  z-index: 10;
+  user-select: none;
 
   h4 {
     margin-bottom: 4px;
@@ -37,18 +39,22 @@
 }
 
 .instructions-modal,
-#instructionsPopup {
-  margin: auto;
-  padding: 0 20px 20px 20px;
-  background: $color-bg-dark;
-  color: $color-text-main;
-  width: 300px;
-  height: 200px;
-  overflow-y: auto;
-  font-family: $font-family-main;
-  border: 2px $color-text-main solid;
-  text-align: center;
-  border-radius: 8px;
+#popupInstructions {
+  .modal-dialog,
+  #instructionsPopup {
+    width: 340px;
+    height: 220px;
+    margin: auto;
+    padding: 0 20px 20px 20px;
+    background: $color-bg-dark;
+    color: $color-text-main;
+    overflow-y: auto;
+    font-family: $font-family-main;
+    border: 2px $color-text-main solid;
+    text-align: center;
+    border-radius: 8px;
+    box-shadow: 0 0 10px 0 $color-text-main;
+  }
 
   &__content,
   #instructionsContent {

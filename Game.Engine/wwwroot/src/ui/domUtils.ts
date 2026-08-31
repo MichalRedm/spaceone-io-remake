@@ -78,6 +78,8 @@ export function fadeIn(
   if (elements.length === 0) return;
 
   for (const el of elements) {
+    el.hidden = false;
+    el.removeAttribute("hidden");
     const targetDisplay = getTargetDisplay(el);
     el.style.display = targetDisplay;
     el.style.transition = `opacity ${duration}ms ease`;
@@ -127,6 +129,8 @@ export function fadeOut(
   setTimeout(() => {
     for (const el of elements) {
       el.style.display = "none";
+      el.hidden = true;
+      el.setAttribute("hidden", "");
     }
     if (callback) callback();
   }, duration);
@@ -144,6 +148,8 @@ export function show(
 ): void {
   const elements = resolveElements(target);
   for (const el of elements) {
+    el.hidden = false;
+    el.removeAttribute("hidden");
     el.style.display = displayStyle || getTargetDisplay(el);
     el.style.opacity = "1";
   }
@@ -166,6 +172,8 @@ export function hide(
       }
     }
     el.style.display = "none";
+    el.hidden = true;
+    el.setAttribute("hidden", "");
   }
 }
 
