@@ -42,8 +42,8 @@ export const FX_CONFIG = {
   shipExplosion: {
     particleCount: 2,
     durationMs: 500,
-    maxScaleRatio: 1.2, // Up to 120% of ship radius
-    scaleVariation: 0.2,
+    minScaleRatio: 0.5, // 50% of ship size (original ParticleSystem.cpp:38)
+    maxScaleRatio: 1.0, // 100% of ship size (original ParticleSystem.cpp:38)
     alphaStart: 1.0,
     alphaEnd: 1.0,
     angularVelocity: 0.05, // Continuous spin +0.05 rad/frame (original Particle.cpp:97)
@@ -289,9 +289,8 @@ class FXManager {
     const count = cfg.particleCount;
     const now = performance.now();
 
-    // Max particle size is ~75% of ship sprite (ship render scale is ~ (shipSize / 121) * 3.1)
+    // Ship particle size is 50% to 100% of ship sprite size (matching original ParticleSystem.cpp:38)
     const baseShipScale = (shipSize / 121.0) * 3.1;
-    const particleMaxScale = baseShipScale * cfg.maxScaleRatio;
 
     for (let i = 0; i < count; i++) {
       const sprite = this.getSprite(tex);
@@ -299,8 +298,10 @@ class FXManager {
       const speed =
         cfg.driftSpeedMin +
         Math.random() * (cfg.driftSpeedMax - cfg.driftSpeedMin);
-      const scale =
-        particleMaxScale * (0.8 + Math.random() * cfg.scaleVariation);
+      const scaleRatio =
+        cfg.minScaleRatio +
+        Math.random() * (cfg.maxScaleRatio - cfg.minScaleRatio);
+      const scale = baseShipScale * scaleRatio;
       const initRotation = Math.random() * Math.PI * 2;
 
       sprite.x = x;
