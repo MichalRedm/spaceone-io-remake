@@ -14,6 +14,7 @@ import * as PIXI from "pixi.js";
 import "pixi-layers";
 import * as particles from "pixi-particles";
 import { CustomContainer } from "../rendering/customContainer";
+import type { Camera } from "../rendering/camera";
 import { WorldConfig } from "./worldConfig";
 import type { BodyState } from "./cache";
 import type { Interpolator, ProjectedPoint } from "../rendering/interpolator";
@@ -393,15 +394,47 @@ export class RenderedObject {
   // ── Render pipeline entry points ───────────────────────────────────────────
 
   /**
-   * Called once per render frame.  Resolves the interpolated position,
+   * Called once per render frame. Resolves the interpolated position,
    * delegates all animation to `SpriteAnimator`, and advances particle emitters.
+   * Culls rendering and transform calculations if entity is outside camera frustum.
    */
-  preRender(time: number, interpolator: Interpolator, _fleetID?: number): void {
+  preRender(
+    time: number,
+    interpolator: Interpolator,
+    _fleetID?: number,
+    camera?: Camera,
+  ): void {
     if (this.body) {
       const newPosition = interpolator.projectObject(this.body, time);
       this._updatePositionDelta(newPosition);
-      const ctx = this._buildAnimationContext();
-      _animator.animate(ctx, newPosition, this.body.Size, performance.now());
+
+      const isVisible =
+        !camera || camera.isWorldPointInView(newPosition.x, newPosition.y, 350);
+
+      if (this.spriteLayers && this.spriteLayers.length) {
+        if (!isVisible) {
+          for (let i = 0; i < this.spriteLayers.length; i++) {
+            const layer = this.spriteLayers[i];
+            if (layer && layer.renderable) {
+              layer.renderable = false;
+            }
+          }
+        } else {
+          for (let i = 0; i < this.spriteLayers.length; i++) {
+            const layer = this.spriteLayers[i];
+            if (layer && !layer.renderable) {
+              layer.renderable = true;
+            }
+          }
+          const ctx = this._buildAnimationContext();
+          _animator.animate(
+            ctx,
+            newPosition,
+            this.body.Size,
+            performance.now(),
+          );
+        }
+      }
     }
 
     if (this.lastTime > 0 && this.emitterLayers && this.emitterLayers.length) {

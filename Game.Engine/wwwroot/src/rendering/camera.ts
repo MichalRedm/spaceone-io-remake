@@ -116,4 +116,21 @@ export class Camera {
     obj.y = pos.y / scaleY + this.viewport.top;
     return obj;
   }
+
+  /**
+   * Evaluates whether a World-space coordinate falls within the active camera viewport bounds plus margin.
+   *
+   * @param x - World X coordinate.
+   * @param y - World Y coordinate.
+   * @param margin - Safety padding in World units (default: 350) to encompass sprite radius, flame, and trails.
+   * @returns `true` if coordinate is inside visible viewport frustum bounds.
+   */
+  isWorldPointInView(x: number, y: number, margin = 350): boolean {
+    return (
+      x >= this.viewport.left - margin &&
+      x <= this.viewport.right + margin &&
+      y >= this.viewport.top - margin &&
+      y <= this.viewport.bottom + margin
+    );
+  }
 }
