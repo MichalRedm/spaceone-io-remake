@@ -44,7 +44,7 @@ import {
   preloadAllGameTextures,
 } from "../rendering/atlasLoader";
 import { textureCache } from "./textureCache";
-import { decodeModes } from "./textureUtils";
+import { decodeModes, parseMapKey } from "./textureUtils";
 
 // ---------------------------------------------------------------------------
 // Module-level service singletons
@@ -159,9 +159,39 @@ export class RenderedObject {
     this.invulnerableStartTime = 0;
   }
 
-  // ── Texture helpers (delegated to TextureLoader) ───────────────────────────
+  // ── Static helpers (delegated to module-level _loader / textureUtils) ───────
 
-  /** @deprecated Use `TextureLoader.getTextureDefinition()` directly. */
+  /** @deprecated Import `getTextureDefinition` from `renderedObject` module instead. */
+  static getTextureDefinition(
+    textureName: string,
+  ): ReturnType<TextureLoader["getTextureDefinition"]> {
+    return _loader.getTextureDefinition(textureName);
+  }
+
+  /** @deprecated Import `loadTexture` from `renderedObject` module instead. */
+  static loadTexture(
+    textureDefinition: Parameters<TextureLoader["loadTexture"]>[0],
+    textureName: string,
+  ): ReturnType<TextureLoader["loadTexture"]> {
+    return _loader.loadTexture(textureDefinition, textureName);
+  }
+
+  /** @deprecated Import `getSpriteDefinition` from `renderedObject` module instead. */
+  static getSpriteDefinition(
+    spriteName: string,
+    additional?: string[],
+  ): ReturnType<TextureLoader["getSpriteDefinition"]> {
+    return _loader.getSpriteDefinition(spriteName, additional);
+  }
+
+  /** @deprecated Import `parseMapKey` from `textureUtils` module instead. */
+  static parseMapKey(
+    mapKey: string,
+  ): { name: string; mapID: number } | false {
+    return parseMapKey(mapKey);
+  }
+
+  /** @deprecated Import `getTextureImage` from `renderedObject` module instead. */
   static getTextureImage(textureName: string): HTMLImageElement {
     const textureDefinition = _loader.getTextureDefinition(textureName);
     if (!textureDefinition) return new Image();
@@ -542,4 +572,34 @@ export class RenderedObject {
       positionDelta: this.positionDelta,
     };
   }
+}
+
+// ---------------------------------------------------------------------------
+// Module-level re-exports for callers (tile.ts, ship.ts, controls.ts …)
+// These are thin delegates to the module-level _loader singleton so callers
+// can import named functions without reaching into the class.
+// ---------------------------------------------------------------------------
+
+export function getTextureDefinition(
+  textureName: string,
+): ReturnType<TextureLoader["getTextureDefinition"]> {
+  return _loader.getTextureDefinition(textureName);
+}
+
+export function loadTexture(
+  textureDefinition: Parameters<TextureLoader["loadTexture"]>[0],
+  textureName: string,
+): ReturnType<TextureLoader["loadTexture"]> {
+  return _loader.loadTexture(textureDefinition, textureName);
+}
+
+export function getSpriteDefinition(
+  spriteName: string,
+  additional?: string[],
+): ReturnType<TextureLoader["getSpriteDefinition"]> {
+  return _loader.getSpriteDefinition(spriteName, additional);
+}
+
+export function getTextureImage(textureName: string): HTMLImageElement {
+  return RenderedObject.getTextureImage(textureName);
 }

@@ -1,6 +1,7 @@
-import { RenderedObject } from "./renderedObject";
+import { RenderedObject, getSpriteDefinition, getTextureImage } from "./renderedObject";
 import { Fleet } from "./fleet";
 import { CustomContainer } from "../rendering/customContainer";
+import type { BodyState } from "./cache";
 
 export class Ship extends RenderedObject {
   fleet?: Fleet | null;
@@ -27,11 +28,11 @@ export class Ship extends RenderedObject {
     return modes;
   }
 
-  static getSelectorImage(spriteName: string): any {
-    const spriteDefinition = RenderedObject.getSpriteDefinition(spriteName);
+  static getSelectorImage(spriteName: string): HTMLImageElement | false {
+    const spriteDefinition = getSpriteDefinition(spriteName);
 
     if (spriteDefinition?.selector)
-      return RenderedObject.getTextureImage(spriteDefinition.selector);
+      return getTextureImage(String(spriteDefinition.selector));
     else return false;
   }
 
@@ -41,7 +42,7 @@ export class Ship extends RenderedObject {
     super.destroy();
   }
 
-  override update(updateData: any): void {
+  override update(updateData: BodyState): void {
     super.update(updateData);
 
     // when a ship is abandoned, the ship lives on
