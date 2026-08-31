@@ -7,6 +7,7 @@ import { CustomContainer } from "./customContainer";
 import { Interpolator } from "./interpolator";
 import { Cache, GroupState, BodyState } from "../models/cache";
 import { FX } from "../models/fx";
+import type { Camera } from "./camera";
 
 /**
  * Top-level render loop coordinator.
@@ -19,14 +20,18 @@ import { FX } from "../models/fx";
 export class Renderer {
   /** Root PIXI container. */
   container: CustomContainer;
+  /** Active camera instance for viewport frustum culling. */
+  camera?: Camera;
 
   /**
-   * Constructs a Renderer instance bound to a container.
+   * Constructs a Renderer instance bound to a container and camera.
    *
    * @param container - Root game rendering container.
+   * @param camera - Optional camera controller for frustum culling.
    */
-  constructor(container: CustomContainer) {
+  constructor(container: CustomContainer, camera?: Camera) {
     this.container = container;
+    this.camera = camera;
   }
 
   /**
@@ -47,9 +52,11 @@ export class Renderer {
   ): void {
     FX.update();
 
+    const cam = this.camera;
+
     cache.foreach((body: BodyState) => {
       if (body.renderer) {
-        body.renderer.preRender(currentTime, interpolator, fleetID);
+        body.renderer.preRender(currentTime, interpolator, fleetID, cam);
       }
     }, this);
 
@@ -60,6 +67,7 @@ export class Renderer {
           interpolator,
           fleetID,
           isSpectating,
+          cam,
         );
       }
     }, this);

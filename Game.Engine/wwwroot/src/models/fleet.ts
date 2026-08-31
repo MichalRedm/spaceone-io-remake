@@ -10,6 +10,7 @@ import type { CustomContainer } from "../rendering/customContainer";
 import type { Ship } from "./ship";
 import type { Cache, GroupState } from "./cache";
 import type { Interpolator } from "../rendering/interpolator";
+import type { Camera } from "../rendering/camera";
 
 /**
  * Controller managing a collection of ships belonging to a single player fleet.
@@ -155,12 +156,14 @@ export class Fleet {
    * @param interpolator - Kinematic interpolation service.
    * @param myFleetID - Local player's fleet ID.
    * @param isSpectating - Whether client is currently in spectator mode.
+   * @param camera - Optional camera for frustum culling.
    */
   preRender(
     time: number,
     interpolator: Interpolator,
     myFleetID: number,
     isSpectating: boolean,
+    camera?: Camera,
   ): void {
     if (this.ships.length > 0 && (this.ID !== myFleetID || isSpectating)) {
       if (this.text.visible !== Settings.namesEnabled)
@@ -188,10 +191,17 @@ export class Fleet {
 
         if (count > 0) {
           const offsetY = 0;
-          this.text.position.x = accX / count;
-          this.text.position.y = accY / count + offsetY;
-          this.textChat.position.x = accX / count;
-          this.textChat.position.y = accY / count + offsetY - 200;
+          const posX = accX / count;
+          const posY = accY / count + offsetY;
+          this.text.position.x = posX;
+          this.text.position.y = posY;
+          this.textChat.position.x = posX;
+          this.textChat.position.y = posY - 200;
+
+          const inView = !camera || camera.isWorldPointInView(posX, posY, 350);
+          if (this.text.renderable !== inView) this.text.renderable = inView;
+          if (this.textChat.renderable !== inView)
+            this.textChat.renderable = inView;
         }
       }
     } else {

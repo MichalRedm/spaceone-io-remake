@@ -105,7 +105,7 @@ FX.init(container);
 const camera = new Camera(size);
 
 const interpolator = new Interpolator();
-const renderer = new Renderer(container);
+const renderer = new Renderer(container, camera);
 const leaderboard = new Leaderboard();
 const minimap = new Minimap(app.stage, size);
 const hud = new HUD();
