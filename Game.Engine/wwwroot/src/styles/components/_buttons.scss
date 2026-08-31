@@ -48,8 +48,9 @@
     font-size: 1.2em;
     font-weight: 900;
     margin: 20px 0;
-    padding-left: 15px;
-    justify-content: flex-start;
+    padding: 7px 0 0 15px;
+    display: block;
+    text-align: left;
     white-space: nowrap;
     z-index: 1;
 
@@ -57,7 +58,9 @@
     #spectate-eye {
       width: 32px;
       height: auto;
-      margin-left: 20px;
+      padding: 0 0 0 20px;
+      position: relative;
+      top: 2px;
     }
   }
 
@@ -81,14 +84,17 @@
     font-size: 1.2em;
     font-weight: 900;
     margin: 20px 0;
-    padding-left: 15px;
-    justify-content: flex-start;
+    padding: 7px 0 0 15px;
+    display: block;
+    text-align: left;
     white-space: nowrap;
     z-index: 2;
 
     i {
       font-size: 1.1em;
-      margin-left: 20px;
+      padding-left: 20px;
+      position: relative;
+      top: 0;
     }
   }
 
