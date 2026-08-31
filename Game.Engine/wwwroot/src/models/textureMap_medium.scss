@@ -81,8 +81,8 @@ food_orange_glow,
 food_pink_glow,
 food_red_glow,
 food_yellow_glow {
-  size: 6;
-  blend-mode: "screen";
+  size: 4.64;
+  blend-mode: "add";
 }
 food_blue_glow {
   file: "food_blue_glow";

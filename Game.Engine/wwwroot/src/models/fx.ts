@@ -20,36 +20,35 @@ export const FX_CONFIG = {
   bulletExplosion: {
     particleCount: 2,
     durationMs: 500,
-    baseScale: 0.9,
+    baseScale: 1.0,
     scaleVariation: 0.2,
     alphaStart: 1.0,
     alphaEnd: 1.0,
-    driftSpeedMin: 10,
-    driftSpeedMax: 25,
+    driftSpeedMin: 25,
+    driftSpeedMax: 50,
   },
   /** Food / fish pickup explosion configuration. */
   foodExplosion: {
     particleCount: 2,
     durationMs: 500,
-    baseScale: 0.8,
+    baseScale: 1.2,
     scaleVariation: 0.2,
     alphaStart: 1.0,
     alphaEnd: 1.0,
-    driftSpeedMin: 10,
-    driftSpeedMax: 25,
+    driftSpeedMin: 25,
+    driftSpeedMax: 50,
   },
   /** Ship destruction explosion configuration. */
   shipExplosion: {
-    minParticles: 1,
-    maxParticles: 2,
+    particleCount: 2,
     durationMs: 500,
-    maxScaleRatio: 1.0, // Up to 100% of ship sprite size
-    scaleVariation: 0.15,
+    maxScaleRatio: 1.2, // Up to 120% of ship radius
+    scaleVariation: 0.2,
     alphaStart: 1.0,
     alphaEnd: 1.0,
-    rotationDeltaRad: Math.PI / 6, // +30 degrees clockwise
-    driftSpeedMin: 15,
-    driftSpeedMax: 35,
+    angularVelocity: 0.05, // Continuous spin +0.05 rad/frame (original Particle.cpp:97)
+    driftSpeedMin: 30,
+    driftSpeedMax: 65,
   },
 };
 
@@ -75,8 +74,10 @@ interface ActiveParticle {
   endAlpha: number;
   /** Initial rotation in radians. */
   startRotation: number;
-  /** Total rotation displacement applied across lifetime in radians. */
+  /** Total rotation displacement applied across lifetime in radians (if angularVelocity is not set). */
   rotationDelta: number;
+  /** Continuous per-frame rotation increment in radians (e.g. +0.05 rad/frame for ship debris). */
+  angularVelocity?: number;
   /** Timestamp when particle spawned from `performance.now()`. */
   startTime: number;
   /** Total particle lifetime in milliseconds. */
@@ -113,7 +114,7 @@ class FXManager {
    * Obtains a recycled `PIXI.Sprite` from the internal pool or instantiates a new one.
    *
    * @param texture - Texture to assign to the sprite.
-   * @returns Recycled or newly created sprite.
+   * @returns Recycled or newly created sprite with additive blending.
    */
   private getSprite(texture: PIXI.Texture): PIXI.Sprite {
     let sprite: PIXI.Sprite;
@@ -125,6 +126,9 @@ class FXManager {
       sprite = new PIXI.Sprite(texture);
       sprite.anchor.set(0.5, 0.5);
     }
+
+    // Additive blending for luminous explosion flashes (original 'lighter' blend)
+    sprite.blendMode = PIXI.BLEND_MODES.ADD;
 
     if (this.container && !sprite.parent) {
       this.container.addChild(sprite);
@@ -282,9 +286,7 @@ class FXManager {
     if (!tex) return;
 
     const cfg = FX_CONFIG.shipExplosion;
-    const count =
-      Math.floor(Math.random() * (cfg.maxParticles - cfg.minParticles + 1)) +
-      cfg.minParticles;
+    const count = cfg.particleCount;
     const now = performance.now();
 
     // Max particle size is ~75% of ship sprite (ship render scale is ~ (shipSize / 121) * 3.1)
@@ -317,7 +319,8 @@ class FXManager {
         startAlpha: cfg.alphaStart ?? 1.0,
         endAlpha: cfg.alphaEnd ?? 1.0,
         startRotation: initRotation,
-        rotationDelta: cfg.rotationDeltaRad, // +30 degrees clockwise
+        rotationDelta: 0,
+        angularVelocity: cfg.angularVelocity, // Continuous spin +0.05 rad/frame
         startTime: now,
         durationMs: cfg.durationMs,
         active: true,
@@ -348,7 +351,13 @@ class FXManager {
       const currentScale = p.startScale * invProgress;
       p.sprite.scale.set(currentScale, currentScale);
       p.sprite.alpha = p.startAlpha + (p.endAlpha - p.startAlpha) * progress;
-      p.sprite.rotation = p.startRotation + p.rotationDelta * progress;
+
+      // Continuous angular velocity (e.g. ship shards) or fixed rotation delta
+      if (p.angularVelocity !== undefined) {
+        p.sprite.rotation += p.angularVelocity;
+      } else {
+        p.sprite.rotation = p.startRotation + p.rotationDelta * progress;
+      }
 
       const dtSec = elapsed * 0.001;
       p.sprite.x = p.startX + p.vx * dtSec;

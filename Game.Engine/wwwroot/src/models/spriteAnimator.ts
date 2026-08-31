@@ -343,7 +343,7 @@ export class SpriteAnimator {
     } else if (fileStr.startsWith("food") || fileStr.startsWith("fish")) {
       this._applyFoodAlpha(layer, ctx, now, AC);
     } else if (fileStr.includes("laser") && fileStr.includes("trail")) {
-      this._applyLaserTrailAlpha(layer, ctx, now, AC);
+      this._applyLaserTrailAlpha(layer, ctx, scale, now, AC);
     } else if (fileStr.startsWith("laser") || fileStr.startsWith("bullet")) {
       this._applyBulletAlpha(layer, ctx, now, AC);
     }
@@ -364,44 +364,41 @@ export class SpriteAnimator {
       return;
     }
     const boostElapsed = now - ctx.boostStartTime;
-    if (boostElapsed < WorldConfig.boostPhase1SurgeMs) {
-      // Phase 1: no trail yet
-      layer.alpha = 0.0;
-      layer.visible = false;
-    } else if (boostElapsed < WorldConfig.boostPhase2BurnMs) {
-      // Phase 2: steady burn with flicker
-      const phaseArg =
-        now * AC.DASH_TRAIL_FLICKER_FREQ +
-        (bodyID % AC.FLICKER_ID_MODULO) * AC.FLICKER_PHASE_SCALE;
-      const flicker =
-        1.0 -
-        AC.DASH_TRAIL_SCALE_FLICKER_AMP +
-        AC.DASH_TRAIL_SCALE_FLICKER_AMP * 2 * Math.sin(phaseArg);
-      layer.scale.set(scale, scale * flicker);
+    const totalBoostMs = WorldConfig.boostDurationMs || 1250;
+    const accelEndMs = totalBoostMs * 0.2; // 0..5 ticks (first 20%)
+    const decelEndMs = totalBoostMs; // 5..25 ticks (remaining 80%)
+
+    const phaseArg =
+      now * AC.DASH_TRAIL_FLICKER_FREQ +
+      (bodyID % AC.FLICKER_ID_MODULO) * AC.FLICKER_PHASE_SCALE;
+    const flicker =
+      1.0 -
+      AC.DASH_TRAIL_SCALE_FLICKER_AMP +
+      AC.DASH_TRAIL_SCALE_FLICKER_AMP * 2 * Math.sin(phaseArg);
+
+    if (boostElapsed < accelEndMs) {
+      // Phase 1 (0..5 ticks / Acceleration Surge): expanding cone, alpha ramps 0 -> 1
+      const progress = Math.min(1.0, Math.max(0.0, boostElapsed / accelEndMs));
+      const coneScale = 0.6 + 0.4 * progress;
+      layer.scale.set(scale, scale * coneScale * flicker);
       layer.alpha =
-        AC.DASH_TRAIL_BASE_ALPHA +
-        AC.DASH_TRAIL_FLICKER_AMP *
-          Math.cos(
-            now * AC.DASH_TRAIL_ALPHA_FREQ +
-              (bodyID % AC.FLICKER_ID_MODULO) * AC.FLICKER_PHASE_SCALE,
-          );
-      layer.visible = true;
-    } else {
-      // Phase 3: fade out
-      const phase3Elapsed = boostElapsed - WorldConfig.boostPhase2BurnMs;
-      const phase3Progress = Math.min(
+        progress *
+        (AC.DASH_TRAIL_BASE_ALPHA +
+          AC.DASH_TRAIL_FLICKER_AMP *
+            Math.cos(
+              now * AC.DASH_TRAIL_ALPHA_FREQ +
+                (bodyID % AC.FLICKER_ID_MODULO) * AC.FLICKER_PHASE_SCALE,
+            ));
+      layer.visible = layer.alpha > 0.01;
+    } else if (boostElapsed < decelEndMs) {
+      // Phase 2 & 3 (5..25 ticks / Deceleration & Decay): contracting cone, alpha fades 1 -> 0
+      const progress = Math.min(
         1.0,
-        Math.max(0.0, phase3Elapsed / WorldConfig.boostPhase3DurationMs),
+        Math.max(0.0, (boostElapsed - accelEndMs) / (decelEndMs - accelEndMs)),
       );
-      const fadeAlpha = 1.0 - phase3Progress;
-      const phaseArg =
-        now * AC.DASH_TRAIL_FLICKER_FREQ +
-        (bodyID % AC.FLICKER_ID_MODULO) * AC.FLICKER_PHASE_SCALE;
-      const flicker =
-        1.0 -
-        AC.DASH_TRAIL_SCALE_FLICKER_AMP +
-        AC.DASH_TRAIL_SCALE_FLICKER_AMP * 2 * Math.sin(phaseArg);
-      layer.scale.set(scale, scale * flicker);
+      const coneScale = 1.0 - 0.4 * progress;
+      const fadeAlpha = 1.0 - progress;
+      layer.scale.set(scale, scale * coneScale * flicker);
       layer.alpha =
         fadeAlpha *
         (AC.DASH_TRAIL_BASE_ALPHA +
@@ -411,6 +408,9 @@ export class SpriteAnimator {
                 (bodyID % AC.FLICKER_ID_MODULO) * AC.FLICKER_PHASE_SCALE,
             ));
       layer.visible = layer.alpha > 0.01;
+    } else {
+      layer.alpha = 0.0;
+      layer.visible = false;
     }
   }
 
@@ -518,11 +518,21 @@ export class SpriteAnimator {
   private _applyLaserTrailAlpha(
     layer: CustomSpriteLayer,
     ctx: AnimationContext,
+    scale: number,
     now: number,
     AC: typeof ANIMATION_CONSTANTS,
   ): void {
     const age = now - ctx.spawnTime;
     const remaining = ctx.bulletLifetime - age;
+    const normLife = Math.min(1.0, Math.max(0.0, age / ctx.bulletLifetime));
+
+    // Parabolic trail length: h = h_max * 4 * normLife * (1 - normLife), capped at h_max / 1.5
+    const parabolicFactor = Math.min(
+      1.0 / 1.5,
+      4.0 * normLife * (1.0 - normLife),
+    );
+    layer.scale.set(scale, scale * (0.5 + parabolicFactor * 0.75));
+
     const fadeIn = Math.min(1.0, age / AC.LASER_TRAIL_FADE_IN_MS);
     const fadeOut =
       remaining < AC.LASER_TRAIL_FADE_OUT_MS
@@ -545,7 +555,14 @@ export class SpriteAnimator {
       remaining < AC.BULLET_FADE_OUT_MS
         ? Math.max(0.0, remaining / AC.BULLET_FADE_OUT_MS)
         : 1.0;
-    layer.alpha = fadeIn * fadeOut;
+    let alpha = fadeIn * fadeOut;
+
+    // Bullet head dissolves 8x faster when alpha drops below 0.5 (original Cell.cpp:490)
+    if (alpha < 0.5) {
+      alpha /= 8.0;
+    }
+
+    layer.alpha = alpha;
     layer.visible = layer.alpha > 0.01;
   }
 }

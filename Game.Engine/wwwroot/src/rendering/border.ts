@@ -7,12 +7,14 @@ import * as PIXI from "pixi.js";
 import type { CustomContainer } from "./customContainer";
 import { RenderedObject } from "../models/renderedObject";
 import { hexToRGB } from "../math/hexColor";
+import { Settings } from "../ui/settings";
 
 /**
  * Visual display controller rendering world perimeter boundary lines and outer deadzone fog.
  *
  * @remarks
- * Draws a prominent red perimeter bounding box and darkened off-map border quads on `CustomContainer.backgroundGroup`.
+ * Draws a prominent red perimeter bounding box with multi-pass neon glow (on medium/high graphics)
+ * and darkened off-map border quads on `CustomContainer.backgroundGroup`.
  */
 export class Border extends RenderedObject {
   /** Underlying PixiJS Graphics display instance. */
@@ -43,7 +45,9 @@ export class Border extends RenderedObject {
   updateWorldSize(size: number): void {
     const edgeWidth = 4000;
     this.graphics.clear();
-    const v = hexToRGB("#200000", 1);
+
+    // Dark red deadzone fog outside boundary
+    const v = hexToRGB("#220000", 1);
     this.graphics.beginFill(v[0] * 256 * 256 + v[1] * 256 + v[2], v[3]);
     this.graphics.drawRect(
       -size - edgeWidth,
@@ -60,9 +64,28 @@ export class Border extends RenderedObject {
       edgeWidth,
     );
     this.graphics.endFill();
-    const v2 = hexToRGB("#ff0000", 1);
-    this.graphics.lineStyle(3, v2[0] * 256 * 256 + v2[1] * 256 + v2[2], v2[3]);
-    this.graphics.drawRect(-size, -size, size * 2, size * 2);
+
+    const redColor = 0xff0000;
+
+    // Multi-pass neon red glow matching original ShadowBlur(50, 255, 0, 0)
+    if (Settings.graphics !== "low") {
+      const glowPasses = [
+        { width: 50, alpha: 0.05 },
+        { width: 35, alpha: 0.1 },
+        { width: 20, alpha: 0.2 },
+        { width: 10, alpha: 0.4 },
+        { width: 5, alpha: 1.0 },
+      ];
+
+      for (const pass of glowPasses) {
+        this.graphics.lineStyle(pass.width, redColor, pass.alpha);
+        this.graphics.drawRect(-size, -size, size * 2, size * 2);
+      }
+    } else {
+      // Flat 3px line on low graphics mode
+      this.graphics.lineStyle(3, redColor, 1.0);
+      this.graphics.drawRect(-size, -size, size * 2, size * 2);
+    }
 
     this.worldSize = size;
   }
