@@ -45,6 +45,7 @@ export interface LogEntry {
 export class Log {
   /** Timestamp when log feed was last updated in milliseconds. */
   lastDisplay: number;
+  private hasActiveMessage = false;
 
   /**
    * Constructs an empty combat log manager.
@@ -80,17 +81,22 @@ export class Log {
       return;
     }
 
-    if (bigLog) bigLog.textContent = lastMsg;
+    if (bigLog) {
+      bigLog.textContent = lastMsg;
+      this.hasActiveMessage = true;
+    }
   }
 
   /**
    * Periodic check called per frame to auto-fade stale combat messages.
    */
   check(): void {
+    if (!this.hasActiveMessage) return;
     const time = performance.now() - this.lastDisplay;
 
-    if (time > 3000 && bigLog) {
-      bigLog.textContent = "";
+    if (time > 3000) {
+      if (bigLog) bigLog.textContent = "";
+      this.hasActiveMessage = false;
     }
   }
 }

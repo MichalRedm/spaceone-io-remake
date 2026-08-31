@@ -19,6 +19,7 @@ import type { BodyState } from "./cache";
 import type { Interpolator, ProjectedPoint } from "../rendering/interpolator";
 import {
   SpriteAnimator,
+  LayerAnimType,
   groupBoostTimes,
   groupInvulnerableTimes,
   groupBulletData,
@@ -66,6 +67,7 @@ export interface CustomSpriteLayer extends PIXI.Sprite {
   baseOffset?: { x: number; y: number };
   baseRotation?: number;
   zOrder?: number;
+  animType?: LayerAnimType;
 }
 
 /**
@@ -116,6 +118,7 @@ export class RenderedObject {
   abandonedStartTime: number;
   isInvulnerable: boolean;
   invulnerableStartTime: number;
+  private _animCtx: AnimationContext;
 
   constructor(container: CustomContainer) {
     this.container = container;
@@ -135,6 +138,20 @@ export class RenderedObject {
     this.abandonedStartTime = 0;
     this.isInvulnerable = false;
     this.invulnerableStartTime = 0;
+    this._animCtx = {
+      spriteLayers: false,
+      emitterLayers: false,
+      body: null,
+      isBoosting: false,
+      boostStartTime: 0,
+      isInvulnerable: false,
+      invulnerableStartTime: 0,
+      isAbandoned: false,
+      abandonedStartTime: 0,
+      spawnTime: this.spawnTime,
+      bulletLifetime: this.bulletLifetime,
+      positionDelta: this.positionDelta,
+    };
   }
 
   // ── Static helpers (delegated to module-level _loader / textureUtils) ───────
@@ -380,7 +397,6 @@ export class RenderedObject {
    * delegates all animation to `SpriteAnimator`, and advances particle emitters.
    */
   preRender(time: number, interpolator: Interpolator, _fleetID?: number): void {
-    this.fixLoadingTextureScales();
     if (this.body) {
       const newPosition = interpolator.projectObject(this.body, time);
       this._updatePositionDelta(newPosition);
@@ -523,20 +539,18 @@ export class RenderedObject {
 
   /** Builds the `AnimationContext` snapshot passed to `SpriteAnimator`. */
   private _buildAnimationContext(): AnimationContext {
-    return {
-      spriteLayers: this.spriteLayers ?? false,
-      emitterLayers: this.emitterLayers ?? false,
-      body: this.body,
-      isBoosting: this.isBoosting,
-      boostStartTime: this.boostStartTime,
-      isInvulnerable: this.isInvulnerable,
-      invulnerableStartTime: this.invulnerableStartTime,
-      isAbandoned: this.isAbandoned,
-      abandonedStartTime: this.abandonedStartTime,
-      spawnTime: this.spawnTime,
-      bulletLifetime: this.bulletLifetime,
-      positionDelta: this.positionDelta,
-    };
+    this._animCtx.spriteLayers = this.spriteLayers ?? false;
+    this._animCtx.emitterLayers = this.emitterLayers ?? false;
+    this._animCtx.body = this.body;
+    this._animCtx.isBoosting = this.isBoosting;
+    this._animCtx.boostStartTime = this.boostStartTime;
+    this._animCtx.isInvulnerable = this.isInvulnerable;
+    this._animCtx.invulnerableStartTime = this.invulnerableStartTime;
+    this._animCtx.isAbandoned = this.isAbandoned;
+    this._animCtx.abandonedStartTime = this.abandonedStartTime;
+    this._animCtx.spawnTime = this.spawnTime;
+    this._animCtx.bulletLifetime = this.bulletLifetime;
+    return this._animCtx;
   }
 }
 
