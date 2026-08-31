@@ -235,6 +235,7 @@ export class SpriteAnimator {
         this._applyLayerAlpha(
           layer,
           ctx,
+          position,
           fileStr,
           scale,
           angle,
@@ -300,6 +301,7 @@ export class SpriteAnimator {
   private _applyLayerAlpha(
     layer: CustomSpriteLayer,
     ctx: AnimationContext,
+    position: ProjectedPoint,
     fileStr: string,
     scale: number,
     angle: number,
