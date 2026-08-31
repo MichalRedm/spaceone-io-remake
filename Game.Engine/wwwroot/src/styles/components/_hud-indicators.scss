@@ -89,7 +89,7 @@
   width: 128px;
   display: none;
 
-  &--visible {
+  &.danger-zone-warning--visible {
     display: block;
   }
 }
