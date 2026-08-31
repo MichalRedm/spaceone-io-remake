@@ -276,16 +276,19 @@ if (qs.has("bandwidth")) Settings.bandwidth = Number(qs.get("bandwidth"));
 const gear = document.getElementById("gear");
 document.getElementById("settings")?.addEventListener("click", () => {
   gear?.classList.remove("closed");
+  if (gear) gear.hidden = false;
 });
 
 document.getElementById("settingsCancel")?.addEventListener("click", () => {
   gear?.classList.add("closed");
+  if (gear) gear.hidden = true;
 });
 
 document.getElementById("settingsSave")?.addEventListener("click", () => {
   save();
   load();
   gear?.classList.add("closed");
+  if (gear) gear.hidden = true;
 });
 
 document.getElementById("settingsReset")?.addEventListener("click", () => {

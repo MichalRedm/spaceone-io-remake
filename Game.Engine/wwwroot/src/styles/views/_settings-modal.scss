@@ -14,9 +14,11 @@
   background: rgba(0, 0, 0, 0.85);
   z-index: $z-index-modal;
   @include flex-center;
+  display: flex;
 
-  &.closed {
-    display: none;
+  &.closed,
+  &[hidden] {
+    display: none !important;
   }
 
   &__container,

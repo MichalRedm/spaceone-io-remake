@@ -10,8 +10,9 @@
   .social-button {
     img {
       cursor: pointer;
-      height: 35px;
-      width: 35px;
+      display: inline-block;
+      width: auto;
+      max-width: none;
     }
   }
 
@@ -22,6 +23,7 @@
       left: 10px;
       bottom: 10px;
       height: 34px;
+      width: auto;
       z-index: $z-index-base;
     }
   }
@@ -33,6 +35,7 @@
       left: 60px;
       bottom: 2px;
       height: 46px;
+      width: auto;
       z-index: $z-index-base;
     }
   }
@@ -44,6 +47,7 @@
       right: 10px;
       bottom: 10px;
       height: 36px;
+      width: auto;
       z-index: $z-index-base;
     }
   }
@@ -55,6 +59,7 @@
       right: 70px;
       bottom: 10px;
       height: 36px;
+      width: auto;
       z-index: $z-index-base;
     }
   }

@@ -51,11 +51,15 @@
     padding: 7px 0 0 15px;
     z-index: $z-index-base;
 
-    &__icon {
+    &__icon,
+    #spectate-eye {
       width: 32px;
-      padding-left: 20px;
+      height: auto;
+      margin-left: 15px;
       position: relative;
       top: 2px;
+      vertical-align: middle;
+      display: inline-block;
     }
   }
 

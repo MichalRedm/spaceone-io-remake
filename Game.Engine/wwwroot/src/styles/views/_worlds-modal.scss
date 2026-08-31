@@ -16,8 +16,9 @@
   @include flex-center;
   flex-direction: column;
 
-  &.closed {
-    display: none;
+  &.closed,
+  &[hidden] {
+    display: none !important;
   }
 
   &__topbar,

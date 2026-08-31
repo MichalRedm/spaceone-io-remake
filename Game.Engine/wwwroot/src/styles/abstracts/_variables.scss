@@ -68,9 +68,9 @@ $z-index-background: 0;
 $z-index-base: 1;
 $z-index-controls: 2;
 $z-index-floating: 4;
-$z-index-modal: 5;
-$z-index-alert: 20;
-$z-index-top: 100;
+$z-index-modal: 1000;
+$z-index-alert: 1100;
+$z-index-top: 2000;
 
 // Transitions & Durations
 $transition-fast: 0.15s ease;

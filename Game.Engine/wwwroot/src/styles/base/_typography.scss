@@ -6,8 +6,9 @@
 
 @font-face {
   font-family: "Alarm Clock";
-  src: url("../../font/alarm_clock.ttf") format("truetype");
-  font-display: swap;
+  src: url("/font/alarm_clock.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
 }
 
 body,

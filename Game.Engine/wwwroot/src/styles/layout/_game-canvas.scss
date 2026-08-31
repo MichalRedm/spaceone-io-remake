@@ -25,6 +25,13 @@
   width: 100%;
   height: 100%;
   z-index: $z-index-canvas;
+  visibility: hidden;
+
+  body.alive &,
+  body.spectating &,
+  &.game-canvas--visible {
+    visibility: visible;
+  }
 }
 
 .centered {
