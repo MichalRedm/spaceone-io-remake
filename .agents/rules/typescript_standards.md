@@ -310,3 +310,44 @@ Golden pattern: `this.animator.animate(this, position, size, now)`.
 | Texture resolution & SCSS rule querying | `TextureLoader` |
 | Particle emitter construction | `TextureLoader` + `GroupParticle` |
 | Pure math helpers (parseMapKey, getScale) | `textureUtils.ts` (standalone functions) |
+
+---
+
+## 15. Code Documentation & TSDoc Standards
+
+All frontend TypeScript code in `Game.Engine/wwwroot/src/` must adhere to strict TSDoc documentation standards:
+
+### Rule 15.1: The Proximity & Intent Principle
+- **Place documentation directly above code**: Keep docstrings immediately above the classes, interfaces, methods, functions, or type aliases they describe.
+- **Explain "Why" and "How", not "What"**: Do NOT merely repeat the parameter type or method name (e.g., avoid `/** @param {string} id - The ID */`).
+- **Document Non-Obvious Invariants**:
+  - **Coordinate systems**: Disambiguate screen pixel space vs. world space (`Vector2`).
+  - **Angle systems**: Specify radians vs degrees and direction conventions (clockwise vs counter-clockwise).
+  - **Time & Units**: Specify milliseconds, seconds, server tick intervals, or normalized $[0, 1]$ ratios.
+  - **Memory & Lifecycle**: Document Pixi display object ownership, container attachment, and `destroy()` cleanup requirements.
+
+### Rule 15.2: Mandatory TSDoc Areas
+1. **Kinematic & Viewport Math** (`math/`, `rendering/camera.ts`, `rendering/interpolator.ts`):
+   - Document projection equations ($p(t) = p_0 + v \cdot \Delta t$), angular slerp, screen-to-world conversion formulas.
+2. **Entity & Group Caching** (`models/cache.ts`, `models/fleet.ts`, `models/renderedObject.ts`):
+   - Document body/group indexing, delta sync mechanics, and group hierarchy.
+3. **FlatBuffers Networking** (`network/connection.ts`, `network/lobby.ts`, `models/worldConfig.ts`):
+   - Document packet encoding/decoding, latency estimation, time offset smoothing, and reconnection logic.
+4. **Theme & Texture Resolution** (`parser/parseTheme.ts`, `models/textureLoader.ts`, `rendering/atlasLoader.ts`):
+   - Document SCSS CSS-rule query matching, sprite sheet atlas frame lookup, and GPU texture warmup.
+5. **Input & UI Dispatchers** (`ui/controls.ts`, `ui/leaderboard.ts`, `ui/minimap.ts`, `ui/hud.ts`):
+   - Document DOM event throttles, touch joystick coordinate normalization, and canvas radar drawing.
+
+### Rule 15.3: Standardized TSDoc Tag Conventions
+- `@remarks`: Architectural context, coordinate models, kinematics formulas, or caching behaviors.
+- `@param`: Constraints, default values, units, and nullability.
+- `@returns`: Return value meaning, updater contract, or lifecycle implications.
+- `@throws`: Exception or error conditions.
+- `@example`: Usage examples when API interaction is non-obvious.
+
+### Rule 15.4: Module-Level Overview Comments
+Every `.ts` source file must start with a top-level `@file` / `@module` JSDoc comment describing:
+1. The module's primary responsibility in the game client architecture.
+2. Key collaborations and dependencies (e.g. `Cache`, `CustomContainer`, `TextureLoader`).
+3. Core invariants, coordinate spaces, or lifecycle assumptions.
+
