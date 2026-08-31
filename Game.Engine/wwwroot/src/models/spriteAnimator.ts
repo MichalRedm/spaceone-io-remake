@@ -14,6 +14,7 @@
 import * as PIXI from "pixi.js";
 import * as particles from "pixi-particles";
 import { WorldConfig } from "./worldConfig";
+import { Settings } from "../ui/settings";
 import type { CustomSpriteLayer } from "./renderedObject";
 import type { BodyState } from "./cache";
 import type { ProjectedPoint } from "../rendering/interpolator";
@@ -357,6 +358,15 @@ export class SpriteAnimator {
       layer.visible = false;
       return;
     }
+
+    // On Low graphics, show static boost trail without animation
+    if (Settings.graphics === "low") {
+      layer.scale.set(scale, scale);
+      layer.alpha = AC.DASH_TRAIL_BASE_ALPHA;
+      layer.visible = true;
+      return;
+    }
+
     const boostElapsed = now - ctx.boostStartTime;
     const totalBoostMs = WorldConfig.boostDurationMs || 1250;
     const accelEndMs = totalBoostMs * 0.2; // 0..5 ticks (first 20%)
