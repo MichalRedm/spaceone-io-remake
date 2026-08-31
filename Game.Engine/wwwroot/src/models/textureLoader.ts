@@ -39,10 +39,7 @@ export class TextureLoader {
   private readonly textureMapRules: ThemeRule[];
   private readonly spriteModeMapRules: ThemeRule[];
 
-  constructor(
-    textureMapRules: ThemeRule[],
-    spriteModeMapRules: ThemeRule[],
-  ) {
+  constructor(textureMapRules: ThemeRule[], spriteModeMapRules: ThemeRule[]) {
     this.textureMapRules = textureMapRules;
     this.spriteModeMapRules = spriteModeMapRules;
   }
@@ -70,8 +67,7 @@ export class TextureLoader {
     } catch (e) {
       console.log("TEXTURE FAILED:", e);
     }
-    if (!textureDefinition)
-      console.log(`cannot load texture '${textureName}'`);
+    if (!textureDefinition) console.log(`cannot load texture '${textureName}'`);
     return textureDefinition;
   }
 
@@ -91,8 +87,7 @@ export class TextureLoader {
       const raw = queryProperties(
         {
           element: spriteName.split("_")[0],
-          class:
-            spriteName.split("_").join(" ") + " " + additional.join(" "),
+          class: spriteName.split("_").join(" ") + " " + additional.join(" "),
         },
         this.spriteModeMapRules[0],
       ) as Record<string, string[]>;
@@ -126,8 +121,7 @@ export class TextureLoader {
 
     if (!textures && textureDefinition.file) {
       const fileKey = String(textureDefinition.file);
-      textures =
-        textureCache[fileKey] ?? textureCache[fileKey.toLowerCase()];
+      textures = textureCache[fileKey] ?? textureCache[fileKey.toLowerCase()];
       if (textures) {
         textureCache[cleanName] = textures;
         return textures;
@@ -337,9 +331,7 @@ export class TextureLoader {
         }
       });
       result[key] =
-        !keepArrayKeys.includes(key) && values.length < 2
-          ? values[0]
-          : values;
+        !keepArrayKeys.includes(key) && values.length < 2 ? values[0] : values;
     }
     return result as TextureDefinition;
   }

@@ -54,6 +54,39 @@ export interface LeaderboardData {
   Record?: LeaderboardRecord;
 }
 
+export type LeaderboardColor =
+  | "cyan"
+  | "blue"
+  | "green"
+  | "orange"
+  | "pink"
+  | "red"
+  | "yellow"
+  | "gray"
+  | "white";
+
+/**
+ * Maps server-supplied color names to safe CSS color values.
+ * Any color not in this map defaults to white.
+ * (Rule 11: no unvalidated server data in inline style attributes)
+ */
+const SAFE_COLORS: Readonly<Record<LeaderboardColor, string>> = {
+  cyan: "#00ffff",
+  blue: "#2255ff",
+  green: "lime",
+  orange: "orange",
+  pink: "fuchsia",
+  red: "red",
+  yellow: "yellow",
+  gray: "#aaaaaa",
+  white: "#ffffff",
+};
+
+function toSafeCssColor(serverColor: string | undefined): string {
+  if (!serverColor) return "#ffffff";
+  return SAFE_COLORS[serverColor as LeaderboardColor] ?? "#ffffff";
+}
+
 function getOut(
   entry: LeaderboardEntry,
   position: Vector2,
@@ -65,18 +98,7 @@ function getOut(
   }
 
   const rankStr = rank === undefined ? "" : `${rank}.`;
-
-  let color: string;
-  if (entry.Color === "pink") {
-    color = "fuchsia";
-  } else if (entry.Color === "green") {
-    color = "lime";
-  } else if (entry.Color === "blue") {
-    color = "#2255ff";
-  } else {
-    color = entry.Color ?? "#ffffff";
-  }
-
+  const color = toSafeCssColor(entry.Color);
   const begin = !entryIsSelf ? `<tr>` : `<tr style="color:${color}">`;
 
   return (

@@ -13,7 +13,8 @@ export interface GroupState {
   Type?: number;
   ZIndex?: number;
   CustomData?: string;
-  renderer?: any;
+  /** Renderer is a Fleet instance when a group has an active fleet. */
+  renderer?: Fleet;
 }
 
 export interface BodyState {
@@ -30,7 +31,8 @@ export interface BodyState {
   Angle?: number;
   Position?: Vector2 | { x: number; y: number };
   previous?: BodyState | false;
-  renderer?: any;
+  /** Renderer is the visual controller for this body (ship, bullet, tile, etc.). */
+  renderer?: RenderedObject | Ship | Bullet | Tile;
   group?: GroupState | null;
   zIndex?: number;
   obsolete?: number;

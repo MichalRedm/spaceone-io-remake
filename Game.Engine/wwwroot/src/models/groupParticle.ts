@@ -45,8 +45,8 @@ export class GroupParticle extends particles.Particle {
     // owning RenderedObject's container.
     this.parentGroup =
       emitter.parent?.parentGroup ||
-      (emitter as unknown as { renderedObject?: RenderedObject })
-        .renderedObject?.container?.bodyGroup;
+      (emitter as unknown as { renderedObject?: RenderedObject }).renderedObject
+        ?.container?.bodyGroup;
 
     const emitterAny = emitter as unknown as {
       renderedObject?: RenderedObject;
@@ -88,9 +88,7 @@ export class GroupParticle extends particles.Particle {
     }
 
     // --- Body-size scale multiplier ---
-    const spriteStr = String(
-      (this.body as { Sprite?: string })?.Sprite || "",
-    );
+    const spriteStr = String((this.body as { Sprite?: string })?.Sprite || "");
     const isBulletOrLaser =
       spriteStr.startsWith("bullet") || spriteStr.startsWith("laser");
     const bodySize = (this.body as { Size?: number })?.Size;

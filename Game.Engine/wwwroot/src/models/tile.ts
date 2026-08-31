@@ -1,8 +1,5 @@
 import { RenderedObject } from "./renderedObject";
-import {
-  getTextureDefinition,
-  loadTexture,
-} from "./renderedObject";
+import { getTextureDefinition, loadTexture } from "./renderedObject";
 import type { CustomContainer } from "../rendering/customContainer";
 import type { Cache, BodyState } from "./cache";
 import type { Interpolator } from "../rendering/interpolator";

@@ -97,8 +97,7 @@ export function getScaleWithHeight(
   let spriteSize = 1;
   if (textureDefinition["size"] !== undefined) {
     const sizeVal = textureDefinition["size"];
-    const isPercent =
-      typeof sizeVal === "string" && sizeVal.endsWith("%");
+    const isPercent = typeof sizeVal === "string" && sizeVal.endsWith("%");
     spriteSize = isPercent
       ? parseFloat((sizeVal as string).slice(0, -1)) / 100
       : parseFloat(String(sizeVal)) / (height > 0 ? height : 1);

@@ -252,7 +252,16 @@ export class SpriteAnimator {
         }
 
         // --- Per-texture-type alpha curves ---
-        this._applyLayerAlpha(layer, ctx, fileStr, scale, angle, now, isBlinkDimmed, AC);
+        this._applyLayerAlpha(
+          layer,
+          ctx,
+          fileStr,
+          scale,
+          angle,
+          now,
+          isBlinkDimmed,
+          AC,
+        );
 
         // --- One-shot AnimatedSprite guard ---
         // Hide a finished one-shot sprite so the frozen last frame is not visible.
@@ -366,7 +375,10 @@ export class SpriteAnimator {
       const phaseArg =
         now * AC.DASH_TRAIL_FLICKER_FREQ +
         (bodyID % AC.FLICKER_ID_MODULO) * AC.FLICKER_PHASE_SCALE;
-      const flicker = 1.0 - AC.DASH_TRAIL_SCALE_FLICKER_AMP + AC.DASH_TRAIL_SCALE_FLICKER_AMP * 2 * Math.sin(phaseArg);
+      const flicker =
+        1.0 -
+        AC.DASH_TRAIL_SCALE_FLICKER_AMP +
+        AC.DASH_TRAIL_SCALE_FLICKER_AMP * 2 * Math.sin(phaseArg);
       layer.scale.set(scale, scale * flicker);
       layer.alpha =
         AC.DASH_TRAIL_BASE_ALPHA +
@@ -387,7 +399,10 @@ export class SpriteAnimator {
       const phaseArg =
         now * AC.DASH_TRAIL_FLICKER_FREQ +
         (bodyID % AC.FLICKER_ID_MODULO) * AC.FLICKER_PHASE_SCALE;
-      const flicker = 1.0 - AC.DASH_TRAIL_SCALE_FLICKER_AMP + AC.DASH_TRAIL_SCALE_FLICKER_AMP * 2 * Math.sin(phaseArg);
+      const flicker =
+        1.0 -
+        AC.DASH_TRAIL_SCALE_FLICKER_AMP +
+        AC.DASH_TRAIL_SCALE_FLICKER_AMP * 2 * Math.sin(phaseArg);
       layer.scale.set(scale, scale * flicker);
       layer.alpha =
         fadeAlpha *

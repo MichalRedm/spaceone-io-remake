@@ -185,9 +185,7 @@ export class RenderedObject {
   }
 
   /** @deprecated Import `parseMapKey` from `textureUtils` module instead. */
-  static parseMapKey(
-    mapKey: string,
-  ): { name: string; mapID: number } | false {
+  static parseMapKey(mapKey: string): { name: string; mapID: number } | false {
     return parseMapKey(mapKey);
   }
 
@@ -204,7 +202,7 @@ export class RenderedObject {
     if (!spriteName) return false;
     const modes = decodeModes(mode, spriteName);
     const spriteDefinition = _loader.getSpriteDefinition(spriteName, modes);
-    const textures = (spriteDefinition?.textures as string[] | undefined);
+    const textures = spriteDefinition?.textures as string[] | undefined;
     return textures ?? false;
   }
 
@@ -286,11 +284,7 @@ export class RenderedObject {
       if (this.activeEmitters[textureName]) {
         emitterLayer = this.activeEmitters[textureName];
       } else {
-        emitterLayer = _loader.buildEmitter(
-          textureName,
-          this.container,
-          this,
-        );
+        emitterLayer = _loader.buildEmitter(textureName, this.container, this);
       }
 
       if (emitterLayer !== null) {
@@ -449,9 +443,7 @@ export class RenderedObject {
       if (!this.isBoosting) {
         this.isBoosting = true;
         this.boostStartTime =
-          groupID && groupBoostTimes[groupID]
-            ? groupBoostTimes[groupID]
-            : now;
+          groupID && groupBoostTimes[groupID] ? groupBoostTimes[groupID] : now;
         if (groupID && !groupBoostTimes[groupID]) {
           groupBoostTimes[groupID] = now;
         }
@@ -486,9 +478,7 @@ export class RenderedObject {
     }
 
     // --- Bullet lifetime ---
-    const spriteStr = String(
-      this.body?.Sprite || this.currentSpriteName || "",
-    );
+    const spriteStr = String(this.body?.Sprite || this.currentSpriteName || "");
     if (spriteStr.startsWith("bullet") || spriteStr.startsWith("laser")) {
       const m = updateData.Momentum;
       if (m) {
@@ -518,9 +508,7 @@ export class RenderedObject {
 
   // ── Iteration helpers ──────────────────────────────────────────────────────
 
-  foreachLayer(
-    action: (layer: CustomSpriteLayer, i: number) => void,
-  ): void {
+  foreachLayer(action: (layer: CustomSpriteLayer, i: number) => void): void {
     if (this.spriteLayers && this.spriteLayers.length) {
       for (let i = 0; i < this.spriteLayers.length; i++) {
         const layer = this.spriteLayers[i];
