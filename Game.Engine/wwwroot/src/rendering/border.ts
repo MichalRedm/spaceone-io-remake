@@ -67,25 +67,10 @@ export class Border extends RenderedObject {
 
     const redColor = 0xff0000;
 
-    // Multi-pass neon red glow matching original ShadowBlur(50, 255, 0, 0)
-    if (Settings.graphics !== "low") {
-      const glowPasses = [
-        { width: 50, alpha: 0.05 },
-        { width: 35, alpha: 0.1 },
-        { width: 20, alpha: 0.2 },
-        { width: 10, alpha: 0.4 },
-        { width: 5, alpha: 1.0 },
-      ];
-
-      for (const pass of glowPasses) {
-        this.graphics.lineStyle(pass.width, redColor, pass.alpha);
-        this.graphics.drawRect(-size, -size, size * 2, size * 2);
-      }
-    } else {
-      // Flat 3px line on low graphics mode
-      this.graphics.lineStyle(3, redColor, 1.0);
-      this.graphics.drawRect(-size, -size, size * 2, size * 2);
-    }
+    // Clean, crisp boundary stroke matching original game (GameRendering.cpp:1023)
+    const lineWidth = Settings.graphics === "low" ? 3 : 4;
+    this.graphics.lineStyle(lineWidth, redColor, 1.0);
+    this.graphics.drawRect(-size, -size, size * 2, size * 2);
 
     this.worldSize = size;
   }

@@ -38,8 +38,8 @@ export const ANIMATION_CONSTANTS = {
   /** Laser trail fade-out ramp duration in milliseconds. */
   LASER_TRAIL_FADE_OUT_MS: 112.5,
 
-  /** Base opacity for the dash trail during phase-2 steady burn. */
-  DASH_TRAIL_BASE_ALPHA: 0.85,
+  /** Base opacity for the dash trail flame. */
+  DASH_TRAIL_BASE_ALPHA: 1.0,
 
   /** Dash trail fade-out ramp duration in milliseconds (phase-3 expiry). */
   DASH_TRAIL_FADE_OUT_MS: 450,
@@ -56,18 +56,6 @@ export const ANIMATION_CONSTANTS = {
   /** Ship abandonment fade-out duration in milliseconds. */
   ABANDON_FADE_MS: 1000,
 
-  /** Amplitude of the sinusoidal flicker layered on the dash trail base opacity. */
-  DASH_TRAIL_FLICKER_AMP: 0.15,
-
-  /** Scale multiplier amplitude for dash trail Y-axis flicker. */
-  DASH_TRAIL_SCALE_FLICKER_AMP: 0.12,
-
-  /** Angular frequency of the flame flicker sine wave (radians per millisecond). */
-  DASH_TRAIL_FLICKER_FREQ: 0.035,
-
-  /** Angular frequency of the alpha cosine wave on the dash trail. */
-  DASH_TRAIL_ALPHA_FREQ: 0.05,
-
   /** Duration (ms) over which a dead/abandoned ship texture fades in. */
   DEAD_SHIP_FADE_IN_MS: 2000,
 
@@ -79,12 +67,6 @@ export const ANIMATION_CONSTANTS = {
 
   /** Duration (ms) for the food/fish sprite fade-in on spawn. */
   FOOD_SPAWN_FADE_IN_MS: 1000,
-
-  /** Phase-offset divisor for per-body flicker differentiation (keeps nearby ships visually distinct). */
-  FLICKER_ID_MODULO: 10,
-
-  /** Scale of the per-body phase offset applied to flicker wave arguments. */
-  FLICKER_PHASE_SCALE: 1.5,
 
   /** Boost emitter begins emitting this many milliseconds into the boost (phase-2 start). */
   BOOST_EMITTER_START_MS: 160,
@@ -355,7 +337,7 @@ export class SpriteAnimator {
     ctx: AnimationContext,
     scale: number,
     now: number,
-    bodyID: number,
+    _bodyID: number,
     AC: typeof ANIMATION_CONSTANTS,
   ): void {
     if (!ctx.isBoosting) {
@@ -368,45 +350,23 @@ export class SpriteAnimator {
     const accelEndMs = totalBoostMs * 0.2; // 0..5 ticks (first 20%)
     const decelEndMs = totalBoostMs; // 5..25 ticks (remaining 80%)
 
-    const phaseArg =
-      now * AC.DASH_TRAIL_FLICKER_FREQ +
-      (bodyID % AC.FLICKER_ID_MODULO) * AC.FLICKER_PHASE_SCALE;
-    const flicker =
-      1.0 -
-      AC.DASH_TRAIL_SCALE_FLICKER_AMP +
-      AC.DASH_TRAIL_SCALE_FLICKER_AMP * 2 * Math.sin(phaseArg);
-
     if (boostElapsed < accelEndMs) {
-      // Phase 1 (0..5 ticks / Acceleration Surge): expanding cone, alpha ramps 0 -> 1
+      // Phase 1 (0..5 ticks / Acceleration Surge): expanding cone, alpha ramps 0 -> 1 (smooth, no flicker)
       const progress = Math.min(1.0, Math.max(0.0, boostElapsed / accelEndMs));
       const coneScale = 0.6 + 0.4 * progress;
-      layer.scale.set(scale, scale * coneScale * flicker);
-      layer.alpha =
-        progress *
-        (AC.DASH_TRAIL_BASE_ALPHA +
-          AC.DASH_TRAIL_FLICKER_AMP *
-            Math.cos(
-              now * AC.DASH_TRAIL_ALPHA_FREQ +
-                (bodyID % AC.FLICKER_ID_MODULO) * AC.FLICKER_PHASE_SCALE,
-            ));
+      layer.scale.set(scale, scale * coneScale);
+      layer.alpha = progress * AC.DASH_TRAIL_BASE_ALPHA;
       layer.visible = layer.alpha > 0.01;
     } else if (boostElapsed < decelEndMs) {
-      // Phase 2 & 3 (5..25 ticks / Deceleration & Decay): contracting cone, alpha fades 1 -> 0
+      // Phase 2 & 3 (5..25 ticks / Deceleration & Decay): contracting cone, alpha fades 1 -> 0 (smooth, no flicker)
       const progress = Math.min(
         1.0,
         Math.max(0.0, (boostElapsed - accelEndMs) / (decelEndMs - accelEndMs)),
       );
       const coneScale = 1.0 - 0.4 * progress;
       const fadeAlpha = 1.0 - progress;
-      layer.scale.set(scale, scale * coneScale * flicker);
-      layer.alpha =
-        fadeAlpha *
-        (AC.DASH_TRAIL_BASE_ALPHA +
-          AC.DASH_TRAIL_FLICKER_AMP *
-            Math.cos(
-              now * AC.DASH_TRAIL_ALPHA_FREQ +
-                (bodyID % AC.FLICKER_ID_MODULO) * AC.FLICKER_PHASE_SCALE,
-            ));
+      layer.scale.set(scale, scale * coneScale);
+      layer.alpha = fadeAlpha * AC.DASH_TRAIL_BASE_ALPHA;
       layer.visible = layer.alpha > 0.01;
     } else {
       layer.alpha = 0.0;
@@ -524,14 +484,9 @@ export class SpriteAnimator {
   ): void {
     const age = now - ctx.spawnTime;
     const remaining = ctx.bulletLifetime - age;
-    const normLife = Math.min(1.0, Math.max(0.0, age / ctx.bulletLifetime));
 
-    // Parabolic trail length: h = h_max * 4 * normLife * (1 - normLife), capped at h_max / 1.5
-    const parabolicFactor = Math.min(
-      1.0 / 1.5,
-      4.0 * normLife * (1.0 - normLife),
-    );
-    layer.scale.set(scale, scale * (0.5 + parabolicFactor * 0.75));
+    // Keep trail locked firmly to bullet head
+    layer.scale.set(scale, scale);
 
     const fadeIn = Math.min(1.0, age / AC.LASER_TRAIL_FADE_IN_MS);
     const fadeOut =
