@@ -133,7 +133,8 @@ function getOut(
   }
 
   const rankStr = rank === undefined ? "" : `${rank}.`;
-  const colorClass = entry.Color && entryIsSelf ? `leaderboard__row--${entry.Color}` : "";
+  const colorClass =
+    entry.Color && entryIsSelf ? `leaderboard__row--${entry.Color}` : "";
   const selfClass = entryIsSelf ? "leaderboard__row--self" : "";
   const rowClass = ["leaderboard__row", selfClass, colorClass]
     .filter(Boolean)
