@@ -12,18 +12,20 @@
   &--spawn,
   &#spawn {
     @include button-variant(
-      $text-color: $color-bg-dark,
-      $border-color: $color-yellow-border,
-      $gradient-top: $color-yellow-primary,
-      $gradient-bottom: $color-yellow-dark,
-      $text-shadow-color: $color-yellow-border,
-      $glow-color: $color-yellow-dark,
-      $glow-radius: 30px
+      $text-color: $color-green-text,
+      $border-color: $color-yellow-primary,
+      $gradient-top: $color-green-light,
+      $gradient-bottom: $color-green-dark,
+      $text-shadow-color: $color-yellow-primary,
+      $glow-color: $color-yellow-primary,
+      $glow-radius: 30px,
+      $hover-pulse-animation: pulse-yellow
     );
     margin: 20px 0;
     width: 100%;
+    height: 55px;
     font-size: 1.6em;
-    font-weight: 900;
+    font-weight: 600;
   }
 
   // Spectate Button
@@ -43,29 +45,19 @@
     top: 45px;
     right: 10px;
     width: 180px;
-    height: 45px;
     font-size: 1.2em;
     font-weight: 900;
     margin: 20px 0;
-    padding: 7px 0 0 15px;
-    box-sizing: content-box;
-    display: block;
-    text-align: left;
+    padding-left: 15px;
+    justify-content: flex-start;
     white-space: nowrap;
-    line-height: normal;
-    cursor: pointer;
     z-index: 1;
 
     &__icon,
     #spectate-eye {
       width: 32px;
       height: auto;
-      box-sizing: content-box;
-      padding: 0 0 0 20px;
-      position: relative;
-      top: 2px;
-      vertical-align: middle;
-      display: inline-block;
+      margin-left: 20px;
     }
   }
 
@@ -86,25 +78,17 @@
     top: 100px;
     right: 10px;
     width: 180px;
-    height: 45px;
     font-size: 1.2em;
     font-weight: 900;
     margin: 20px 0;
-    padding: 7px 0 0 15px;
-    box-sizing: content-box;
-    display: block;
-    text-align: left;
+    padding-left: 15px;
+    justify-content: flex-start;
     white-space: nowrap;
-    line-height: normal;
-    cursor: pointer;
     z-index: 2;
 
     i {
       font-size: 1.1em;
-      position: relative;
-      top: 0;
-      padding-left: 20px;
-      vertical-align: middle;
+      margin-left: 20px;
     }
   }
 
