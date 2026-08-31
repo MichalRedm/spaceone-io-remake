@@ -9,16 +9,82 @@ import { RenderedObject } from "../models/renderedObject";
 import { hexToRGB } from "../math/hexColor";
 import { Settings } from "../ui/settings";
 
+let _glowTextureH: PIXI.Texture | null = null;
+let _glowTextureV: PIXI.Texture | null = null;
+
+function getGlowTextures(): {
+  horizontal: PIXI.Texture;
+  vertical: PIXI.Texture;
+} {
+  if (_glowTextureH && _glowTextureV) {
+    return { horizontal: _glowTextureH, vertical: _glowTextureV };
+  }
+
+  const size = 64;
+
+  // Horizontal gradient texture (for left & right vertical border walls)
+  const canvasH = document.createElement("canvas");
+  canvasH.width = size;
+  canvasH.height = 2;
+  const ctxH = canvasH.getContext("2d")!;
+  const gradH = ctxH.createLinearGradient(0, 0, size, 0);
+  gradH.addColorStop(0.0, "rgba(255, 0, 0, 0)");
+  gradH.addColorStop(0.2, "rgba(255, 0, 0, 0.02)");
+  gradH.addColorStop(0.35, "rgba(255, 0, 0, 0.07)");
+  gradH.addColorStop(0.46, "rgba(255, 0, 0, 0.20)");
+  gradH.addColorStop(0.5, "rgba(255, 0, 0, 0.35)");
+  gradH.addColorStop(0.54, "rgba(255, 0, 0, 0.20)");
+  gradH.addColorStop(0.65, "rgba(255, 0, 0, 0.07)");
+  gradH.addColorStop(0.8, "rgba(255, 0, 0, 0.02)");
+  gradH.addColorStop(1.0, "rgba(255, 0, 0, 0)");
+  ctxH.fillStyle = gradH;
+  ctxH.fillRect(0, 0, size, 2);
+
+  // Vertical gradient texture (for top & bottom horizontal border walls)
+  const canvasV = document.createElement("canvas");
+  canvasV.width = 2;
+  canvasV.height = size;
+  const ctxV = canvasV.getContext("2d")!;
+  const gradV = ctxV.createLinearGradient(0, 0, 0, size);
+  gradV.addColorStop(0.0, "rgba(255, 0, 0, 0)");
+  gradV.addColorStop(0.2, "rgba(255, 0, 0, 0.02)");
+  gradV.addColorStop(0.35, "rgba(255, 0, 0, 0.07)");
+  gradV.addColorStop(0.46, "rgba(255, 0, 0, 0.20)");
+  gradV.addColorStop(0.5, "rgba(255, 0, 0, 0.35)");
+  gradV.addColorStop(0.54, "rgba(255, 0, 0, 0.20)");
+  gradV.addColorStop(0.65, "rgba(255, 0, 0, 0.07)");
+  gradV.addColorStop(0.8, "rgba(255, 0, 0, 0.02)");
+  gradV.addColorStop(1.0, "rgba(255, 0, 0, 0)");
+  ctxV.fillStyle = gradV;
+  ctxV.fillRect(0, 0, 2, size);
+
+  _glowTextureH = PIXI.Texture.from(canvasH, {
+    scaleMode: PIXI.SCALE_MODES.LINEAR,
+  });
+  _glowTextureV = PIXI.Texture.from(canvasV, {
+    scaleMode: PIXI.SCALE_MODES.LINEAR,
+  });
+
+  return { horizontal: _glowTextureH, vertical: _glowTextureV };
+}
+
 /**
  * Visual display controller rendering world perimeter boundary lines and outer deadzone fog.
  *
  * @remarks
- * Draws a prominent red perimeter bounding box with multi-pass neon glow (on medium/high graphics)
+ * Draws a prominent red perimeter bounding box with continuous gradient glow (on medium/high graphics)
  * and darkened off-map border quads on `CustomContainer.backgroundGroup`.
  */
 export class Border extends RenderedObject {
-  /** Underlying PixiJS Graphics display instance. */
+  /** Underlying PixiJS Graphics display instance for fog and crisp line. */
   graphics: PIXI.Graphics;
+  /** Container holding smooth gradient glow border strips. */
+  glowContainer: PIXI.Container;
+  /** Four boundary glow sprites. */
+  topGlow: PIXI.Sprite;
+  bottomGlow: PIXI.Sprite;
+  leftGlow: PIXI.Sprite;
+  rightGlow: PIXI.Sprite;
   /** World half-width / radius extent in world units. */
   worldSize = 6000;
 
@@ -30,11 +96,35 @@ export class Border extends RenderedObject {
   constructor(container: CustomContainer) {
     super(container);
 
+    const { horizontal, vertical } = getGlowTextures();
+
+    this.glowContainer = new PIXI.Container();
+    this.glowContainer.parentGroup = this.container.backgroundGroup;
+
+    this.topGlow = new PIXI.Sprite(vertical);
+    this.bottomGlow = new PIXI.Sprite(vertical);
+    this.leftGlow = new PIXI.Sprite(horizontal);
+    this.rightGlow = new PIXI.Sprite(horizontal);
+
+    this.topGlow.blendMode = PIXI.BLEND_MODES.ADD;
+    this.bottomGlow.blendMode = PIXI.BLEND_MODES.ADD;
+    this.leftGlow.blendMode = PIXI.BLEND_MODES.ADD;
+    this.rightGlow.blendMode = PIXI.BLEND_MODES.ADD;
+
+    this.glowContainer.addChild(
+      this.topGlow,
+      this.bottomGlow,
+      this.leftGlow,
+      this.rightGlow,
+    );
+
     this.graphics = new PIXI.Graphics();
     this.graphics.parentGroup = this.container.backgroundGroup;
 
-    this.updateWorldSize(6000);
+    this.container.addChild(this.glowContainer);
     this.container.addChild(this.graphics);
+
+    this.updateWorldSize(6000);
   }
 
   /**
@@ -44,6 +134,7 @@ export class Border extends RenderedObject {
    */
   updateWorldSize(size: number): void {
     const edgeWidth = 4000;
+    const isLow = Settings.graphics === "low";
     this.graphics.clear();
 
     // Dark red deadzone fog outside boundary
@@ -65,22 +156,37 @@ export class Border extends RenderedObject {
     );
     this.graphics.endFill();
 
-    const redColor = 0xff0000;
-    const isLow = Settings.graphics === "low";
-
+    // Smooth continuous Gaussian gradient glow strips
     if (!isLow) {
-      // Soft, subtle concentric halo centered directly on the perimeter line (original shadowBlur effect)
-      this.graphics.lineStyle(28, redColor, 0.04);
-      this.graphics.drawRect(-size, -size, size * 2, size * 2);
+      this.glowContainer.visible = true;
+      const glowThickness = 32;
+      const half = glowThickness / 2;
 
-      this.graphics.lineStyle(18, redColor, 0.09);
-      this.graphics.drawRect(-size, -size, size * 2, size * 2);
+      this.topGlow.x = -size - half;
+      this.topGlow.y = -size - half;
+      this.topGlow.width = 2 * size + glowThickness;
+      this.topGlow.height = glowThickness;
 
-      this.graphics.lineStyle(10, redColor, 0.18);
-      this.graphics.drawRect(-size, -size, size * 2, size * 2);
+      this.bottomGlow.x = -size - half;
+      this.bottomGlow.y = +size - half;
+      this.bottomGlow.width = 2 * size + glowThickness;
+      this.bottomGlow.height = glowThickness;
+
+      this.leftGlow.x = -size - half;
+      this.leftGlow.y = -size - half;
+      this.leftGlow.width = glowThickness;
+      this.leftGlow.height = 2 * size + glowThickness;
+
+      this.rightGlow.x = +size - half;
+      this.rightGlow.y = -size - half;
+      this.rightGlow.width = glowThickness;
+      this.rightGlow.height = 2 * size + glowThickness;
+    } else {
+      this.glowContainer.visible = false;
     }
 
     // Core crisp boundary line (4px on high/medium, 3px on low matching GameRendering.cpp:1023)
+    const redColor = 0xff0000;
     const lineWidth = isLow ? 3 : 4;
     this.graphics.lineStyle(lineWidth, redColor, 1.0);
     this.graphics.drawRect(-size, -size, size * 2, size * 2);
