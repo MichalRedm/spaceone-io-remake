@@ -14,7 +14,7 @@ import type { RenderedObject } from "./renderedObject";
 /** Time window in milliseconds over which a bullet/laser particle fades in at spawn. */
 const BULLET_FADE_IN_MS = 180;
 /** Time window in milliseconds over which a bullet/laser particle fades out before expiry. */
-const BULLET_FADE_OUT_MS = 112.5;
+const BULLET_FADE_OUT_MS = 180;
 
 /**
  * Group-aware particle controller.

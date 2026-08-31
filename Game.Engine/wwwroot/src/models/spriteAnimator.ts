@@ -271,6 +271,8 @@ export class SpriteAnimator {
         ).textureDefinition;
         const emitterKey = String(texDef?.emitter ?? "");
         const isBoostEmitter = emitterKey.startsWith("boost");
+        const isBulletEmitter =
+          emitterKey.startsWith("bullet") || emitterKey.startsWith("laser");
 
         if (isBoostEmitter) {
           if (ctx.isBoosting) {
@@ -286,6 +288,14 @@ export class SpriteAnimator {
           const rearX = position.x - Math.cos(angle) * (size * 0.45);
           const rearY = position.y - Math.sin(angle) * (size * 0.45);
           emitter.updateOwnerPos(rearX, rearY);
+        } else if (isBulletEmitter) {
+          // In original Cell.cpp:478, particles only emit during mid-flight cruise phase
+          // (after initial fade-in and before final fade-out threshold)
+          const age = now - ctx.spawnTime;
+          const remaining = ctx.bulletLifetime - age;
+          emitter.emit =
+            age >= AC.BULLET_FADE_IN_MS && remaining >= AC.BULLET_FADE_OUT_MS;
+          emitter.updateOwnerPos(position.x, position.y);
         } else {
           emitter.updateOwnerPos(position.x, position.y);
         }
@@ -489,8 +499,9 @@ export class SpriteAnimator {
     const normLife = Math.min(1.0, Math.max(0.0, age / ctx.bulletLifetime));
 
     // Parabolic length factor matching original Cell.cpp:459-462:
-    // Starts at 0 upon firing, grows to full length mid-flight, contracts back to 0 at expiry
-    const rawLength = 4.0 * normLife * (1.0 - normLife);
+    // (4.0 * normLife * (1.0 - normLife) capped at 1/1.5 -> multiplier is 6.0)
+    // Snaps to full length by ~20% of flight (~200ms), stays at full length mid-flight, contracts during final 20%
+    const rawLength = 6.0 * normLife * (1.0 - normLife);
     const lengthFactor = Math.min(1.0, rawLength);
 
     // Scale along the length axis
