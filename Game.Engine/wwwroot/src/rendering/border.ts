@@ -29,13 +29,13 @@ function getGlowTextures(): {
   const ctxH = canvasH.getContext("2d")!;
   const gradH = ctxH.createLinearGradient(0, 0, size, 0);
   gradH.addColorStop(0.0, "rgba(255, 0, 0, 0)");
-  gradH.addColorStop(0.1, "rgba(255, 0, 0, 0.01)");
-  gradH.addColorStop(0.25, "rgba(255, 0, 0, 0.08)");
-  gradH.addColorStop(0.4, "rgba(255, 0, 0, 0.30)");
-  gradH.addColorStop(0.5, "rgba(255, 0, 0, 0.75)");
-  gradH.addColorStop(0.6, "rgba(255, 0, 0, 0.30)");
-  gradH.addColorStop(0.75, "rgba(255, 0, 0, 0.08)");
-  gradH.addColorStop(0.9, "rgba(255, 0, 0, 0.01)");
+  gradH.addColorStop(0.15, "rgba(255, 0, 0, 0.01)");
+  gradH.addColorStop(0.3, "rgba(255, 0, 0, 0.04)");
+  gradH.addColorStop(0.42, "rgba(255, 0, 0, 0.14)");
+  gradH.addColorStop(0.5, "rgba(255, 0, 0, 0.25)");
+  gradH.addColorStop(0.58, "rgba(255, 0, 0, 0.14)");
+  gradH.addColorStop(0.7, "rgba(255, 0, 0, 0.04)");
+  gradH.addColorStop(0.85, "rgba(255, 0, 0, 0.01)");
   gradH.addColorStop(1.0, "rgba(255, 0, 0, 0)");
   ctxH.fillStyle = gradH;
   ctxH.fillRect(0, 0, size, 2);
@@ -47,13 +47,13 @@ function getGlowTextures(): {
   const ctxV = canvasV.getContext("2d")!;
   const gradV = ctxV.createLinearGradient(0, 0, 0, size);
   gradV.addColorStop(0.0, "rgba(255, 0, 0, 0)");
-  gradV.addColorStop(0.1, "rgba(255, 0, 0, 0.01)");
-  gradV.addColorStop(0.25, "rgba(255, 0, 0, 0.08)");
-  gradV.addColorStop(0.4, "rgba(255, 0, 0, 0.30)");
-  gradV.addColorStop(0.5, "rgba(255, 0, 0, 0.75)");
-  gradV.addColorStop(0.6, "rgba(255, 0, 0, 0.30)");
-  gradV.addColorStop(0.75, "rgba(255, 0, 0, 0.08)");
-  gradV.addColorStop(0.9, "rgba(255, 0, 0, 0.01)");
+  gradV.addColorStop(0.15, "rgba(255, 0, 0, 0.01)");
+  gradV.addColorStop(0.3, "rgba(255, 0, 0, 0.04)");
+  gradV.addColorStop(0.42, "rgba(255, 0, 0, 0.14)");
+  gradV.addColorStop(0.5, "rgba(255, 0, 0, 0.25)");
+  gradV.addColorStop(0.58, "rgba(255, 0, 0, 0.14)");
+  gradV.addColorStop(0.7, "rgba(255, 0, 0, 0.04)");
+  gradV.addColorStop(0.85, "rgba(255, 0, 0, 0.01)");
   gradV.addColorStop(1.0, "rgba(255, 0, 0, 0)");
   ctxV.fillStyle = gradV;
   ctxV.fillRect(0, 0, 2, size);
@@ -77,7 +77,7 @@ function getGlowTextures(): {
  * Visual display controller rendering world perimeter boundary lines and outer deadzone fog.
  *
  * @remarks
- * Draws a prominent red perimeter bounding box with continuous gradient glow (on medium/high graphics)
+ * Draws a prominent red perimeter bounding box with subtle continuous gradient glow (on medium/high graphics)
  * and darkened off-map border quads on `CustomContainer.backgroundGroup`.
  */
 export class Border extends RenderedObject {
@@ -116,11 +116,6 @@ export class Border extends RenderedObject {
     this.bottomGlow.parentGroup = this.container.backgroundGroup;
     this.leftGlow.parentGroup = this.container.backgroundGroup;
     this.rightGlow.parentGroup = this.container.backgroundGroup;
-
-    this.topGlow.blendMode = PIXI.BLEND_MODES.ADD;
-    this.bottomGlow.blendMode = PIXI.BLEND_MODES.ADD;
-    this.leftGlow.blendMode = PIXI.BLEND_MODES.ADD;
-    this.rightGlow.blendMode = PIXI.BLEND_MODES.ADD;
 
     this.container.addChild(
       this.topGlow,
@@ -167,9 +162,9 @@ export class Border extends RenderedObject {
     this.graphics.lineStyle(lineWidth, redColor, 1.0);
     this.graphics.drawRect(-size, -size, size * 2, size * 2);
 
-    // Smooth continuous Gaussian gradient glow strips
+    // Subtle continuous Gaussian gradient halo
     if (!isLow) {
-      const glowThickness = 48;
+      const glowThickness = 16;
       const half = glowThickness / 2;
 
       this.topGlow.visible = true;
@@ -177,6 +172,7 @@ export class Border extends RenderedObject {
       this.leftGlow.visible = true;
       this.rightGlow.visible = true;
 
+      // Top & Bottom cover full outer span
       this.topGlow.x = -size - half;
       this.topGlow.y = -size - half;
       this.topGlow.width = 2 * size + glowThickness;
@@ -187,15 +183,16 @@ export class Border extends RenderedObject {
       this.bottomGlow.width = 2 * size + glowThickness;
       this.bottomGlow.height = glowThickness;
 
+      // Left & Right fit seamlessly between Top and Bottom (zero corner overlap artifact)
       this.leftGlow.x = -size - half;
-      this.leftGlow.y = -size - half;
+      this.leftGlow.y = -size + half;
       this.leftGlow.width = glowThickness;
-      this.leftGlow.height = 2 * size + glowThickness;
+      this.leftGlow.height = 2 * size - glowThickness;
 
       this.rightGlow.x = +size - half;
-      this.rightGlow.y = -size - half;
+      this.rightGlow.y = -size + half;
       this.rightGlow.width = glowThickness;
-      this.rightGlow.height = 2 * size + glowThickness;
+      this.rightGlow.height = 2 * size - glowThickness;
     } else {
       this.topGlow.visible = false;
       this.bottomGlow.visible = false;
