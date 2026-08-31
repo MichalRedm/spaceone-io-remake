@@ -60,7 +60,7 @@ export class TextureLoader {
     try {
       const raw = queryProperties(
         { element: textureName },
-        this.textureMapRules[0],
+        this.textureMapRules,
       ) as Record<string, string[]>;
 
       textureDefinition = this._normalizeDefinition(raw);
@@ -89,7 +89,7 @@ export class TextureLoader {
           element: spriteName.split("_")[0],
           class: spriteName.split("_").join(" ") + " " + additional.join(" "),
         },
-        this.spriteModeMapRules[0],
+        this.spriteModeMapRules,
       ) as Record<string, string[]>;
 
       spriteDefinition = this._normalizeDefinition(raw, [

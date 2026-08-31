@@ -44,18 +44,22 @@ import {
   preloadAllGameTextures,
 } from "../rendering/atlasLoader";
 import { textureCache } from "./textureCache";
-import { decodeModes, parseMapKey } from "./textureUtils";
+import {
+  decodeModes,
+  parseMapKey,
+  type TextureDefinition,
+} from "./textureUtils";
 
 // ---------------------------------------------------------------------------
 // Module-level service singletons
 // ---------------------------------------------------------------------------
 
-const _textureMapRules = [getDefaultTextureMapRules(Settings.graphics)];
-const _spriteModeMapRules = [getDefaultSpriteModeMapRules(Settings.graphics)];
+const _textureMapRules = getDefaultTextureMapRules(Settings.graphics);
+const _spriteModeMapRules = getDefaultSpriteModeMapRules(Settings.graphics);
 
 // Initialise the atlas textures once at module load time.
 textureCache.initAtlases = () => {
-  preloadAllGameTextures(_textureMapRules[0], Settings.mipmapping);
+  preloadAllGameTextures(_textureMapRules, Settings.mipmapping);
 };
 textureCache.initAtlases();
 
@@ -75,7 +79,7 @@ const _animator = new SpriteAnimator();
  * by `SpriteAnimator`.
  */
 export interface CustomSpriteLayer extends PIXI.Sprite {
-  textureDefinition?: Record<string, unknown>;
+  textureDefinition?: TextureDefinition;
   baseScale?: number;
   baseOffset?: { x: number; y: number };
   baseRotation?: number;
@@ -288,12 +292,8 @@ export class RenderedObject {
       }
 
       if (emitterLayer !== null) {
-        emitterLayer.zOrder = resolveEffectiveZ(
-          spriteName,
-          zIndex,
-          i,
-          this.body?.ID ?? 0,
-        );
+        (emitterLayer as unknown as { zOrder: number }).zOrder =
+          resolveEffectiveZ(spriteName, zIndex, i, this.body?.ID ?? 0);
         emitterLayers.push(emitterLayer);
         this.activeEmitters[textureName] = emitterLayer;
       }
@@ -405,7 +405,7 @@ export class RenderedObject {
    * Called once per render frame.  Resolves the interpolated position,
    * delegates all animation to `SpriteAnimator`, and advances particle emitters.
    */
-  preRender(time: number, interpolator: Interpolator): void {
+  preRender(time: number, interpolator: Interpolator, _fleetID?: number): void {
     this.fixLoadingTextureScales();
     if (this.body) {
       const newPosition = interpolator.projectObject(this.body, time);
@@ -503,7 +503,11 @@ export class RenderedObject {
       }
     }
 
-    this.setSprite(updateData.Sprite, updateData.Mode, updateData.zIndex ?? 0);
+    this.setSprite(
+      updateData.Sprite ?? false,
+      updateData.Mode,
+      updateData.zIndex ?? 0,
+    );
   }
 
   // ── Iteration helpers ──────────────────────────────────────────────────────

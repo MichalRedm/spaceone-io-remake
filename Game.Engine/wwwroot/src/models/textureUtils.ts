@@ -43,6 +43,8 @@ export interface TextureDefinition {
   "image-height"?: number;
   "tile-width"?: number;
   "tile-height"?: number;
+  /** Allow arbitrary extra SCSS-parsed properties. */
+  [key: string]: unknown;
 }
 
 // ---------------------------------------------------------------------------

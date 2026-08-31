@@ -241,7 +241,7 @@ export class Cache {
         update.previous = existing;
 
         existing.previous = false;
-        existing.renderer = false;
+        existing.renderer = undefined;
         existing.obsolete = time;
 
         if (update.Size === -1) update.Size = existing.Size;
@@ -270,9 +270,11 @@ export class Cache {
           group = this.getGroup(update.Group) ?? null;
           if (group) {
             switch (group.Type) {
-              case 1:
-                let ship = update.renderer;
-                if (!ship) ship = new Ship(this.container);
+              case 1: {
+                let ship =
+                  update.renderer instanceof Ship
+                    ? update.renderer
+                    : new Ship(this.container);
                 update.renderer = ship;
 
                 let fleet = group.renderer;
@@ -281,6 +283,7 @@ export class Cache {
 
                 if (fleet) fleet.addShip(ship);
                 break;
+              }
 
               case 3:
               case 4:
@@ -324,7 +327,7 @@ export class Cache {
           update.zIndex = 0;
           if (group) update.zIndex = group.ZIndex || 0;
 
-          if (update.renderer) update.renderer.update(update, myFleetID);
+          if (update.renderer) update.renderer.update(update);
         }
 
         Cache.count++;

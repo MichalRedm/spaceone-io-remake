@@ -9,6 +9,7 @@ import { Overlay } from "../ui/overlay";
 import { spriteIndices } from "../models/spriteIndices";
 import { Camera } from "../rendering/camera";
 import { Cache } from "../models/cache";
+import type { BodyState, GroupState } from "../models/cache";
 import { Interpolator } from "../rendering/interpolator";
 import { Leaderboard, clear as clearLeaderboards } from "../ui/leaderboard";
 import { Minimap } from "../ui/minimap";
@@ -170,7 +171,6 @@ function bodyFromServer(
     Size: body.size() * 5,
     Sprite: spriteName,
     Mode: body.mode(),
-    Color: "red",
     Group: groupID,
     OriginalAngle: body.originalAngle(),
     AngularVelocity: body.angularVelocity(),
@@ -202,7 +202,7 @@ function groupFromServer(
     Caption: group.caption() ?? undefined,
     Type: group.type(),
     ZIndex: group.zindex(),
-    CustomData: customData,
+    CustomData: customData ?? undefined,
   };
 }
 
@@ -333,7 +333,14 @@ connection.onView = (newView) => {
     if (gdel !== null) groupDeletes.push(gdel);
   }
 
-  cache.update(updates, deletes, groups, groupDeletes, gameTime, fleetID);
+  cache.update(
+    updates.filter((u): u is BodyState => u !== null),
+    deletes,
+    groups.filter((g): g is GroupState => g !== null),
+    groupDeletes,
+    gameTime,
+    fleetID,
+  );
   overlay.update(newView.customData());
 
   hud.playerCount = newView.playerCount();
@@ -362,7 +369,7 @@ connection.onView = (newView) => {
     cooldown.hide();
   }
 
-  view.camera = bodyFromServer(cache, newView.camera());
+  view.camera = bodyFromServer(cache, newView.camera()) ?? undefined;
 
   if (spawnOnView) {
     spawnOnView = false;
