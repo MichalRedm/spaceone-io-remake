@@ -70,7 +70,7 @@ export const Settings: SettingsData = {
   mouseScale: 1.0,
   font: "Exo 2",
   leaderboardEnabled: true,
-  hudEnabled: true,
+  hudEnabled: false,
   namesEnabled: true,
   bandwidth: 100,
   showCooldown: true,
