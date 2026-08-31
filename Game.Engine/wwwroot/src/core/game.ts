@@ -9,6 +9,7 @@ import { Overlay } from "../ui/overlay";
 import { spriteIndices } from "../models/spriteIndices";
 import { Camera } from "../rendering/camera";
 import { Cache } from "../models/cache";
+import type { BodyState, GroupState } from "../models/cache";
 import { Interpolator } from "../rendering/interpolator";
 import { Leaderboard, clear as clearLeaderboards } from "../ui/leaderboard";
 import { Minimap } from "../ui/minimap";
@@ -65,9 +66,9 @@ app.stage.addChild(container);
 // Preload all assets and warm up GPU before gameplay
 preloadAllAssets(app, Settings.mipmapping);
 
-var backgroundGroup = new pixiAny.display.Group(0, true);
-var tileGroup = new pixiAny.display.Group(1, true);
-var bodyGroup = new pixiAny.display.Group(2, true);
+const backgroundGroup = new pixiAny.display.Group(0, true);
+const tileGroup = new pixiAny.display.Group(1, true);
+const bodyGroup = new pixiAny.display.Group(2, true);
 
 app.stage.addChild(new pixiAny.display.Layer(backgroundGroup));
 app.stage.addChild(new pixiAny.display.Layer(tileGroup));
@@ -109,7 +110,7 @@ let keyboardSteeringSpeed = 0.075;
 interface GameViewState {
   time: number;
   isAlive: boolean;
-  camera?: any;
+  camera?: BodyState;
 }
 
 const cache = new Cache(container);
@@ -153,7 +154,7 @@ document
 function bodyFromServer(
   _cache: Cache,
   body: FBGame.Engine.Networking.FlatBuffers.NetBody | null,
-): any {
+): BodyState | null {
   if (!body) return null;
   const originalPosition = body.originalPosition();
   const momentum = body.velocity();
@@ -170,7 +171,6 @@ function bodyFromServer(
     Size: body.size() * 5,
     Sprite: spriteName,
     Mode: body.mode(),
-    Color: "red",
     Group: groupID,
     OriginalAngle: body.originalAngle(),
     AngularVelocity: body.angularVelocity(),
@@ -186,7 +186,7 @@ function bodyFromServer(
 function groupFromServer(
   _cache: Cache,
   group: FBGame.Engine.Networking.FlatBuffers.NetGroup | null,
-): any {
+): GroupState | null {
   if (!group) return null;
   let customData = group.customData();
   if (customData) {
@@ -202,7 +202,7 @@ function groupFromServer(
     Caption: group.caption() ?? undefined,
     Type: group.type(),
     ZIndex: group.zindex(),
-    CustomData: customData,
+    CustomData: customData ?? undefined,
   };
 }
 
@@ -211,7 +211,7 @@ connection.onLeaderboard = (lb) => {
   minimap.update(lb, worldSize, fleetID);
 };
 
-var fleetID = 0;
+let fleetID = 0;
 let ownFleetID = 0;
 let lastAliveState: boolean | null = null;
 let aliveSince: number | null = null;
@@ -333,7 +333,14 @@ connection.onView = (newView) => {
     if (gdel !== null) groupDeletes.push(gdel);
   }
 
-  cache.update(updates, deletes, groups, groupDeletes, gameTime, fleetID);
+  cache.update(
+    updates.filter((u): u is BodyState => u !== null),
+    deletes,
+    groups.filter((g): g is GroupState => g !== null),
+    groupDeletes,
+    gameTime,
+    fleetID,
+  );
   overlay.update(newView.customData());
 
   hud.playerCount = newView.playerCount();
@@ -362,7 +369,7 @@ connection.onView = (newView) => {
     cooldown.hide();
   }
 
-  view.camera = bodyFromServer(cache, newView.camera());
+  view.camera = bodyFromServer(cache, newView.camera()) ?? undefined;
 
   if (spawnOnView) {
     spawnOnView = false;
@@ -428,7 +435,7 @@ LobbyCallbacks.onLobbyClose = function () {
   clearLeaderboards();
 };
 
-var spawnOnView = false;
+let spawnOnView = false;
 LobbyCallbacks.onWorldJoin = function (worldKey: string, world?: WorldInfo) {
   console.log(`onWorldJoin: ${worldKey} ${world}`);
   if (joiningWorld) {
@@ -547,8 +554,8 @@ window.addEventListener("resize", () => {
 });
 
 let frameCounter = 0;
-var viewCounter = 0;
-var updateCounter = 0;
+let viewCounter = 0;
+let updateCounter = 0;
 let lastCamera = new Vector2(0, 0);
 
 function doPing() {
@@ -660,7 +667,7 @@ app.ticker.add(() => {
       Controls.numUpLeft ||
       keyboardSteering
     ) {
-      var i = 0;
+      let i = 0;
       if (Controls.numUp) {
         angle = mergeSet(angle, (3 * Math.PI) / 2, i);
         i++;

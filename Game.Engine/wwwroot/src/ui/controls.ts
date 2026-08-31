@@ -117,7 +117,7 @@ const secretShips = ["ship_secret", "ship_zed"];
 const autofCon = document.getElementById("autofireContainer");
 const autofTgg = document.getElementById("autofireToggle");
 const selector = document.getElementById("shipSelectorSwitch");
-var colors = [
+let colors = [
   "ship_blue",
   "ship_cyan",
   "ship_green",
@@ -783,7 +783,7 @@ function toggleFullscreen() {
   }
 }
 
-var elem = document.documentElement;
+const elem = document.documentElement;
 
 function openFullscreen() {
   if (elem.requestFullscreen) {

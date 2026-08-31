@@ -1,7 +1,9 @@
 import { RenderedObject } from "./renderedObject";
+import { getTextureDefinition, loadTexture } from "./renderedObject";
 import type { CustomContainer } from "../rendering/customContainer";
 import type { Cache, BodyState } from "./cache";
 import type { Interpolator } from "../rendering/interpolator";
+import { parseMapKey } from "./textureUtils";
 
 export class Tile extends RenderedObject {
   constructor(container: CustomContainer, _cache?: Cache) {
@@ -24,20 +26,17 @@ export class Tile extends RenderedObject {
     if (this.container.tiles.isRefreshing) {
       const tiles = this.container.tiles;
       const spriteName = this.body.Sprite || "";
-      const mapKey = RenderedObject.parseMapKey(spriteName);
+      const mapKey = parseMapKey(spriteName);
 
       if (!mapKey) {
         console.log(
           `non-map key used to reference map texture: ${this.body.Sprite}`,
         );
       } else {
-        const textureDefinition =
-          RenderedObject.getTextureDefinition(spriteName);
+        const textureDefinition = getTextureDefinition(spriteName);
         if (!textureDefinition) return;
-        const textures = RenderedObject.loadTexture(
-          textureDefinition,
-          mapKey.name,
-        );
+        const textures = loadTexture(textureDefinition, mapKey.name);
+        if (!textures) return;
         const texture = textures[mapKey.mapID];
         const tileWidth = Number(textureDefinition["tile-width"] ?? 1);
         const tileHeight = Number(textureDefinition["tile-height"] ?? 1);

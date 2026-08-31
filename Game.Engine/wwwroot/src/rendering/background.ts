@@ -1,5 +1,6 @@
 import { Settings } from "../ui/settings";
-import { RenderedObject } from "../models/renderedObject";
+import { RenderedObject, loadTexture } from "../models/renderedObject";
+import { calculateScaleWithHeight } from "./atlasLoader";
 import * as PIXI from "pixi.js";
 import { Vector2 } from "../math/vector2";
 import type { CustomContainer } from "./customContainer";
@@ -53,17 +54,16 @@ export class Background extends RenderedObject {
     const spriteDefinition = RenderedObject.getSpriteDefinition("bg");
     if (!spriteDefinition) return;
 
-    let layerSpeeds = spriteDefinition["layer-speeds"];
+    let layerSpeeds = spriteDefinition["layer-speeds"] as number[] | undefined;
     let layerTextures = spriteDefinition["layer-textures"];
     if (!layerSpeeds || !layerTextures) {
       layerSpeeds = [];
       layerTextures = [];
     }
-    const speeds = layerSpeeds;
-    this.speeds = speeds;
+    this.speeds = layerSpeeds;
     const allLayersTextureNames: string[] = Array.isArray(layerTextures)
-      ? layerTextures
-      : [layerTextures];
+      ? (layerTextures as string[])
+      : [layerTextures as string];
     const allLayersTextures = allLayersTextureNames.map((x: string) =>
       RenderedObject.getTextureDefinition(x),
     );
@@ -74,20 +74,17 @@ export class Background extends RenderedObject {
       if (i >= this.backgroundSprites.length) {
         this.backgroundSprites.push(null);
       }
-      const textures = RenderedObject.loadTexture(
-        allLayersTextures[i],
-        allLayersTextureNames[i] ?? "",
-      );
+      const texDef = allLayersTextures[i];
+      if (!texDef) continue;
+      const textures = loadTexture(texDef, allLayersTextureNames[i] ?? "");
       if (textures && textures.length > 0) {
         let backgroundSprite = this.backgroundSprites[i];
         if (!backgroundSprite) {
           backgroundSprite = new PIXI.TilingSprite(textures[0], 200000, 200000);
           backgroundSprite.parentGroup = this.container.backgroundGroup;
           this.container.addChild(backgroundSprite);
-          backgroundSprite.tileScale.set(
-            RenderedObject.getScale(allLayersTextures[i], textures[0]),
-            RenderedObject.getScale(allLayersTextures[i], textures[0]),
-          );
+          const scale = calculateScaleWithHeight(texDef, textures[0].height);
+          backgroundSprite.tileScale.set(scale, scale);
           backgroundSprite.rotation = Math.random() - 0.5;
           backgroundSprite.position.x =
             -100000 *

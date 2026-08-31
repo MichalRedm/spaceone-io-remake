@@ -13,7 +13,8 @@ export interface GroupState {
   Type?: number;
   ZIndex?: number;
   CustomData?: string;
-  renderer?: any;
+  /** Renderer is a Fleet instance when a group has an active fleet. */
+  renderer?: Fleet;
 }
 
 export interface BodyState {
@@ -30,7 +31,8 @@ export interface BodyState {
   Angle?: number;
   Position?: Vector2 | { x: number; y: number };
   previous?: BodyState | false;
-  renderer?: any;
+  /** Renderer is the visual controller for this body (ship, bullet, tile, etc.). */
+  renderer?: RenderedObject | Ship | Bullet | Tile;
   group?: GroupState | null;
   zIndex?: number;
   obsolete?: number;
@@ -239,7 +241,7 @@ export class Cache {
         update.previous = existing;
 
         existing.previous = false;
-        existing.renderer = false;
+        existing.renderer = undefined;
         existing.obsolete = time;
 
         if (update.Size === -1) update.Size = existing.Size;
@@ -268,9 +270,11 @@ export class Cache {
           group = this.getGroup(update.Group) ?? null;
           if (group) {
             switch (group.Type) {
-              case 1:
-                let ship = update.renderer;
-                if (!ship) ship = new Ship(this.container);
+              case 1: {
+                let ship =
+                  update.renderer instanceof Ship
+                    ? update.renderer
+                    : new Ship(this.container);
                 update.renderer = ship;
 
                 let fleet = group.renderer;
@@ -279,6 +283,7 @@ export class Cache {
 
                 if (fleet) fleet.addShip(ship);
                 break;
+              }
 
               case 3:
               case 4:
@@ -322,7 +327,7 @@ export class Cache {
           update.zIndex = 0;
           if (group) update.zIndex = group.ZIndex || 0;
 
-          if (update.renderer) update.renderer.update(update, myFleetID);
+          if (update.renderer) update.renderer.update(update);
         }
 
         Cache.count++;
