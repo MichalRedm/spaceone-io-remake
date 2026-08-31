@@ -19,22 +19,6 @@ namespace Game.Engine.Core.Scoring
             {
                 try
                 {
-                    var comboText = "";
-                    var comboPlusScore = 0;
-
-                    if (time - killer.LastKillTime < hook.ComboDelay)
-                    {
-                        killer.ComboCounter += 1;
-                        comboText = $"x{killer.ComboCounter} combo!";
-                        comboPlusScore = (killer.ComboCounter - 1) * hook.ComboPointsStep;
-                        killer.Score += comboPlusScore;
-                    }
-                    else
-                        killer.ComboCounter = 1;
-
-                    killer.MaxCombo = (killer.MaxCombo < killer.ComboCounter) ? killer.ComboCounter : killer.MaxCombo;
-
-                    var PreviousKillTime = killer.LastKillTime;
                     killer.LastKillTime = time;
                     
                     var entries =  killer.World.Leaderboard.Entries;
@@ -60,11 +44,6 @@ namespace Game.Engine.Core.Scoring
                                 you = killer?.Connection?.Latency ?? 0,
                                 them = victim?.Connection?.Latency ?? 0
                             },
-                            combo = new
-                            {
-                                text = comboText,
-                                score = comboPlusScore
-                            },
                             stats = new
                             {
                                 kills = killer.KillCount,
@@ -81,7 +60,6 @@ namespace Game.Engine.Core.Scoring
                             score = victim.Score,
                             kills = victim.KillStreak,
                             gameTime = time - victim.AliveSince,
-                            maxCombo = victim.MaxCombo,
                             ping = new
                             {
                                 you = victim.Connection?.Latency ?? 0,
@@ -96,7 +74,6 @@ namespace Game.Engine.Core.Scoring
                     );
                     victim.Score = (int)Math.Max(victim.Score * hook.PointsMultiplierDeath + 1, 0);
                     victim.KillStreak = 0;
-                    victim.MaxCombo = 0;
                 }
                 catch (Exception e)
                 {
@@ -110,14 +87,12 @@ namespace Game.Engine.Core.Scoring
                     victim.Score += hook.PointsPerUniverseDeath;
                     victim.KillStreak = 0;
                     victim.DeathCount++;
-                    victim.MaxCombo = 0;
                     victim.SendMessage($"Killed by the universe", "universeDeath", hook.PointsPerUniverseDeath,
                         new
                         {
                             score = victim.Score,
                             kills = victim.KillStreak,
                             gameTime = fleet.World.Time - victim.AliveSince,
-                            maxCombo = victim.MaxCombo,
                             stats = new
                             {
                                 kills = victim.KillCount,

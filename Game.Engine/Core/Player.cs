@@ -29,9 +29,9 @@ namespace Game.Engine.Core
         public int KillCount { get; set; } = 0;
         public int DeathCount { get; set; } = 0;
 
-        public int MaxCombo { get; set; }
+
         public long LastKillTime { get; set; } = 0;
-        public int ComboCounter { get; set; } = 0;
+
 
         public Player LastShipDeathKiller { get; set; }
         public long LastShipDeathTime { get; set; } = 0;
@@ -425,8 +425,8 @@ namespace Game.Engine.Core
                 Latency = this.Connection?.Latency ?? 0,
                 KillCount = this.KillCount,
                 KillStreak = this.KillStreak,
-                ComboCounter = this.ComboCounter,
-                MaxCombo = this.MaxCombo,
+
+
 
                 Position = this.Fleet?.FleetCenter,
                 Momentum = this.Fleet?.FleetMomentum
