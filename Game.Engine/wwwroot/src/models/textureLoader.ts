@@ -202,8 +202,23 @@ export class TextureLoader {
     if (textureDefinition.alpha !== undefined) {
       pixiSprite.alpha = Number(textureDefinition.alpha);
     }
-    if (textureDefinition.blendMode !== undefined) {
-      pixiSprite.blendMode = textureDefinition.blendMode;
+    const rawBlend =
+      textureDefinition.blendMode ?? textureDefinition["blend-mode"];
+    if (rawBlend !== undefined) {
+      if (typeof rawBlend === "string") {
+        const lower = rawBlend.toLowerCase();
+        if (lower === "add" || lower === "lighter") {
+          pixiSprite.blendMode = PIXI.BLEND_MODES.ADD;
+        } else if (lower === "screen") {
+          pixiSprite.blendMode = PIXI.BLEND_MODES.SCREEN;
+        } else if (lower === "multiply") {
+          pixiSprite.blendMode = PIXI.BLEND_MODES.MULTIPLY;
+        } else {
+          pixiSprite.blendMode = Number(rawBlend) || PIXI.BLEND_MODES.NORMAL;
+        }
+      } else {
+        pixiSprite.blendMode = Number(rawBlend);
+      }
     }
 
     pixiSprite.pivot.x = pixiSprite.width / 2;

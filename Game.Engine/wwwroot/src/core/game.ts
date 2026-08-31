@@ -65,7 +65,7 @@ pixiAny.tilemap = pixiAny.tilemap || pixi_tilemap;
 const size = { width: 1000, height: 500 };
 const canvas = document.getElementById("gameCanvas") as HTMLCanvasElement;
 const zoom = 1000;
-const cameraDrag = 0.8;
+const cameraDrag = 0.7;
 
 PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.LINEAR;
 const app = new PIXI.Application(<any>{
