@@ -92,6 +92,7 @@ interface ActiveParticle {
 class FXManager {
   private container: PIXI.Container | null = null;
   private particlePool: PIXI.Sprite[] = [];
+  private particleObjectPool: ActiveParticle[] = [];
   private activeParticles: ActiveParticle[] = [];
 
   /**
@@ -122,31 +123,90 @@ class FXManager {
       sprite = this.particlePool.pop()!;
       sprite.texture = texture;
       sprite.visible = true;
+      sprite.renderable = true;
     } else {
       sprite = new PIXI.Sprite(texture);
       sprite.anchor.set(0.5, 0.5);
-    }
-
-    // Additive blending for luminous explosion flashes (original 'lighter' blend)
-    sprite.blendMode = PIXI.BLEND_MODES.ADD;
-
-    if (this.container && !sprite.parent) {
-      this.container.addChild(sprite);
+      sprite.blendMode = PIXI.BLEND_MODES.ADD;
+      if (this.container) {
+        this.container.addChild(sprite);
+      }
     }
     return sprite;
   }
 
   /**
-   * Returns an active sprite back to the pool.
+   * Returns an active sprite back to the pool without detaching from container.
    *
    * @param sprite - Sprite to recycle.
    */
   private releaseSprite(sprite: PIXI.Sprite): void {
     sprite.visible = false;
-    if (sprite.parent) {
-      sprite.parent.removeChild(sprite);
-    }
+    sprite.renderable = false;
     this.particlePool.push(sprite);
+  }
+
+  /**
+   * Obtains a recycled `ActiveParticle` descriptor or allocates a new one.
+   */
+  private getParticle(
+    sprite: PIXI.Sprite,
+    startX: number,
+    startY: number,
+    vx: number,
+    vy: number,
+    startScale: number,
+    startAlpha: number,
+    endAlpha: number,
+    startRotation: number,
+    rotationDelta: number,
+    startTime: number,
+    durationMs: number,
+    angularVelocity?: number,
+  ): ActiveParticle {
+    const p = this.particleObjectPool.pop();
+    if (p) {
+      p.sprite = sprite;
+      p.startX = startX;
+      p.startY = startY;
+      p.vx = vx;
+      p.vy = vy;
+      p.startScale = startScale;
+      p.startAlpha = startAlpha;
+      p.endAlpha = endAlpha;
+      p.startRotation = startRotation;
+      p.rotationDelta = rotationDelta;
+      p.angularVelocity = angularVelocity;
+      p.startTime = startTime;
+      p.durationMs = durationMs;
+      p.active = true;
+      return p;
+    }
+    return {
+      sprite,
+      startX,
+      startY,
+      vx,
+      vy,
+      startScale,
+      startAlpha,
+      endAlpha,
+      startRotation,
+      rotationDelta,
+      angularVelocity,
+      startTime,
+      durationMs,
+      active: true,
+    };
+  }
+
+  /**
+   * Recycles an active particle descriptor and its sprite.
+   */
+  private releaseParticle(p: ActiveParticle): void {
+    this.releaseSprite(p.sprite);
+    p.active = false;
+    this.particleObjectPool.push(p);
   }
 
   /**
@@ -194,21 +254,22 @@ class FXManager {
       sprite.alpha = cfg.alphaStart ?? 1.0;
       sprite.rotation = Math.random() * Math.PI * 2;
 
-      this.activeParticles.push({
-        sprite,
-        startX: x,
-        startY: y,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed,
-        startScale: scale,
-        startAlpha: cfg.alphaStart ?? 1.0,
-        endAlpha: cfg.alphaEnd ?? 1.0,
-        startRotation: sprite.rotation,
-        rotationDelta: 0,
-        startTime: now,
-        durationMs: cfg.durationMs,
-        active: true,
-      });
+      this.activeParticles.push(
+        this.getParticle(
+          sprite,
+          x,
+          y,
+          Math.cos(angle) * speed,
+          Math.sin(angle) * speed,
+          scale,
+          cfg.alphaStart ?? 1.0,
+          cfg.alphaEnd ?? 1.0,
+          sprite.rotation,
+          0,
+          now,
+          cfg.durationMs,
+        ),
+      );
     }
   }
 
@@ -245,21 +306,22 @@ class FXManager {
       sprite.alpha = cfg.alphaStart ?? 1.0;
       sprite.rotation = Math.random() * Math.PI * 2;
 
-      this.activeParticles.push({
-        sprite,
-        startX: x,
-        startY: y,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed,
-        startScale: scale,
-        startAlpha: cfg.alphaStart ?? 1.0,
-        endAlpha: cfg.alphaEnd ?? 1.0,
-        startRotation: sprite.rotation,
-        rotationDelta: 0,
-        startTime: now,
-        durationMs: cfg.durationMs,
-        active: true,
-      });
+      this.activeParticles.push(
+        this.getParticle(
+          sprite,
+          x,
+          y,
+          Math.cos(angle) * speed,
+          Math.sin(angle) * speed,
+          scale,
+          cfg.alphaStart ?? 1.0,
+          cfg.alphaEnd ?? 1.0,
+          sprite.rotation,
+          0,
+          now,
+          cfg.durationMs,
+        ),
+      );
     }
   }
 
@@ -310,22 +372,23 @@ class FXManager {
       sprite.alpha = cfg.alphaStart ?? 1.0;
       sprite.rotation = initRotation;
 
-      this.activeParticles.push({
-        sprite,
-        startX: x,
-        startY: y,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed,
-        startScale: scale,
-        startAlpha: cfg.alphaStart ?? 1.0,
-        endAlpha: cfg.alphaEnd ?? 1.0,
-        startRotation: initRotation,
-        rotationDelta: 0,
-        angularVelocity: cfg.angularVelocity, // Continuous spin +0.05 rad/frame
-        startTime: now,
-        durationMs: cfg.durationMs,
-        active: true,
-      });
+      this.activeParticles.push(
+        this.getParticle(
+          sprite,
+          x,
+          y,
+          Math.cos(angle) * speed,
+          Math.sin(angle) * speed,
+          scale,
+          cfg.alphaStart ?? 1.0,
+          cfg.alphaEnd ?? 1.0,
+          initRotation,
+          0,
+          now,
+          cfg.durationMs,
+          cfg.angularVelocity,
+        ),
+      );
     }
   }
 
@@ -338,12 +401,16 @@ class FXManager {
 
     for (let i = this.activeParticles.length - 1; i >= 0; i--) {
       const p = this.activeParticles[i];
+      if (!p) continue;
       const elapsed = now - p.startTime;
       const progress = elapsed / p.durationMs;
 
       if (progress >= 1.0) {
-        this.releaseSprite(p.sprite);
-        this.activeParticles.splice(i, 1);
+        this.releaseParticle(p);
+        const last = this.activeParticles.pop()!;
+        if (i < this.activeParticles.length) {
+          this.activeParticles[i] = last;
+        }
         continue;
       }
 
@@ -370,10 +437,11 @@ class FXManager {
    * Recycles all currently active explosion particles and clears the active list.
    */
   public clear(): void {
-    for (const p of this.activeParticles) {
-      this.releaseSprite(p.sprite);
+    for (let i = 0; i < this.activeParticles.length; i++) {
+      const p = this.activeParticles[i];
+      if (p) this.releaseParticle(p);
     }
-    this.activeParticles = [];
+    this.activeParticles.length = 0;
   }
 }
 
