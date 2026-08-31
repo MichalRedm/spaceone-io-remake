@@ -10,7 +10,6 @@ import { escapeHtml } from "./leaderboard";
 const log = document.getElementById("log");
 const bigLog = document.getElementById("bigLog");
 const scoreCon = document.getElementById("plusScoreContainer");
-const comboMsg = document.getElementById("comboMessage");
 
 /**
  * Metadata payload attached to combat log events.
@@ -26,10 +25,6 @@ export interface LogEntryExtraData {
   kills?: number;
   /** Active session duration in milliseconds. */
   gameTime?: number;
-  /** Maximum kill streak combo achieved. */
-  maxCombo?: number;
-  /** Kill streak banner text and score bonus. */
-  combo?: { text: string; score: number };
 }
 
 /**
@@ -125,15 +120,6 @@ export class Log {
       return;
     }
     if (bigLog) bigLog.textContent = lastMsg;
-
-    if (
-      comboMsg &&
-      lastData.extraData &&
-      lastData.extraData.combo !== undefined &&
-      lastData.extraData.combo.text !== ""
-    ) {
-      comboMsg.textContent = `${lastData.extraData.combo.text} +${lastData.extraData.combo.score}`;
-    }
   }
 
   /**
@@ -147,10 +133,6 @@ export class Log {
 
     if (time > 3000 && bigLog) {
       bigLog.textContent = "";
-    }
-
-    if (time > 2000 && comboMsg) {
-      comboMsg.textContent = "";
     }
   }
 }
@@ -182,8 +164,6 @@ function deathStats(lastData: LogEntry): void {
       timeEl.textContent = `${gameTimeMinutes}min ${gameTimeSeconds}sec`;
     }
   }
-  const comboEl = document.getElementById("deathScreenMaxKillStreak");
-  if (comboEl) comboEl.textContent = String(lastData.extraData?.maxCombo ?? 0);
 }
 
 updateHighscore(0);
