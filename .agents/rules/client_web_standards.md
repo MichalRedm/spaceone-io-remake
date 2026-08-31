@@ -6,6 +6,7 @@
 
 ## 1. Core Principles & Stack
 - **Framework**: HTML5 Canvas / WebGL via Pixi.js (`pixi.js`, `pixi-layers`, `pixi-particles`).
+- **Styling**: Modular SCSS (7-1 directory pattern: `abstracts/`, `base/`, `components/`, `layout/`, `views/`) adhering to strict BEM naming methodology.
 - **Render Interpolation**: The client receives snapshot updates from the server and must interpolate entity positions and rotations smoothly across render frames to prevent stuttering.
 - **Sprite Atlas Precision**: All ship skins, projectiles, foods, and particles must map to texture atlases (`reference/space1-original/assets/atlas/`) with exact UV frame boundaries.
 - **Input Handling**: Capture mouse position and keyboard events, computing normalized heading vectors and firing state for WebSocket transmission.

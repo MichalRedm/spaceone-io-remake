@@ -1,0 +1,61 @@
+// -----------------------------------------------------------------------------
+// COMPONENTS: MOBILE TOUCH CONTROLS
+// -----------------------------------------------------------------------------
+
+@use "../abstracts" as *;
+
+.touch-controls,
+#nipple-controls {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: $z-index-controls;
+
+  &__zone,
+  #nipple-zone {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 50%;
+    height: 60%;
+    pointer-events: auto;
+  }
+
+  &__buttons,
+  #niple-buttons {
+    position: absolute;
+    bottom: 30px;
+    right: 30px;
+    display: flex;
+    gap: 20px;
+    pointer-events: auto;
+  }
+
+  &__btn {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    user-select: none;
+    opacity: 0.6;
+    transition: opacity $transition-fast;
+
+    &:active {
+      opacity: 1;
+    }
+
+    &--shoot,
+    &#shoot {
+      background: $color-danger;
+      box-shadow: 0 0 15px 0 $color-danger;
+    }
+
+    &--boost,
+    &#boost {
+      background: $color-blue-primary;
+      box-shadow: 0 0 15px 0 $color-blue-primary;
+    }
+  }
+}

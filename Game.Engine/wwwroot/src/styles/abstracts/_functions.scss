@@ -1,0 +1,11 @@
+// -----------------------------------------------------------------------------
+// ABSTRACTS: FUNCTIONS
+// -----------------------------------------------------------------------------
+
+@use "sass:color";
+@use "sass:math";
+
+// Converts pixel value to rem assuming a 16px root font size
+@function px-to-rem($px, $base: 16px) {
+  @return math.div($px, $base) * 1rem;
+}

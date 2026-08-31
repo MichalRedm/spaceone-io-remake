@@ -508,7 +508,14 @@ export const Controls: ControlsType = {
             const ship = shipSelectorSwitch.querySelector(
               "[data-color=ship_secret]",
             );
-            if (ship) (ship as HTMLElement).style.display = "inline-block";
+            if (ship) {
+              (ship as HTMLElement).classList.remove(
+                "ship-selector__item--secret",
+              );
+              (ship as HTMLElement).classList.add(
+                "ship-selector__item--unlocked",
+              );
+            }
           }
         }
         if (discord.data.roles.includes("Old Guard")) {
@@ -516,7 +523,14 @@ export const Controls: ControlsType = {
             const ship = shipSelectorSwitch.querySelector(
               "[data-color=ship_zed]",
             );
-            if (ship) (ship as HTMLElement).style.display = "inline-block";
+            if (ship) {
+              (ship as HTMLElement).classList.remove(
+                "ship-selector__item--secret",
+              );
+              (ship as HTMLElement).classList.add(
+                "ship-selector__item--unlocked",
+              );
+            }
           }
         }
       }
@@ -580,13 +594,13 @@ window.addEventListener(
           Controls.autofire = true;
           Controls.shoot = true;
           if (autofTgg) autofTgg.textContent = "ON";
-          if (autofCon) autofCon.style.color = "#fff";
+          if (autofCon) autofCon.classList.add("autofire-indicator--active");
           console.log("Autofire enabled!");
         } else {
           Controls.autofire = false;
           Controls.shoot = false;
           if (autofTgg) autofTgg.textContent = "OFF";
-          if (autofCon) autofCon.style.color = "";
+          if (autofCon) autofCon.classList.remove("autofire-indicator--active");
           console.log("Autofire disabled!");
         }
         break;
@@ -768,8 +782,9 @@ function drawColorSelector() {
     if (selectorImage) {
       switchEl.appendChild(selectorImage);
       selectorImage.setAttribute("data-color", colors[i]);
+      selectorImage.classList.add("ship-selector__item");
       if (secretShips.includes(colors[i])) {
-        selectorImage.style.display = "none";
+        selectorImage.classList.add("ship-selector__item--secret");
       }
     }
   }

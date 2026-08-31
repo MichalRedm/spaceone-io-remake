@@ -1,0 +1,32 @@
+// -----------------------------------------------------------------------------
+// LAYOUT: TRANSITION OVERLAYS & VIGNETTES
+// -----------------------------------------------------------------------------
+
+@use "../abstracts" as *;
+
+.screen-fade-overlay,
+#overlay {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: $color-bg-dark;
+  opacity: 0;
+  pointer-events: none;
+  z-index: $z-index-background;
+}
+
+.vignette-overlay,
+#shadowmaker {
+  width: 100%;
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  box-shadow: 0 0 32px $color-danger-fill-glow inset;
+  pointer-events: none;
+  z-index: $z-index-canvas;
+}

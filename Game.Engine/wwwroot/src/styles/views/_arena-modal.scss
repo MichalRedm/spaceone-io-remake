@@ -1,0 +1,121 @@
+// -----------------------------------------------------------------------------
+// VIEWS: ARENA MODAL (INVALID ARENA / ALERTS)
+// -----------------------------------------------------------------------------
+
+@use "../abstracts" as *;
+
+.arena-modal,
+.arena-modal-popup,
+#invalidArenaPopup {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  margin: auto;
+  width: 480px;
+  max-width: 90vw;
+  height: fit-content;
+  max-height: 320px;
+  background: $color-blue-navy;
+  border: 2px solid $color-blue-primary;
+  border-radius: 10px;
+  box-shadow: 0 0 35px 5px rgba(0, 82, 255, 0.7);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  overflow: hidden;
+  font-family: $font-family-main;
+  color: $color-text-main;
+  z-index: $z-index-alert;
+
+  &__header,
+  .header {
+    position: relative;
+    width: 100%;
+    height: 50px;
+    background: $color-blue-header;
+    border-bottom: 1px solid $color-blue-border-light;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+  }
+
+  &__title,
+  .header .title {
+    font-size: 1.4em;
+    font-weight: 900;
+    color: $color-text-main;
+    @include text-glow($color-blue-primary);
+  }
+
+  &__close,
+  .header .close {
+    font-size: 24px;
+    color: $color-text-muted;
+    cursor: pointer;
+    transition:
+      color $transition-medium,
+      text-shadow $transition-medium;
+
+    &:hover {
+      color: $color-text-main;
+      text-shadow: 0 0 8px $color-text-main;
+    }
+  }
+
+  &__body,
+  .arena-modal-body {
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+
+  &__text,
+  .modal-text {
+    font-size: 1.15em;
+    margin: 0 0 8px 0;
+    color: $color-text-ice;
+    line-height: 1.4;
+  }
+
+  &__subtext,
+  .modal-subtext {
+    font-size: 0.95em;
+    color: $color-text-subtle;
+    margin-bottom: 15px;
+  }
+
+  &__btn,
+  .modal-btn {
+    @include button-base;
+    color: $color-bg-dark;
+    font-weight: 900;
+    font-size: 1.1em;
+    border: 3px $color-yellow-border solid;
+    border-radius: 8px;
+    min-width: 140px;
+    padding: 7px 0;
+    margin: 10px auto 0;
+    text-shadow: 0 2px 2px $color-yellow-border;
+    background: linear-gradient(
+      to bottom,
+      $color-yellow-primary 50%,
+      $color-yellow-dark 50%
+    );
+    box-shadow: 0 0 30px 0 $color-yellow-dark;
+
+    &:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 35px 0 $color-yellow-bright;
+    }
+
+    &:active {
+      transform: scale(0.98);
+    }
+  }
+}

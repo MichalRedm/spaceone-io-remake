@@ -1,0 +1,118 @@
+// -----------------------------------------------------------------------------
+// VIEWS: CHANGELOG & INSTRUCTIONS MODALS
+// -----------------------------------------------------------------------------
+
+@use "../abstracts" as *;
+
+.changelog-btn,
+.change-log-button,
+#changelogButton {
+  font-size: 1em;
+  padding: 10px;
+  color: #fff;
+  border-radius: 20px / 50px;
+  text-decoration: none;
+  cursor: pointer;
+  position: fixed;
+  bottom: 60px;
+  left: 10px;
+  transition: all 0.3s ease-out;
+  user-select: none;
+  display: block;
+  z-index: 100;
+
+  h4 {
+    margin: 0 0 2px 0;
+    color: #fff;
+    font-size: 1em;
+    font-weight: bold;
+  }
+
+  span {
+    color: #fff;
+    font-size: 0.9em;
+  }
+
+  &:hover {
+    transform: none;
+  }
+}
+
+.instructions-modal,
+#popupInstructions {
+  .modal-dialog,
+  #instructionsPopup {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: auto;
+    width: 300px;
+    height: 200px;
+    background: #000;
+    color: #fff;
+    font-family: $font-family-main;
+    border: 2px #fff solid;
+    text-align: center;
+    border-radius: 8px;
+    padding: 0 20px 20px 20px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .modal-dialog__header,
+  .header {
+    background: #000;
+    width: 100%;
+    height: 50px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .modal-dialog__title,
+  .title {
+    font-size: 1.5em;
+    font-weight: bold;
+    padding: 0;
+    margin: 0;
+    color: #fff;
+  }
+
+  .modal-dialog__close,
+  .close {
+    cursor: pointer;
+    font-size: 24px;
+    font-weight: bold;
+    color: #fff;
+    padding: 0;
+    line-height: 1;
+    transition: color $transition-fast;
+
+    &:hover {
+      color: $color-blue-accent;
+    }
+  }
+
+  &__content,
+  #instructionsContent {
+    font-size: 0.95em;
+    line-height: 1.8;
+    text-align: center;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0;
+    color: #fff;
+
+    span {
+      display: block;
+      margin: 2px 0;
+    }
+  }
+}

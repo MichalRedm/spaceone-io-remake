@@ -1,0 +1,22 @@
+// -----------------------------------------------------------------------------
+// COMPONENTS: PANELS & CONTAINERS
+// -----------------------------------------------------------------------------
+
+@use "../abstracts" as *;
+
+.box-panel {
+  @include glowing-panel;
+
+  &--blue,
+  &.blue-box-border {
+    @include glowing-panel(
+      $border-color: $color-blue-border,
+      $bg-color: $color-blue-panel-bg,
+      $glow-color: $color-blue-primary
+    );
+  }
+
+  &--compact {
+    padding: 8px 12px;
+  }
+}

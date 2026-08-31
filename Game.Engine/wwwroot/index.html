@@ -20,7 +20,7 @@
     <meta property="twitter:description"
         content="Spaceone.io is a fast-paced real-time strategy shooter game where you take command of spaceship squadrons! Play with your friends, team up, and destroy the enemies! Conquer the arena with your lasers with your mouse and keyboard in this hot online multiplayer game. Join now! Available as a online browser HTML5 io game." />
     <title>SPACEONE.io</title>
-    <link rel="stylesheet" type="text/css" href="css/game.css" />
+    <link rel="stylesheet" href="src/styles/main.scss" />
     <link rel="shortcut icon" type="image/png" href="img/ship_icon.png" />
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.1/css/all.css"
         integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous" />
@@ -31,140 +31,93 @@
 <body class="loading dead static_background">
     <div class="container aspectratio">
 
-        <!--<div id="error" hidden>
-            <h4 id="error_message">
-                Unable to connect to the server! Please check your internet connection or the server maybe under maintenance.
-            </h4>
-        </div>-->
-
-        <div id="settings" class="blue-box-border visibility" style="z-index:1">
-            <div id="settings-text">
-                <span>Graphics:</span><span id="graphics-high">HIGH</span>/<span
-                    id="graphics-medium">MEDIUM</span>/<span id="graphics-low">LOW</span>
+        <div id="settings" class="graphics-bar box-panel box-panel--blue view-state--menu visibility">
+            <div id="settings-text" class="graphics-bar__label">
+                <span>Graphics:</span><span id="graphics-high" class="graphics-bar__option">HIGH</span>/<span
+                    id="graphics-medium" class="graphics-bar__option">MEDIUM</span>/<span id="graphics-low" class="graphics-bar__option">LOW</span>
             </div>
         </div>
 
-        <div id="spectate" class="visibility">
-            SPECTATE<img id="spectate-eye" src="img/main_menu/Spectate_Icon.png" />
+        <div id="spectate" class="btn btn--spectate view-state--menu visibility">
+            SPECTATE<img id="spectate-eye" class="btn--spectate__icon" src="img/main_menu/Spectate_Icon.png" alt="Spectate" />
         </div>
 
-        <div id="fullscreenButton" class="visibility">
+        <div id="fullscreenButton" class="btn btn--fullscreen view-state--menu visibility">
             FULLSCREEN&nbsp;&nbsp;<i class="fas fa-expand"></i>
         </div>
 
-
-        <div id="support-game" class="blue-box-border visibility" style="z-index:4">
-            <!--<script src="js/googlesheetsutils.js" charset="utf-8"></script>
-			<script async defer src="https://apis.google.com/js/api.js"
-			onload="this.onload=function(){};handleClientLoad()"
-			onreadystatechange="if (this.readyState === 'complete') this.onload()">
-			</script>-->
-            <div id="support-game-text">
+        <div id="support-game" class="support-panel box-panel box-panel--blue view-state--menu visibility">
+            <div id="support-game-text" class="support-panel__text">
                 Want to be featured here?<br />
                 Contact: spaceoneiogame@gmail.com
             </div>
-            <div id="player"></div>
-            <!--<script src="js/videoutils.js" charset="utf-8"></script>
-			<div id="cross-promo">
-				<a href="//bit.ly/2vJl9Dx" target="_blank">
-					<img id="promo-image" src="img/main_menu/snok-x-promo.png">
-				</a>
-			</div>-->
+            <div id="player" class="support-panel__video"></div>
         </div>
-        <div id="cross-promo" class="visibility">
-            <a href="https://www.reddit.com/r/space1io/" target="_blank" id="reddit-button">
+
+        <div id="cross-promo" class="social-links view-state--menu visibility">
+            <a href="https://www.reddit.com/r/space1io/" target="_blank" id="reddit-button" class="social-links__item social-links__item--reddit">
                 <img src="img/main_menu/Reddit_Logo.svg" alt="Reddit" />
             </a>
-            <a href="https://discord.gg/hDGnWju" target="_blank" id="discord-button">
+            <a href="https://discord.gg/hDGnWju" target="_blank" id="discord-button" class="social-links__item social-links__item--discord">
                 <img src="img/main_menu/Discord_Logo.png" alt="Discord" />
             </a>
-            <a href="#" target="_blank" id="twitter-button">
+            <a href="#" target="_blank" id="twitter-button" class="social-links__item social-links__item--twitter">
                 <img src="img/main_menu/Twitter_Logo.webp" alt="Twitter" />
             </a>
-            <a href="#" target="_blank" id="youtube-button">
+            <a href="#" target="_blank" id="youtube-button" class="social-links__item social-links__item--youtube">
                 <img src="img/main_menu/Youtube_Logo.webp" alt="Youtube" />
             </a>
         </div>
 
-        <div id="gameArea" class="noselect aspectratio" style="z-index:-1">
-            <canvas id="gameCanvas" class="centered" style="visibility:hidden" width="1000" height="500"></canvas>
+        <div id="gameArea" class="game-area noselect aspectratio">
+            <canvas id="gameCanvas" class="game-canvas centered" width="1000" height="500"></canvas>
 
-            <div id="leaderboard-container" class="visibility2">
-                <h2 id="leaderboard-header">Leaderboard</h2>
-                <table id="leaderboard" cellspacing="0"></table>
+            <div id="leaderboard-container" class="leaderboard view-state--game visibility2">
+                <h2 id="leaderboard-header" class="leaderboard__header">Leaderboard</h2>
+                <table id="leaderboard" class="leaderboard__table" cellspacing="0"></table>
             </div>
 
-            <div id="record" class="visibility2">
-                Arena record: <span id="record-score">0</span><br />
-                Fleet: <span id="record-fleet">Unknown Squadron #0</span>
+            <div id="record" class="arena-record view-state--game visibility2">
+                Arena record: <span id="record-score" class="arena-record__score">0</span><br />
+                Fleet: <span id="record-fleet" class="arena-record__fleet">Unknown Squadron #0</span>
             </div>
 
-            <div id="clock"></div>
+            <div id="clock" class="fullscreen-clock"></div>
 
-            <div id="fleetSizeContainer" class="visibility3">Size: <span id="fleetSize">0</span></div>
+            <div id="fleetSizeContainer" class="fleet-size view-state--alive visibility3">Size: <span id="fleetSize">0</span></div>
 
-            <div id="plusScoreContainer"></div>
+            <div id="plusScoreContainer" class="score-popup-container"></div>
 
-            <img src="img/Leader_Arrow.png" id="leader-arrow" class="visibility3" />
+            <img src="img/Leader_Arrow.png" id="leader-arrow" class="leader-arrow view-state--alive visibility3" alt="Leader Arrow" />
 
-            <div id="autofireContainer" class="visibility3">Autofire (E): <span id="autofireToggle">OFF</span></div>
-            <!--<small id="minimapTip" style="display:none">Press M to toggle the minimap</small>-->
+            <div id="autofireContainer" class="autofire-indicator view-state--alive visibility3">Autofire (E): <span id="autofireToggle" class="autofire-indicator__state">OFF</span></div>
 
-            <img id="dangerZoneWarning" style="display:none" src="img/Danger_Zone.png" alt="DANGER ZONE" />
-            <div id="bigLog"></div>
+            <img id="dangerZoneWarning" class="danger-zone-warning" src="img/Danger_Zone.png" alt="DANGER ZONE" />
+            <div id="bigLog" class="kill-banner"></div>
 
-            <div id="ctf_arena" class="hide" hidden>
-                <span id="ctf_cyan">
-                    <span class="flag_status">
+            <div id="ctf_arena" class="ctf-hud hide" hidden>
+                <span id="ctf_cyan" class="ctf-hud__team ctf-hud__team--cyan">
+                    <span class="ctf-hud__flag-status flag_status">
                         <span class="home">Home</span>
                         <span class="taken">Taken</span>
                     </span>
                 </span>
-                <span id="ctf_red">
-                    <span class="flag_status">
+                <span id="ctf_red" class="ctf-hud__team ctf-hud__team--red">
+                    <span class="ctf-hud__flag-status flag_status">
                         <span class="home">Home</span>
                         <span class="taken">Taken</span>
                     </span>
                 </span>
-            </div>
-
-            <div id="spectatecontrols">
-                <div id="deathScreen" hidden>
-                    <table>
-                        <tr>
-                            <td>High score:</td>
-                            <td id="deathScreenScore">
-                                <span style="color:red">ERROR</span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Game time:</td>
-                            <td id="deathScreenGameTime">
-                                <span style="color:red">ERROR</span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Kills:</td>
-                            <td id="deathScreenKills">
-                                <span style="color:red">ERROR</span>
-                            </td>
-                        </tr>
-                    </table>
-                </div>
-
-                <input type="button" id="stop_spectating" class="button1" value="Menu" hidden />
-                <input type="button" id="spawnSpectate" class="button1" value="Launch" hidden />
             </div>
 
             <div id="plotly"></div>
 
-            <table id="leaderboard-left" cellspacing="0" hidden></table>
-            <table id="leaderboard-center" cellspacing="0" hidden></table>
-            <div id="log"></div>
+            <table id="leaderboard-left" class="leaderboard__table" cellspacing="0" hidden></table>
+            <table id="leaderboard-center" class="leaderboard__table" cellspacing="0" hidden></table>
 
-            <div id="selfNickContainer" class="visibility3"></div>
-            <div id="cooldown" class="visibility3">
-                <div id="cooldownValue" style="width: 100%;"></div>
+            <div id="selfNickContainer" class="player-name-hud view-state--alive visibility3"></div>
+            <div id="cooldown" class="cooldown-bar view-state--alive visibility3">
+                <div id="cooldownValue" class="cooldown-bar__fill cooldown-bar__fill--ready"></div>
             </div>
 
             <table id="chat" hidden>
@@ -174,255 +127,72 @@
                 </tr>
             </table>
 
-            <div id="hud" hidden>fps: 0 - players: 0 - ping: 0</div>
-            <div id="nipple-controls">
-                <div id="nipple-zone"></div>
-                <div id="niple-buttons">
-                    <div id="shoot"></div>
-                    <div id="boost"></div>
+            <div id="nipple-controls" class="touch-controls">
+                <div id="nipple-zone" class="touch-controls__zone"></div>
+                <div id="niple-buttons" class="touch-controls__buttons">
+                    <div id="shoot" class="touch-controls__btn touch-controls__btn--shoot"></div>
+                    <div id="boost" class="touch-controls__btn touch-controls__btn--boost"></div>
                 </div>
             </div>
         </div>
-        <div id="overlay"></div>
-        <div id="shadowmaker" class="visibility2" oncontextmenu="return false;"></div>
-        <div class="spawnscreen" style="z-index:1">
-            <div id="arena-link" class="blue-box-border visibility" data-state="open" style="z-index:4">
-                <img id="arena-link-close" src="img/main_menu/Arena_Link_Close.png" alt="Close Arena Link"
-                    style="display: none;">
-                <span id="arena-link-span">Play with your friends!<br>Share this link:</span>
-                <input id="arena-link-input" type="text" readonly="readonly">
-                <div id="generate-link-button">
+        <div id="overlay" class="screen-fade-overlay"></div>
+        <div id="shadowmaker" class="vignette-overlay view-state--game visibility2" oncontextmenu="return false;"></div>
+        <div class="spawnscreen">
+            <div id="arena-link" class="arena-share box-panel box-panel--blue view-state--menu visibility" data-state="open">
+                <img id="arena-link-close" class="arena-share__close" src="img/main_menu/Arena_Link_Close.png" alt="Close Arena Link">
+                <span id="arena-link-span" class="arena-share__text">Play with your friends!<br>Share this link:</span>
+                <input id="arena-link-input" class="arena-share__input" type="text" readonly="readonly">
+                <div id="generate-link-button" class="btn btn--gold arena-share__btn">
                     COPY LINK
                 </div>
-                <img id="arena-link-success" src="img/main_menu/Arena_Link_Success.png" alt="Success Arena Link"
-                    style="display: none;">
+                <img id="arena-link-success" class="arena-share__success" src="img/main_menu/Arena_Link_Success.png" alt="Success Arena Link">
             </div>
-            <div class="controls visibility">
-                <div id="container" class="container" style="position:absolute;top:0;width:100%;text-align:center">
-                    <div id="logo">
+            <div class="controls view-state--menu visibility">
+                <div id="container" class="container spawnscreen__content">
+                    <div id="logo" class="spawnscreen__logo">
                     </div>
-                    <div id="selection-container">
-                        <div id="left-arrow" class="arrow" style="z-index:4"> <img
-                                src="img/main_menu/Color_Selector_Arrow_left.png" alt="Left Arrow"> </div>
-                        <div id="right-arrow" class="arrow" style="z-index:4"> <img
-                                src="img/main_menu/Color_Selector_Arrow_right.png" alt="Right Arrow"> </div>
-                        <div style="position:relative;top:12px">
-                            <div id="shipSelectorSwitch"></div>
-                            <div id="selection"></div>
+                    <div id="selection-container" class="ship-selector">
+                        <div id="left-arrow" class="ship-selector__arrow ship-selector__arrow--left arrow">
+                            <img src="img/main_menu/Color_Selector_Arrow_left.png" alt="Left Arrow">
+                        </div>
+                        <div id="right-arrow" class="ship-selector__arrow ship-selector__arrow--right arrow">
+                            <img src="img/main_menu/Color_Selector_Arrow_right.png" alt="Right Arrow">
+                        </div>
+                        <div class="ship-selector__carousel-wrapper">
+                            <div id="shipSelectorSwitch" class="ship-selector__carousel"></div>
+                            <div id="selection" class="ship-selector__indicator"></div>
                         </div>
                     </div>
-                    <button id="emoji-trigger" class="button1" hidden>👋</button>
-                    <div class="main-ui">
-                        <div id="high-score">High Score: <span id="high-score-num">0</span> </div>
-                        <input placeholder="Your fleet name" type="text" id="nick" maxlength="15"
+                    <button id="emoji-trigger" class="btn button1" hidden>👋</button>
+                    <div class="main-ui spawnscreen__form">
+                        <div id="high-score" class="spawnscreen__high-score">High Score: <span id="high-score-num">0</span> </div>
+                        <input placeholder="Your fleet name" type="text" id="nick" class="spawnscreen__nick-input" maxlength="15"
                             ondragstart="return false;" ondrop="return false;" /><br />
-                        <div id="emoji-container" hidden></div>
-                        <div id="launch-container">
-                            <input type="button" id="spawn" class="button1" value="PLAY" />
-                            <input type="button" id="dauth" class="button1" value="Login with Discord" hidden />
+                        <div id="emoji-container" class="emoji-picker" hidden></div>
+                        <div id="launch-container" class="spawnscreen__actions">
+                            <input type="button" id="spawn" class="btn btn--spawn button1" value="PLAY" />
+                            <input type="button" id="dauth" class="btn btn--discord button1" value="Login with Discord" hidden />
                         </div>
-                        <div id="instructions" class="visibility">
-                            <p id="instructions-text">MOVE MOUSE to steer fleet</p>
+                        <div id="instructions" class="instructions-hint view-state--menu visibility">
+                            <p id="instructions-text" class="instructions-hint__text">MOVE MOUSE to steer fleet</p>
                         </div>
-                        <div id="popupInstructions" class="change-log-overlay" hidden style="z-index:5">
-                            <div id="instructionsBack" class="invisible-change-log-back"></div>
-                            <div id="instructionsPopup" class="change-log-popup">
-                                <div class="header">
-                                    <div id="instructionsClose" class="close">✕</div>
-                                    <div class="title">Instructions</div>
-                                </div>
-                                <span id="instructionsContent">
-                                    <br>
-                                    <span>MOVE MOUSE to steer fleet</span><br><br>
-                                    <span>CLICK or SPACE to shoot</span><br><br>
-                                    <span>'S' to Split &amp; Dash</span>
-                                </span>
-                            </div>
-                        </div>
-                        <!-- <div id="dev-notice" class="blue-box-border visibility"
-                            style="display: inline-block; font-size: 1em; padding: 1em; margin-top: 3em;">
-                            <i class="fa fa-info-circle" style="margin-right: 0.3em;"></i>
-                            <span>This remake is still in development. <a href="https://discord.gg/5ak5FsU"
-                                    target="_blank" style="color: #3d78ff;">Join here</a> for more info.</span>
-                        </div> -->
                     </div>
-                    <input type="button" id="arenas" class="button1" value="Game Modes" hidden />
+                    <input type="button" id="arenas" class="btn button1" value="Game Modes" hidden />
                 </div>
             </div>
-            <div id="popupInvalidArena" class="change-log-overlay" hidden style="z-index:20">
-                <div id="invalidArenaBack" class="invisible-change-log-back"></div>
-                <div id="invalidArenaPopup" class="arena-modal-popup">
-                    <div class="header">
-                        <div id="invalidArenaClose" class="close">✕</div>
-                        <div class="title">Arena Not Found</div>
-                    </div>
-                    <div class="arena-modal-body">
-                        <p class="modal-text">The arena link you followed does not exist or has expired.</p>
-                        <p class="modal-text modal-subtext">You have been connected to the default arena.</p>
-                        <button id="invalidArenaOk" class="modal-btn">OK</button>
-                    </div>
-                </div>
-            </div>
-            <div id="error" style="visibility:hidden">
+            <div id="error" class="connection-error" hidden>
                 <div id="toast-container" class="toast-bottom-left">
                     <div class="toast toast-error" aria-live="assertive">
                         <div class="toast-message">Couldn't connect to an arena. Please try again</div>
                     </div>
                 </div>
             </div>
-            <div class="visibility">
-                <a id="changelogButton" class="change-log-button">
-                    <h4>CAPTAIN'S LOG</h4>
-                    <span>19 February 2021</span><br>
-                    <span>- Movement physics reworked</span><br>
-                </a>
-            </div>
-            <div id="popupChangelog" class="change-log-overlay" style="z-index:5">
-                <div id="changelogBack" class="invisible-change-log-back"></div>
-                <div class="change-log-popup">
-                    <div class="header">
-                        <div id="changelogClose" class="close">✕</div>
-                        <div class="title">Captain's Log History</div>
-                        <div id="button-iluminati-container">
-                            <!--<a class="social-button" id="iluminati-button" href="http://bit.ly/2qvVKNK" target="_blank"><img src="img/illuminati.png" alt="reddit logo"></a>-->
-                        </div>
-                    </div>
-                    <span>
-                        <br><br><br>
-
-                        <span>19 February 2021</span><br>
-                        <span>- Movement physics reworked</span><br><br>
-
-                        <span>29 January 2021</span><br>
-                        <span>- Physics improved</span><br>
-                        <span>- More original sprites added</span><br>
-                        <span>- Graphical settings</span><br><br>
-
-                        <span>4 April 2020</span><br>
-                        <span>- More physics improvements</span><br><br>
-
-                        <span>11 March 2020</span><br>
-                        <span>- Flocking improved</span><br>
-                        <span>- Fleet velocity and drag updated</span><br><br>
-
-                        <span>9 October 2019</span><br>
-                        <span>- Drag and flocking improvements</span><br>
-                        <span>- Ship selector bug fix</span><br><br>
-
-                        <span>6 October 2019</span><br>
-                        <span>- Spaceone Beta deployed for tests</span><br>
-                        <span>- Physics partly reconstructed</span><br>
-                        <span>- Spawnscreen mostly reconstructed</span><br>
-                        <span>- Graphics partly reconstructed</span><br><br>
-
-                        <span>3 September 2019</span><br>
-                        <span>- Spaceone rebuild project has officially begun</span><br>
-                        <span>- Game is basing now on daud.io engine</span><br><br>
-
-                        <span>12 November 2018</span><br>
-                        <span>- Spaceone takedown</span><br><br>
-
-                        <span>17 May 2017</span><br>
-                        <span>- Autofire improvement</span><br>
-                        <span>- ?</span><br><br>
-
-                        <span>12 May 2017</span><br>
-                        <span>- Server improvements</span><br><br>
-
-                        <span>11 May 2017</span><br>
-                        <span>- Fix autofire bug</span><br><br>
-
-                        <span>5 May 2017</span><br>
-                        <span>- Improved youtube featured system</span><br><br>
-
-                        <span>2 May 2017</span><br>
-                        <span>- Improved flocking algorithm</span><br><br>
-
-                        <span>28 April 2017</span><br>
-                        <span>- Ship selection fixed (left)</span><br><br>
-
-                        <span>27 April 2017</span><br>
-                        <span>- Graphic Settings</span><br>
-                        <span>- Instructions Popup</span><br>
-                        <span>- Food spawn animation</span><br>
-                        <span>- Score announcements</span><br>
-                        <span>- Official Twitter account</span><br><br>
-
-                        <span>21 April 2017</span><br>
-                        <span>- Revamp visuals</span><br>
-                        <span>- Dash and shoot mechanic</span><br>
-                        <span>- Change log history</span><br>
-                        <span>- Bug fixing</span><br>
-                        <span>- Improvement in overall performance</span><br><br>
-
-                        <span>6 April 2017</span><br>
-                        <span>- Rotating Instruction text</span><br>
-                        <span>- Fixed bullets starting velocity</span><br>
-                        <span>- Fix soft lock when getting AFK</span><br><br>
-
-                        <span>31 March 2017</span><br>
-                        <span>- Fixed invisible bullets bug</span><br><br>
-
-                        <span>28 March 2017</span><br>
-                        <span>- Bullets are now displayed more accurately</span><br>
-                        <span>- Unknown fleets each have a number</span><br>
-                        <span>- Improved feedback when failing to connect with Arena Link</span><br>
-                        <span>- Added message warning of server shutdown</span><br><br>
-
-                        <span>17 March 2017</span><br>
-                        <span>- Fixed score bug when dying in the Danger Zone</span><br>
-                        <span>- Fixed some visual bugs</span><br><br>
-
-                        <span>16 March 2017</span><br>
-                        <span>- Fixed some bugs from previous updates</span><br><br>
-
-                        <span>14 March 2017</span><br>
-                        <span>- Bandwitdh optimisations</span><br>
-                        <span>- New Split and Dash Mechanic ('S' key)</span><br>
-                        <span>- Arena Links</span><br>
-                        <span>- Check the official subreddit for more info</span><br><br>
-
-                        <span>17 February 2017</span><br>
-                        <span>- Added official Discord server link</span><br>
-                        <span>- Last name used is now saved</span><br><br>
-
-                        <span>14 February 2017</span><br>
-                        <span>- Client upgrade mechanism</span><br>
-                        <span>- Fixed issue with adblock users not being able to play</span><br><br>
-
-                        <span>13 February 2017</span><br>
-                        <span>- Client upgrade mechanism</span><br><br>
-
-                        <span>9 February 2017</span><br>
-                        <span>- Fixed score bug when dying in the Danger Zone</span><br><br>
-
-                        <span>7 February 2017</span><br>
-                        <span>- Improved ship selection</span><br>
-                        <span>- Added high score display</span><br>
-                        <span>- Fixed bugs</span><br><br>
-
-                        <span>3 February 2017</span><br>
-                        <span>- Improved mouse deadzone</span><br>
-                        <span>- Changed background</span><br>
-                        <span>- Added high score display</span><br><br>
-                    </span>
-                </div>
-            </div>
-            <div id="worlds" hidden>
-                <div id="topbar">
-                    <span>Arenas</span>
-                    <div class="close-button" id="wcancel"><img src="img/whiteX.png"></div>
-                </div>
-                <div id="world-list-scroll">
-                    <table id="worldList"></table>
-                </div>
-            </div>
-
+            
             <div id="links" hidden>
                 <a href="https://discord.gg/5ak5FsU" target="_blank">
                     <div class="link">
                         <div class="linkLogo">
-                            <img src="img/discord-icon.png" />
+                            <img src="img/discord-icon.png" alt="Discord" />
                         </div>
                         <div class="linkText">
                             Chat
@@ -432,7 +202,7 @@
                 <a href="https://new.reddit.com/r/daudio/" target="_blank">
                     <div class="link">
                         <div class="linkLogo">
-                            <img src="img/reddit-icon.png" />
+                            <img src="img/reddit-icon.png" alt="Reddit" />
                         </div>
                         <div class="linkText">
                             Forum
@@ -440,10 +210,10 @@
                     </div>
                 </a>
                 <div id="linksDropdown">
-                    <div class="link" style="margin-top:6px">
+                    <div class="link quick-links__item--first">
                         <div class="linkLogo">
                             <img src="https://ams-nw.com/wp-content/plugins/bb-plugin/img/svg/play.svg"
-                                style="width:25px;height:25px" />
+                                class="quick-links__icon" alt="Play" />
                         </div>
                         <div class="linkText">
                             More games
@@ -452,7 +222,7 @@
                     <a href="http://iogames.space" target="_blank">
                         <div class="link">
                             <div class="linkLogo">
-                                <img src="img/iogames-icon.png" />
+                                <img src="img/iogames-icon.png" alt="IOGames" />
                             </div>
                             <div class="linkText">
                                 Iogames.space
@@ -462,7 +232,7 @@
                     <a href="http://titotu.io/" target="_blank">
                         <div class="link">
                             <div class="linkLogo">
-                                <img src="img/titotu-icon.png" />
+                                <img src="img/titotu-icon.png" alt="Titotu" />
                             </div>
                             <div class="linkText">
                                 Titotu
@@ -471,17 +241,191 @@
                     </a>
                 </div>
             </div>
+        </div>
 
-            <div id="gear" hidden>
-                <div id="settingsContainer">
-                    <h1>Settings</h1>
+        <a id="changelogButton" class="changelog-btn change-log-button visibility">
+            <h4>CAPTAIN'S LOG</h4>
+            <span>19 February 2021</span><br>
+            <span>- Movement physics reworked</span><br>
+        </a>
+
+        <div id="popupInstructions" class="modal-overlay change-log-overlay instructions-modal" hidden>
+            <div id="instructionsBack" class="modal-backdrop invisible-change-log-back"></div>
+            <div id="instructionsPopup" class="modal-dialog change-log-popup instructions-modal__dialog">
+                <div class="modal-dialog__header header">
+                    <div class="modal-dialog__title title">Instructions</div>
+                    <div id="instructionsClose" class="modal-dialog__close close">✕</div>
+                </div>
+                <div id="instructionsContent" class="instructions-modal__content">
+                    <span>MOVE MOUSE to steer fleet</span>
+                    <span>CLICK or SPACE to shoot</span>
+                    <span>'S' to Split &amp; Dash</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="popupInvalidArena" class="modal-overlay change-log-overlay arena-modal-overlay" hidden>
+            <div id="invalidArenaBack" class="modal-backdrop invisible-change-log-back"></div>
+            <div id="invalidArenaPopup" class="arena-modal arena-modal-popup">
+                <div class="arena-modal__header header">
+                    <div class="arena-modal__title title">Arena Not Found</div>
+                    <div id="invalidArenaClose" class="arena-modal__close close">✕</div>
+                </div>
+                <div class="arena-modal__body arena-modal-body">
+                    <p class="arena-modal__text modal-text">The arena link you followed does not exist or has expired.</p>
+                    <p class="arena-modal__text arena-modal__subtext modal-text modal-subtext">You have been connected to the default arena.</p>
+                    <button id="invalidArenaOk" class="btn btn--gold arena-modal__btn modal-btn">OK</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="popupChangelog" class="modal-overlay change-log-overlay changelog-modal" hidden>
+            <div id="changelogBack" class="modal-backdrop invisible-change-log-back"></div>
+            <div class="modal-dialog change-log-popup">
+                <div class="modal-dialog__header header">
+                    <div class="modal-dialog__title title">Captain's Log History</div>
+                    <div id="changelogClose" class="modal-dialog__close close">✕</div>
+                </div>
+                <div class="modal-dialog__content content">
+                    <span>19 February 2021</span><br>
+                    <span>- Movement physics reworked</span><br><br>
+
+                    <span>29 January 2021</span><br>
+                    <span>- Physics improved</span><br>
+                    <span>- More original sprites added</span><br>
+                    <span>- Graphical settings</span><br><br>
+
+                    <span>4 April 2020</span><br>
+                    <span>- More physics improvements</span><br><br>
+
+                    <span>11 March 2020</span><br>
+                    <span>- Flocking improved</span><br>
+                    <span>- Fleet velocity and drag updated</span><br><br>
+
+                    <span>9 October 2019</span><br>
+                    <span>- Drag and flocking improvements</span><br>
+                    <span>- Ship selector bug fix</span><br><br>
+
+                    <span>6 October 2019</span><br>
+                    <span>- Spaceone Beta deployed for tests</span><br>
+                    <span>- Physics partly reconstructed</span><br>
+                    <span>- Spawnscreen mostly reconstructed</span><br>
+                    <span>- Graphics partly reconstructed</span><br><br>
+
+                    <span>3 September 2019</span><br>
+                    <span>- Spaceone rebuild project has officially begun</span><br>
+                    <span>- Game is basing now on daud.io engine</span><br><br>
+
+                    <span>12 November 2018</span><br>
+                    <span>- Spaceone takedown</span><br><br>
+
+                    <span>17 May 2017</span><br>
+                    <span>- Autofire improvement</span><br>
+                    <span>- ?</span><br><br>
+
+                    <span>12 May 2017</span><br>
+                    <span>- Server improvements</span><br><br>
+
+                    <span>11 May 2017</span><br>
+                    <span>- Fix autofire bug</span><br><br>
+
+                    <span>5 May 2017</span><br>
+                    <span>- Improved youtube featured system</span><br><br>
+
+                    <span>2 May 2017</span><br>
+                    <span>- Improved flocking algorithm</span><br><br>
+
+                    <span>28 April 2017</span><br>
+                    <span>- Ship selection fixed (left)</span><br><br>
+
+                    <span>27 April 2017</span><br>
+                    <span>- Graphic Settings</span><br>
+                    <span>- Instructions Popup</span><br>
+                    <span>- Food spawn animation</span><br>
+                    <span>- Score announcements</span><br>
+                    <span>- Official Twitter account</span><br><br>
+
+                    <span>21 April 2017</span><br>
+                    <span>- Revamp visuals</span><br>
+                    <span>- Dash and shoot mechanic</span><br>
+                    <span>- Change log history</span><br>
+                    <span>- Bug fixing</span><br>
+                    <span>- Improvement in overall performance</span><br><br>
+
+                    <span>6 April 2017</span><br>
+                    <span>- Rotating Instruction text</span><br>
+                    <span>- Fixed bullets starting velocity</span><br>
+                    <span>- Fix soft lock when getting AFK</span><br><br>
+
+                    <span>31 March 2017</span><br>
+                    <span>- Fixed invisible bullets bug</span><br><br>
+
+                    <span>28 March 2017</span><br>
+                    <span>- Bullets are now displayed more accurately</span><br>
+                    <span>- Unknown fleets each have a number</span><br>
+                    <span>- Improved feedback when failing to connect with Arena Link</span><br>
+                    <span>- Added message warning of server shutdown</span><br><br>
+
+                    <span>17 March 2017</span><br>
+                    <span>- Fixed score bug when dying in the Danger Zone</span><br>
+                    <span>- Fixed some visual bugs</span><br><br>
+
+                    <span>16 March 2017</span><br>
+                    <span>- Fixed some bugs from previous updates</span><br><br>
+
+                    <span>14 March 2017</span><br>
+                    <span>- Bandwitdh optimisations</span><br>
+                    <span>- New Split and Dash Mechanic ('S' key)</span><br>
+                    <span>- Arena Links</span><br>
+                    <span>- Check the official subreddit for more info</span><br><br>
+
+                    <span>17 February 2017</span><br>
+                    <span>- Added official Discord server link</span><br>
+                    <span>- Last name used is now saved</span><br><br>
+
+                    <span>14 February 2017</span><br>
+                    <span>- Client upgrade mechanism</span><br>
+                    <span>- Fixed issue with adblock users not being able to play</span><br><br>
+
+                    <span>13 February 2017</span><br>
+                    <span>- Client upgrade mechanism</span><br><br>
+
+                    <span>9 February 2017</span><br>
+                    <span>- Fixed score bug when dying in the Danger Zone</span><br><br>
+
+                    <span>7 February 2017</span><br>
+                    <span>- Improved ship selection</span><br>
+                    <span>- Added high score display</span><br>
+                    <span>- Fixed bugs</span><br><br>
+
+                    <span>3 February 2017</span><br>
+                    <span>- Improved mouse deadzone</span><br>
+                    <span>- Changed background</span><br>
+                    <span>- Added high score display</span><br><br>
+                </div>
+            </div>
+        </div>
+
+        <div id="worlds" class="worlds-modal closed" hidden>
+            <div id="topbar" class="worlds-modal__topbar">
+                <span>Arenas</span>
+                <div class="worlds-modal__close close-button" id="wcancel"><img src="img/whiteX.png" alt="Close"></div>
+            </div>
+            <div id="world-list-scroll" class="worlds-modal__scroll">
+                <table id="worldList" class="worlds-modal__list"></table>
+            </div>
+        </div>
+
+        <div id="gear" class="settings-modal closed" hidden>
+            <div id="settingsContainer" class="settings-modal__container">
+                <h1>Settings</h1>
 
                     <table>
                         <tr>
                             <td>
                                 <h4>Display</h4>
                                 <label for="settingsThemeSelector">Theme Selection</label>
-                                <select id="settingsThemeSelector" class="button1">
+                                <select id="settingsThemeSelector" class="btn button1">
                                     <option value="">default</option>
                                     <option value="0thqdzjhd6x17ag">Poly</option>
                                     <option value="gddlfhf0qkm8je7">Bright - Old</option>
@@ -490,18 +434,18 @@
                                     <option value="c4yh49qs8uvms87">Universe - Old</option>
                                 </select>
                                 <input placeholder="custom hash" type="text" id="settingsThemeSelectorCustom"
-                                    class="button1" value="">
+                                    class="btn button1" value="">
                                 <br />
 
                                 <label for="settingsBackground">Background</label>
-                                <select id="settingsBackground" class="button1">
+                                <select id="settingsBackground" class="btn button1">
                                     <option value="none">none</option>
                                     <option value="on">enabled</option>
                                 </select>
                                 <br />
 
                                 <label for="settingsNameSize">Name Size</label>
-                                <select id="settingsNameSize" class="button1">
+                                <select id="settingsNameSize" class="btn button1">
                                     <option value="20">tiny</option>
                                     <option value="32">smaller</option>
                                     <option value="48">small</option>
@@ -512,7 +456,7 @@
                                 <br />
 
                                 <label for="settingsLog">Log Length</label>
-                                <select id="settingsLog" class="button1">
+                                <select id="settingsLog" class="btn button1">
                                     <option value="0">none</option>
                                     <option value="1">1 line</option>
                                     <option value="2">2 lines</option>
@@ -521,23 +465,20 @@
                                     <option value="10">historian</option>
                                 </select>
                                 <br />
-
-
                             </td>
                             <td>
                                 <h4>Controls</h4>
 
                                 <label for="settingsMouseScale">Mouse Sensitivity</label>
-                                <select id="settingsMouseScale" class="button1">
+                                <select id="settingsMouseScale" class="btn button1">
                                     <option value="1">sensitive</option>
                                     <option value="4">medium</option>
                                     <option value="10">straight-shooter</option>
                                 </select>
-
                                 <br />
 
                                 <label for="settingsBandwidth">Bandwidth</label>
-                                <select id="settingsBandwidth" class="button1">
+                                <select id="settingsBandwidth" class="btn button1">
                                     <option value="100">high</option>
                                     <option value="50">medium</option>
                                     <option value="25">low</option>
@@ -547,126 +488,117 @@
                         </tr>
                     </table>
 
-
                     <table id="settingsTable">
-                        <!-- hidden... this isn't doing anything -->
-                        <tr style="display: none;">
+                        <tr class="settings-modal__row--hidden">
                             <td>Display Minimap</td>
                             <td>
-                                <label class="switch">
+                                <label class="form-switch switch">
                                     <input type="checkbox" id="settingsDisplayMinimap">
-                                    <span class="slider round"></span>
+                                    <span class="form-switch__slider slider round"></span>
                                 </label>
                             </td>
                         </tr>
                         <tr>
                             <td>Big Kill Message</td>
                             <td>
-                                <label class="switch">
+                                <label class="form-switch switch">
                                     <input type="checkbox" id="settingsBigKillMessage">
-                                    <span class="slider round"></span>
+                                    <span class="form-switch__slider slider round"></span>
                                 </label>
                             </td>
                         </tr>
                         <tr>
                             <td>Show Keyboard Hints</td>
                             <td>
-                                <label class="switch">
+                                <label class="form-switch switch">
                                     <input type="checkbox" id="settingsShowKeyboardHints">
-                                    <span class="slider round"></span>
+                                    <span class="form-switch__slider slider round"></span>
                                 </label>
                             </td>
                         </tr>
-
                         <tr>
                             <td>Show Leaderboard</td>
                             <td>
-                                <label class="switch">
+                                <label class="form-switch switch">
                                     <input type="checkbox" id="settingsLeaderboardEnabled">
-                                    <span class="slider round"></span>
+                                    <span class="form-switch__slider slider round"></span>
                                 </label>
                             </td>
                         </tr>
-
                         <tr>
                             <td>Show Stats</td>
                             <td>
-                                <label class="switch">
+                                <label class="form-switch switch">
                                     <input type="checkbox" id="settingsHUDEnabled">
-                                    <span class="slider round"></span>
+                                    <span class="form-switch__slider slider round"></span>
                                 </label>
                             </td>
                         </tr>
-
                         <tr>
                             <td>Show Names</td>
                             <td>
-                                <label class="switch">
+                                <label class="form-switch switch">
                                     <input type="checkbox" id="settingsNamesEnabled">
-                                    <span class="slider round"></span>
+                                    <span class="form-switch__slider slider round"></span>
                                 </label>
                             </td>
                         </tr>
-
                         <tr>
                             <td>Show OWN name</td>
                             <td>
-                                <label class="switch">
+                                <label class="form-switch switch">
                                     <input type="checkbox" id="settingsShowOwnName">
-                                    <span class="slider round"></span>
+                                    <span class="form-switch__slider slider round"></span>
                                 </label>
                             </td>
                         </tr>
-
-
                         <tr>
                             <td>Rendering Tweak (MipMapping)</td>
                             <td>
-                                <label class="switch">
+                                <label class="form-switch switch">
                                     <input type="checkbox" id="settingsMipMapping">
-                                    <span class="slider round"></span>
+                                    <span class="form-switch__slider slider round"></span>
                                 </label>
                             </td>
                         </tr>
-
                         <tr>
                             <td>Show Cooldown Timer</td>
                             <td>
-                                <label class="switch">
+                                <label class="form-switch switch">
                                     <input type="checkbox" id="settingsShowCooldown">
-                                    <span class="slider round"></span>
+                                    <span class="form-switch__slider slider round"></span>
                                 </label>
                             </td>
                         </tr>
                         <tr>
                             <td>Show Hints</td>
                             <td>
-                                <label class="switch">
+                                <label class="form-switch switch">
                                     <input type="checkbox" id="settingsShowHints">
-                                    <span class="slider round"></span>
+                                    <span class="form-switch__slider slider round"></span>
                                 </label>
                             </td>
                         </tr>
                         <tr>
                             <td>Allow Darkblue Ships</td>
                             <td>
-                                <label class="switch">
+                                <label class="form-switch switch">
                                     <input type="checkbox" id="settingsAllowDarkblueShips">
-                                    <span class="slider round"></span>
+                                    <span class="form-switch__slider slider round"></span>
                                 </label>
                             </td>
                         </tr>
                     </table>
 
-                    <button id="settingsSave" class="button1">
+                    <button id="settingsSave" class="btn btn--gold button1">
                         <i class="fas fa-save"></i> Save
                     </button>
 
-                    <button id="settingsCancel" class="button1">
+                    <button id="settingsCancel" class="btn button1">
                         <i class="fas fa-ban"></i> Cancel
                     </button>
                     <br>
-                    <button id="settingsReset" class="button1">
+                    <button id="settingsReset" class="btn button1">
                         <i class="fas fa-undo"></i> Reset Defaults
                     </button>
                 </div>
@@ -704,17 +636,17 @@
                 </div>
 
                 <div id="socialMediaContainer">
-                    <a href="https://discord.gg/5ak5FsU" target="_blank"><img id="discord" src="img/discord.png" /></a>
-                    <a href="https://reddit.com/r/daudio" target="_blank"><img id="reddit" src="img/reddit.png" /></a>
+                    <a href="https://discord.gg/5ak5FsU" target="_blank"><img id="discord" src="img/discord.png" alt="Discord" /></a>
+                    <a href="https://reddit.com/r/daudio" target="_blank"><img id="reddit" src="img/reddit.png" alt="Reddit" /></a>
                     <a href="https://iogames.space" target="_blank"><img id="iogamesspace"
-                            src="img/linkback.iogames.space.png" /></a>
-                    <a href="https://titotu.io" target="_blank"><img id="titotu" src="img/linkback.titotu.io.png" /></a>
+                            src="img/linkback.iogames.space.png" alt="IOGames" /></a>
+                    <a href="https://titotu.io" target="_blank"><img id="titotu" src="img/linkback.titotu.io.png" alt="Titotu" /></a>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="theme-styles" style="display:none;"></div>
+    <div id="theme-styles" hidden></div>
 
     <script type="module" src="src/core/game.ts"></script>
 </body>

@@ -70,7 +70,7 @@ export const Settings: SettingsData = {
   mouseScale: 1.0,
   font: "Exo 2",
   leaderboardEnabled: true,
-  hudEnabled: true,
+  hudEnabled: false,
   namesEnabled: true,
   bandwidth: 100,
   showCooldown: true,
@@ -248,7 +248,10 @@ export function load(): void {
   if (background) background.value = Settings.background;
 
   const graphicsElem = document.getElementById(`graphics-${Settings.graphics}`);
-  graphicsElem?.classList.add("setting-selected");
+  graphicsElem?.classList.add(
+    "graphics-bar__option--selected",
+    "setting-selected",
+  );
 }
 
 (window as any).getTextureMapRules = function () {
@@ -273,16 +276,19 @@ if (qs.has("bandwidth")) Settings.bandwidth = Number(qs.get("bandwidth"));
 const gear = document.getElementById("gear");
 document.getElementById("settings")?.addEventListener("click", () => {
   gear?.classList.remove("closed");
+  if (gear) gear.hidden = false;
 });
 
 document.getElementById("settingsCancel")?.addEventListener("click", () => {
   gear?.classList.add("closed");
+  if (gear) gear.hidden = true;
 });
 
 document.getElementById("settingsSave")?.addEventListener("click", () => {
   save();
   load();
   gear?.classList.add("closed");
+  if (gear) gear.hidden = true;
 });
 
 document.getElementById("settingsReset")?.addEventListener("click", () => {

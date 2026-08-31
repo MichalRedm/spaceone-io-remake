@@ -14,6 +14,7 @@
  */
 
 import "./bootstrap";
+import "../styles/main.scss";
 import * as PIXI from "pixi.js";
 import { Game as FBGame } from "../network/game_generated";
 
@@ -554,7 +555,10 @@ function stopSpectate() {
 document.getElementById("stop_spectating")?.addEventListener("click", () => {
   stopSpectate();
   const deathScreen = document.getElementById("deathScreen");
-  if (deathScreen) deathScreen.style.visibility = "hidden";
+  if (deathScreen) {
+    deathScreen.classList.remove("death-screen--visible");
+    deathScreen.hidden = true;
+  }
 });
 
 document.addEventListener("keydown", ({ keyCode, which }) => {
@@ -689,14 +693,13 @@ app.ticker.add(() => {
   }
 
   if (dangerZoneWarning) {
-    if (
+    const isOutOfBounds =
       (Math.abs(position.x) > worldSize || Math.abs(position.y) > worldSize) &&
-      document.body.classList.contains("alive")
-    ) {
-      dangerZoneWarning.style.display = "block";
-    } else {
-      dangerZoneWarning.style.display = "none";
-    }
+      document.body.classList.contains("alive");
+    dangerZoneWarning.classList.toggle(
+      "danger-zone-warning--visible",
+      isOutOfBounds,
+    );
   }
 
   log.check();

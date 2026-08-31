@@ -33,8 +33,13 @@ export class HUD {
    */
   update(): void {
     if (!hudh) return;
-    if (Settings.hudEnabled) hudh.style.visibility = "visible";
-    else hudh.style.visibility = "hidden";
+    const isGameplayActive =
+      document.body.classList.contains("alive") ||
+      document.body.classList.contains("spectating");
+    const shouldShow = Settings.hudEnabled && isGameplayActive;
+
+    hudh.hidden = !shouldShow;
+    hudh.classList.toggle("is-hidden", !shouldShow);
 
     hudh.style.fontFamily = Settings.font;
 
