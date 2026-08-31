@@ -29,8 +29,7 @@
   }
 
   // Spectate Button
-  &--spectate,
-  &#spectate {
+  &--spectate {
     @include button-variant(
       $text-color: $color-text-main,
       $border-color: #3893f7,
@@ -66,8 +65,7 @@
   }
 
   // Fullscreen Button
-  &--fullscreen,
-  &#fullscreenButton {
+  &--fullscreen {
     @include button-variant(
       $text-color: $color-text-main,
       $border-color: $color-purple-border,
