@@ -1,35 +1,68 @@
+/**
+ * @file Client game settings, cookie persistence, and theme rule synchronization.
+ * @module ui/settings
+ */
+
 import Cookies from "js-cookie";
 import { textureCache } from "../models/textureCache";
 import { getDefaultTextureMapRules } from "../models/textureMap";
 import { getDefaultSpriteModeMapRules } from "../models/spriteModeMap";
 import { Controls } from "./controls";
 
+/**
+ * Game configuration options persisted across sessions in cookies.
+ */
 export interface SettingsData {
+  /** Graphics quality level (`"low"`, `"medium"`, or `"high"`). */
   graphics: string;
+  /** Built-in visual theme name. */
   theme: string;
+  /** Custom remote theme stylesheet URL. */
   themeCustom: string;
+  /** Steering mouse sensitivity scale factor. */
   mouseScale: number;
+  /** UI and nametag font family. */
   font: string;
+  /** Whether the leaderboard panel is visible. */
   leaderboardEnabled: boolean;
+  /** Whether latency and FPS counter HUD is visible. */
   hudEnabled: boolean;
+  /** Whether fleet nametags are rendered. */
   namesEnabled: boolean;
+  /** Target network update rate / bandwidth throttle. */
   bandwidth: number;
+  /** Whether dash cooldown charge meter is shown. */
   showCooldown: boolean;
+  /** Maximum number of lines displayed in combat event log. */
   logLength: number;
+  /** Whether radar minimap is displayed. */
   displayMinimap: boolean;
+  /** Whether big kill notification banners appear. */
   bigKillMessage: boolean;
+  /** Whether keyboard hints are displayed in controls modal. */
   showKeyboardHints: boolean;
+  /** Whether player's own nametag is displayed over their ship. */
   showOwnName: boolean;
+  /** Whether dark blue ship skins are permitted. */
   allowDarkblueShips: boolean;
+  /** Whether controls hint ticker is shown. */
   showHints: boolean;
+  /** Font size for player nametag captions. */
   nameSize: number;
+  /** Background starfield visibility (`"on"` or `"none"`). */
   background: string;
+  /** Whether WebGL mipmapping is enabled for textures. */
   mipmapping: boolean;
+  /** Settings schema version tracker. */
   updatesVersion: number;
+  /** Mouse button binding mode for one-button controls. */
   mouseOneButton: number;
   [key: string]: string | number | boolean;
 }
 
+/**
+ * Active game settings repository.
+ */
 export const Settings: SettingsData = {
   graphics: "high",
   theme: "",
@@ -55,9 +88,12 @@ export const Settings: SettingsData = {
   mouseOneButton: 0,
 };
 
+/** Active sprite mode rules matching current graphics level. */
 export const spriteModeMapRules = [
   getDefaultSpriteModeMapRules(Settings.graphics),
 ];
+
+/** Active texture map rules matching current graphics level. */
 export const textureMapRules = [getDefaultTextureMapRules(Settings.graphics)];
 
 const themeSelector = document.getElementById(

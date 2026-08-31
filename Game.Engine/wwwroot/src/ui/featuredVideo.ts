@@ -1,5 +1,14 @@
-﻿/**
+/**
+ * @file Localized featured YouTube gameplay video embed in main menu.
+ * @module ui/featuredVideo
+ */
+
+/**
  * Initializes the localized featured YouTube gameplay video in the main menu.
+ *
+ * @remarks
+ * Selects a gameplay showcase video matching the user's browser language (`de`, `es`, or fallback English),
+ * dynamically mounts an `<iframe>`, and attaches it inside `#player`.
  */
 export function initFeaturedVideo(): void {
   const featuredVideosIDs: string[] = [

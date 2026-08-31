@@ -1,15 +1,37 @@
+/**
+ * @file Dynamic server world configuration and kinematic constants singleton.
+ * @module models/worldConfig
+ *
+ * @remarks
+ * Stores game balance parameters, boost duration phases, invulnerability periods, bullet lifetime lookup tables,
+ * and shot thrust conversions pushed dynamically by the authoritative server via world hook updates.
+ */
+
+/**
+ * Server-supplied world hook configuration schema.
+ */
 export interface WorldHookConfig {
+  /** Speed / thrust values indexed by fleet ship count. */
   shotThrust: number[];
+  /** Bullet lifetime in milliseconds indexed by fleet ship count. */
   bulletLifeTable: number[];
+  /** Unit conversion factor for shot thrust calculation. */
   shotThrustConverter: number;
+  /** Duration of invulnerability granted on player spawn in milliseconds. */
   spawnInvulnerabilityTime: number;
+  /** Period of visual blinking during spawn invulnerability in milliseconds. */
   invulnerabilityBlinkPeriod: number;
+  /** Total duration of ship boost action in milliseconds. */
   boostDuration: number;
+  /** Duration of boost Phase 1 (surge / acceleration buildup) in milliseconds. */
   boostPhase1SurgeMs: number;
+  /** Duration of boost Phase 2 (steady burn with particle flames) in milliseconds. */
   boostPhase2BurnMs: number;
+  /** Duration of boost Phase 3 (cooldown fade-out) in milliseconds. */
   boostPhase3DurationMs: number;
 }
 
+/** Default world constants used before receiving custom server hook updates. */
 export const DEFAULT_HOOK_CONFIG: Readonly<WorldHookConfig> = {
   shotThrust: [
     0, 41, 34.17, 30.71, 28.47, 26.85, 25.59, 24.58, 23.73, 23.01, 22.38, 21.82,
@@ -43,53 +65,72 @@ export const DEFAULT_HOOK_CONFIG: Readonly<WorldHookConfig> = {
   boostPhase3DurationMs: 640,
 };
 
+/**
+ * Singleton repository providing access to current world kinematics and timing configurations.
+ */
 export class WorldConfig {
   private static config: WorldHookConfig = { ...DEFAULT_HOOK_CONFIG };
 
+  /** Current active world configuration snapshot. */
   public static get current(): WorldHookConfig {
     return this.config;
   }
 
+  /** Speed values indexed by ship count. */
   public static get shotThrust(): number[] {
     return this.config.shotThrust;
   }
 
+  /** Projectile lifetime table in milliseconds. */
   public static get bulletLifeTable(): number[] {
     return this.config.bulletLifeTable;
   }
 
+  /** Scaled shot thrust conversion multiplier. */
   public static get shotThrustScale(): number {
     return this.config.shotThrustConverter * 10;
   }
 
+  /** Total spawn invulnerability period in milliseconds. */
   public static get spawnInvulnerabilityDurationMs(): number {
     return this.config.spawnInvulnerabilityTime;
   }
 
+  /** Invulnerability blink cycle period in milliseconds. */
   public static get invulnerabilityBlinkPeriodMs(): number {
     return this.config.invulnerabilityBlinkPeriod;
   }
 
+  /** Total boost duration in milliseconds. */
   public static get boostDurationMs(): number {
     return this.config.boostDuration;
   }
 
+  /** Duration of boost Phase 1 surge in milliseconds. */
   public static get boostPhase1SurgeMs(): number {
     return this.config.boostPhase1SurgeMs;
   }
 
+  /** Duration of boost Phase 2 steady burn in milliseconds. */
   public static get boostPhase2BurnMs(): number {
     return this.config.boostPhase2BurnMs;
   }
 
+  /** Duration of boost Phase 3 tail-off in milliseconds. */
   public static get boostPhase3DurationMs(): number {
     return this.config.boostPhase3DurationMs;
   }
 
+  /** Resets all configuration settings back to defaults. */
   public static resetToDefaults(): void {
     this.config = { ...DEFAULT_HOOK_CONFIG };
   }
 
+  /**
+   * Updates world configuration values from a parsed server hook payload.
+   *
+   * @param serverHook - Deserialized JSON hook object from server.
+   */
   public static updateFromHook(serverHook: unknown): void {
     if (!serverHook || typeof serverHook !== "object") return;
     const hook = serverHook as Record<string, unknown>;
@@ -141,6 +182,12 @@ export class WorldConfig {
     };
   }
 
+  /**
+   * Estimates fleet ship count from observed kinematic velocity using table lookup and power-law inverse regression.
+   *
+   * @param speed - Observed fleet speed.
+   * @returns Inferred ship count $N \ge 1$.
+   */
   public static getShipCountFromSpeed(speed: number): number {
     const table = this.config.shotThrust;
     if (speed <= 0 || !table || table.length <= 1) return 1;

@@ -1,13 +1,22 @@
+/**
+ * @file Particle and explosion visual effects manager.
+ * @module models/fx
+ *
+ * @remarks
+ * Manages object pools of transient explosion particles for ship deaths, bullet impacts, and food collection.
+ * Particles feature drift kinematics, linear size shrinking, rotation offsets, and alpha fade transitions.
+ */
+
 import * as PIXI from "pixi.js";
 import { textureCache } from "./textureCache";
 import type { CustomContainer } from "../rendering/customContainer";
 import { Settings } from "../ui/settings";
 
 /**
- * Global FX Configuration Parameters
- * Easily tunable to match visual reference.
+ * Global FX configuration parameters controlling particle counts, durations, drift speeds, and scaling factors.
  */
 export const FX_CONFIG = {
+  /** Bullet explosion configuration on obstacle/laser impact. */
   bulletExplosion: {
     particleCount: 2,
     durationMs: 500,
@@ -18,6 +27,7 @@ export const FX_CONFIG = {
     driftSpeedMin: 10,
     driftSpeedMax: 25,
   },
+  /** Food / fish pickup explosion configuration. */
   foodExplosion: {
     particleCount: 2,
     durationMs: 500,
@@ -28,6 +38,7 @@ export const FX_CONFIG = {
     driftSpeedMin: 10,
     driftSpeedMax: 25,
   },
+  /** Ship destruction explosion configuration. */
   shipExplosion: {
     minParticles: 1,
     maxParticles: 2,
@@ -42,27 +53,51 @@ export const FX_CONFIG = {
   },
 };
 
+/**
+ * Kinematic and visual state for an active transient explosion particle.
+ */
 interface ActiveParticle {
+  /** Underlying PixiJS Sprite instance. */
   sprite: PIXI.Sprite;
+  /** Origin X coordinate in world pixels. */
   startX: number;
+  /** Origin Y coordinate in world pixels. */
   startY: number;
+  /** Horizontal drift velocity in world pixels per second. */
   vx: number;
+  /** Vertical drift velocity in world pixels per second. */
   vy: number;
+  /** Initial uniform scale. */
   startScale: number;
+  /** Initial alpha opacity $[0.0, 1.0]$. */
   startAlpha: number;
+  /** Final alpha opacity $[0.0, 1.0]$ at expiry. */
   endAlpha: number;
+  /** Initial rotation in radians. */
   startRotation: number;
+  /** Total rotation displacement applied across lifetime in radians. */
   rotationDelta: number;
+  /** Timestamp when particle spawned from `performance.now()`. */
   startTime: number;
+  /** Total particle lifetime in milliseconds. */
   durationMs: number;
+  /** Whether particle is currently active and animating. */
   active: boolean;
 }
 
+/**
+ * High-performance pooled particle effects manager.
+ */
 class FXManager {
   private container: PIXI.Container | null = null;
   private particlePool: PIXI.Sprite[] = [];
   private activeParticles: ActiveParticle[] = [];
 
+  /**
+   * Initializes the FX manager and attaches the emitter container to the Pixi stage.
+   *
+   * @param container - Root game rendering container.
+   */
   public init(container: CustomContainer): void {
     if (!container.emitterContainer) {
       container.emitterContainer = new PIXI.Container();
@@ -74,6 +109,12 @@ class FXManager {
     this.container = container.emitterContainer;
   }
 
+  /**
+   * Obtains a recycled `PIXI.Sprite` from the internal pool or instantiates a new one.
+   *
+   * @param texture - Texture to assign to the sprite.
+   * @returns Recycled or newly created sprite.
+   */
   private getSprite(texture: PIXI.Texture): PIXI.Sprite {
     let sprite: PIXI.Sprite;
     if (this.particlePool.length > 0) {
@@ -91,6 +132,11 @@ class FXManager {
     return sprite;
   }
 
+  /**
+   * Returns an active sprite back to the pool.
+   *
+   * @param sprite - Sprite to recycle.
+   */
   private releaseSprite(sprite: PIXI.Sprite): void {
     sprite.visible = false;
     if (sprite.parent) {
@@ -99,6 +145,12 @@ class FXManager {
     this.particlePool.push(sprite);
   }
 
+  /**
+   * Retrieves a cached texture frame by name.
+   *
+   * @param name - Symbolic texture or frame name.
+   * @returns Texture instance or `null` if not found.
+   */
   private getTexture(name: string): PIXI.Texture | null {
     const clean = name.toLowerCase().replace(/\.[^/.]+$/, "");
     const cached = textureCache[clean] || textureCache[name];
@@ -108,6 +160,13 @@ class FXManager {
     return null;
   }
 
+  /**
+   * Spawns an impact explosion effect when a bullet or laser collides.
+   *
+   * @param color - Bullet color theme (e.g. `'red'`, `'cyan'`).
+   * @param x - World X position of impact.
+   * @param y - World Y position of impact.
+   */
   public spawnBulletExplosion(color: string, x: number, y: number): void {
     if (Settings.graphics !== "high") return;
     const texName = `particle_${color.toLowerCase()}`;
@@ -149,6 +208,13 @@ class FXManager {
     }
   }
 
+  /**
+   * Spawns a collection burst effect when a food/fish particle is collected.
+   *
+   * @param color - Food color name.
+   * @param x - World X position.
+   * @param y - World Y position.
+   */
   public spawnFoodExplosion(color: string, x: number, y: number): void {
     if (Settings.graphics !== "high") return;
     const texName = `particle_food_${color.toLowerCase()}`;
@@ -193,6 +259,14 @@ class FXManager {
     }
   }
 
+  /**
+   * Spawns a major ship destruction explosion effect scaled to ship radius.
+   *
+   * @param color - Ship skin color theme.
+   * @param x - World X position.
+   * @param y - World Y position.
+   * @param shipSize - Ship collision size radius in world units.
+   */
   public spawnShipExplosion(
     color: string,
     x: number,
@@ -251,6 +325,9 @@ class FXManager {
     }
   }
 
+  /**
+   * Advances active particle simulation by one frame, applying drift, shrink, and fading.
+   */
   public update(): void {
     if (this.activeParticles.length === 0) return;
     const now = performance.now();
@@ -279,6 +356,9 @@ class FXManager {
     }
   }
 
+  /**
+   * Recycles all currently active explosion particles and clears the active list.
+   */
   public clear(): void {
     for (const p of this.activeParticles) {
       this.releaseSprite(p.sprite);
@@ -287,4 +367,5 @@ class FXManager {
   }
 }
 
+/** Global particle effects manager singleton instance. */
 export const FX = new FXManager();

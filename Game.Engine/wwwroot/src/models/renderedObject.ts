@@ -1,23 +1,13 @@
 /**
- * renderedObject.ts — Facade / View Controller
+ * @file Base entity visual controller (Facade / View Controller) for cached world objects.
+ * @module models/renderedObject
  *
- * `RenderedObject` is the public-facing API that the rest of the game engine
- * uses to attach, update, and destroy the visual representation of a game
- * entity.  It owns the PIXI display objects but does NOT compute their
- * animation values inline.
- *
- * Responsibilities (Rule 14 — RenderedObject as View Controller):
- *  ✅ Add / remove sprite layers and emitters to the PIXI scene graph
- *  ✅ Maintain per-entity state (isBoosting, spawnTime, bulletLifetime …)
- *  ✅ Delegate per-frame animation to SpriteAnimator
- *  ✅ Delegate texture/sprite resolution to TextureLoader
- *
- * Responsibilities moved OUT:
- *  ❌ Animation math (alpha curves, invulnerability blink) → spriteAnimator.ts
- *  ❌ Texture/SCSS querying                               → textureLoader.ts
- *  ❌ Group-state caches (groupBoostTimes …)              → spriteAnimator.ts
- *  ❌ Particle class (GroupParticle)                      → groupParticle.ts
- *  ❌ Pure math helpers (parseMapKey, getScale)           → textureUtils.ts
+ * @remarks
+ * `RenderedObject` is the primary display object lifecycle manager:
+ * - Owns and manages PIXI.Sprite, AnimatedSprite, and Emitter layers in the scene graph.
+ * - Ingests server snapshot updates (`update`) and tracks boost, invulnerability, and decay timings.
+ * - Delegates per-frame kinematic transforms and alpha curves to `SpriteAnimator`.
+ * - Delegates texture asset lookup to `TextureLoader`.
  */
 
 import * as PIXI from "pixi.js";

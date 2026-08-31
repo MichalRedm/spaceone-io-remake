@@ -1,14 +1,10 @@
 /**
- * groupParticle.ts
+ * @file Boost trail and projectile particle controller with group lag compensation and lifetime fading.
+ * @module models/groupParticle
  *
- * Custom `particles.Particle` subclass that synchronises position with the
- * owning `RenderedObject` (for boost trail lag compensation) and applies
- * lifecycle alpha corrections for boost and bullet fade-in/fade-out curves.
- *
- * Previously an inner class at the top of `renderedObject.ts`, making it
- * impossible to import independently. Extracted here to satisfy Rule 13
- * (single responsibility per file) and to decouple the particle subsystem
- * from the `RenderedObject` God Object.
+ * @remarks
+ * Custom `particles.Particle` subclass that synchronizes position with the owning `RenderedObject`
+ * (for boost trail lag compensation) and applies lifecycle alpha corrections for boost and bullet fade-in/fade-out curves.
  */
 
 import * as particles from "pixi-particles";
@@ -19,9 +15,9 @@ import type { RenderedObject } from "./renderedObject";
 // Animation constants used by the particle fade curves
 // ---------------------------------------------------------------------------
 
-/** Time window (ms) over which a bullet/laser fades in at spawn. */
+/** Time window in milliseconds over which a bullet/laser particle fades in at spawn. */
 const BULLET_FADE_IN_MS = 180;
-/** Time window (ms) over which a bullet/laser fades out before expiry. */
+/** Time window in milliseconds over which a bullet/laser particle fades out before expiry. */
 const BULLET_FADE_OUT_MS = 112.5;
 
 // ---------------------------------------------------------------------------
@@ -29,16 +25,25 @@ const BULLET_FADE_OUT_MS = 112.5;
 // ---------------------------------------------------------------------------
 
 /**
- * A `pixi-particles` `Particle` that is group-aware: boost particles
- * lag-compensate their position with the parent ship's frame delta, and
- * bullet/laser particles apply a smooth fade-in + fade-out alpha curve
- * based on the projectile's remaining lifetime.
+ * Group-aware particle controller.
+ *
+ * @remarks
+ * Boost particles lag-compensate their position with the parent ship's frame delta (`positionDelta`),
+ * and bullet/laser particles apply a smooth fade-in + fade-out alpha curve based on the projectile's remaining lifetime.
  */
 export class GroupParticle extends particles.Particle {
+  /** Optional reference to server body state for size scaling. */
   body: unknown;
+  /** Owning visual controller instance. */
   renderedObject?: RenderedObject;
+  /** Whether this particle belongs to an active thruster/boost emitter. */
   isBoostParticle: boolean;
 
+  /**
+   * Constructs a GroupParticle instance and attaches it to the appropriate display layer.
+   *
+   * @param emitter - Parent Pixi particle emitter.
+   */
   constructor(emitter: particles.Emitter) {
     super(emitter);
     // Inherit the display layer group from the emitter's parent or the
@@ -60,6 +65,12 @@ export class GroupParticle extends particles.Particle {
     this.isBoostParticle = emitterKey.startsWith("boost");
   }
 
+  /**
+   * Updates particle kinematic position, boost lag compensation, and lifetime alpha modulation.
+   *
+   * @param delta - Frame elapsed time factor in seconds.
+   * @returns Normalized particle age ratio $[0.0, 1.0]$.
+   */
   override update(delta: number): number {
     // --- Boost trail position lag compensation ---
     if (this.isBoostParticle && this.renderedObject?.positionDelta) {

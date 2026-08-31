@@ -1,3 +1,12 @@
+/**
+ * @file Sprite sheet atlas preloader, texture unpacker, and GPU upload pipeline.
+ * @module rendering/atlasLoader
+ *
+ * @remarks
+ * Preloads raw images, parses JSON texture atlases, creates individual sub-rectangle `PIXI.Texture` frames,
+ * computes aspect-ratio scaling offsets (`daudScale`), and uploads base textures directly to WebGL GPU memory.
+ */
+
 import * as PIXI from "pixi.js";
 import { textureCache } from "../models/textureCache";
 import type { ThemeRule } from "../parser/parseTheme";
@@ -27,6 +36,7 @@ const rawAtlases = import.meta.glob("../../img/atlas/*.json", {
   import: "default",
 }) as Record<string, any>;
 
+/** Image asset lookup mapping asset filenames and clean stems to bundler URL paths. */
 export const images: Record<string, string> = {};
 for (const [path, url] of Object.entries(rawImages)) {
   const filenameWithExt = path.split("/").pop() || "";
@@ -37,8 +47,15 @@ for (const [path, url] of Object.entries(rawImages)) {
   images[filenameWithoutExt.toLowerCase()] = url;
 }
 
+/** Global cache of instantiated `PIXI.BaseTexture` objects keyed by file/URL. */
 export const baseTextureCache: Record<string, PIXI.BaseTexture> = {};
 
+/**
+ * Preloads and decodes an image resource via an `HTMLImageElement` promise.
+ *
+ * @param url - Image URL to preload.
+ * @returns Promise resolving to the loaded HTML image element.
+ */
 export function preloadImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve) => {
     const img = new Image();
@@ -57,6 +74,11 @@ export function preloadImage(url: string): Promise<HTMLImageElement> {
   });
 }
 
+/**
+ * Collects all core game texture URLs required by active atlases and theme rules.
+ *
+ * @returns Array of unique image URL strings.
+ */
 export function getCoreGameImageUrls(): string[] {
   const urls = new Set<string>();
   for (const [, atlasData] of Object.entries(rawAtlases)) {
@@ -79,11 +101,23 @@ export function getCoreGameImageUrls(): string[] {
   return Array.from(urls);
 }
 
+/**
+ * Preloads all core game image assets in parallel before rendering starts.
+ *
+ * @returns Promise resolving when all images are decoded.
+ */
 export function preloadAllImages(): Promise<void> {
   const urls = getCoreGameImageUrls();
   return Promise.all(urls.map((url) => preloadImage(url))).then(() => {});
 }
 
+/**
+ * Retrieves or creates a `PIXI.BaseTexture` from a filename or URL with optional mipmapping.
+ *
+ * @param fileOrUrl - Asset file path or data URI.
+ * @param enableMipmapping - Whether to generate WebGL texture mipmaps.
+ * @returns `PIXI.BaseTexture` or `null` if the asset could not be resolved.
+ */
 export function getBaseTexture(
   fileOrUrl: string,
   enableMipmapping = false,
@@ -114,6 +148,13 @@ export function getBaseTexture(
   return baseTexture;
 }
 
+/**
+ * Calculates uniform display scale multiplier based on SCSS size/scale rules and texture pixel height.
+ *
+ * @param textureDefinition - Parsed texture definition property bag.
+ * @param height - Base texture or tile height in pixels.
+ * @returns Calculated float scale multiplier.
+ */
 export function calculateScaleWithHeight(
   textureDefinition: any,
   height: number,
@@ -133,6 +174,14 @@ export function calculateScaleWithHeight(
   return Number.isFinite(spriteSize) ? spriteSize : 1.0;
 }
 
+/**
+ * Generates an array of `PIXI.Texture` frames (single, animated strip, or tile grid) from a theme definition.
+ *
+ * @param textureDefinition - Parsed theme definition object.
+ * @param textureName - Symbolic texture identifier.
+ * @param enableMipmapping - Whether to enable mipmaps.
+ * @returns Array of texture frames, or `null` if definition cannot be converted.
+ */
 export function createTextureFromDefinition(
   textureDefinition: any,
   textureName: string,
@@ -240,6 +289,11 @@ export function createTextureFromDefinition(
   return textures;
 }
 
+/**
+ * Unpacks sub-rectangles for all JSON atlas frames and registers them into `textureCache`.
+ *
+ * @param enableMipmapping - Whether base textures should have mipmapping enabled.
+ */
 export function initializeAtlasTextures(enableMipmapping = false): void {
   for (const [atlasPath, atlasData] of Object.entries(rawAtlases)) {
     if (!atlasData || !atlasData.frames || !atlasData.meta) continue;
@@ -274,6 +328,12 @@ export function initializeAtlasTextures(enableMipmapping = false): void {
   }
 }
 
+/**
+ * Pre-instantiates all textures configured across theme rules and registers them into `textureCache`.
+ *
+ * @param rules - Optional theme rules array (defaults to active graphics level rules).
+ * @param enableMipmapping - Whether to generate mipmaps for textures.
+ */
 export function preloadAllGameTextures(
   rules?: ThemeRule[],
   enableMipmapping = false,
@@ -311,6 +371,11 @@ export function preloadAllGameTextures(
   }
 }
 
+/**
+ * Uploads all cached base textures to GPU VRAM in a single batch using Pixi's `prepare` plugin.
+ *
+ * @param renderer - Active PixiJS renderer instance.
+ */
 export function uploadTexturesToGPU(renderer?: PIXI.Renderer | any): void {
   if (!renderer || !renderer.plugins?.prepare) return;
   try {
@@ -324,6 +389,12 @@ export function uploadTexturesToGPU(renderer?: PIXI.Renderer | any): void {
   }
 }
 
+/**
+ * Master initialization lifecycle step: preloads image assets, parses theme textures, and uploads to GPU.
+ *
+ * @param app - Optional PixiJS Application instance.
+ * @param enableMipmapping - Whether to enable mipmaps for all textures.
+ */
 export async function preloadAllAssets(
   app?: PIXI.Application,
   enableMipmapping = false,

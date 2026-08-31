@@ -1,3 +1,8 @@
+/**
+ * @file In-game leaderboard rendering (FFA, Teams, CTF), arena record banner, and leader indicator compass.
+ * @module ui/leaderboard
+ */
+
 import { Settings } from "./settings";
 import { RenderedObject } from "../models/renderedObject";
 import arrow from "../../img/arrow.png";
@@ -17,6 +22,9 @@ const leaderArrowFadeZoneWidth = 200;
 const leaderArrowTranslate = 50;
 const leaderArrowDefaultOpacity = 0.7;
 
+/**
+ * Clears all leaderboard table DOM contents.
+ */
 export function clear(): void {
   if (leaderboard) leaderboard.innerHTML = "";
   if (leaderboardLeft) leaderboardLeft.innerHTML = "";
@@ -27,6 +35,12 @@ export function clear(): void {
   }
 }
 
+/**
+ * Escapes unsafe HTML characters from untrusted strings to prevent XSS injection.
+ *
+ * @param str - Input text.
+ * @returns Sanitized string.
+ */
 export function escapeHtml(str?: string): string {
   if (!str) return "";
   const div = document.createElement("div");
@@ -34,26 +48,47 @@ export function escapeHtml(str?: string): string {
   return div.innerHTML;
 }
 
+/**
+ * Historical high-score record for the current arena.
+ */
 export interface LeaderboardRecord {
+  /** Record score. */
   Score: number;
+  /** Player name who set the record. */
   Name?: string;
 }
 
+/**
+ * Single leaderboard participant entry.
+ */
 export interface LeaderboardEntry {
+  /** Fleet group identifier. */
   FleetID?: number;
+  /** Player nickname. */
   Name?: string;
+  /** Current player score. */
   Score?: number;
+  /** Player skin color theme name. */
   Color?: string;
+  /** World position of player fleet. */
   Position?: { x: number; y: number };
+  /** Bitmask mode flags. */
   Mode?: number;
 }
 
+/**
+ * Deserialized leaderboard snapshot payload from server.
+ */
 export interface LeaderboardData {
+  /** Gameplay mode type (`"FFA"`, `"Team"`, or `"CTF"`). */
   Type: string;
+  /** Ranked list of active participant entries. */
   Entries: LeaderboardEntry[];
+  /** Historical high-score record. */
   Record?: LeaderboardRecord;
 }
 
+/** Recognized safe player skin color strings. */
 export type LeaderboardColor =
   | "cyan"
   | "blue"

@@ -1,3 +1,8 @@
+/**
+ * @file Versioned changelog notification badge and click toggle controller.
+ * @module ui/changelog
+ */
+
 import Cookies from "js-cookie";
 
 const changelog = document.getElementById("changelog");

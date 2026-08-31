@@ -1,15 +1,13 @@
 /**
- * textureLoader.ts
+ * @file SCSS theme rule texture and emitter resolution service.
+ * @module models/textureLoader
  *
+ * @remarks
  * Service that encapsulates all texture and sprite definition resolution:
- *  - Querying SCSS-parsed theme rules via `queryProperties()`
- *  - Resolving texture names to cached PIXI.Texture arrays
- *  - Building PIXI.Sprite / PIXI.AnimatedSprite instances from definitions
- *  - Building pixi-particles Emitter instances
- *
- * Previously these were static methods on `RenderedObject`, violating the
- * Single Responsibility Principle (Rule 13). Centralising them here allows
- * `RenderedObject` to act as a pure View controller (Rule 14).
+ * - Querying SCSS-parsed theme rules via `queryProperties()`.
+ * - Resolving texture names to cached `PIXI.Texture` frame arrays.
+ * - Building `PIXI.Sprite` and `PIXI.AnimatedSprite` display layers from definitions.
+ * - Instantiating `pixi-particles` Emitter instances.
  */
 
 import * as emittersJson from "../../img/emitters.json";
@@ -35,10 +33,19 @@ import { Settings } from "../ui/settings";
 // TextureLoader
 // ---------------------------------------------------------------------------
 
+/**
+ * Service providing texture lookup, sprite instantiation, and particle emitter configuration.
+ */
 export class TextureLoader {
   private readonly textureMapRules: ThemeRule[];
   private readonly spriteModeMapRules: ThemeRule[];
 
+  /**
+   * Constructs a TextureLoader service bound to theme rules.
+   *
+   * @param textureMapRules - Base texture mapping theme rules.
+   * @param spriteModeMapRules - Sprite mode modifier theme rules.
+   */
   constructor(textureMapRules: ThemeRule[], spriteModeMapRules: ThemeRule[]) {
     this.textureMapRules = textureMapRules;
     this.spriteModeMapRules = spriteModeMapRules;
@@ -49,8 +56,10 @@ export class TextureLoader {
   // -------------------------------------------------------------------------
 
   /**
-   * Looks up the texture definition object for `textureName` from the SCSS
-   * theme rules. Returns `null` if no definition is found.
+   * Looks up the texture definition object for a texture name from the SCSS theme rules.
+   *
+   * @param textureName - Symbolic texture name (e.g. `'ship_red'` or `'map[3]'`).
+   * @returns Parsed `TextureDefinition` or `null` if no rule matches.
    */
   getTextureDefinition(textureName: string): TextureDefinition | null {
     const mapKey = parseMapKey(textureName);

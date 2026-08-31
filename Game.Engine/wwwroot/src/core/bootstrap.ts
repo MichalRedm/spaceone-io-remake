@@ -1,3 +1,16 @@
+/**
+ * @file PixiJS global namespace polyfill and ESM mutable bridge.
+ * @module core/bootstrap
+ *
+ * @remarks
+ * In ECMAScript Modules (ESM), imported module namespace objects are sealed and non-extensible.
+ * Legacy PixiJS plugins such as `pixi-layers` and `pixi-tilemap` dynamically attach sub-namespaces
+ * (`PIXI.display`, `PIXI.tilemap`) to `window.PIXI` and `globalThis.PIXI`.
+ *
+ * This bootstrap module constructs an extensible mutable proxy object containing all PIXI exports
+ * and installs it onto the global scope before any rendering or UI subsystems load.
+ */
+
 import * as pixiModule from "pixi.js";
 
 // In ESM, module namespace objects are sealed and non-extensible.

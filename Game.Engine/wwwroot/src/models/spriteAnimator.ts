@@ -1,17 +1,14 @@
 /**
- * spriteAnimator.ts
+ * @file Entity sprite animation service for per-frame alpha, scaling, and boost/invulnerability transitions.
+ * @module models/spriteAnimator
  *
+ * @remarks
  * Service responsible for all per-frame visual animation applied to the PIXI
- * display objects owned by a `RenderedObject`.  This is where all boost-phase
+ * display objects owned by a `RenderedObject`. This is where all boost-phase
  * state machines, invulnerability blink logic, abandoned-ship fades, and
  * per-layer alpha/visibility curves live.
  *
- * Previously the entirety of `RenderedObject.moveSprites()` (250+ lines of
- * inline math) plus the duplicate boost/invulnerability state machine in
- * `RenderedObject.update()`.  Centralising them here:
- *  - Satisfies Rule 13 (SRP / no pure statics on classes)
- *  - Satisfies Rule 14 (RenderedObject as thin View controller / Facade)
- *  - Makes every magic number traceable via Rule 12 (named constants)
+ * All client-side visual constants are parameterized in `ANIMATION_CONSTANTS`.
  */
 
 import * as PIXI from "pixi.js";

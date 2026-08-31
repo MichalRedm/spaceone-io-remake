@@ -1,25 +1,48 @@
+/**
+ * @file Arena browser, lobby modal UI, and world discovery coordinator.
+ * @module network/lobby
+ */
+
 import { escapeHtml } from "../ui/leaderboard";
 import { pressPopup } from "../ui/popupUtils";
 import { ArenaLink } from "./arenaLink";
 
 const arenaLinkHelper = new ArenaLink();
 
+/**
+ * Metadata descriptor for an active game world or custom arena.
+ */
 export interface WorldInfo {
+  /** Fully qualified world key (e.g. `'us.spaceone.io/default'`). */
   world: string;
+  /** Display title of the world. */
   name: string;
+  /** World gameplay description. */
   description: string;
+  /** Custom instructions or mode details. */
   instructions?: string;
+  /** Current active player count. */
   players?: number;
+  /** Thumbnail image asset key. */
   image?: string;
+  /** Short shareable arena identifier. */
   arenaID?: string;
+  /** Case-insensitive arena match key. */
   arenaKey?: string;
+  /** Allowed ship skin color themes. */
   allowedColors?: string[];
   [key: string]: unknown;
 }
 
+/**
+ * Event callbacks emitted by the lobby browser.
+ */
 export interface LobbyCallbacksType {
+  /** Fired when the lobby dialog is dismissed. */
   onLobbyClose: (() => void) | null;
+  /** Fired when a player selects a world to join. */
   onWorldJoin: ((worldKey: string, worldInfo?: WorldInfo) => void) | null;
+  /** Direct callback to trigger world join. */
   joinWorld: ((worldKey: string) => void) | null;
 }
 
@@ -285,6 +308,9 @@ function joinWorld(worldKey: string): void {
   hide();
 }
 
+/**
+ * Toggles visibility of the worlds lobby modal overlay.
+ */
 export function toggleLobby(): void {
   if (!showing) show();
   else hide();

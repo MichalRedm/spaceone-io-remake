@@ -1,12 +1,11 @@
 /**
- * textureUtils.ts
+ * @file Canonical TextureDefinition contract and pure texture math utilities.
+ * @module models/textureUtils
  *
- * Canonical `TextureDefinition` interface and pure stateless utility functions
- * for texture/sprite name parsing and scale calculation.
- *
- * These were previously static methods on `RenderedObject` that had no
- * dependency on class state. Extracting them here satisfies Rule 13 of the
- * TypeScript standards (single-responsibility, no pure statics on classes).
+ * @remarks
+ * Encapsulates the parsed SCSS theme rule contract (`TextureDefinition`) and provides pure,
+ * stateless helper functions for sprite name parsing (`parseMapKey`), scaling factor calculations
+ * (`getScaleWithHeight`), and bitmask mode decoding (`decodeModes`).
  */
 
 // ---------------------------------------------------------------------------
@@ -14,34 +13,58 @@
 // ---------------------------------------------------------------------------
 
 /**
- * Shape of a texture definition object parsed from SCSS theme rules by
- * `queryProperties()`. All fields are optional because the SCSS parser
- * returns only the properties declared for a given selector.
+ * Normalized texture and animation definition parsed from SCSS theme stylesheets.
+ *
+ * @remarks
+ * Properties map directly to SCSS properties defined in `textureMap_*.scss` and `spriteModeMap_*.scss`.
+ * Evaluated at runtime by `TextureLoader` to configure PixiJS sprites and emitters.
  */
 export interface TextureDefinition {
+  /** Relative filename or atlas sprite frame key. */
   file?: string;
+  /** Direct URL to external image asset. */
   url?: string;
+  /** Whether the texture should be instantiated as a multi-frame `PIXI.AnimatedSprite`. */
   animated?: boolean;
+  /** Whether animation loop repeats indefinitely. */
   loop?: boolean;
   /** Either a named key into `emitters.json` or a raw emitter config object. */
   emitter?: string | Record<string, unknown>;
+  /** Particle texture name override used for emitters. */
   particle?: string;
+  /** Whether texture represents a static tilemap texture. */
   map?: boolean;
+  /** Color tint hex integer or string applied to sprite. */
   tint?: string | number;
+  /** Base opacity channel $[0.0, 1.0]$. */
   alpha?: number;
+  /** PixiJS blend mode integer constant. */
   blendMode?: number;
+  /** Render size string (e.g. `"50%"` or numeric pixel radius). */
   size?: string | number;
+  /** Explicit uniform scale multiplier. */
   scale?: string | number;
+  /** Base rotation offset in radians or degrees (e.g. `"90deg"`). */
   rotate?: string | number;
+  /** Pivot offset vector in normalized sprite coordinates. */
   offset?: { x: number; y: number };
+  /** Horizontal pivot offset in pixels. */
   "offset-x"?: number;
+  /** Vertical pivot offset in pixels. */
   "offset-y"?: number;
+  /** Playback speed multiplier for animated sprites. */
   "animation-speed"?: number;
+  /** Tile grid size in pixels. */
   "tile-size"?: number;
+  /** Number of tiles across atlas sheet. */
   "tile-count"?: number;
+  /** Source image width in pixels. */
   "image-width"?: number;
+  /** Source image height in pixels. */
   "image-height"?: number;
+  /** Sub-tile frame width in pixels. */
   "tile-width"?: number;
+  /** Sub-tile frame height in pixels. */
   "tile-height"?: number;
   /** Allow arbitrary extra SCSS-parsed properties. */
   [key: string]: unknown;
@@ -52,14 +75,16 @@ export interface TextureDefinition {
 // ---------------------------------------------------------------------------
 
 /**
- * Parses a texture/sprite name that optionally contains an atlas map index
- * in the format `"name[N]"`.
+ * Parses a texture/sprite name that optionally contains an atlas map index in `"name[N]"` format.
  *
- * @returns `{ name, mapID }` if the format matches, `false` otherwise.
+ * @param mapKey - String candidate (e.g. `"map[3]"` or `"ship_red"`).
+ * @returns Object with base `name` and integer `mapID`, or `false` if not a map index format.
  *
  * @example
- * parseMapKey("ship_red[3]") // → { name: "ship_red", mapID: 3 }
- * parseMapKey("ship_red")    // → false
+ * ```typescript
+ * parseMapKey("map[3]") // { name: "map", mapID: 3 }
+ * parseMapKey("ship_red") // false
+ * ```
  */
 export function parseMapKey(
   mapKey: string,
@@ -77,19 +102,17 @@ export function parseMapKey(
 
 // ---------------------------------------------------------------------------
 // Scale calculation
-//
-// `calculateScaleWithHeight` in atlasLoader.ts is the single canonical
-// implementation. `getScaleWithHeight` below is a thin re-export shim kept
-// for backward compatibility during the transition period; callers should
-// migrate to the atlasLoader import directly.
 // ---------------------------------------------------------------------------
 
 /**
- * Calculates the display scale factor for a sprite given its texture height.
+ * Calculates the display scale factor for a sprite given its texture pixel height.
  *
- * Handles both percentage-based (`"50%"`) and pixel-absolute size values
- * as well as explicit `scale` overrides.
+ * @remarks
+ * Handles percentage-based (`"50%"`) and pixel-absolute size values as well as explicit `scale` overrides.
  *
+ * @param textureDefinition - Parsed SCSS definition object.
+ * @param height - Raw pixel height of the source texture.
+ * @returns Computed uniform scale multiplier.
  * @deprecated Prefer `calculateScaleWithHeight` from `../rendering/atlasLoader`.
  */
 export function getScaleWithHeight(
@@ -114,7 +137,7 @@ export function getScaleWithHeight(
 // Mode decoding
 // ---------------------------------------------------------------------------
 
-/** The ordered colour names mapped to boom-type sprite modes. */
+/** Ordered color names mapped to boom explosion sprite modes. */
 const BOOM_COLORS = [
   "cyan",
   "blue",
@@ -127,14 +150,11 @@ const BOOM_COLORS = [
 ] as const;
 
 /**
- * Decodes a numeric mode bitmask (and optional sprite name) into an array of
- * mode class strings used by `queryProperties` to select the sprite definition.
+ * Decodes a numeric mode bitmask into an array of mode class strings for SCSS query matching.
  *
- * Previously a non-static instance method on `RenderedObject` despite having
- * no dependency on `this`. Now a pure function.
- *
- * @param mode       The numeric mode bitmask from the server.
- * @param spriteName The current sprite name (used to detect boom-type sprites).
+ * @param mode - Numeric mode bitmask received from server.
+ * @param spriteName - Optional sprite name prefix used to detect explosion sprites.
+ * @returns Array of mode class names (e.g. `['default', 'boost']`).
  */
 export function decodeModes(mode: number, spriteName?: string): string[] {
   const modes: string[] = [];
