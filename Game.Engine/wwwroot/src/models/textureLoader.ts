@@ -27,6 +27,7 @@ import type { CustomContainer } from "../rendering/customContainer";
 import type { ThemeRule } from "../parser/parseTheme";
 import { GroupParticle } from "./groupParticle";
 import type { RenderedObject } from "./renderedObject";
+import { resolveLayerAnimType } from "./spriteAnimator";
 import { Settings } from "../ui/settings";
 
 // ---------------------------------------------------------------------------
@@ -221,8 +222,8 @@ export class TextureLoader {
       }
     }
 
-    pixiSprite.pivot.x = pixiSprite.width / 2;
-    pixiSprite.pivot.y = pixiSprite.height / 2;
+    pixiSprite.pivot.x = textures[0].width / 2;
+    pixiSprite.pivot.y = textures[0].height / 2;
     pixiSprite.x = 0;
     pixiSprite.y = 0;
 
@@ -233,6 +234,9 @@ export class TextureLoader {
     );
     layer.scale.set(layer.baseScale, layer.baseScale);
     layer.textureDefinition = textureDefinition;
+    layer.animType = resolveLayerAnimType(
+      String(textureDefinition.file || "").toLowerCase(),
+    );
 
     // Rotation
     let rot = Math.PI / 2;

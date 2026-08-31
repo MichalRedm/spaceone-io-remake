@@ -642,6 +642,7 @@ const currentCameraPosition = new Vector2(0, 0);
 const mouseScreenPos = new Vector2(0, 0);
 const mouseWorldPos = new Vector2(0, 0);
 let currentFleetSize = -1;
+let lastDangerZoneState: boolean | null = null;
 
 // Game Loop
 app.ticker.add(() => {
@@ -677,8 +678,6 @@ app.ticker.add(() => {
   }
   container.pivot.x = position.x - zoom / 2;
   container.pivot.y = position.y - (zoom / 2) * (9 / 16);
-  container.position.x = container.position.x;
-  container.position.y = container.position.y;
 
   renderer.draw(cache, interpolator, gameTime, ownFleetID, isSpectating);
   background.updateFocus(position);
@@ -697,10 +696,13 @@ app.ticker.add(() => {
     const isOutOfBounds =
       (Math.abs(position.x) > worldSize || Math.abs(position.y) > worldSize) &&
       document.body.classList.contains("alive");
-    dangerZoneWarning.classList.toggle(
-      "danger-zone-warning--visible",
-      isOutOfBounds,
-    );
+    if (isOutOfBounds !== lastDangerZoneState) {
+      lastDangerZoneState = isOutOfBounds;
+      dangerZoneWarning.classList.toggle(
+        "danger-zone-warning--visible",
+        isOutOfBounds,
+      );
+    }
   }
 
   log.check();

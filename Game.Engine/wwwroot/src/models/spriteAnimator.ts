@@ -20,6 +20,44 @@ import type { BodyState } from "./cache";
 import type { ProjectedPoint } from "../rendering/interpolator";
 
 /**
+ * Fast discriminant enum for sprite animation logic, eliminating per-frame string checks.
+ */
+export enum LayerAnimType {
+  Default = 0,
+  Ship = 1,
+  DashTrail = 2,
+  DeadShip = 3,
+  BoostOverlay = 4,
+  Glow = 5,
+  Food = 6,
+  LaserTrail = 7,
+  Bullet = 8,
+}
+
+/**
+ * Classifies a texture file string into a LayerAnimType enum once during sprite construction.
+ *
+ * @param fileStr - Lowercase texture file name.
+ * @returns Classified LayerAnimType.
+ */
+export function resolveLayerAnimType(fileStr: string): LayerAnimType {
+  if (fileStr.startsWith("dash_trail")) return LayerAnimType.DashTrail;
+  if (fileStr.startsWith("dead_ship")) return LayerAnimType.DeadShip;
+  if (fileStr.startsWith("particle_ship") || fileStr.includes("_boost"))
+    return LayerAnimType.BoostOverlay;
+  if (fileStr.startsWith("ship") && !fileStr.startsWith("ship_ab"))
+    return LayerAnimType.Ship;
+  if (fileStr.includes("glow")) return LayerAnimType.Glow;
+  if (fileStr.startsWith("food") || fileStr.startsWith("fish"))
+    return LayerAnimType.Food;
+  if (fileStr.includes("laser") && fileStr.includes("trail"))
+    return LayerAnimType.LaserTrail;
+  if (fileStr.startsWith("laser") || fileStr.startsWith("bullet"))
+    return LayerAnimType.Bullet;
+  return LayerAnimType.Default;
+}
+
+/**
  * Client-side visual animation constants.
  * Server-driven timing values (boost duration, invulnerability period, bullet lifetime) live in WorldConfig.
  */
@@ -185,10 +223,6 @@ export class SpriteAnimator {
         const layer = ctx.spriteLayers[i];
         if (!layer) continue;
 
-        // --- Geometry ---
-        layer.pivot.x = layer.texture.width / 2;
-        layer.pivot.y = layer.texture.height / 2;
-
         const scale = size * (layer.baseScale ?? 1);
         layer.scale.set(scale, scale);
 
@@ -209,10 +243,6 @@ export class SpriteAnimator {
 
         layer.rotation = angle + rotationOffset;
 
-        const fileStr = String(
-          layer.textureDefinition?.file ?? "",
-        ).toLowerCase();
-
         // --- Invulnerability blink ---
         let isBlinkDimmed = false;
         if (ctx.isInvulnerable && !ctx.isAbandoned) {
@@ -226,7 +256,7 @@ export class SpriteAnimator {
             if (!isBlinkVisible) {
               if (ctx.isBoosting) {
                 // Dash trail stays continuous; body/aura dims to ghostly translucent
-                if (!fileStr.startsWith("dash_trail")) {
+                if (layer.animType !== LayerAnimType.DashTrail) {
                   isBlinkDimmed = true;
                 }
               } else {
@@ -243,7 +273,6 @@ export class SpriteAnimator {
           layer,
           ctx,
           position,
-          fileStr,
           scale,
           angle,
           now,
@@ -314,12 +343,11 @@ export class SpriteAnimator {
   // Private helpers
   // -------------------------------------------------------------------------
 
-  /** Applies the correct alpha/visibility curve for a single sprite layer based on its texture file name. */
+  /** Applies the correct alpha/visibility curve for a single sprite layer based on its layer animation type. */
   private _applyLayerAlpha(
     layer: CustomSpriteLayer,
     ctx: AnimationContext,
     position: ProjectedPoint,
-    fileStr: string,
     scale: number,
     angle: number,
     now: number,
@@ -327,28 +355,37 @@ export class SpriteAnimator {
     AC: typeof ANIMATION_CONSTANTS,
   ): void {
     const bodyID = ctx.body?.ID ?? 0;
+    const animType = layer.animType ?? LayerAnimType.Default;
 
-    if (fileStr.startsWith("dash_trail")) {
-      this._applyDashTrailAlpha(layer, ctx, scale, now, bodyID, AC);
-    } else if (fileStr.startsWith("dead_ship")) {
-      this._applyDeadShipAlpha(layer, ctx, now, AC);
-    } else if (
-      fileStr.startsWith("particle_ship") ||
-      fileStr.includes("_boost")
-    ) {
-      this._applyBoostOverlayAlpha(layer, ctx, now, isBlinkDimmed, AC);
-    } else if (fileStr.startsWith("ship") && !fileStr.startsWith("ship_ab")) {
-      this._applyLiveShipAlpha(layer, ctx, now, isBlinkDimmed, AC);
-    } else if (fileStr.includes("glow")) {
-      this._applyGlowAlpha(layer, ctx, now, AC);
-    } else if (fileStr.startsWith("food") || fileStr.startsWith("fish")) {
-      this._applyFoodAlpha(layer, ctx, now, AC);
-    } else if (fileStr.includes("laser") && fileStr.includes("trail")) {
-      this._applyLaserTrailAlpha(layer, ctx, position, angle, scale, now, AC);
-    } else if (fileStr.startsWith("laser") || fileStr.startsWith("bullet")) {
-      this._applyBulletAlpha(layer, ctx, now, AC);
+    switch (animType) {
+      case LayerAnimType.DashTrail:
+        this._applyDashTrailAlpha(layer, ctx, scale, now, bodyID, AC);
+        break;
+      case LayerAnimType.DeadShip:
+        this._applyDeadShipAlpha(layer, ctx, now, AC);
+        break;
+      case LayerAnimType.BoostOverlay:
+        this._applyBoostOverlayAlpha(layer, ctx, now, isBlinkDimmed, AC);
+        break;
+      case LayerAnimType.Ship:
+        this._applyLiveShipAlpha(layer, ctx, now, isBlinkDimmed, AC);
+        break;
+      case LayerAnimType.Glow:
+        this._applyGlowAlpha(layer, ctx, now, AC);
+        break;
+      case LayerAnimType.Food:
+        this._applyFoodAlpha(layer, ctx, now, AC);
+        break;
+      case LayerAnimType.LaserTrail:
+        this._applyLaserTrailAlpha(layer, ctx, position, angle, scale, now, AC);
+        break;
+      case LayerAnimType.Bullet:
+        this._applyBulletAlpha(layer, ctx, now, AC);
+        break;
+      default:
+        // Textures that don't match any animated category retain their definition alpha.
+        break;
     }
-    // No else: textures that don't match any pattern keep their definition alpha.
   }
 
   private _applyDashTrailAlpha(

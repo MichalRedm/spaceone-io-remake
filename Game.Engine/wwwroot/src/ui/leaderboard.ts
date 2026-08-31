@@ -367,8 +367,8 @@ export class Leaderboard {
       return;
     }
 
-    const arrowHeight = leaderArrow.offsetHeight || leaderArrow.height || 40;
-    const arrowWidth = leaderArrow.offsetWidth || leaderArrow.width || 40;
+    const arrowHeight = 40;
+    const arrowWidth = 40;
     const winWidth = window.innerWidth;
     const winHeight = window.innerHeight;
 

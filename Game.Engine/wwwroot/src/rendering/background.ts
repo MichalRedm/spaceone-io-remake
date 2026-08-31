@@ -25,6 +25,8 @@ export class Background extends RenderedObject {
   speeds: number[];
   /** Instantiated tiling sprite layers. */
   backgroundSprites: (PIXI.TilingSprite | null)[] = [];
+  /** Precomputed static trigonometry coordinate offsets per layer. */
+  private baseOffsets: { x: number; y: number }[] = [];
 
   /**
    * Constructs a Background renderer attached to `CustomContainer.backgroundGroup`.
@@ -48,16 +50,11 @@ export class Background extends RenderedObject {
         if (!backgroundSprite) continue;
         if (this.speeds && this.speeds.length > i) {
           const speed = this.speeds[i] ?? 1;
-          backgroundSprite.position.x =
-            -100000 *
-              (Math.cos(backgroundSprite.rotation) -
-                Math.sin(backgroundSprite.rotation)) -
-            this.focus.x * (speed - 1);
-          backgroundSprite.position.y =
-            -100000 *
-              (Math.sin(backgroundSprite.rotation) +
-                Math.cos(backgroundSprite.rotation)) -
-            this.focus.y * (speed - 1);
+          const offset = this.baseOffsets[i];
+          const baseOffX = offset ? offset.x : 0;
+          const baseOffY = offset ? offset.y : 0;
+          backgroundSprite.position.x = baseOffX - this.focus.x * (speed - 1);
+          backgroundSprite.position.y = baseOffY - this.focus.y * (speed - 1);
           if (Settings.background === "none" && backgroundSprite.visible)
             backgroundSprite.visible = false;
           if (Settings.background === "on" && !backgroundSprite.visible)
@@ -117,17 +114,23 @@ export class Background extends RenderedObject {
           const scale = calculateScaleWithHeight(texDef, textures[0].height);
           backgroundSprite.tileScale.set(scale, scale);
           backgroundSprite.rotation = Math.random() - 0.5;
-          backgroundSprite.position.x =
-            -100000 *
-            (Math.cos(backgroundSprite.rotation) -
-              Math.sin(backgroundSprite.rotation));
-          backgroundSprite.position.y =
-            -100000 *
-            (Math.sin(backgroundSprite.rotation) +
-              Math.cos(backgroundSprite.rotation));
+          const cosR = Math.cos(backgroundSprite.rotation);
+          const sinR = Math.sin(backgroundSprite.rotation);
+          const baseOffX = -100000 * (cosR - sinR);
+          const baseOffY = -100000 * (sinR + cosR);
+          this.baseOffsets[i] = { x: baseOffX, y: baseOffY };
+          backgroundSprite.position.x = baseOffX;
+          backgroundSprite.position.y = baseOffY;
 
           this.backgroundSprites[i] = backgroundSprite;
-        } else backgroundSprite.texture = textures[0];
+        } else {
+          backgroundSprite.texture = textures[0];
+          const cosR = Math.cos(backgroundSprite.rotation);
+          const sinR = Math.sin(backgroundSprite.rotation);
+          const baseOffX = -100000 * (cosR - sinR);
+          const baseOffY = -100000 * (sinR + cosR);
+          this.baseOffsets[i] = { x: baseOffX, y: baseOffY };
+        }
       }
     }
   }
@@ -144,6 +147,7 @@ export class Background extends RenderedObject {
     }
 
     this.backgroundSprites = [];
+    this.baseOffsets = [];
   }
 
   /**
