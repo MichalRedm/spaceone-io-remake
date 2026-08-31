@@ -27,17 +27,23 @@ export const ANIMATION_CONSTANTS = {
   /** Alpha applied to the ship body/aura during an invulnerability blink-off period while also boosting. */
   INVULN_BLINK_DIM_ALPHA: 0.25,
 
-  /** Bullet and laser trail fade-in ramp duration in milliseconds (original 8-tick threshold ~180ms). */
-  BULLET_FADE_IN_MS: 180,
+  /** Bullet and laser trail fade-in ramp duration in milliseconds (Option A: 60ms fast muzzle ramp). */
+  BULLET_FADE_IN_MS: 60,
 
-  /** Bullet and laser trail fade-out ramp duration in milliseconds (original 8-tick threshold ~180ms). */
-  BULLET_FADE_OUT_MS: 180,
+  /** Bullet initial alpha floor at spawn (frame 0). */
+  BULLET_INITIAL_ALPHA: 0.4,
+
+  /** Bullet and laser trail fade-out ramp duration in milliseconds. */
+  BULLET_FADE_OUT_MS: 120,
 
   /** Laser trail fade-in ramp duration in milliseconds. */
-  LASER_TRAIL_FADE_IN_MS: 180,
+  LASER_TRAIL_FADE_IN_MS: 60,
+
+  /** Laser trail initial alpha floor at spawn (frame 0). */
+  LASER_TRAIL_INITIAL_ALPHA: 0.4,
 
   /** Laser trail fade-out ramp duration in milliseconds. */
-  LASER_TRAIL_FADE_OUT_MS: 180,
+  LASER_TRAIL_FADE_OUT_MS: 120,
 
   /** Base opacity for the dash trail flame. */
   DASH_TRAIL_BASE_ALPHA: 1.0,
@@ -527,7 +533,10 @@ export class SpriteAnimator {
     layer.position.y =
       position.y + offY * Math.cos(angle) + offX * Math.sin(angle);
 
-    const fadeIn = Math.min(1.0, age / AC.LASER_TRAIL_FADE_IN_MS);
+    const fadeInProgress = Math.min(1.0, age / AC.LASER_TRAIL_FADE_IN_MS);
+    const fadeIn =
+      AC.LASER_TRAIL_INITIAL_ALPHA +
+      (1.0 - AC.LASER_TRAIL_INITIAL_ALPHA) * fadeInProgress;
     const fadeOut =
       remaining < AC.LASER_TRAIL_FADE_OUT_MS
         ? Math.max(0.0, remaining / AC.LASER_TRAIL_FADE_OUT_MS)
@@ -544,15 +553,18 @@ export class SpriteAnimator {
   ): void {
     const age = now - ctx.spawnTime;
     const remaining = ctx.bulletLifetime - age;
-    const fadeIn = Math.min(1.0, age / AC.BULLET_FADE_IN_MS);
+    const fadeInProgress = Math.min(1.0, age / AC.BULLET_FADE_IN_MS);
+    const fadeIn =
+      AC.BULLET_INITIAL_ALPHA +
+      (1.0 - AC.BULLET_INITIAL_ALPHA) * fadeInProgress;
     const fadeOut =
       remaining < AC.BULLET_FADE_OUT_MS
         ? Math.max(0.0, remaining / AC.BULLET_FADE_OUT_MS)
         : 1.0;
     let alpha = fadeIn * fadeOut;
 
-    // Bullet head dissolves 8x faster when alpha drops below 0.5 (original Cell.cpp:490)
-    if (alpha < 0.5) {
+    // Bullet head dissolves rapidly when expiring at end of life
+    if (remaining < AC.BULLET_FADE_OUT_MS && alpha < 0.5) {
       alpha /= 8.0;
     }
 

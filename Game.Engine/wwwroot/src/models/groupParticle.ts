@@ -11,10 +11,10 @@ import * as particles from "pixi-particles";
 import { WorldConfig } from "./worldConfig";
 import type { RenderedObject } from "./renderedObject";
 
-/** Time window in milliseconds over which a bullet/laser particle fades in at spawn. */
-const BULLET_FADE_IN_MS = 180;
+/** Time window in milliseconds over which a bullet/laser particle fades in at spawn (Option A fast ramp). */
+const BULLET_FADE_IN_MS = 60;
 /** Time window in milliseconds over which a bullet/laser particle fades out before expiry. */
-const BULLET_FADE_OUT_MS = 180;
+const BULLET_FADE_OUT_MS = 120;
 
 /**
  * Group-aware particle controller.
