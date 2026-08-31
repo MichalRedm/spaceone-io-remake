@@ -176,36 +176,8 @@
                         <div id="instructions" class="instructions-hint view-state--menu visibility">
                             <p id="instructions-text" class="instructions-hint__text">MOVE MOUSE to steer fleet</p>
                         </div>
-                        <div id="popupInstructions" class="modal-overlay change-log-overlay instructions-modal" hidden>
-                            <div id="instructionsBack" class="modal-backdrop invisible-change-log-back"></div>
-                            <div id="instructionsPopup" class="modal-dialog change-log-popup instructions-modal__dialog">
-                                <div class="modal-dialog__header header">
-                                    <div class="modal-dialog__title title">Instructions</div>
-                                    <div id="instructionsClose" class="modal-dialog__close close">✕</div>
-                                </div>
-                                <div id="instructionsContent" class="instructions-modal__content">
-                                    <span>MOVE MOUSE to steer fleet</span>
-                                    <span>CLICK or SPACE to shoot</span>
-                                    <span>'S' to Split &amp; Dash</span>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                     <input type="button" id="arenas" class="btn button1" value="Game Modes" hidden />
-                </div>
-            </div>
-            <div id="popupInvalidArena" class="modal-overlay change-log-overlay arena-modal-overlay" hidden>
-                <div id="invalidArenaBack" class="modal-backdrop invisible-change-log-back"></div>
-                <div id="invalidArenaPopup" class="arena-modal arena-modal-popup">
-                    <div class="arena-modal__header header">
-                        <div class="arena-modal__title title">Arena Not Found</div>
-                        <div id="invalidArenaClose" class="arena-modal__close close">✕</div>
-                    </div>
-                    <div class="arena-modal__body arena-modal-body">
-                        <p class="arena-modal__text modal-text">The arena link you followed does not exist or has expired.</p>
-                        <p class="arena-modal__text arena-modal__subtext modal-text modal-subtext">You have been connected to the default arena.</p>
-                        <button id="invalidArenaOk" class="btn btn--gold arena-modal__btn modal-btn">OK</button>
-                    </div>
                 </div>
             </div>
             <div id="error" class="connection-error" hidden>
@@ -220,143 +192,6 @@
                 <span>19 February 2021</span><br>
                 <span>- Movement physics reworked</span><br>
             </a>
-            <div id="popupChangelog" class="modal-overlay change-log-overlay changelog-modal" hidden>
-                <div id="changelogBack" class="modal-backdrop invisible-change-log-back"></div>
-                <div class="modal-dialog change-log-popup">
-                    <div class="modal-dialog__header header">
-                        <div class="modal-dialog__title title">Captain's Log History</div>
-                        <div id="changelogClose" class="modal-dialog__close close">✕</div>
-                    </div>
-                    <span class="modal-dialog__content content">
-                        <br><br><br>
-                        <span>19 February 2021</span><br>
-                        <span>- Movement physics reworked</span><br><br>
-
-                        <span>29 January 2021</span><br>
-                        <span>- Physics improved</span><br>
-                        <span>- More original sprites added</span><br>
-                        <span>- Graphical settings</span><br><br>
-
-                        <span>4 April 2020</span><br>
-                        <span>- More physics improvements</span><br><br>
-
-                        <span>11 March 2020</span><br>
-                        <span>- Flocking improved</span><br>
-                        <span>- Fleet velocity and drag updated</span><br><br>
-
-                        <span>9 October 2019</span><br>
-                        <span>- Drag and flocking improvements</span><br>
-                        <span>- Ship selector bug fix</span><br><br>
-
-                        <span>6 October 2019</span><br>
-                        <span>- Spaceone Beta deployed for tests</span><br>
-                        <span>- Physics partly reconstructed</span><br>
-                        <span>- Spawnscreen mostly reconstructed</span><br>
-                        <span>- Graphics partly reconstructed</span><br><br>
-
-                        <span>3 September 2019</span><br>
-                        <span>- Spaceone rebuild project has officially begun</span><br>
-                        <span>- Game is basing now on daud.io engine</span><br><br>
-
-                        <span>12 November 2018</span><br>
-                        <span>- Spaceone takedown</span><br><br>
-
-                        <span>17 May 2017</span><br>
-                        <span>- Autofire improvement</span><br>
-                        <span>- ?</span><br><br>
-
-                        <span>12 May 2017</span><br>
-                        <span>- Server improvements</span><br><br>
-
-                        <span>11 May 2017</span><br>
-                        <span>- Fix autofire bug</span><br><br>
-
-                        <span>5 May 2017</span><br>
-                        <span>- Improved youtube featured system</span><br><br>
-
-                        <span>2 May 2017</span><br>
-                        <span>- Improved flocking algorithm</span><br><br>
-
-                        <span>28 April 2017</span><br>
-                        <span>- Ship selection fixed (left)</span><br><br>
-
-                        <span>27 April 2017</span><br>
-                        <span>- Graphic Settings</span><br>
-                        <span>- Instructions Popup</span><br>
-                        <span>- Food spawn animation</span><br>
-                        <span>- Score announcements</span><br>
-                        <span>- Official Twitter account</span><br><br>
-
-                        <span>21 April 2017</span><br>
-                        <span>- Revamp visuals</span><br>
-                        <span>- Dash and shoot mechanic</span><br>
-                        <span>- Change log history</span><br>
-                        <span>- Bug fixing</span><br>
-                        <span>- Improvement in overall performance</span><br><br>
-
-                        <span>6 April 2017</span><br>
-                        <span>- Rotating Instruction text</span><br>
-                        <span>- Fixed bullets starting velocity</span><br>
-                        <span>- Fix soft lock when getting AFK</span><br><br>
-
-                        <span>31 March 2017</span><br>
-                        <span>- Fixed invisible bullets bug</span><br><br>
-
-                        <span>28 March 2017</span><br>
-                        <span>- Bullets are now displayed more accurately</span><br>
-                        <span>- Unknown fleets each have a number</span><br>
-                        <span>- Improved feedback when failing to connect with Arena Link</span><br>
-                        <span>- Added message warning of server shutdown</span><br><br>
-
-                        <span>17 March 2017</span><br>
-                        <span>- Fixed score bug when dying in the Danger Zone</span><br>
-                        <span>- Fixed some visual bugs</span><br><br>
-
-                        <span>16 March 2017</span><br>
-                        <span>- Fixed some bugs from previous updates</span><br><br>
-
-                        <span>14 March 2017</span><br>
-                        <span>- Bandwitdh optimisations</span><br>
-                        <span>- New Split and Dash Mechanic ('S' key)</span><br>
-                        <span>- Arena Links</span><br>
-                        <span>- Check the official subreddit for more info</span><br><br>
-
-                        <span>17 February 2017</span><br>
-                        <span>- Added official Discord server link</span><br>
-                        <span>- Last name used is now saved</span><br><br>
-
-                        <span>14 February 2017</span><br>
-                        <span>- Client upgrade mechanism</span><br>
-                        <span>- Fixed issue with adblock users not being able to play</span><br><br>
-
-                        <span>13 February 2017</span><br>
-                        <span>- Client upgrade mechanism</span><br><br>
-
-                        <span>9 February 2017</span><br>
-                        <span>- Fixed score bug when dying in the Danger Zone</span><br><br>
-
-                        <span>7 February 2017</span><br>
-                        <span>- Improved ship selection</span><br>
-                        <span>- Added high score display</span><br>
-                        <span>- Fixed bugs</span><br><br>
-
-                        <span>3 February 2017</span><br>
-                        <span>- Improved mouse deadzone</span><br>
-                        <span>- Changed background</span><br>
-                        <span>- Added high score display</span><br><br>
-                    </span>
-                </div>
-            </div>
-            <div id="worlds" class="worlds-modal" hidden>
-                <div id="topbar" class="worlds-modal__topbar">
-                    <span>Arenas</span>
-                    <div class="worlds-modal__close close-button" id="wcancel"><img src="img/whiteX.png" alt="Close"></div>
-                </div>
-                <div id="world-list-scroll" class="worlds-modal__scroll">
-                    <table id="worldList" class="worlds-modal__list"></table>
-                </div>
-            </div>
-
             <div id="links" hidden>
                 <a href="https://discord.gg/5ak5FsU" target="_blank">
                     <div class="link">
@@ -410,10 +245,178 @@
                     </a>
                 </div>
             </div>
+        </div>
 
-            <div id="gear" class="settings-modal closed" hidden>
-                <div id="settingsContainer" class="settings-modal__container">
-                    <h1>Settings</h1>
+        <div id="popupInstructions" class="modal-overlay change-log-overlay instructions-modal" hidden>
+            <div id="instructionsBack" class="modal-backdrop invisible-change-log-back"></div>
+            <div id="instructionsPopup" class="modal-dialog change-log-popup instructions-modal__dialog">
+                <div class="modal-dialog__header header">
+                    <div class="modal-dialog__title title">Instructions</div>
+                    <div id="instructionsClose" class="modal-dialog__close close">✕</div>
+                </div>
+                <div id="instructionsContent" class="instructions-modal__content">
+                    <span>MOVE MOUSE to steer fleet</span>
+                    <span>CLICK or SPACE to shoot</span>
+                    <span>'S' to Split &amp; Dash</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="popupInvalidArena" class="modal-overlay change-log-overlay arena-modal-overlay" hidden>
+            <div id="invalidArenaBack" class="modal-backdrop invisible-change-log-back"></div>
+            <div id="invalidArenaPopup" class="arena-modal arena-modal-popup">
+                <div class="arena-modal__header header">
+                    <div class="arena-modal__title title">Arena Not Found</div>
+                    <div id="invalidArenaClose" class="arena-modal__close close">✕</div>
+                </div>
+                <div class="arena-modal__body arena-modal-body">
+                    <p class="arena-modal__text modal-text">The arena link you followed does not exist or has expired.</p>
+                    <p class="arena-modal__text arena-modal__subtext modal-text modal-subtext">You have been connected to the default arena.</p>
+                    <button id="invalidArenaOk" class="btn btn--gold arena-modal__btn modal-btn">OK</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="popupChangelog" class="modal-overlay change-log-overlay changelog-modal" hidden>
+            <div id="changelogBack" class="modal-backdrop invisible-change-log-back"></div>
+            <div class="modal-dialog change-log-popup">
+                <div class="modal-dialog__header header">
+                    <div class="modal-dialog__title title">Captain's Log History</div>
+                    <div id="changelogClose" class="modal-dialog__close close">✕</div>
+                </div>
+                <div class="modal-dialog__content content">
+                    <span>19 February 2021</span><br>
+                    <span>- Movement physics reworked</span><br><br>
+
+                    <span>29 January 2021</span><br>
+                    <span>- Physics improved</span><br>
+                    <span>- More original sprites added</span><br>
+                    <span>- Graphical settings</span><br><br>
+
+                    <span>4 April 2020</span><br>
+                    <span>- More physics improvements</span><br><br>
+
+                    <span>11 March 2020</span><br>
+                    <span>- Flocking improved</span><br>
+                    <span>- Fleet velocity and drag updated</span><br><br>
+
+                    <span>9 October 2019</span><br>
+                    <span>- Drag and flocking improvements</span><br>
+                    <span>- Ship selector bug fix</span><br><br>
+
+                    <span>6 October 2019</span><br>
+                    <span>- Spaceone Beta deployed for tests</span><br>
+                    <span>- Physics partly reconstructed</span><br>
+                    <span>- Spawnscreen mostly reconstructed</span><br>
+                    <span>- Graphics partly reconstructed</span><br><br>
+
+                    <span>3 September 2019</span><br>
+                    <span>- Spaceone rebuild project has officially begun</span><br>
+                    <span>- Game is basing now on daud.io engine</span><br><br>
+
+                    <span>12 November 2018</span><br>
+                    <span>- Spaceone takedown</span><br><br>
+
+                    <span>17 May 2017</span><br>
+                    <span>- Autofire improvement</span><br>
+                    <span>- ?</span><br><br>
+
+                    <span>12 May 2017</span><br>
+                    <span>- Server improvements</span><br><br>
+
+                    <span>11 May 2017</span><br>
+                    <span>- Fix autofire bug</span><br><br>
+
+                    <span>5 May 2017</span><br>
+                    <span>- Improved youtube featured system</span><br><br>
+
+                    <span>2 May 2017</span><br>
+                    <span>- Improved flocking algorithm</span><br><br>
+
+                    <span>28 April 2017</span><br>
+                    <span>- Ship selection fixed (left)</span><br><br>
+
+                    <span>27 April 2017</span><br>
+                    <span>- Graphic Settings</span><br>
+                    <span>- Instructions Popup</span><br>
+                    <span>- Food spawn animation</span><br>
+                    <span>- Score announcements</span><br>
+                    <span>- Official Twitter account</span><br><br>
+
+                    <span>21 April 2017</span><br>
+                    <span>- Revamp visuals</span><br>
+                    <span>- Dash and shoot mechanic</span><br>
+                    <span>- Change log history</span><br>
+                    <span>- Bug fixing</span><br>
+                    <span>- Improvement in overall performance</span><br><br>
+
+                    <span>6 April 2017</span><br>
+                    <span>- Rotating Instruction text</span><br>
+                    <span>- Fixed bullets starting velocity</span><br>
+                    <span>- Fix soft lock when getting AFK</span><br><br>
+
+                    <span>31 March 2017</span><br>
+                    <span>- Fixed invisible bullets bug</span><br><br>
+
+                    <span>28 March 2017</span><br>
+                    <span>- Bullets are now displayed more accurately</span><br>
+                    <span>- Unknown fleets each have a number</span><br>
+                    <span>- Improved feedback when failing to connect with Arena Link</span><br>
+                    <span>- Added message warning of server shutdown</span><br><br>
+
+                    <span>17 March 2017</span><br>
+                    <span>- Fixed score bug when dying in the Danger Zone</span><br>
+                    <span>- Fixed some visual bugs</span><br><br>
+
+                    <span>16 March 2017</span><br>
+                    <span>- Fixed some bugs from previous updates</span><br><br>
+
+                    <span>14 March 2017</span><br>
+                    <span>- Bandwitdh optimisations</span><br>
+                    <span>- New Split and Dash Mechanic ('S' key)</span><br>
+                    <span>- Arena Links</span><br>
+                    <span>- Check the official subreddit for more info</span><br><br>
+
+                    <span>17 February 2017</span><br>
+                    <span>- Added official Discord server link</span><br>
+                    <span>- Last name used is now saved</span><br><br>
+
+                    <span>14 February 2017</span><br>
+                    <span>- Client upgrade mechanism</span><br>
+                    <span>- Fixed issue with adblock users not being able to play</span><br><br>
+
+                    <span>13 February 2017</span><br>
+                    <span>- Client upgrade mechanism</span><br><br>
+
+                    <span>9 February 2017</span><br>
+                    <span>- Fixed score bug when dying in the Danger Zone</span><br><br>
+
+                    <span>7 February 2017</span><br>
+                    <span>- Improved ship selection</span><br>
+                    <span>- Added high score display</span><br>
+                    <span>- Fixed bugs</span><br><br>
+
+                    <span>3 February 2017</span><br>
+                    <span>- Improved mouse deadzone</span><br>
+                    <span>- Changed background</span><br>
+                    <span>- Added high score display</span><br><br>
+                </div>
+            </div>
+        </div>
+
+        <div id="worlds" class="worlds-modal closed" hidden>
+            <div id="topbar" class="worlds-modal__topbar">
+                <span>Arenas</span>
+                <div class="worlds-modal__close close-button" id="wcancel"><img src="img/whiteX.png" alt="Close"></div>
+            </div>
+            <div id="world-list-scroll" class="worlds-modal__scroll">
+                <table id="worldList" class="worlds-modal__list"></table>
+            </div>
+        </div>
+
+        <div id="gear" class="settings-modal closed" hidden>
+            <div id="settingsContainer" class="settings-modal__container">
+                <h1>Settings</h1>
 
                     <table>
                         <tr>

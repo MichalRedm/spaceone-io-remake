@@ -4,27 +4,26 @@
 
 @use "../abstracts" as *;
 
-.btn {
+.btn,
+.button1 {
   @include button-base;
 
-  // Primary Spawn / Play Button
+  // Primary Spawn Button (PLAY)
   &--spawn,
   &#spawn {
     @include button-variant(
-      $text-color: $color-green-text,
-      $border-color: $color-yellow-primary,
-      $gradient-top: $color-green-light,
-      $gradient-bottom: $color-green-dark,
-      $text-shadow-color: $color-yellow-primary,
-      $glow-color: $color-yellow-primary,
-      $glow-radius: 30px,
-      $hover-pulse-animation: pulse-yellow
+      $text-color: $color-bg-dark,
+      $border-color: $color-yellow-border,
+      $gradient-top: $color-yellow-primary,
+      $gradient-bottom: $color-yellow-dark,
+      $text-shadow-color: $color-yellow-border,
+      $glow-color: $color-yellow-dark,
+      $glow-radius: 30px
     );
-    width: 350px;
-    height: 55px;
-    font-size: 1.6em;
-    font-weight: 600;
     margin: 20px 0;
+    width: 100%;
+    font-size: 1.6em;
+    font-weight: 900;
   }
 
   // Spectate Button
@@ -52,13 +51,16 @@
     box-sizing: border-box;
     display: block;
     text-align: left;
+    white-space: nowrap;
+    line-height: normal;
     cursor: pointer;
-    z-index: $z-index-base;
+    z-index: 1;
 
     &__icon,
     #spectate-eye {
       width: 32px;
       height: auto;
+      box-sizing: content-box;
       padding: 0 0 0 20px;
       position: relative;
       top: 2px;
@@ -92,14 +94,17 @@
     box-sizing: border-box;
     display: block;
     text-align: left;
+    white-space: nowrap;
+    line-height: normal;
     cursor: pointer;
-    z-index: $z-index-controls;
+    z-index: 2;
 
     i {
       font-size: 1.1em;
       position: relative;
       top: 0;
       padding-left: 20px;
+      vertical-align: middle;
     }
   }
 
@@ -116,16 +121,14 @@
       $glow-radius: 30px
     );
     width: 170px;
-    height: 46px;
     font-size: 1em;
+    height: 46px;
+    padding: 0;
     font-weight: 600;
-    margin: 20px 0;
   }
 
-  // Gold / Modal Primary Button
-  &--gold,
-  .modal-btn,
-  #generate-link-button {
+  // Gold Action Button
+  &--gold {
     @include button-variant(
       $text-color: $color-bg-dark,
       $border-color: $color-yellow-border,
@@ -135,42 +138,50 @@
       $glow-color: $color-yellow-dark,
       $glow-radius: 30px
     );
+    padding: 6px 16px;
+    font-size: 1em;
     border-radius: 8px;
-    min-width: 140px;
-    padding: 7px 16px;
-    margin: 10px auto 0;
-    font-size: 1.1em;
-    font-weight: 900;
-
-    &:hover {
-      transform: scale(1.05);
-      box-shadow: 0 0 35px 0 $color-yellow-bright;
-    }
   }
 
   // Discord Login Button
   &--discord,
   &#dauth {
-    @extend .btn--pink;
+    @include button-variant(
+      $text-color: $color-text-main,
+      $border-color: #3893f7,
+      $gradient-top: $color-blue-button-start,
+      $gradient-bottom: $color-blue-button-end,
+      $text-shadow-color: #3893f7,
+      $glow-color: $color-blue-glow,
+      $glow-radius: 50px,
+      $hover-pulse-animation: pulse-blue
+    );
+    width: 100%;
+    margin-top: 10px;
   }
 
-  // Toastr / Notification Button
-  &--toast,
-  &.toastr-button {
-    cursor: pointer;
-    border: 1px $color-bg-dark solid;
-    border-radius: 5px;
-    font-family: $font-family-main;
-    background-color: $color-text-main;
-    float: right;
-    width: 70px;
-    height: 25px;
-    margin: 10px 5px 0 0;
-    font-weight: 800;
+  // Settings Save / Reset / Cancel Actions
+  &--settings-save {
+    background: $color-blue-button-start;
+    color: $color-text-main;
+    border: 1px solid $color-blue-accent;
+    padding: 8px 16px;
+    border-radius: 6px;
   }
 
-  // Legacy .button1 alias for compatibility
-  &.button1 {
-    cursor: pointer;
+  &--settings-cancel {
+    background: #444;
+    color: $color-text-main;
+    border: 1px solid #666;
+    padding: 8px 16px;
+    border-radius: 6px;
+  }
+
+  &--settings-reset {
+    background: $color-danger;
+    color: $color-text-main;
+    border: 1px solid lighten($color-danger, 15%);
+    padding: 8px 16px;
+    border-radius: 6px;
   }
 }

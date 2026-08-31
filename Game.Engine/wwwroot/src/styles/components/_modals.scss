@@ -11,9 +11,9 @@
   bottom: 0;
   left: 0;
   right: 0;
-  background: $color-overlay-dark;
+  background: rgba(0, 0, 0, 0.7);
   display: none;
-  z-index: $z-index-modal;
+  z-index: 1000;
 
   &--open,
   &.is-open {
@@ -35,35 +35,40 @@
 .change-log-popup {
   margin: auto;
   padding: 0 20px 20px 20px;
-  background: $color-bg-dark;
-  color: $color-text-main;
+  background: #000;
+  color: #fff;
   border-radius: 8px;
   width: 600px;
+  max-width: 90vw;
   height: 80vh;
-  overflow-y: auto;
   position: absolute;
   top: 0;
   bottom: 0;
   right: 0;
   left: 0;
-  border: 2px $color-text-main solid;
-  box-shadow: 0 0 10px 0 $color-text-main;
+  font-family: $font-family-main;
+  border: 2px #fff solid;
+  box-shadow: 0 0 10px 0 #fff;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 
   &__header,
   .header {
-    background: $color-bg-dark;
-    position: fixed;
-    width: inherit;
+    background: #000;
+    width: 100%;
     height: 60px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding-right: 20px;
+    flex-shrink: 0;
   }
 
   &__title,
   .header .title {
     font-size: 1.8em;
+    font-weight: bold;
     padding-top: 10px;
   }
 
@@ -74,7 +79,7 @@
     font-weight: bold;
     text-decoration: none;
     padding-top: 10px;
-    color: $color-text-main;
+    color: #fff;
     transition: color $transition-fast;
 
     &:hover {
@@ -84,9 +89,12 @@
 
   &__content,
   .content {
-    position: fixed;
-    width: inherit;
+    width: 100%;
     font-size: 1.1em;
-    margin-top: 65px;
+    flex: 1;
+    overflow-y: auto;
+    padding-top: 10px;
+    padding-bottom: 20px;
+    box-sizing: border-box;
   }
 }
