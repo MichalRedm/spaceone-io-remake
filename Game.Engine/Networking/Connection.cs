@@ -455,7 +455,7 @@ namespace Game.Engine.Networking
 
         private async Task SendAsync(ByteBuffer message, CancellationToken cancellationToken)
         {
-            var buffer = message.ToArraySegment(message.Position, message.Length);
+            var buffer = message.ToArraySegment(message.Position, message.Length - message.Position);
 
             await WebsocketSendingSemaphore.WaitAsync();
             try
