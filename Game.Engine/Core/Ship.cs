@@ -276,6 +276,12 @@ namespace Game.Engine.Core
             else
             {
                 Momentum = Momentum * World.Hook.DragAbandoned;
+                if (AngularVelocity != 0)
+                {
+                    AngularVelocity = AngularVelocity * World.Hook.DragAbandoned;
+                    if (MathF.Abs(AngularVelocity) < 0.000001f)
+                        AngularVelocity = 0;
+                }
             }
                 
 

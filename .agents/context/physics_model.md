@@ -68,9 +68,12 @@ Extracted from over **3.8M ship frames**, **413k food orbs**, and **112k laser s
 - **Lifespan**: Empirical sublinear table `Hook.BulletLifeTable[N]` ($N=1: 1560\text{ ms}, N=3: 1840\text{ ms}, N=10: 2240\text{ ms}, N=20: 2640\text{ ms}, N=45: 3040\text{ ms}$), with linear regression fallback $\tau_{\text{life}} = \text{BulletLifeB} + \text{BulletLifeM} \cdot N = 1985\text{ ms} + 25\text{ ms} \cdot N$.
 - **Cooldown**: Exact empirical discrete closed-form formula $K(N) = 13 + N - \lfloor \frac{N+4}{10} \rfloor \text{ ticks}$ ($\tau_{\text{cooldown}} = K(N) \cdot 40\text{ ms}$), verified across 4,467 cooldown cycles and 36,389 step frames (100.00% exact match). ($N=1: 560\text{ ms}, N=3: 640\text{ ms}, N=5,6: 720\text{ ms}, N=10: 880\text{ ms}, N=20: 1240\text{ ms}, N=50: 2320\text{ ms}$).
 
-### Abandoned Ships & Fleet Splitting (`Hook.AbandonedShipLifespan`, `Hook.DragAbandoned`)
+### Abandoned Ships & Fleet Splitting (`Hook.AbandonedShipLifespan`, `Hook.DragAbandoned`, `Hook.AbandonNoiseVelocity`, `Hook.AbandonNoiseRotation`)
 - **Empirical Invariant**: Extracted across 3,147 split ship trajectories (`analysis/datasets/abandoned_ship_experiment_results.json`).
-- **Persistence Model**: When a fleet dashes/splits (opcode `0x19`), abandoned ships (`isSplitting`, flag 8) lose active engine thrust and drift with low linear damping (`DragAbandoned = 0.98`).
+- **Persistence Model**: When a fleet dashes/splits (opcode `0x19`), abandoned ships (`isSplitting`, flag 8) lose active engine thrust and drift with linear and angular damping (`DragAbandoned = 0.98`).
+- **Noise & Dispersion**:
+  - `Hook.AbandonNoiseVelocity = 0.015f`: Applies subtle random linear velocity noise to each abandoned ship individually on separation so ships drift slightly relative to each other.
+  - `Hook.AbandonNoiseRotation = 0.0005f`: Applies small random angular velocity perturbation (`[-AbandonNoiseRotation, +AbandonNoiseRotation]`) individually on separation, which decays to 0 under `DragAbandoned`.
 - **Expiration Dynamics**:
   - Abandoned ships do **not** automatically expire after a fixed timeout in the original game; undisturbed instances survived continuously for $67+\text{ s}$ and several minutes as long as the owner was alive.
   - Destruction triggers: (1) Creator fleet / owner death ($100\%$ immediate deletion), (2) projectile collision damage, or (3) active viewport de-synchronization.

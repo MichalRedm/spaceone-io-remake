@@ -303,6 +303,20 @@ namespace Game.Engine.Core
             ship.Color = "gray";
             ship.Abandoned = true;
             ship.Momentum = ship.Momentum * World.Hook.AbandonMomentumMultiplier;
+
+            // Apply slight random translational velocity noise and angular spin noise to each abandoned ship
+            if (World.Hook.AbandonNoiseVelocity > 0)
+            {
+                float noiseAngle = (float)Random.Shared.NextDouble() * MathF.PI * 2f;
+                float noiseSpeed = (float)Random.Shared.NextDouble() * World.Hook.AbandonNoiseVelocity;
+                ship.Momentum += new Vector2(MathF.Cos(noiseAngle), MathF.Sin(noiseAngle)) * noiseSpeed;
+            }
+
+            if (World.Hook.AbandonNoiseRotation > 0)
+            {
+                ship.AngularVelocity = ((float)Random.Shared.NextDouble() - 0.5f) * 2f * World.Hook.AbandonNoiseRotation;
+            }
+
             ship.Group = null;
             ship.ThrustAmount = 0;
             ship.Mode = 0;
