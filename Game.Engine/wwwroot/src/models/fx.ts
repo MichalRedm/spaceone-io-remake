@@ -20,8 +20,8 @@ export const FX_CONFIG = {
   bulletExplosion: {
     particleCount: 2,
     durationMs: 500,
-    baseScale: 1.0,
-    scaleVariation: 0.2,
+    baseScale: 0.62, // Scaled to ~25px initial width (2.5x bullet width matching original GameNetworking.cpp:540)
+    scaleVariation: 0.1,
     alphaStart: 1.0,
     alphaEnd: 1.0,
     driftSpeedMin: 25,
@@ -31,8 +31,8 @@ export const FX_CONFIG = {
   foodExplosion: {
     particleCount: 2,
     durationMs: 500,
-    baseScale: 1.2,
-    scaleVariation: 0.2,
+    baseScale: 0.37, // Scaled to ~16px initial width (2.27x food width matching original GameNetworking.cpp:534)
+    scaleVariation: 0.08,
     alphaStart: 1.0,
     alphaEnd: 1.0,
     driftSpeedMin: 25,
