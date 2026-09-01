@@ -144,6 +144,7 @@ namespace Game.Engine.Core
             InitializeSystemActor<TeamColors>();
             InitializeSystemActor<RoomReset>();
             InitializeSystemActor<SharksAndMinnows>();
+            InitializeSystemActor<RoboTrainerActor>();
         }
 
         public T GetActor<T>()

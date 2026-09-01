@@ -123,7 +123,9 @@ namespace Game.Engine.Core
             hook.PickupShields = 0;
             hook.AllowedColors = Hook.AllColors;
             hook.Weight = 100;
-            hook.BotBase = 2;
+            hook.BotBase = 3;
+            hook.RoboTrainerMode = true;
+            hook.RoboTrainerMinBots = 3;
 
             hook.WorldResizeEnabled = false;
 
