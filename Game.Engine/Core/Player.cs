@@ -23,6 +23,7 @@ namespace Game.Engine.Core
         public Connection Connection { get; set; }
 
         public static Dictionary<World, List<Player>> Players = new Dictionary<World, List<Player>>();
+        private static readonly object _playersLock = new object();
 
         public int Score { get; set; }
         public int KillStreak { get; set; } = 0;
@@ -188,7 +189,7 @@ namespace Game.Engine.Core
 
         public static List<Player> GetWorldPlayers(World world)
         {
-            lock (typeof(Player))
+            lock (_playersLock)
             {
                 List<Player> worldPlayers = null;
                 if (!Players.ContainsKey(world))
@@ -241,8 +242,8 @@ namespace Game.Engine.Core
 
             if (this.IsControlNew)
             {
-                if (float.IsNaN(ControlInput.Position.X))
-                    ControlInput.Position = new System.Numerics.Vector2(0, 0);
+                if (float.IsNaN(ControlInput.Position.X) || float.IsNaN(ControlInput.Position.Y) || float.IsInfinity(ControlInput.Position.X) || float.IsInfinity(ControlInput.Position.Y))
+                    ControlInput.Position = Vector2.Zero;
 
                 Fleet.AimTarget = ControlInput.Position;
 
@@ -253,13 +254,6 @@ namespace Game.Engine.Core
                 CummulativeShootRequested = false;
 
                 Fleet.CustomData = ControlInput.CustomData;
-
-                if (Fleet.CustomData != null)
-                {
-                    var parsed = JsonConvert.DeserializeAnonymousType(Fleet.CustomData, new { magic = null as string });
-                    if (parsed?.magic != null)
-                        JsonConvert.PopulateObject(parsed.magic, this);
-                }
             }
 
             this.IsControlNew = false;
