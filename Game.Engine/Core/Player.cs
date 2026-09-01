@@ -299,7 +299,7 @@ namespace Game.Engine.Core
                 {
                     UnknownSquadronNumber = World != null ? World.NextUnknownSquadronNumber() : 1;
                 }
-                name = $"Unknown Squadron #{UnknownSquadronNumber}";
+                name = $"Unknown Fleet #{UnknownSquadronNumber}";
             }
 
             CummulativeBoostRequested = false;

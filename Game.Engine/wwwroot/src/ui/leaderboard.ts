@@ -132,6 +132,7 @@ function getOut(
   entryIsSelf?: boolean,
 ): string {
   const rankStr = rank === undefined ? "" : `${rank}.`;
+  const name = escapeHtml(entry.Name) || "Unknown Fleet";
   const colorClass =
     entry.Color && entryIsSelf ? `leaderboard__row--${entry.Color}` : "";
   const selfClass = entryIsSelf ? "leaderboard__row--self" : "";
@@ -141,7 +142,7 @@ function getOut(
 
   return (
     `<tr class="${rowClass}">` +
-    `<td class="name">${rankStr} ${escapeHtml(entry.Name) || "Unknown Squadron"}</td>` +
+    `<td class="name" title="${name}">${rankStr} ${name}</td>` +
     `<td class="score">${entry.Score ?? 0}</td>` +
     `</tr>`
   );
@@ -175,7 +176,7 @@ export class Leaderboard {
     if (data.Record && record && recordScore && recordFleet) {
       record.style.fontFamily = Settings.font;
       recordScore.innerHTML = `${data.Record.Score}`;
-      recordFleet.innerHTML = `${escapeHtml(data.Record.Name) || "Unknown Squadron"}`;
+      recordFleet.innerHTML = `${escapeHtml(data.Record.Name) || "Unknown Fleet"}`;
     }
 
     if (fleetID) {
