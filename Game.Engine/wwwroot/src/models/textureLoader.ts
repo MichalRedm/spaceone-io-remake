@@ -10,7 +10,7 @@
  * - Instantiating `pixi-particles` Emitter instances.
  */
 
-import * as emittersJson from "../../img/emitters.json";
+import * as emittersJson from "../../img/game/emitters.json";
 import * as PIXI from "pixi.js";
 import * as particles from "pixi-particles";
 import { textureCache } from "./textureCache";
@@ -339,7 +339,7 @@ export class TextureLoader {
 
   /**
    * Creates an `HTMLImageElement` loaded from the file or URL specified in
-   * a texture definition.
+   * a texture definition, or extracts it from `textureCache` as a fallback.
    */
   getImageFromTextureDefinition(
     textureDefinition: TextureDefinition,
@@ -348,8 +348,49 @@ export class TextureLoader {
     if (textureDefinition.url) {
       img.src = textureDefinition.url;
     } else if (textureDefinition.file) {
-      const src = images[textureDefinition.file];
-      if (src) img.src = src;
+      const fileKey = String(textureDefinition.file);
+      const src =
+        images[fileKey] ??
+        images[fileKey.toLowerCase()] ??
+        images[`${fileKey}.png`] ??
+        images[`${fileKey.toLowerCase()}.png`];
+      if (src) {
+        img.src = src;
+      } else {
+        const textures =
+          textureCache[fileKey] ?? textureCache[fileKey.toLowerCase()];
+        if (textures && textures[0]) {
+          const tex = textures[0];
+          try {
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d");
+            const srcImg = tex.baseTexture?.resource
+              ?.source as CanvasImageSource;
+            if (ctx && srcImg) {
+              const f = tex.frame;
+              canvas.width = f.width;
+              canvas.height = f.height;
+              ctx.drawImage(
+                srcImg,
+                f.x,
+                f.y,
+                f.width,
+                f.height,
+                0,
+                0,
+                f.width,
+                f.height,
+              );
+              img.src = canvas.toDataURL();
+            }
+          } catch (e) {
+            console.warn(
+              `Could not extract texture '${fileKey}' from atlas:`,
+              e,
+            );
+          }
+        }
+      }
     }
     return img;
   }

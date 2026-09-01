@@ -13,7 +13,7 @@
     <meta property="og:title" content="SPACEONE.io" />
     <meta property="og:description"
         content="Spaceone.io is a fast-paced real-time strategy shooter game where you take command of spaceship squadrons! Play with your friends, team up, and destroy the enemies! Conquer the arena with your lasers with your mouse and keyboard in this hot online multiplayer game. Join now! Available as a online browser HTML5 io game." />
-    <meta property="og:image" content="/img/miniature.png" />
+    <meta property="og:image" content="/img/ui/miniature.png" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:locale" content="en-US" />
     <meta property="twitter:card" content="summary_large_image" />
@@ -21,7 +21,7 @@
         content="Spaceone.io is a fast-paced real-time strategy shooter game where you take command of spaceship squadrons! Play with your friends, team up, and destroy the enemies! Conquer the arena with your lasers with your mouse and keyboard in this hot online multiplayer game. Join now! Available as a online browser HTML5 io game." />
     <title>SPACEONE.io</title>
     <link rel="stylesheet" href="src/styles/main.scss" />
-    <link rel="shortcut icon" type="image/png" href="img/ship_icon.png" />
+    <link rel="shortcut icon" type="image/png" href="img/ui/ship_icon.png" />
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.1/css/all.css"
         integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous" />
     <link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
@@ -39,7 +39,7 @@
         </div>
 
         <div id="spectate" class="btn btn--spectate view-state--menu visibility">
-            SPECTATE<img id="spectate-eye" class="btn--spectate__icon" src="img/main_menu/Spectate_Icon.png" alt="Spectate" />
+            SPECTATE<img id="spectate-eye" class="btn--spectate__icon" src="img/ui/Spectate_Icon.png" alt="Spectate" />
         </div>
 
         <div id="fullscreenButton" class="btn btn--fullscreen view-state--menu visibility">
@@ -56,16 +56,16 @@
 
         <div id="cross-promo" class="social-links view-state--menu visibility">
             <a href="https://www.reddit.com/r/space1io/" target="_blank" id="reddit-button" class="social-links__item social-links__item--reddit">
-                <img src="img/main_menu/Reddit_Logo.svg" alt="Reddit" />
+                <img src="img/ui/Reddit_Logo.svg" alt="Reddit" />
             </a>
             <a href="https://discord.gg/hDGnWju" target="_blank" id="discord-button" class="social-links__item social-links__item--discord">
-                <img src="img/main_menu/Discord_Logo.png" alt="Discord" />
+                <img src="img/ui/Discord_Logo.png" alt="Discord" />
             </a>
             <a href="#" target="_blank" id="twitter-button" class="social-links__item social-links__item--twitter">
-                <img src="img/main_menu/Twitter_Logo.webp" alt="Twitter" />
+                <img src="img/ui/Twitter_Logo.webp" alt="Twitter" />
             </a>
             <a href="#" target="_blank" id="youtube-button" class="social-links__item social-links__item--youtube">
-                <img src="img/main_menu/Youtube_Logo.webp" alt="Youtube" />
+                <img src="img/ui/Youtube_Logo.webp" alt="Youtube" />
             </a>
         </div>
 
@@ -88,11 +88,11 @@
 
             <div id="plusScoreContainer" class="score-popup-container"></div>
 
-            <img src="img/Leader_Arrow.png" id="leader-arrow" class="leader-arrow view-state--alive visibility3" alt="Leader Arrow" />
+            <img src="img/ui/Leader_Arrow.png" id="leader-arrow" class="leader-arrow view-state--alive visibility3" alt="Leader Arrow" />
 
             <div id="autofireContainer" class="autofire-indicator view-state--alive visibility3">Autofire (E): <span id="autofireToggle" class="autofire-indicator__state">OFF</span></div>
 
-            <img id="dangerZoneWarning" class="danger-zone-warning" src="img/Danger_Zone.png" alt="DANGER ZONE" />
+            <img id="dangerZoneWarning" class="danger-zone-warning" src="img/ui/Danger_Zone.png" alt="DANGER ZONE" />
             <div id="bigLog" class="kill-banner"></div>
 
             <div id="ctf_arena" class="ctf-hud hide" hidden>
@@ -139,13 +139,13 @@
         <div id="shadowmaker" class="vignette-overlay view-state--game visibility2" oncontextmenu="return false;"></div>
         <div class="spawnscreen">
             <div id="arena-link" class="arena-share box-panel box-panel--blue view-state--menu visibility" data-state="open">
-                <img id="arena-link-close" class="arena-share__close" src="img/main_menu/Arena_Link_Close.png" alt="Close Arena Link">
+                <img id="arena-link-close" class="arena-share__close" src="img/ui/Arena_Link_Close.png" alt="Close Arena Link">
                 <span id="arena-link-span" class="arena-share__text">Play with your friends!<br>Share this link:</span>
                 <input id="arena-link-input" class="arena-share__input" type="text" readonly="readonly">
                 <div id="generate-link-button" class="btn btn--gold arena-share__btn">
                     COPY LINK
                 </div>
-                <img id="arena-link-success" class="arena-share__success" src="img/main_menu/Arena_Link_Success.png" alt="Success Arena Link">
+                <img id="arena-link-success" class="arena-share__success" src="img/ui/Arena_Link_Success.png" alt="Success Arena Link">
             </div>
             <div class="controls view-state--menu visibility">
                 <div id="container" class="container spawnscreen__content">
@@ -153,10 +153,10 @@
                     </div>
                     <div id="selection-container" class="ship-selector">
                         <div id="left-arrow" class="ship-selector__arrow ship-selector__arrow--left arrow">
-                            <img src="img/main_menu/Color_Selector_Arrow_left.png" alt="Left Arrow">
+                            <img src="img/ui/Color_Selector_Arrow_left.png" alt="Left Arrow">
                         </div>
                         <div id="right-arrow" class="ship-selector__arrow ship-selector__arrow--right arrow">
-                            <img src="img/main_menu/Color_Selector_Arrow_right.png" alt="Right Arrow">
+                            <img src="img/ui/Color_Selector_Arrow_right.png" alt="Right Arrow">
                         </div>
                         <div class="ship-selector__carousel-wrapper">
                             <div id="shipSelectorSwitch" class="ship-selector__carousel"></div>
@@ -192,7 +192,7 @@
                 <a href="https://discord.gg/5ak5FsU" target="_blank">
                     <div class="link">
                         <div class="linkLogo">
-                            <img src="img/discord-icon.png" alt="Discord" />
+                            <img src="img/ui/discord-icon.png" alt="Discord" />
                         </div>
                         <div class="linkText">
                             Chat
@@ -202,7 +202,7 @@
                 <a href="https://new.reddit.com/r/daudio/" target="_blank">
                     <div class="link">
                         <div class="linkLogo">
-                            <img src="img/reddit-icon.png" alt="Reddit" />
+                            <img src="img/ui/reddit-icon.png" alt="Reddit" />
                         </div>
                         <div class="linkText">
                             Forum
@@ -222,7 +222,7 @@
                     <a href="http://iogames.space" target="_blank">
                         <div class="link">
                             <div class="linkLogo">
-                                <img src="img/iogames-icon.png" alt="IOGames" />
+                                <img src="img/ui/iogames-icon.png" alt="IOGames" />
                             </div>
                             <div class="linkText">
                                 Iogames.space
@@ -232,7 +232,7 @@
                     <a href="http://titotu.io/" target="_blank">
                         <div class="link">
                             <div class="linkLogo">
-                                <img src="img/titotu-icon.png" alt="Titotu" />
+                                <img src="img/ui/titotu-icon.png" alt="Titotu" />
                             </div>
                             <div class="linkText">
                                 Titotu
@@ -409,7 +409,7 @@
         <div id="worlds" class="worlds-modal closed" hidden>
             <div id="topbar" class="worlds-modal__topbar">
                 <span>Arenas</span>
-                <div class="worlds-modal__close close-button" id="wcancel"><img src="img/whiteX.png" alt="Close"></div>
+                <div class="worlds-modal__close close-button" id="wcancel"><img src="img/ui/whiteX.png" alt="Close"></div>
             </div>
             <div id="world-list-scroll" class="worlds-modal__scroll">
                 <table id="worldList" class="worlds-modal__list"></table>
@@ -636,11 +636,11 @@
                 </div>
 
                 <div id="socialMediaContainer">
-                    <a href="https://discord.gg/5ak5FsU" target="_blank"><img id="discord" src="img/discord.png" alt="Discord" /></a>
-                    <a href="https://reddit.com/r/daudio" target="_blank"><img id="reddit" src="img/reddit.png" alt="Reddit" /></a>
+                    <a href="https://discord.gg/5ak5FsU" target="_blank"><img id="discord" src="img/ui/discord.png" alt="Discord" /></a>
+                    <a href="https://reddit.com/r/daudio" target="_blank"><img id="reddit" src="img/ui/reddit.png" alt="Reddit" /></a>
                     <a href="https://iogames.space" target="_blank"><img id="iogamesspace"
-                            src="img/linkback.iogames.space.png" alt="IOGames" /></a>
-                    <a href="https://titotu.io" target="_blank"><img id="titotu" src="img/linkback.titotu.io.png" alt="Titotu" /></a>
+                            src="img/ui/linkback.iogames.space.png" alt="IOGames" /></a>
+                    <a href="https://titotu.io" target="_blank"><img id="titotu" src="img/ui/linkback.titotu.io.png" alt="Titotu" /></a>
                 </div>
             </div>
         </div>

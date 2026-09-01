@@ -16,14 +16,10 @@ import { Settings } from "../ui/settings";
 
 const rawImages = import.meta.glob(
   [
-    "../../img/*.png",
-    "../../img/*.webp",
-    "../../img/*.jpg",
-    "../../img/*.svg",
-    "../../img/atlas/*.png",
-    "../../img/main_menu/*.png",
-    "../../img/main_menu/*.svg",
-    "../../img/worlds/*.png",
+    "../../img/**/*.png",
+    "../../img/**/*.webp",
+    "../../img/**/*.jpg",
+    "../../img/**/*.svg",
   ],
   {
     eager: true,

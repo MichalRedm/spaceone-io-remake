@@ -56,7 +56,7 @@
   #selection {
     display: inline-block;
     position: relative;
-    background-image: url("/img/main_menu/selection.png");
+    background-image: url("/img/ui/selection.png");
     background-size: contain;
     background-repeat: no-repeat;
     width: 85px;
@@ -76,7 +76,7 @@
       white-space: nowrap;
       display: inline-block;
       width: 48px;
-      transform: rotate(-90deg) scale(1.5, 1.5);
+      transform: scale(1.5, 1.5);
       margin: 0 18px;
       user-select: none;
       cursor: pointer;

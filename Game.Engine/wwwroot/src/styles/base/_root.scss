@@ -20,7 +20,7 @@ body {
   // Background starfield texture
   &.static_background,
   &.body--static-bg {
-    background-image: url("/img/bg.png");
+    background-image: url("/img/game/bg.png");
     background-color: $color-bg-dark;
     background-repeat: no-repeat;
     background-position: center center;

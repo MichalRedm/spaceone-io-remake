@@ -63,7 +63,7 @@ function selectRow(selectedWorld: string | null): void {
   }
 }
 
-const rawWorldImgs = import.meta.glob("../img/worlds/*.png", {
+const rawWorldImgs = import.meta.glob("../../img/worlds/*.png", {
   eager: true,
   import: "default",
 }) as Record<string, string>;
