@@ -314,7 +314,7 @@ export class Connection {
   ): void {
     const builder = new flatbuffers.Builder(0);
 
-    const stringName = builder.createString(name || "unknown");
+    const stringName = builder.createString(name || "");
     const stringSprite = builder.createString(sprite || "ship_gray");
     const stringColor = builder.createString(color || "gray");
     let stringToken: flatbuffers.Offset | null = null;
