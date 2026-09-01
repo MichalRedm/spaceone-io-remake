@@ -395,6 +395,14 @@ namespace Game.Engine.Core
             float maxConvergenceAngle = 0.06f * Math.Clamp((targetLen - 30.0f) / 70.0f, 0.0f, 1.0f);
             Vector2 mousePos = FleetCenter + AimTarget;
 
+            bool hasOffense = false;
+            bool hasDefense = false;
+            foreach (var weapon in WeaponStack)
+            {
+                if (weapon.IsOffense) hasOffense = true;
+                if (weapon.IsDefense) hasDefense = true;
+            }
+
             foreach (var ship in Ships)
             {
                 // Align ship visual facing angle with aim target or velocity
@@ -449,8 +457,8 @@ namespace Game.Engine.Core
                 ship.Mode = (byte)
                     (
                         (isBoosting ? ShipModeEnum.boost : ShipModeEnum.none)
-                        | (WeaponStack.Any(w => w.IsOffense) ? ShipModeEnum.offense_upgrade : ShipModeEnum.none)
-                        | (WeaponStack.Any(w => w.IsDefense) ? ShipModeEnum.defense_upgrade : ShipModeEnum.none)
+                        | (hasOffense ? ShipModeEnum.offense_upgrade : ShipModeEnum.none)
+                        | (hasDefense ? ShipModeEnum.defense_upgrade : ShipModeEnum.none)
                         | (!Owner.IsShielded && Owner.IsInvulnerable ? ShipModeEnum.invulnerable : ShipModeEnum.none)
                         | (Owner.IsShielded && ship.ShieldStrength > 0 ? ShipModeEnum.shield : ShipModeEnum.none)
                     );
@@ -470,6 +478,34 @@ namespace Game.Engine.Core
                 /*if (ship.Momentum.LengthSquared() != 0) {
                     ship.Momentum = Vector2.Multiply(Vector2.Normalize(ship.Momentum), (Single)Math.Round(ship.Momentum.Length()*200)/200);
                 }*/
+            }
+
+            // Authoritative Fleet Out-of-Bounds Evaluation
+            var oob = World.DistanceOutOfBounds(FleetCenter);
+            if (oob > 0)
+            {
+                if (DangerSince == 0)
+                    DangerSince = World.Time;
+
+                if (DangerSince != 0 &&
+                    World.Time > DangerSince + World.Hook.OutOufBoundsDecayStart &&
+                    World.Hook.OutOufBoundsDecayInterval > 0)
+                {
+                    uint currentDecayCount = (World.Time - DangerSince - (uint)World.Hook.OutOufBoundsDecayStart) / (uint)World.Hook.OutOufBoundsDecayInterval;
+                    if (currentDecayCount != DangerDecayCounter)
+                    {
+                        if (Ships.Count > 0)
+                        {
+                            Ships[Ships.Count - 1]?.Die(null, null, null);
+                        }
+                        DangerDecayCounter++;
+                    }
+                }
+            }
+            else
+            {
+                DangerSince = 0;
+                DangerDecayCounter = 0;
             }
 
             if (isShooting)
@@ -492,20 +528,17 @@ namespace Game.Engine.Core
                 ShootCooldownStatus = (float)
                     (World.Time - ShootCooldownTimeStart) / (ShootCooldownTime - ShootCooldownTimeStart);
 
-            if (MathF.Abs(FleetCenter.X) > World.Hook.WorldSize &&
-                FleetCenter.X < 0 != LastTouchedLeft &&
-                World.Hook.Name == "Sharks and Minnows" &&
-                !Owner.IsInvulnerable &&
-                !Shark)
+            bool anyAlive = false;
+            for (int i = 0; i < Ships.Count; i++)
             {
-                LastTouchedLeft = FleetCenter.X < 0;
-                Owner.IsInvulnerable = true;
-                Owner.SpawnTime = World.Time;
-                Owner.Score++;
+                if (!Ships[i].PendingDestruction)
+                {
+                    anyAlive = true;
+                    break;
+                }
             }
 
-            if (!Ships.Where(s => !s.PendingDestruction).Any()
-                && !NewShips.Any())
+            if (!anyAlive && NewShips.Count == 0)
                 Die(null);
         }
 

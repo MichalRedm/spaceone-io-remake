@@ -140,8 +140,8 @@ namespace Game.Engine.Networking
                 if (GroupClient == null
                     || GroupClient.CustomData != GroupUpdated.CustomData
                     || GroupClient.Color != GroupUpdated.Color
-                    || GroupClient.GroupType != GroupClient.GroupType
-                    || GroupClient.Caption != GroupClient.Caption
+                    || GroupClient.GroupType != GroupUpdated.GroupType
+                    || GroupClient.Caption != GroupUpdated.Caption
                     )
 
                     Error = 1;
@@ -177,13 +177,13 @@ namespace Game.Engine.Networking
                         BodyClient.Project(time);
                         var distance = Vector2.Distance(BodyClient.Position, BodyUpdated.Position);
                         Error =
-                            distance > DISTANCE_THRESHOLD
+                            (distance > DISTANCE_THRESHOLD
                                 ? WEIGHT_DISTANCE * distance
-                                : 0
-                            + WEIGHT_ANGLE * Math.Abs(BodyClient.Angle - BodyUpdated.Angle)
-                            + WEIGHT_SIZE * Math.Abs(BodyClient.Size - BodyUpdated.Size)
-                            + WEIGHT_MODE * Math.Abs(BodyClient.Mode - BodyUpdated.Mode)
-                            + WEIGHT_SPRITE * (BodyClient.Sprite != BodyUpdated.Sprite ? 1 : 0);
+                                : 0f)
+                            + WEIGHT_ANGLE * MathF.Abs(BodyClient.Angle - BodyUpdated.Angle)
+                            + WEIGHT_SIZE * MathF.Abs(BodyClient.Size - BodyUpdated.Size)
+                            + WEIGHT_MODE * MathF.Abs(BodyClient.Mode - BodyUpdated.Mode)
+                            + WEIGHT_SPRITE * (BodyClient.Sprite != BodyUpdated.Sprite ? 1f : 0f);
                     }
                 }
                 else

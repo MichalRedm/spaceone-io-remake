@@ -29,7 +29,6 @@ namespace Game.Engine.Core
         public long AbandonedTime { get; set; }
 
         protected bool IsOOB = false;
-        private long TimeDeath = 0;
 
         public Ship()
         {
@@ -284,56 +283,26 @@ namespace Game.Engine.Core
 
         private void DoOutOfBoundsRules()
         {
-            if (this.Fleet != null) {
-                var oob = World.DistanceOutOfBounds(this.Fleet.FleetCenter);
-
-                IsOOB = oob > 0;
-                
-                if (IsOOB && this.Fleet.DangerSince == 0) {
-                    this.Fleet.DangerSince = World.Time;
-                } else if (!IsOOB) {
-                    this.Fleet.DangerSince = 0;
-                }
-                
-                if (this.Fleet.DangerSince != 0 &&
-                    World.Time > this.Fleet.DangerSince + World.Hook.OutOufBoundsDecayStart &&
-                    Math.Floor((decimal)(World.Time - this.Fleet.DangerSince - World.Hook.OutOufBoundsDecayStart) / World.Hook.OutOufBoundsDecayInterval) != this.Fleet.DangerDecayCounter)
-                {
-                    this.Fleet?.Ships[this.Fleet.Ships.Count - 1]?.Die(null, null, null);
-                    this.Fleet.DangerDecayCounter++;
-                }
-                
-                //Console.WriteLine(this.Fleet.DangerSince + ", " + (World.Time + 5000));
-                
-                /*if (oob > World.Hook.OutOfBoundsBorder)
-                    this.Momentum *= 1 - (oob / World.Hook.OutOfBoundsDecayDistance);
-
-                if (oob > World.Hook.OutOfBoundsDeathLine)
-                {
-                    //Console.WriteLine("ship dying oob");
-                    Die(null, null, null);
-                }*/
-            } else if (this.Sprite == Sprites.fish_blue ||
-                       this.Sprite == Sprites.fish_cyan ||
-                       this.Sprite == Sprites.fish_green ||
-                       this.Sprite == Sprites.fish_orange ||
-                       this.Sprite == Sprites.fish_pink ||
-                       this.Sprite == Sprites.fish_red ||
-                       this.Sprite == Sprites.fish_yellow) {
+            if (this.Fleet != null)
+            {
+                IsOOB = World.DistanceOutOfBounds(this.Fleet.FleetCenter) > 0;
+            }
+            else if (this.Sprite == Sprites.fish_blue ||
+                     this.Sprite == Sprites.fish_cyan ||
+                     this.Sprite == Sprites.fish_green ||
+                     this.Sprite == Sprites.fish_orange ||
+                     this.Sprite == Sprites.fish_pink ||
+                     this.Sprite == Sprites.fish_red ||
+                     this.Sprite == Sprites.fish_yellow)
+            {
                 var oob = World.DistanceOutOfBounds(Position);
-
                 IsOOB = oob > 0;
-
-                /*if (oob > World.Hook.OutOfBoundsBorder)
-                    this.Momentum *= 1 - (oob / World.Hook.OutOfBoundsDecayDistance);*/
 
                 if (oob > World.Hook.OutOfBoundsDeathLine)
                 {
-                    //Console.WriteLine("ship dying oob");
                     Die(null, null, null);
                 }
             }
-            // catch (Exception e) {}
         }
     }
 }

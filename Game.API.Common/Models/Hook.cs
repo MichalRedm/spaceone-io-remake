@@ -158,6 +158,8 @@ namespace Game.API.Common.Models
                     SumoMode = false,
                     SumoRingSize = 1000,
 
+                    SharksAndMinnowsMode = false,
+
                     SpawnShipCount = 3,
                     SpawnInvulnerabilityTime = 3000,
                     InvulnerabilityBlinkPeriod = 250,
@@ -363,6 +365,7 @@ namespace Game.API.Common.Models
         public int CTFSpawnDistance { get; set; }
         public bool SumoMode { get; set; }
         public int SumoRingSize { get; set; }
+        public bool SharksAndMinnowsMode { get; set; }
 
         public int LeaderboardRefresh { get; set; }
 

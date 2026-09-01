@@ -18,6 +18,7 @@ Rebuild and launch a high-fidelity remake of the multiplayer 2D fleet shooter **
 - [x] Public GitHub repository published at `MichalRedm/spaceone-io-remake`.
 - [x] Reference assets, original wasm client, decoders, and gameplay recordings imported into `reference/space1-original/`.
 - [x] Agentic context framework and rule routing matrices initialized in `.agents/` and `AGENTS.md`.
+- [x] Establish authoritative C# coding standards (`.agents/rules/csharp_standards.md`) and complete full backend codebase security, sync, and concurrency remediation.
 - [x] Upgrade/modernize client build toolchain to Vite with Node 20/22+ support.
 - [x] Upgrade/modernize backend solution to .NET 7.0 with 0 build warnings/errors.
 - [x] Ingest authentic binary playback recordings and build telemetry extraction CLI (`extract_telemetry.py`).

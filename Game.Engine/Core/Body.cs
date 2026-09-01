@@ -8,7 +8,7 @@ namespace Game.Engine.Core
     public class Body : ISpatialData
     {
         public long ProjectedTime { get; set; }
-        private Vector2 _position { get; set; } = new Vector2(0, 0);
+        private Vector2 _position = Vector2.Zero;
         protected long MaximumCleanTime = 2000;
 
         public Envelope Envelope;
@@ -29,13 +29,10 @@ namespace Game.Engine.Core
 
         public bool IsStatic { get; set; } = false;
 
-        private int _size { get; set; }
+        private int _size;
         public virtual int Size
         {
-            get
-            {
-                return _size;
-            }
+            get => _size;
             set
             {
                 IsDirty = IsDirty || _size != value;
@@ -43,13 +40,10 @@ namespace Game.Engine.Core
             }
         }
 
-        private byte _mode { get; set; }
+        private byte _mode;
         public virtual byte Mode
         {
-            get
-            {
-                return _mode;
-            }
+            get => _mode;
             set
             {
                 IsDirty = IsDirty || _mode != value;
@@ -57,13 +51,10 @@ namespace Game.Engine.Core
             }
         }
 
-        private Sprites _sprite { get; set; }
+        private Sprites _sprite;
         public virtual Sprites Sprite
         {
-            get
-            {
-                return _sprite;
-            }
+            get => _sprite;
             set
             {
                 IsDirty = IsDirty || _sprite != value;
@@ -71,13 +62,10 @@ namespace Game.Engine.Core
             }
         }
 
-        private string _color { get; set; }
+        private string _color;
         public virtual string Color
         {
-            get
-            {
-                return _color;
-            }
+            get => _color;
             set
             {
                 IsDirty = IsDirty || _color != value;
@@ -85,27 +73,21 @@ namespace Game.Engine.Core
             }
         }
 
-        private float _anuglarVelocity { get; set; }
+        private float _angularVelocity;
         public virtual float AngularVelocity
         {
-            get
-            {
-                return _anuglarVelocity;
-            }
+            get => _angularVelocity;
             set
             {
-                IsDirty = IsDirty || _anuglarVelocity != value;
-                _anuglarVelocity = value;
+                IsDirty = IsDirty || _angularVelocity != value;
+                _angularVelocity = value;
             }
         }
 
-        private float _originalAngle { get; set; }
+        private float _originalAngle;
         public virtual float OriginalAngle
         {
-            get
-            {
-                return _originalAngle;
-            }
+            get => _originalAngle;
             set
             {
                 IsDirty = IsDirty || _originalAngle != value;
@@ -113,29 +95,23 @@ namespace Game.Engine.Core
             }
         }
 
-        private Vector2 _momentum = new Vector2(0, 0);
+        private Vector2 _momentum = Vector2.Zero;
         public virtual Vector2 Momentum
         {
-            get
-            {
-                return _momentum;
-            }
+            get => _momentum;
             set
             {
-                if (float.IsNaN(value.X))
-                    throw new Exception("Invalid position");
+                if (float.IsNaN(value.X) || float.IsNaN(value.Y) || float.IsInfinity(value.X) || float.IsInfinity(value.Y))
+                    throw new ArgumentException("Invalid momentum vector", nameof(value));
                 IsDirty = IsDirty || _momentum != value;
                 _momentum = value;
             }
         }
 
-        private Vector2 _originalPosition { get; set; } = new Vector2(0, 0);
+        private Vector2 _originalPosition = Vector2.Zero;
         public virtual Vector2 OriginalPosition
         {
-            get
-            {
-                return _originalPosition;
-            }
+            get => _originalPosition;
             set
             {
                 IsDirty = IsDirty || _originalPosition != value;
@@ -149,36 +125,30 @@ namespace Game.Engine.Core
             {
                 if (_position != value)
                 {
-                    if (float.IsNaN(value.X))
-                        throw new Exception("Invalid position");
+                    if (float.IsNaN(value.X) || float.IsNaN(value.Y) || float.IsInfinity(value.X) || float.IsInfinity(value.Y))
+                        throw new ArgumentException("Invalid position vector", nameof(value));
                     _position = value;
                     IsDirty = true;
                 }
             }
-            get
-            {
-                return _position;
-            }
+            get => _position;
         }
 
-        private float _angle { get; set; } = 0;
+        private float _angle = 0;
         public virtual float Angle
         {
             set
             {
                 if (_angle != value)
                 {
-                    if (float.IsNaN(value))
-                        throw new Exception("Invalid angle");
+                    if (float.IsNaN(value) || float.IsInfinity(value))
+                        throw new ArgumentException("Invalid angle value", nameof(value));
 
                     _angle = value;
                     IsDirty = true;
                 }
             }
-            get
-            {
-                return _angle;
-            }
+            get => _angle;
         }
 
         ref readonly Envelope ISpatialData.Envelope => ref this.Envelope;

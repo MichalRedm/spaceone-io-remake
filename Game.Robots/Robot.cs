@@ -40,11 +40,11 @@ namespace Game.Robots
         public ushort WorldSize { get => this.Connection.WorldSize; }
         public uint FleetID { get => this.Connection?.FleetID ?? 0; }
 
-        protected virtual Task AliveAsync() => Task.FromResult(0);
-        protected virtual Task DeadAsync() => Task.FromResult(0);
-        protected virtual Task OnDeathAsync() => Task.FromResult(0);
-        protected virtual Task OnSpawnAsync() => Task.FromResult(0);
-        protected virtual Task OnNewLeaderboardAsync() => Task.FromResult(0);
+        protected virtual Task AliveAsync() => Task.CompletedTask;
+        protected virtual Task DeadAsync() => Task.CompletedTask;
+        protected virtual Task OnDeathAsync() => Task.CompletedTask;
+        protected virtual Task OnSpawnAsync() => Task.CompletedTask;
+        protected virtual Task OnNewLeaderboardAsync() => Task.CompletedTask;
 
         private bool IsSpawning = false;
 
@@ -284,9 +284,10 @@ namespace Game.Robots
             return absolutePoint - this.Position;
         }
 
+        private static readonly object _consoleLock = new object();
         protected virtual void Log(string message)
         {
-            lock (typeof(Console))
+            lock (_consoleLock)
             {
                 Console.ForegroundColor = ConsoleColor.DarkGray;
                 Console.Write($"[{this.FleetID}\t{this.Name}]\t");

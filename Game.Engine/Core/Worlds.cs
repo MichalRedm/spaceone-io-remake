@@ -280,12 +280,12 @@ namespace Game.Engine.Core
                     + " - Minnows (blue) run towards borders (left & right)";
 
             hook.AllowedColors = Hook.TeamColors;
+            hook.SharksAndMinnowsMode = true;
 
             hook.WorldResizeEnabled = false;
 
-            return new World(null, GameConfiguration)
+            return new World(hook, GameConfiguration)
             {
-                Hook = hook,
                 NewFleetGenerator = delegate (Player p, string Color)
                 {
                     return new Fleet

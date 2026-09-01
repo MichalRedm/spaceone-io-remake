@@ -69,7 +69,7 @@ namespace Game.API.Client
 
         private void PingEntry(object state)
         {
-            Task.Run(async () =>
+            _ = Task.Run(async () =>
             {
                 try
                 {
@@ -78,7 +78,7 @@ namespace Game.API.Client
                 }
                 catch (Exception)
                 { }
-            }).Wait();
+            });
         }
 
         private Task HandleNetPing(NetPing netPing)
@@ -455,6 +455,8 @@ namespace Game.API.Client
                         try { Socket.Dispose(); } catch (Exception) { }
                     if (PingTimer != null)
                         try { PingTimer.Dispose(); } catch (Exception) { }
+                    if (WebsocketSendingSemaphore != null)
+                        try { WebsocketSendingSemaphore.Dispose(); } catch (Exception) { }
                 }
 
                 // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
