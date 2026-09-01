@@ -38,7 +38,10 @@ namespace Game.Robots.Behaviors
                             ring.Angle(i),
                             LookAheadMS
                         );
-                        var momentumBoost = momentum / momentum.Length() * Robot.HookComputer.Hook.BoostThrust;
+                        float momLen = momentum.Length();
+                        var momentumBoost = momLen > 0.0001f
+                            ? (momentum / momLen) * Robot.HookComputer.Hook.BoostThrust
+                            : Vector2.Zero;
                         var positionBoost = RoboMath.ShipThrustProjection(Robot.HookComputer,
                             position,
                             ref momentumBoost,
