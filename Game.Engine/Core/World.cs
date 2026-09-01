@@ -60,13 +60,14 @@ namespace Game.Engine.Core
 
         public ScoringBase Scoring = new DefaultScoring();
 
-        private uint LastObjectID = 0;
-        public uint GenerateObjectID() { lock (this) return ++LastObjectID; }
+        private int LastObjectID = 0;
+        public uint GenerateObjectID() => (uint)Interlocked.Increment(ref LastObjectID);
 
         private int LastUnknownSquadronNumber = 0;
+        private readonly object _squadronLock = new object();
         public int NextUnknownSquadronNumber()
         {
-            lock (this)
+            lock (_squadronLock)
             {
                 LastUnknownSquadronNumber = (LastUnknownSquadronNumber % 99) + 1;
                 return LastUnknownSquadronNumber;
@@ -142,6 +143,7 @@ namespace Game.Engine.Core
             InitializeSystemActor<MapActor>();
             InitializeSystemActor<TeamColors>();
             InitializeSystemActor<RoomReset>();
+            InitializeSystemActor<SharksAndMinnows>();
         }
 
         public T GetActor<T>()
@@ -251,22 +253,32 @@ namespace Game.Engine.Core
             return Math.Max(pos.X - Hook.WorldSize + buffer, Math.Max(pos.Y - Hook.WorldSize + buffer, 0));
         }
 
+        private int _stepIsRunning = 0;
         private void InitializeStepTimer()
         {
             Heartbeat = new Timer((state) =>
             {
-                Step();
-                ConnectionHeartbeat.Step();
+                if (Interlocked.CompareExchange(ref _stepIsRunning, 1, 0) == 0)
+                {
+                    try
+                    {
+                        Step();
+                        ConnectionHeartbeat.Step();
+                    }
+                    finally
+                    {
+                        Interlocked.Exchange(ref _stepIsRunning, 0);
+                    }
+                }
             }, null, 0, Hook.StepTime);
         }
 
         public Vector2 RandomPosition()
         {
-            var r = new Random();
             return new Vector2
             {
-                X = r.Next(-Hook.WorldSize, Hook.WorldSize),
-                Y = r.Next(-Hook.WorldSize, Hook.WorldSize)
+                X = Random.Shared.Next(-Hook.WorldSize, Hook.WorldSize),
+                Y = Random.Shared.Next(-Hook.WorldSize, Hook.WorldSize)
             };
         }
 
