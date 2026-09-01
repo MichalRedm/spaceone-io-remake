@@ -43,7 +43,6 @@ namespace Game.Engine.Core.Weapons
 
         public virtual void FireFrom(Ship ship, ActorGroup group)
         {
-            var r = new Random();
             World = ship.World;
             var bulletOrigin = ship.Position
                 + new Vector2(MathF.Cos(ship.Angle), MathF.Sin(ship.Angle)) * ship.Size;
@@ -70,7 +69,7 @@ namespace Game.Engine.Core.Weapons
 
                 var noise = 0f;
                 if (ship.Fleet.Ships.Count > 1)
-                    noise = ((float)r.NextDouble() - 0.5f) * World.Hook.PrecisionBulletsNoise;
+                    noise = ((float)Random.Shared.NextDouble() - 0.5f) * World.Hook.PrecisionBulletsNoise;
 
                 this.Angle = MathF.Atan2(toTarget.Y, toTarget.X)
                     + noise;
@@ -79,7 +78,7 @@ namespace Game.Engine.Core.Weapons
             {
                 var noise = 0f;
                 if (ship.Fleet?.Ships.Count > 1)
-                    noise = ((float)r.NextDouble() - 0.5f) * World.Hook.PrecisionBulletsNoise;
+                    noise = ((float)Random.Shared.NextDouble() - 0.5f) * World.Hook.PrecisionBulletsNoise;
 
                 this.Angle = ship.Angle + noise;
             }

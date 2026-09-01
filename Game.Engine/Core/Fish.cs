@@ -24,12 +24,10 @@ namespace Game.Engine.Core
 
         public void Randomize()
         {
-            var r = new Random();
             Position = World.RandomPosition();
-            AngleMovement = (float)r.NextDouble() * MathF.PI * 2;
+            AngleMovement = (float)Random.Shared.NextDouble() * MathF.PI * 2;
             ThrustAmount = World.Hook.FishThrust;
-            r = new Random();
-            int rInt = r.Next(0, 7); //for ints
+            int rInt = Random.Shared.Next(0, 7);
             switch (rInt) {
                 case 0: Sprite = Sprites.fish_red; break;
                 case 1: Sprite = Sprites.fish_cyan; break;

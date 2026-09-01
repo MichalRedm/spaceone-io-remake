@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Numerics;
+using RBush;
 
 namespace Game.Engine.Core.Weapons
 {
@@ -29,24 +30,61 @@ namespace Game.Engine.Core.Weapons
             Ship target = null;
             if (World.Time > TimeBirth + World.Hook.SeekerCycle)
             {
-                var targets = World.BodiesNear(this.Position, World.Hook.SeekerRange);
+                var searchEnvelope = new Envelope(
+                    Position.X - World.Hook.SeekerRange,
+                    Position.Y - World.Hook.SeekerRange,
+                    Position.X + World.Hook.SeekerRange,
+                    Position.Y + World.Hook.SeekerRange
+                );
 
-                target = targets
-                    .OfType<Ship>()
-                    .Where(s => s.Fleet != OwnedByFleet)
-                    .Where(s => s.Fleet != null)
-                    .Where(s => !World.Hook.TeamMode || s.Fleet?.Owner.Color != this.Color)
-                    .OrderBy(s => (!World.Hook.SeekerNegotiation
-                        || (!(this.Group as ShipWeaponVolley<ShipWeaponSeeker>)
-                            ?.AllWeapons
-                            .OfType<ShipWeaponSeeker>()
-                            .Any(w => w != this && w.DeclaredTarget == s) ?? false)
-                            )
-                                ? 0
-                                : 1
-                        )
-                    .ThenBy(s => Vector2.Distance(s.Position, Position))
-                    .FirstOrDefault();
+                var dynamicHits = World.SearchDynamic(in searchEnvelope);
+                var staticHits = World.SearchStatic(in searchEnvelope);
+
+                var volley = this.Group as ShipWeaponVolley<ShipWeaponSeeker>;
+                bool seekerNegotiation = World.Hook.SeekerNegotiation;
+                bool teamMode = World.Hook.TeamMode;
+
+                float bestPrimaryScore = float.MaxValue;
+                float bestDistance = float.MaxValue;
+
+                void EvaluateCandidate(Body b)
+                {
+                    if (b is Ship s && s.Fleet != null && s.Fleet != OwnedByFleet)
+                    {
+                        if (teamMode && s.Fleet.Owner?.Color == this.Color)
+                            return;
+
+                        bool isClaimed = false;
+                        if (seekerNegotiation && volley?.AllWeapons != null)
+                        {
+                            for (int w = 0; w < volley.AllWeapons.Count; w++)
+                            {
+                                var weapon = volley.AllWeapons[w];
+                                if (weapon is ShipWeaponSeeker otherSeeker && otherSeeker != this && otherSeeker.DeclaredTarget == s)
+                                {
+                                    isClaimed = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        float primaryScore = isClaimed ? 1f : 0f;
+                        float dist = Vector2.Distance(s.Position, Position);
+
+                        if (primaryScore < bestPrimaryScore || (primaryScore == bestPrimaryScore && dist < bestDistance))
+                        {
+                            bestPrimaryScore = primaryScore;
+                            bestDistance = dist;
+                            target = s;
+                        }
+                    }
+                }
+
+                for (int i = 0; i < dynamicHits.Count; i++)
+                    EvaluateCandidate(dynamicHits[i]);
+
+                for (int i = 0; i < staticHits.Count; i++)
+                    EvaluateCandidate(staticHits[i]);
 
                 DeclaredTarget = target;
             }

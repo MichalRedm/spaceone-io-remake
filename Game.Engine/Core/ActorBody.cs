@@ -1,5 +1,6 @@
 namespace Game.Engine.Core
 {
+    using RBush;
     using System.Linq;
 
     public abstract class ActorBody : Body, IActor
@@ -39,21 +40,32 @@ namespace Game.Engine.Core
         {
             if (CausesCollisions)
             {
+                var searchEnvelope = new Envelope(
+                    Position.X - Size,
+                    Position.Y - Size,
+                    Position.X + Size,
+                    Position.Y + Size
+                );
 
-                var collisionSet =
-                    World.BodiesNear(this.Position, this.Size)
-                    .Where(b => b != this);
-
-                if (collisionSet.Any())
+                var dynamicHits = World.SearchDynamic(in searchEnvelope);
+                for (int i = 0; i < dynamicHits.Count; i++)
                 {
-                    foreach (var hit in collisionSet.OfType<ICollide>()
-                        .ToList())
+                    var body = dynamicHits[i];
+                    if (body != this && body is ICollide hit && hit.IsCollision(this))
                     {
-                        if (hit.IsCollision(this))
-                        {
-                            hit.CollisionExecute(this);
-                            Collided(hit);
-                        }
+                        hit.CollisionExecute(this);
+                        Collided(hit);
+                    }
+                }
+
+                var staticHits = World.SearchStatic(in searchEnvelope);
+                for (int i = 0; i < staticHits.Count; i++)
+                {
+                    var body = staticHits[i];
+                    if (body != this && body is ICollide hit && hit.IsCollision(this))
+                    {
+                        hit.CollisionExecute(this);
+                        Collided(hit);
                     }
                 }
             }
