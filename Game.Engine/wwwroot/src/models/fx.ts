@@ -19,36 +19,36 @@ export const FX_CONFIG = {
   /** Bullet explosion configuration on obstacle/laser impact. */
   bulletExplosion: {
     particleCount: 2,
-    durationMs: 220, // ~12-14 frame decay (matching original Particle.cpp:44)
+    durationMs: 730, // Proportionally scaled with 500ms food explosion (~3.33x original)
     baseScale: 0.62, // Scaled to ~25px initial width (2.5x bullet width matching original GameNetworking.cpp:540)
     scaleVariation: 0.1,
     alphaStart: 1.0,
     alphaEnd: 1.0,
-    driftSpeedMin: 35,
-    driftSpeedMax: 100, // 4.5-22px distance
+    driftSpeedMin: 15,
+    driftSpeedMax: 40,
   },
   /** Food / fish pickup explosion configuration. */
   foodExplosion: {
     particleCount: 2,
-    durationMs: 150, // ~8-9 frame decay (matching original Particle.cpp:44)
+    durationMs: 500, // User-configured 500ms food explosion animation
     baseScale: 0.37, // Scaled to ~16px initial width (2.27x food width matching original GameNetworking.cpp:534)
     scaleVariation: 0.08,
     alphaStart: 1.0,
     alphaEnd: 1.0,
-    driftSpeedMin: 35,
-    driftSpeedMax: 95, // 4-14px distance
+    driftSpeedMin: 15,
+    driftSpeedMax: 35,
   },
   /** Ship destruction explosion configuration. */
   shipExplosion: {
     particleCount: 2,
-    durationMs: 250, // ~10-18 frame decay (matching original Particle.cpp:44)
+    durationMs: 830, // Proportionally scaled with 500ms food explosion (~3.33x original)
     minScaleRatio: 0.5, // 50% of ship size (original ParticleSystem.cpp:38)
     maxScaleRatio: 1.0, // 100% of ship size (original ParticleSystem.cpp:38)
     alphaStart: 1.0,
     alphaEnd: 1.0,
     angularVelocity: 0.05, // Continuous spin +0.05 rad/frame (original Particle.cpp:97)
-    driftSpeedMin: 35,
-    driftSpeedMax: 110, // 5-28px distance
+    driftSpeedMin: 15,
+    driftSpeedMax: 45,
   },
 };
 
