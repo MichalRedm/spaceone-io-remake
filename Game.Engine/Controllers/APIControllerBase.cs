@@ -58,7 +58,7 @@ namespace Game.Engine.Controllers
                 {
                     Exception = exception.Message,
                     ExceptionType = exception.GetType().Name,
-                    ExceptionStack = exception.StackTrace,
+                    ExceptionStack = null,
                     Success = false,
                     StatusCode = HttpStatusCode.InternalServerError,
                     Elapsed = elapsed

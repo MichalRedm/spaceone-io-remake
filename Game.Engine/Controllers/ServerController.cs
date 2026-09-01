@@ -61,7 +61,7 @@ namespace Game.Engine.Controllers
                     Name = p.Name,
                     Score = p.Score,
                     IsAlive = p.IsAlive,
-                    IP = p.IP,
+                    IP = (this.SecurityContext?.IsAuthenticated ?? false) && (this.SecurityContext?.SecurityIdentifiers?.Contains("Admin") ?? false) ? p.IP : "[REDACTED]",
                     Backgrounded = p.Connection?.Backgrounded ?? false,
                     ClientFPS = p.Connection?.ClientFPS ?? 0,
                     ClientVPS = p.Connection?.ClientVPS ?? 0,
