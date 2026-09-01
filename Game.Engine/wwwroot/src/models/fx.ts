@@ -19,8 +19,8 @@ export const FX_CONFIG = {
   /** Bullet explosion configuration on obstacle/laser impact. */
   bulletExplosion: {
     particleCount: 2,
-    durationMs: 730, // Proportionally scaled with 500ms food explosion (~3.33x original)
-    baseScale: 0.62, // Scaled to ~25px initial width (2.5x bullet width matching original GameNetworking.cpp:540)
+    durationMs: 500,
+    baseScale: 0.62,
     scaleVariation: 0.1,
     alphaStart: 1.0,
     alphaEnd: 1.0,
@@ -30,8 +30,8 @@ export const FX_CONFIG = {
   /** Food / fish pickup explosion configuration. */
   foodExplosion: {
     particleCount: 2,
-    durationMs: 500, // User-configured 500ms food explosion animation
-    baseScale: 0.37, // Scaled to ~16px initial width (2.27x food width matching original GameNetworking.cpp:534)
+    durationMs: 500,
+    baseScale: 0.37,
     scaleVariation: 0.08,
     alphaStart: 1.0,
     alphaEnd: 1.0,
@@ -41,12 +41,12 @@ export const FX_CONFIG = {
   /** Ship destruction explosion configuration. */
   shipExplosion: {
     particleCount: 2,
-    durationMs: 830, // Proportionally scaled with 500ms food explosion (~3.33x original)
-    minScaleRatio: 0.5, // 50% of ship size (original ParticleSystem.cpp:38)
-    maxScaleRatio: 1.0, // 100% of ship size (original ParticleSystem.cpp:38)
+    durationMs: 500,
+    minScaleRatio: 0.5,
+    maxScaleRatio: 1.0,
     alphaStart: 1.0,
     alphaEnd: 1.0,
-    angularVelocity: 0.05, // Continuous spin +0.05 rad/frame (original Particle.cpp:97)
+    angularVelocity: 0.05,
     driftSpeedMin: 15,
     driftSpeedMax: 45,
   },
