@@ -502,8 +502,8 @@ function doSpawn(): void {
   aliveSince = gameTime;
   connection.sendSpawn(
     Controls.nick,
-    Controls.color ?? "gray",
     Controls.ship,
+    Controls.color ?? "gray",
     getToken() ?? "",
   );
   const overlayEl = document.getElementById("overlay");
