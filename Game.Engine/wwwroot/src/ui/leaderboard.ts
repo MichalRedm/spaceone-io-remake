@@ -5,6 +5,7 @@
 
 import { Settings } from "./settings";
 import { Vector2 } from "../math/vector2";
+import { updateHighscore } from "./log";
 import type { Cache } from "../models/cache";
 import type { Interpolator } from "../rendering/interpolator";
 
@@ -175,6 +176,13 @@ export class Leaderboard {
       record.style.fontFamily = Settings.font;
       recordScore.innerHTML = `${data.Record.Score}`;
       recordFleet.innerHTML = `${escapeHtml(data.Record.Name) || "Unknown Squadron"}`;
+    }
+
+    if (fleetID) {
+      const selfEntry = data.Entries.find((e) => e.FleetID === fleetID);
+      if (selfEntry && selfEntry.Score !== undefined) {
+        updateHighscore(selfEntry.Score);
+      }
     }
 
     const ctfArena = document.getElementById("ctf-arena");
