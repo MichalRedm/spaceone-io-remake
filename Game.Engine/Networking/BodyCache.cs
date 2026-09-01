@@ -11,9 +11,13 @@ namespace Game.Engine.Networking
         private readonly Dictionary<long, BucketBody> Bodies = new Dictionary<long, BucketBody>();
         private readonly Dictionary<long, BucketGroup> Groups = new Dictionary<long, BucketGroup>();
 
+        private readonly List<BucketBody> _bodiesByErrorList = new List<BucketBody>();
+        private readonly List<BucketGroup> _groupsByErrorList = new List<BucketGroup>();
+        private readonly List<BucketBody> _staleBodiesList = new List<BucketBody>();
+        private readonly List<BucketGroup> _staleGroupsList = new List<BucketGroup>();
+
         public void Update(IEnumerable<Body> bodies, uint time)
         {
-
             // update cache items and flag missing ones as stale
             UpdateLocalBodies(bodies);
 
@@ -23,25 +27,32 @@ namespace Game.Engine.Networking
 
             foreach (var bucket in Groups.Values)
                 bucket.CalculateError();
-
         }
 
-        public IEnumerable<BucketBody> BodiesByError()
+        public List<BucketBody> BodiesByError()
         {
             // find the bodies with the largest error
-            return Bodies.Values
-                .Where(b => !b.Stale)
-                .Where(b => b.Error > 0)
-                .OrderByDescending(b => b.Error);
+            _bodiesByErrorList.Clear();
+            foreach (var b in Bodies.Values)
+            {
+                if (!b.Stale && b.Error > 0)
+                    _bodiesByErrorList.Add(b);
+            }
+            _bodiesByErrorList.Sort((a, b) => b.Error.CompareTo(a.Error));
+            return _bodiesByErrorList;
         }
 
-        public IEnumerable<BucketGroup> GroupsByError()
+        public List<BucketGroup> GroupsByError()
         {
-            // find the bodies with the largest error
-            return Groups.Values
-                .Where(b => !b.Stale)
-                .Where(b => b.Error > 0)
-                .OrderByDescending(b => b.Error);
+            // find the groups with the largest error
+            _groupsByErrorList.Clear();
+            foreach (var g in Groups.Values)
+            {
+                if (!g.Stale && g.Error > 0)
+                    _groupsByErrorList.Add(g);
+            }
+            _groupsByErrorList.Sort((a, b) => b.Error.CompareTo(a.Error));
+            return _groupsByErrorList;
         }
 
         private void UpdateLocalGroups(IEnumerable<Group> groups)
@@ -51,20 +62,17 @@ namespace Game.Engine.Networking
 
             foreach (var obj in groups)
             {
-                BucketGroup bucket = null;
-
-                if (Groups.ContainsKey(obj.ID))
+                if (Groups.TryGetValue(obj.ID, out var bucket))
                 {
-                    Groups[obj.ID].Stale = false;
+                    bucket.Stale = false;
                 }
                 else
                 {
-                    bucket = new BucketGroup
+                    Groups.Add(obj.ID, new BucketGroup
                     {
                         GroupUpdated = obj,
                         Stale = false
-                    };
-                    Groups.Add(obj.ID, bucket);
+                    });
                 }
             }
         }
@@ -79,52 +87,66 @@ namespace Game.Engine.Networking
 
             foreach (var obj in bodies)
             {
-                if (Bodies.ContainsKey(obj.ID))
+                if (Bodies.TryGetValue(obj.ID, out var bodyBucket))
                 {
-                    Bodies[obj.ID].Stale = false;
-                    Bodies[obj.ID].BodyUpdated = obj;
+                    bodyBucket.Stale = false;
+                    bodyBucket.BodyUpdated = obj;
                 }
                 else
                 {
-                    var bucket = new BucketBody
+                    Bodies.Add(obj.ID, new BucketBody
                     {
                         BodyUpdated = obj,
                         Stale = false
-                    };
-                    Bodies.Add(obj.ID, bucket);
+                    });
                 }
 
                 if (obj.Group != null)
-                    if (Groups.ContainsKey(obj.Group.ID))
-                        Groups[obj.Group.ID].Stale = false;
+                {
+                    if (Groups.TryGetValue(obj.Group.ID, out var groupBucket))
+                    {
+                        groupBucket.Stale = false;
+                    }
                     else
                     {
-                        var bucket = new BucketGroup
+                        Groups.Add(obj.Group.ID, new BucketGroup
                         {
                             GroupUpdated = obj.Group,
                             Stale = false
-                        };
-                        Groups.Add(obj.Group.ID, bucket);
+                        });
                     }
+                }
             }
         }
 
-        public IEnumerable<BucketBody> CollectStaleBuckets()
+        public List<BucketBody> CollectStaleBuckets()
         {
-            var stale = Bodies.Values.Where(b => b.Stale).ToList();
-            foreach (var b in stale)
-                Bodies.Remove(b.BodyUpdated.ID);
+            _staleBodiesList.Clear();
+            foreach (var b in Bodies.Values)
+            {
+                if (b.Stale)
+                    _staleBodiesList.Add(b);
+            }
 
-            return stale;
+            for (int i = 0; i < _staleBodiesList.Count; i++)
+                Bodies.Remove(_staleBodiesList[i].BodyUpdated.ID);
+
+            return _staleBodiesList;
         }
 
-        public IEnumerable<BucketGroup> CollectStaleGroups()
+        public List<BucketGroup> CollectStaleGroups()
         {
-            var stale = Groups.Values.Where(b => b.Stale).ToList();
-            foreach (var b in stale)
-                Groups.Remove(b.GroupUpdated.ID);
+            _staleGroupsList.Clear();
+            foreach (var g in Groups.Values)
+            {
+                if (g.Stale)
+                    _staleGroupsList.Add(g);
+            }
 
-            return stale;
+            for (int i = 0; i < _staleGroupsList.Count; i++)
+                Groups.Remove(_staleGroupsList[i].GroupUpdated.ID);
+
+            return _staleGroupsList;
         }
 
         public class BucketGroup

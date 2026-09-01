@@ -137,7 +137,17 @@ namespace Game.Engine.Core
             this.Owner.LastShipDeathKiller = bullet?.OwnedByFleet?.Owner;
             this.Owner.LastShipDeathTime = World.Time;
 
-            if (!Ships.Where(s => !s.PendingDestruction).Any())
+            bool anyAlive = false;
+            for (int i = 0; i < Ships.Count; i++)
+            {
+                if (!Ships[i].PendingDestruction)
+                {
+                    anyAlive = true;
+                    break;
+                }
+            }
+
+            if (!anyAlive)
             {
                 if (ship != null)
                     this.FleetCenter = ship.Position;
@@ -163,7 +173,7 @@ namespace Game.Engine.Core
             }
             this.ShipGainCounter += 1;
             if (threshold <= this.ShipGainCounter)
-                if ((Ships?.Any() ?? false)
+                if (Ships != null && Ships.Count > 0
                   && Ships.Count <= 99
                   && !(this.Owner.LastShipDeathKiller == killedShip?.Fleet?.Owner
                   && World.Time - this.Owner.LastShipDeathTime <= World.Hook.MutualDestructionCooldown))
@@ -178,12 +188,10 @@ namespace Game.Engine.Core
             if (!this.Owner.IsAlive || this.PendingDestruction)
                 return;
 
-            var random = new Random();
-
             var offset = new Vector2
             (
-                random.Next(-World.Hook.ShipAddRadius, World.Hook.ShipAddRadius),
-                random.Next(-World.Hook.ShipAddRadius, World.Hook.ShipAddRadius)
+                Random.Shared.Next(-World.Hook.ShipAddRadius, World.Hook.ShipAddRadius),
+                Random.Shared.Next(-World.Hook.ShipAddRadius, World.Hook.ShipAddRadius)
             );
 
             var ship = new Ship()
@@ -194,7 +202,7 @@ namespace Game.Engine.Core
                 Size = ShipSize
             };
 
-            if (this.Ships.Any())
+            if (this.Ships.Count > 0)
             {
                 var position = Vector2.Zero;
                 var momentum = Vector2.Zero;
@@ -242,7 +250,7 @@ namespace Game.Engine.Core
         {
             if (FiringWeapon)
             {
-                var weapon = this.WeaponStack.Any()
+                var weapon = this.WeaponStack.Count > 0
                     ? this.WeaponStack.Pop()
                     : this.BaseWeapon;
 
@@ -250,7 +258,7 @@ namespace Game.Engine.Core
                 FiringWeapon = false;
             }
 
-            while (EarnedShips.Any() && EarnedShips.Peek() < World.Time)
+            while (EarnedShips.Count > 0 && EarnedShips.Peek() < World.Time)
             {
                 AddShip();
                 EarnedShips.Dequeue();
@@ -273,8 +281,8 @@ namespace Game.Engine.Core
 
         public void Abandon()
         {
-            foreach (var ship in Ships.ToList())
-                this.AbandonShip(ship);
+            while (Ships.Count > 0)
+                this.AbandonShip(Ships[Ships.Count - 1]);
         }
 
         public void AbandonShip(Ship ship)

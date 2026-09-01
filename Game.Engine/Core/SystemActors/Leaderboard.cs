@@ -25,28 +25,37 @@ namespace Game.Engine.Core.SystemActors
 
         protected Leaderboard GenerateStandardLeaderboard()
         {
-            var leaderboard = new Leaderboard
+            var players = Player.GetWorldPlayers(World);
+            var entries = new List<Leaderboard.Entry>(players.Count);
+            for (int i = 0; i < players.Count; i++)
             {
-                Entries = Player.GetWorldPlayers(World)
-                    .Where(p => p.IsAlive)
-                    .Select(p => new Leaderboard.Entry
+                var p = players[i];
+                if (p != null && p.IsAlive)
+                {
+                    entries.Add(new Leaderboard.Entry
                     {
                         FleetID = p.Fleet?.ID ?? 0,
                         Name = p.Name,
                         Score = p.Score,
                         Color = p.Color,
-                        Position = p.Fleet.FleetCenter,
+                        Position = p.Fleet?.FleetCenter ?? Vector2.Zero,
                         Token = p.Token
-                    })
-                        .OrderByDescending(e => e.Score)
-                        .ToList(),
+                    });
+                }
+            }
+
+            entries.Sort((a, b) => b.Score.CompareTo(a.Score));
+
+            var leaderboard = new Leaderboard
+            {
+                Entries = entries,
                 Type = "FFA",
                 Time = World.Time,
                 ArenaRecord = World.Leaderboard?.ArenaRecord
                     ?? new Leaderboard.Entry()
             };
 
-            var firstPlace = leaderboard.Entries.FirstOrDefault();
+            var firstPlace = leaderboard.Entries.Count > 0 ? leaderboard.Entries[0] : null;
             if (World.Leaderboard != null && firstPlace?.Score > World.Leaderboard.ArenaRecord.Score)
             {
                 leaderboard.ArenaRecord = firstPlace;
@@ -69,40 +78,57 @@ namespace Game.Engine.Core.SystemActors
 
         protected Leaderboard GenerateTeamLeaderboard()
         {
-            var entries = new List<Leaderboard.Entry>();
+            var players = Player.GetWorldPlayers(World);
+            int cyanScore = 0;
+            int redScore = 0;
 
-            var cyanTeam = Player.GetTeam(World, "cyan");
-            var redTeam = Player.GetTeam(World, "red");
-
-            entries.Add(new Leaderboard.Entry
+            var playerEntries = new List<Leaderboard.Entry>(players.Count);
+            for (int i = 0; i < players.Count; i++)
             {
-                Name = "cyan",
-                Score = cyanTeam.Sum(p => p.Score),
-                Color = "cyan"
-            });
+                var p = players[i];
+                if (p == null) continue;
 
-            entries.Add(new Leaderboard.Entry
-            {
-                Name = "red",
-                Score = redTeam.Sum(p => p.Score),
-                Color = "red"
-            });
+                if (p.Color == "cyan")
+                    cyanScore += p.Score;
+                else if (p.Color == "red")
+                    redScore += p.Score;
 
-            entries.AddRange(Player.GetWorldPlayers(World)
-                .Where(p => p.IsAlive)
-                .OrderBy(p => p.Color)
-                .ThenByDescending(p => p.Score)
-                .Select(p => new Leaderboard.Entry
+                if (p.IsAlive)
                 {
-                    FleetID = p.Fleet?.ID ?? 0,
-                    Name = p.Name,
-                    Score = p.Score,
-                    Color = p.Color,
-                    Position = p.Fleet?.FleetCenter ?? Vector2.Zero
-                })
-                .ToList());
+                    playerEntries.Add(new Leaderboard.Entry
+                    {
+                        FleetID = p.Fleet?.ID ?? 0,
+                        Name = p.Name,
+                        Score = p.Score,
+                        Color = p.Color,
+                        Position = p.Fleet?.FleetCenter ?? Vector2.Zero
+                    });
+                }
+            }
 
-            
+            playerEntries.Sort((a, b) =>
+            {
+                int c = string.CompareOrdinal(a.Color, b.Color);
+                return c != 0 ? c : b.Score.CompareTo(a.Score);
+            });
+
+            var entries = new List<Leaderboard.Entry>(playerEntries.Count + 2)
+            {
+                new Leaderboard.Entry
+                {
+                    Name = "cyan",
+                    Score = cyanScore,
+                    Color = "cyan"
+                },
+                new Leaderboard.Entry
+                {
+                    Name = "red",
+                    Score = redScore,
+                    Color = "red"
+                }
+            };
+            entries.AddRange(playerEntries);
+
             return new Leaderboard
             {
                 Entries = entries,

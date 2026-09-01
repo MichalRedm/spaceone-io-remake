@@ -178,19 +178,22 @@ namespace Game.Engine.Core
                 body.Update(Time);
         }
 
+        private readonly List<Body> _dynamicBodiesBuffer = new List<Body>();
+
         private void ActorsCreateDestroy()
         {
-            foreach (var actor in Actors.ToList())
-                actor.CreateDestroy();
+            for (int i = 0; i < Actors.Count; i++)
+                Actors[i].CreateDestroy();
         }
 
         private void ActorsThink()
         {
-            foreach (var actor in Actors)
+            int actorsCount = Actors.Count;
+            for (int i = 0; i < Actors.Count; i++)
             {
-                int actors = Actors.Count();
+                var actor = Actors[i];
                 actor.Think();
-                if (Actors.Count() != actors)
+                if (Actors.Count != actorsCount)
                     throw new Exception($"Collection modified in think time by {actor.GetType().Name}");
             }
         }
@@ -198,18 +201,27 @@ namespace Game.Engine.Core
         private void RebuildDynamicIndex()
         {
             RTreeDynamic.Clear();
-            foreach (var body in Bodies)
+            _dynamicBodiesBuffer.Clear();
+
+            for (int i = 0; i < Bodies.Count; i++)
             {
+                var body = Bodies[i];
                 body.Project(Time);
                 body.Envelope = new Envelope(
                     body.Position.X - body.Size,
                     body.Position.Y - body.Size,
                     body.Position.X + body.Size,
                     body.Position.Y + body.Size);
+
+                if (!body.IsStatic)
+                    _dynamicBodiesBuffer.Add(body);
             }
 
-            RTreeDynamic.BulkLoad(Bodies.Where(b => !b.IsStatic));
+            RTreeDynamic.BulkLoad(_dynamicBodiesBuffer);
         }
+
+        public IReadOnlyList<Body> SearchDynamic(in Envelope searchArea) => RTreeDynamic.Search(searchArea);
+        public IReadOnlyList<Body> SearchStatic(in Envelope searchArea) => RTreeStatic.Search(searchArea);
 
         public IEnumerable<Body> BodiesNear(Envelope searchArea)
         {

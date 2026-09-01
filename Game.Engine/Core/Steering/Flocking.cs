@@ -44,19 +44,26 @@ namespace Game.Engine.Core.Steering
 
         public static Vector2 Separation(IEnumerable<Ship> ships, Ship ship, float minimumDistanceB, float minimumDistanceM)
         {
+            int shipCount = (ships is ICollection<Ship> col) ? col.Count : ships.Count();
+            int minimumDistance = (int)(Math.Round(minimumDistanceM * shipCount + minimumDistanceB));
+            if (minimumDistance <= 0)
+                return Vector2.Zero;
+
+            float minSq = minimumDistance * minimumDistance;
+            float invMinSq = 1f / minSq;
+
             var accumulator = Vector2.Zero;
             foreach (var shipOther in ships)
             {
                 if (shipOther != ship)
                 {
                     var distance = Vector2.Distance(ship.Position, shipOther.Position);
-                    int minimumDistance = (int)(Math.Round(minimumDistanceM * ships.Count() + minimumDistanceB));
                     if (distance < minimumDistance)
                     {
                         if (distance < 1)
                             distance = 1;
 
-                        accumulator += (ship.Position - shipOther.Position) * (1 / (distance * distance) - 1 / (minimumDistance * minimumDistance));
+                        accumulator += (ship.Position - shipOther.Position) * (1 / (distance * distance) - invMinSq);
                     }
                 }
             }
@@ -66,12 +73,16 @@ namespace Game.Engine.Core.Steering
 
         public static Vector2 Alignment(IEnumerable<Ship> ships, Ship ship)
         {
+            int shipCount = (ships is ICollection<Ship> col) ? col.Count : ships.Count();
+            if (shipCount <= 1)
+                return Vector2.Zero;
+
             var accumulator = Vector2.Zero;
             foreach (var shipOther in ships)
                 if (shipOther != ship)
                     accumulator += shipOther.Momentum;
 
-            return accumulator / (ships.Count() - 1);
+            return accumulator / (shipCount - 1);
         }
 
         /// <summary>
