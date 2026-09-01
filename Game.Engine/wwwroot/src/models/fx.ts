@@ -20,35 +20,35 @@ export const FX_CONFIG = {
   bulletExplosion: {
     particleCount: 2,
     durationMs: 500,
-    baseScale: 1.0,
-    scaleVariation: 0.2,
+    baseScale: 0.62,
+    scaleVariation: 0.1,
     alphaStart: 1.0,
     alphaEnd: 1.0,
-    driftSpeedMin: 25,
-    driftSpeedMax: 50,
+    driftSpeedMin: 15,
+    driftSpeedMax: 40,
   },
   /** Food / fish pickup explosion configuration. */
   foodExplosion: {
     particleCount: 2,
     durationMs: 500,
-    baseScale: 1.2,
-    scaleVariation: 0.2,
+    baseScale: 0.37,
+    scaleVariation: 0.08,
     alphaStart: 1.0,
     alphaEnd: 1.0,
-    driftSpeedMin: 25,
-    driftSpeedMax: 50,
+    driftSpeedMin: 15,
+    driftSpeedMax: 35,
   },
   /** Ship destruction explosion configuration. */
   shipExplosion: {
     particleCount: 2,
     durationMs: 500,
-    minScaleRatio: 0.5, // 50% of ship size (original ParticleSystem.cpp:38)
-    maxScaleRatio: 1.0, // 100% of ship size (original ParticleSystem.cpp:38)
+    minScaleRatio: 0.5,
+    maxScaleRatio: 1.0,
     alphaStart: 1.0,
     alphaEnd: 1.0,
-    angularVelocity: 0.05, // Continuous spin +0.05 rad/frame (original Particle.cpp:97)
-    driftSpeedMin: 30,
-    driftSpeedMax: 65,
+    angularVelocity: 0.05,
+    driftSpeedMin: 15,
+    driftSpeedMax: 45,
   },
 };
 
