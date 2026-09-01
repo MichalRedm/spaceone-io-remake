@@ -446,6 +446,9 @@ export class SpriteAnimator {
     if (!ctx.isAbandoned) {
       layer.alpha = 0.0;
       layer.visible = false;
+    } else if (Settings.graphics === "low") {
+      layer.alpha = 1.0;
+      layer.visible = true;
     } else {
       const abElapsed = now - ctx.abandonedStartTime;
       const abProgress = Math.min(1.0, abElapsed / AC.DEAD_SHIP_FADE_IN_MS);
@@ -463,16 +466,20 @@ export class SpriteAnimator {
   ): void {
     let boostAlpha = 0.0;
     if (ctx.isBoosting) {
-      const boostElapsed = now - ctx.boostStartTime;
-      if (boostElapsed < WorldConfig.boostPhase2BurnMs) {
+      if (Settings.graphics === "low") {
         boostAlpha = 1.0;
-      } else if (boostElapsed < WorldConfig.boostDurationMs) {
-        const phase3Elapsed = boostElapsed - WorldConfig.boostPhase2BurnMs;
-        const phase3Progress = Math.min(
-          1.0,
-          Math.max(0.0, phase3Elapsed / WorldConfig.boostPhase3DurationMs),
-        );
-        boostAlpha = Math.max(0.0, 1.0 - phase3Progress);
+      } else {
+        const boostElapsed = now - ctx.boostStartTime;
+        if (boostElapsed < WorldConfig.boostPhase2BurnMs) {
+          boostAlpha = 1.0;
+        } else if (boostElapsed < WorldConfig.boostDurationMs) {
+          const phase3Elapsed = boostElapsed - WorldConfig.boostPhase2BurnMs;
+          const phase3Progress = Math.min(
+            1.0,
+            Math.max(0.0, phase3Elapsed / WorldConfig.boostPhase3DurationMs),
+          );
+          boostAlpha = Math.max(0.0, 1.0 - phase3Progress);
+        }
       }
     }
 
@@ -503,10 +510,15 @@ export class SpriteAnimator {
     AC: typeof ANIMATION_CONSTANTS,
   ): void {
     if (ctx.isAbandoned) {
-      const abElapsed = now - ctx.abandonedStartTime;
-      const abProgress = Math.min(1.0, abElapsed / AC.LIVE_SHIP_FADE_OUT_MS);
-      layer.alpha = Math.max(0.0, 1.0 - abProgress);
-      layer.visible = layer.alpha > 0.01;
+      if (Settings.graphics === "low") {
+        layer.alpha = 0.0;
+        layer.visible = false;
+      } else {
+        const abElapsed = now - ctx.abandonedStartTime;
+        const abProgress = Math.min(1.0, abElapsed / AC.LIVE_SHIP_FADE_OUT_MS);
+        layer.alpha = Math.max(0.0, 1.0 - abProgress);
+        layer.visible = layer.alpha > 0.01;
+      }
     } else {
       layer.alpha = isBlinkDimmed ? AC.INVULN_BLINK_DIM_ALPHA : 1.0;
       layer.visible = layer.alpha > 0.01;
