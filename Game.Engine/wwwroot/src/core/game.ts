@@ -239,8 +239,9 @@ function groupFromServer(
 }
 
 connection.onLeaderboard = (lb) => {
-  leaderboard.update(lb, lastPosition ?? new Vector2(0, 0), fleetID);
-  minimap.update(lb, worldSize, fleetID);
+  const currentFleetID = fleetID || ownFleetID;
+  leaderboard.update(lb, lastPosition ?? new Vector2(0, 0), currentFleetID);
+  minimap.update(lb, worldSize, currentFleetID);
 };
 
 let fleetID = 0;

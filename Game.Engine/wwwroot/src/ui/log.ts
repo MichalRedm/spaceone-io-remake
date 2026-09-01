@@ -110,7 +110,10 @@ export function updateHighscore(score: number): void {
   const currentCookie = Cookies.get("highscore");
   let scoreParsed = 0;
   if (currentCookie) {
-    scoreParsed = Number(currentCookie);
+    const parsed = Number(currentCookie);
+    if (!isNaN(parsed)) {
+      scoreParsed = parsed;
+    }
   }
   if (score > scoreParsed) {
     Cookies.set("highscore", `${score}`, { expires: 365 });
@@ -118,3 +121,24 @@ export function updateHighscore(score: number): void {
     if (scoreNum) scoreNum.textContent = String(score);
   }
 }
+
+/**
+ * Initializes the high score display from saved cookie on startup.
+ */
+export function initHighscore(): void {
+  const apply = () => {
+    const saved = Cookies.get("highscore");
+    if (saved !== undefined) {
+      const scoreNum = document.getElementById("high-score-num");
+      if (scoreNum) scoreNum.textContent = saved;
+    }
+  };
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", apply);
+  } else {
+    apply();
+  }
+}
+
+initHighscore();
