@@ -6,8 +6,8 @@
 import Cookies from "js-cookie";
 import { escapeHtml } from "./leaderboard";
 
-const bigLog = document.getElementById("bigLog");
-const scoreCon = document.getElementById("plusScoreContainer");
+const bigLog = document.getElementById("big-log");
+const scoreCon = document.getElementById("plus-score-container");
 
 /**
  * Metadata payload attached to combat log events.

@@ -120,9 +120,9 @@ if (emojiTrigger && emojiContainer) {
 
 const secretShips = ["ship_secret", "ship_zed"];
 
-const autofCon = document.getElementById("autofireContainer");
-const autofTgg = document.getElementById("autofireToggle");
-const selector = document.getElementById("shipSelectorSwitch");
+const autofCon = document.getElementById("autofire-container");
+const autofTgg = document.getElementById("autofire-toggle");
+const selector = document.getElementById("ship-selector-switch");
 let colors = [
   "ship_blue",
   "ship_cyan",
@@ -147,10 +147,10 @@ if (!isMobile && nipple) {
   if (nc) nc.style.display = "none";
 }
 
-const shipSelectorSwitch = document.getElementById("shipSelectorSwitch");
+const shipSelectorSwitch = document.getElementById("ship-selector-switch");
 
 const refreshSelectedStyle = function () {
-  const switchEl = document.getElementById("shipSelectorSwitch");
+  const switchEl = document.getElementById("ship-selector-switch");
   const container = document.getElementById("selection-container");
   if (!switchEl) return;
   const options = Array.from(switchEl.children) as HTMLElement[];
@@ -469,7 +469,7 @@ export const Controls: ControlsType = {
         }
       });
       document
-        .getElementById("gameArea")
+        .getElementById("game-area")
         ?.addEventListener("contextmenu", (e) => {
           e.preventDefault();
           return false;
@@ -718,7 +718,7 @@ function shuffle<T>(array: T[]): T[] {
 }
 
 export function waitForShipSelectorImages(): Promise<void> {
-  const switchEl = document.getElementById("shipSelectorSwitch");
+  const switchEl = document.getElementById("ship-selector-switch");
   if (!switchEl) return Promise.resolve();
   const imgElements = Array.from(switchEl.querySelectorAll("img"));
   if (imgElements.length === 0) return Promise.resolve();
@@ -771,7 +771,7 @@ function drawColorSelector() {
     }
   }
 
-  const switchEl = document.getElementById("shipSelectorSwitch") || selector;
+  const switchEl = document.getElementById("ship-selector-switch") || selector;
   if (!switchEl) return;
 
   while (switchEl.firstChild) switchEl.removeChild(switchEl.firstChild);
@@ -789,7 +789,7 @@ function drawColorSelector() {
     }
   }
 
-  document.querySelectorAll("#shipSelectorSwitch img").forEach((img) => {
+  document.querySelectorAll("#ship-selector-switch img").forEach((img) => {
     img.addEventListener("click", function (this: HTMLImageElement) {
       const chosen = this.getAttribute("data-color");
       if (chosen) {
@@ -830,7 +830,7 @@ if (document.readyState === "loading") {
 }
 
 document
-  .getElementById("fullscreenButton")
+  .getElementById("fullscreen-button")
   ?.addEventListener("click", toggleFullscreen);
 
 function toggleFullscreen() {

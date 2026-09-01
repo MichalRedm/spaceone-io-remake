@@ -6,7 +6,7 @@
 
 .changelog-btn,
 .change-log-button,
-#changelogButton {
+#changelog-button {
   font-size: 1em;
   padding: 10px;
   color: #fff;
@@ -39,9 +39,9 @@
 }
 
 .instructions-modal,
-#popupInstructions {
+#popup-instructions {
   .modal-dialog,
-  #instructionsPopup {
+  #instructions-popup {
     position: absolute;
     top: 0;
     bottom: 0;
@@ -99,7 +99,7 @@
   }
 
   &__content,
-  #instructionsContent {
+  #instructions-content {
     font-size: 0.95em;
     line-height: 1.8;
     text-align: center;

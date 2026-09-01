@@ -5,7 +5,7 @@
 @use "../abstracts" as *;
 
 .autofire-indicator,
-#autofireContainer {
+#autofire-container {
   position: fixed;
   right: 8px;
   bottom: 14px;
@@ -19,7 +19,7 @@
 }
 
 .fleet-size,
-#fleetSizeContainer {
+#fleet-size-container {
   position: absolute;
   top: 32px;
   left: 16px;
@@ -27,7 +27,7 @@
 }
 
 .player-name-hud,
-#selfNickContainer {
+#self-nick-container {
   position: absolute;
   bottom: calc(5vh + 30px);
   left: 50%;
@@ -48,7 +48,7 @@
 }
 
 .score-popup-container,
-#plusScoreContainer {
+#plus-score-container {
   position: absolute;
   top: 50%;
   left: 50%;
@@ -65,7 +65,7 @@
 }
 
 .kill-banner,
-#bigLog {
+#big-log {
   position: absolute;
   top: 4em;
   left: 50%;
@@ -75,7 +75,7 @@
 }
 
 .combo-banner,
-#comboMessage {
+#combo-message {
   position: absolute;
   top: 6em;
   left: 50%;
@@ -87,7 +87,7 @@
 }
 
 .danger-zone-warning,
-#dangerZoneWarning {
+#danger-zone-warning {
   position: absolute;
   top: 10em;
   left: 50%;

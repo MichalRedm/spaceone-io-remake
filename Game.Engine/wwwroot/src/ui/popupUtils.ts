@@ -13,7 +13,7 @@ export type PopupName = "changelog" | "instructions" | "invalidArena";
  */
 export function bootstrapPopups(): void {
   document
-    .querySelectorAll(".change-log-button, #changelogButton")
+    .querySelectorAll(".change-log-button, #changelog-button")
     .forEach((btn) => {
       btn.addEventListener("click", () => {
         pressPopup("changelog");
@@ -28,7 +28,7 @@ export function bootstrapPopups(): void {
   }
 
   document
-    .querySelectorAll("#changelogClose, #changelogBack")
+    .querySelectorAll("#changelog-close, #changelog-back")
     .forEach((btn) => {
       btn.addEventListener("click", () => {
         closePopup("changelog");
@@ -36,7 +36,7 @@ export function bootstrapPopups(): void {
     });
 
   document
-    .querySelectorAll("#instructionsClose, #instructionsBack")
+    .querySelectorAll("#instructions-close, #instructions-back")
     .forEach((btn) => {
       btn.addEventListener("click", () => {
         closePopup("instructions");
@@ -44,7 +44,9 @@ export function bootstrapPopups(): void {
     });
 
   document
-    .querySelectorAll("#invalidArenaClose, #invalidArenaBack, #invalidArenaOk")
+    .querySelectorAll(
+      "#invalid-arena-close, #invalid-arena-back, #invalid-arena-ok",
+    )
     .forEach((btn) => {
       btn.addEventListener("click", () => {
         closePopup("invalidArena");
@@ -87,11 +89,11 @@ export function closePopup(popupPressed: PopupName): void {
 export function getPopupElement(popupPressed: PopupName): HTMLElement | null {
   switch (popupPressed) {
     case "changelog":
-      return document.getElementById("popupChangelog");
+      return document.getElementById("popup-changelog");
     case "instructions":
-      return document.getElementById("popupInstructions");
+      return document.getElementById("popup-instructions");
     case "invalidArena":
-      return document.getElementById("popupInvalidArena");
+      return document.getElementById("popup-invalid-arena");
     default:
       return null;
   }

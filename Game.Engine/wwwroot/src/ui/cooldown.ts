@@ -6,7 +6,7 @@
 import { Settings } from "./settings";
 
 const progress = document.getElementById("cooldown");
-const progressVal = document.getElementById("cooldownValue");
+const progressVal = document.getElementById("cooldown-value");
 
 /**
  * Controller managing the on-screen dash/boost cooldown charge meter.

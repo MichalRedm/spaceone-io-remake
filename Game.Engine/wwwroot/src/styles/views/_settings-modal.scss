@@ -22,7 +22,7 @@
   }
 
   &__container,
-  #settingsContainer {
+  #settings-container {
     @include glassmorphism(
       $bg: $color-panel-glass,
       $border: $color-blue-border,

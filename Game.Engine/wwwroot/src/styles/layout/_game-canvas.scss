@@ -5,7 +5,7 @@
 @use "../abstracts" as *;
 
 .game-area,
-#gameArea {
+#game-area {
   position: absolute;
   top: 0;
   left: 0;
@@ -15,7 +15,7 @@
 }
 
 .game-canvas,
-#gameCanvas,
+#game-canvas,
 #canvas {
   z-index: $z-index-canvas;
   visibility: hidden;

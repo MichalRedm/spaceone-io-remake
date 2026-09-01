@@ -97,58 +97,58 @@ export const spriteModeMapRules = [
 export const textureMapRules = [getDefaultTextureMapRules(Settings.graphics)];
 
 const themeSelector = document.getElementById(
-  "settingsThemeSelector",
+  "settings-theme-selector",
 ) as HTMLInputElement | null;
 const themeSelectorCustom = document.getElementById(
-  "settingsThemeSelectorCustom",
+  "settings-theme-selector-custom",
 ) as HTMLInputElement | null;
 const mouseScale = document.getElementById(
-  "settingsMouseScale",
+  "settings-mouse-scale",
 ) as HTMLInputElement | null;
 const leaderboardEnabled = document.getElementById(
-  "settingsLeaderboardEnabled",
+  "settings-leaderboard-enabled",
 ) as HTMLInputElement | null;
 const showHints = document.getElementById(
-  "settingsShowHints",
+  "settings-show-hints",
 ) as HTMLInputElement | null;
 const namesEnabled = document.getElementById(
-  "settingsNamesEnabled",
+  "settings-names-enabled",
 ) as HTMLInputElement | null;
 const bandwidth = document.getElementById(
-  "settingsBandwidth",
+  "settings-bandwidth",
 ) as HTMLInputElement | null;
 const hudEnabled = document.getElementById(
-  "settingsHUDEnabled",
+  "settings-hud-enabled",
 ) as HTMLInputElement | null;
 const showCooldown = document.getElementById(
-  "settingsShowCooldown",
+  "settings-show-cooldown",
 ) as HTMLInputElement | null;
 const logLength = document.getElementById(
-  "settingsLog",
+  "settings-log",
 ) as HTMLInputElement | null;
 const displayMinimap = document.getElementById(
-  "settingsDisplayMinimap",
+  "settings-display-minimap",
 ) as HTMLInputElement | null;
 const mipmapping = document.getElementById(
-  "settingsMipMapping",
+  "settings-mip-mapping",
 ) as HTMLInputElement | null;
 const bigKillMessage = document.getElementById(
-  "settingsBigKillMessage",
+  "settings-big-kill-message",
 ) as HTMLInputElement | null;
 const showKeyboardHints = document.getElementById(
-  "settingsShowKeyboardHints",
+  "settings-show-keyboard-hints",
 ) as HTMLInputElement | null;
 const showOwnName = document.getElementById(
-  "settingsShowOwnName",
+  "settings-show-own-name",
 ) as HTMLInputElement | null;
 const allowDarkblueShips = document.getElementById(
-  "settingsAllowDarkblueShips",
+  "settings-allow-darkblue-ships",
 ) as HTMLInputElement | null;
 const nameSize = document.getElementById(
-  "settingsNameSize",
+  "settings-name-size",
 ) as HTMLInputElement | null;
 const background = document.getElementById(
-  "settingsBackground",
+  "settings-background",
 ) as HTMLInputElement | null;
 
 const settingsText = document.getElementById("settings-text");
@@ -279,19 +279,19 @@ document.getElementById("settings")?.addEventListener("click", () => {
   if (gear) gear.hidden = false;
 });
 
-document.getElementById("settingsCancel")?.addEventListener("click", () => {
+document.getElementById("settings-cancel")?.addEventListener("click", () => {
   gear?.classList.add("closed");
   if (gear) gear.hidden = true;
 });
 
-document.getElementById("settingsSave")?.addEventListener("click", () => {
+document.getElementById("settings-save")?.addEventListener("click", () => {
   save();
   load();
   gear?.classList.add("closed");
   if (gear) gear.hidden = true;
 });
 
-document.getElementById("settingsReset")?.addEventListener("click", () => {
+document.getElementById("settings-reset")?.addEventListener("click", () => {
   reset();
   window.location.reload();
 });

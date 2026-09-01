@@ -63,7 +63,7 @@ const pixiAny = (window as any).PIXI;
 pixiAny.tilemap = pixiAny.tilemap || pixi_tilemap;
 
 const size = { width: 1000, height: 500 };
-const canvas = document.getElementById("gameCanvas") as HTMLCanvasElement;
+const canvas = document.getElementById("game-canvas") as HTMLCanvasElement;
 const zoom = 1000;
 const cameraDrag = 0.7;
 
@@ -388,7 +388,9 @@ connection.onView = (newView) => {
     if (ownFleetID) {
       const ownFleetGroup = cache.getGroup(ownFleetID);
       if (ownFleetGroup?.Caption) {
-        const selfNickContainer = document.getElementById("selfNickContainer");
+        const selfNickContainer = document.getElementById(
+          "self-nick-container",
+        );
         if (
           selfNickContainer &&
           selfNickContainer.textContent !== ownFleetGroup.Caption
@@ -506,13 +508,13 @@ function doSpawn(): void {
   );
   const overlayEl = document.getElementById("overlay");
   if (overlayEl) overlayEl.style.opacity = "0";
-  const selfNickContainer = document.getElementById("selfNickContainer");
+  const selfNickContainer = document.getElementById("self-nick-container");
   if (selfNickContainer) selfNickContainer.textContent = Controls.nick;
   show(".visibility2");
   show(".visibility3");
 }
 document.getElementById("spawn")?.addEventListener("click", doSpawn);
-document.getElementById("spawnSpectate")?.addEventListener("click", doSpawn);
+document.getElementById("spawn-spectate")?.addEventListener("click", doSpawn);
 
 /**
  * Transitions the client into spectator camera mode.
@@ -552,9 +554,9 @@ function stopSpectate() {
   document.body.classList.remove("spectate_only");
 }
 
-document.getElementById("stop_spectating")?.addEventListener("click", () => {
+document.getElementById("stop-spectating")?.addEventListener("click", () => {
   stopSpectate();
-  const deathScreen = document.getElementById("deathScreen");
+  const deathScreen = document.getElementById("death-screen");
   if (deathScreen) {
     deathScreen.classList.remove("death-screen--visible");
     deathScreen.hidden = true;
@@ -632,8 +634,8 @@ setInterval(doPing, 1000);
 const graphics = new PIXI.Graphics();
 container.addChild(graphics);
 
-const fleetSizeDisplay = document.getElementById("fleetSize");
-const dangerZoneWarning = document.getElementById("dangerZoneWarning");
+const fleetSizeDisplay = document.getElementById("fleet-size");
+const dangerZoneWarning = document.getElementById("danger-zone-warning");
 
 let lastCustomData: string | null = null;
 let spotSprites: PIXI.Sprite[] = [];
