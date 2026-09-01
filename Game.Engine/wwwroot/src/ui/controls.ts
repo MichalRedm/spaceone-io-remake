@@ -215,11 +215,13 @@ if (leftArrow) {
       const centerIdx = Math.floor(colors.length / 2);
       const prevIdx = (centerIdx - 1 + colors.length) % colors.length;
       Controls.ship = colors[prevIdx];
+      Controls.color = Controls.ship;
       drawColorSelector();
     } else {
       const curIdx = colors.indexOf(Controls.ship);
       const prevIdx = (curIdx - 1 + colors.length) % colors.length;
       Controls.ship = colors[prevIdx] ?? colors[0];
+      Controls.color = Controls.ship;
       refreshSelectedStyle();
       save();
     }
@@ -235,11 +237,13 @@ if (rightArrow) {
       const centerIdx = Math.floor(colors.length / 2);
       const nextIdx = (centerIdx + 1) % colors.length;
       Controls.ship = colors[nextIdx];
+      Controls.color = Controls.ship;
       drawColorSelector();
     } else {
       const curIdx = colors.indexOf(Controls.ship);
       const nextIdx = (curIdx + 1) % colors.length;
       Controls.ship = colors[nextIdx] ?? colors[0];
+      Controls.color = Controls.ship;
       refreshSelectedStyle();
       save();
     }
@@ -496,6 +500,7 @@ export const Controls: ControlsType = {
     const centerIdx = Math.floor(colors.length / 2);
     if (!colors.includes(Controls.ship)) {
       Controls.ship = colors[centerIdx] ?? colors[0] ?? "ship_green";
+      Controls.color = Controls.ship;
     }
     drawColorSelector();
   },
@@ -666,8 +671,11 @@ function save() {
   const cookieOptions = { expires: 300 };
 
   if (Controls.nick) Cookies.set("nick", Controls.nick, cookieOptions);
-  if (Controls.ship) Cookies.set("ship", Controls.ship, cookieOptions);
-  if (Controls.color) Cookies.set("color", Controls.color, cookieOptions);
+  if (Controls.ship) {
+    Cookies.set("ship", Controls.ship, cookieOptions);
+    Cookies.set("color", Controls.ship, cookieOptions);
+    Controls.color = Controls.ship;
+  }
 }
 
 const savedNick = Cookies.get("nick");
@@ -758,6 +766,7 @@ function drawColorSelector() {
     if (!colors.includes(Controls.ship)) {
       Controls.ship = colors[centerIdx] ?? "ship_green";
     }
+    Controls.color = Controls.ship;
 
     let safety = 0;
     while (colors[centerIdx] !== Controls.ship && safety < colors.length) {
@@ -769,6 +778,7 @@ function drawColorSelector() {
     if (!colors.includes(Controls.ship)) {
       Controls.ship = colors[0] ?? "ship_green";
     }
+    Controls.color = Controls.ship;
   }
 
   const switchEl = document.getElementById("ship-selector-switch") || selector;
@@ -794,6 +804,7 @@ function drawColorSelector() {
       const chosen = this.getAttribute("data-color");
       if (chosen) {
         Controls.ship = chosen;
+        Controls.color = chosen;
         if (isOdd) {
           drawColorSelector();
         } else {
