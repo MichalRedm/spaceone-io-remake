@@ -177,7 +177,7 @@ export class Leaderboard {
       recordFleet.innerHTML = `${escapeHtml(data.Record.Name) || "Unknown Squadron"}`;
     }
 
-    const ctfArena = document.getElementById("ctf_arena");
+    const ctfArena = document.getElementById("ctf-arena");
     if (ctfArena) {
       if (data.Type === "CTF") {
         ctfArena.classList.remove("hide");

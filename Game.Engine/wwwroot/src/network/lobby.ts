@@ -47,7 +47,7 @@ export interface LobbyCallbacksType {
 }
 
 const worlds = document.getElementById("worlds");
-const worldList = document.getElementById("worldList");
+const worldList = document.getElementById("world-list");
 
 let allWorlds: Record<string, WorldInfo> | null = null;
 let lastKeys: string | null = null;
@@ -55,7 +55,7 @@ let lastKeys: string | null = null;
 function selectRow(selectedWorld: string | null): void {
   if (!allWorlds) return;
   for (const world in allWorlds) {
-    const row = document.getElementById(`${world}_row`);
+    const row = document.getElementById(`${world}-row`);
     if (row) {
       if (world === selectedWorld) row.classList.add("selected");
       else row.classList.remove("selected");
@@ -96,10 +96,10 @@ function buildList(response: WorldInfo[]): void {
     const safeInstructions = escapeHtml(world.instructions || "");
     const safePlayers = escapeHtml(String(world.players ?? 0));
 
-    options += `<tbody id="${safeWorld}_row" world="${safeWorld}" class="worldrow">`;
+    options += `<tbody id="${safeWorld}-row" world="${safeWorld}" class="worldrow">`;
     options +=
       `<tr>` +
-      `<td><button class="button1 button3" id="join">Join</button> (<span id="${safeWorld}_playercount">${safePlayers}</span>)</td>` +
+      `<td><button class="button1 button3" id="join">Join</button> (<span id="${safeWorld}-playercount">${safePlayers}</span>)</td>` +
       `<td id="second-world-td"><b>${safeName}</b>: ${safeDescription}</td>` +
       `</tr>`;
 
@@ -128,9 +128,9 @@ function buildList(response: WorldInfo[]): void {
 
 function updateList(response: WorldInfo[]): void {
   for (const world of response) {
-    const countEl = document.getElementById(`${world.world}_playercount`);
+    const countEl = document.getElementById(`${world.world}-playercount`);
     if (countEl) countEl.textContent = String(world.players ?? 0);
-    const row = document.getElementById(`${world.world}_row`);
+    const row = document.getElementById(`${world.world}-row`);
     if (row) {
       if ((world.players ?? 0) > 0) row.classList.remove("empty");
       else row.classList.add("empty");
