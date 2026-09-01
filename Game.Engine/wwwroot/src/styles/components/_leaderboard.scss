@@ -9,7 +9,7 @@
   position: absolute;
   top: 20px;
   right: 20px;
-  width: 250px;
+  width: 260px;
 
   &__header,
   #leaderboard-header {
@@ -24,21 +24,40 @@
   #leaderboard-left,
   #leaderboard-center {
     width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
     padding: 0;
     margin: 0;
     font-size: 15pt;
 
-    td,
     tr {
       height: 24px;
+      line-height: 24px;
       margin: 0;
       padding: 0;
       border: none;
     }
 
+    td {
+      margin: 0;
+      padding: 0;
+      border: none;
+      vertical-align: middle;
+    }
+
+    .name {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding-right: 8px;
+    }
+
     tr td:last-child,
     .score {
+      width: 60px;
       text-align: right;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
     }
   }
 
