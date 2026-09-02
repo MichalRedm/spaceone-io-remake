@@ -1,0 +1,202 @@
+﻿[
+    {
+        "date":  "2021-02-19",
+        "changes":  [
+                        "Movement physics reworked"
+                    ]
+    },
+    {
+        "date":  "2021-01-29",
+        "changes":  [
+                        "Physics improved",
+                        "More original sprites added",
+                        "Graphical settings"
+                    ]
+    },
+    {
+        "date":  "2020-04-04",
+        "changes":  [
+                        "More physics improvements"
+                    ]
+    },
+    {
+        "date":  "2020-03-11",
+        "changes":  [
+                        "Flocking improved",
+                        "Fleet velocity and drag updated"
+                    ]
+    },
+    {
+        "date":  "2019-10-09",
+        "changes":  [
+                        "Drag and flocking improvements",
+                        "Ship selector bug fix"
+                    ]
+    },
+    {
+        "date":  "2019-10-06",
+        "changes":  [
+                        "Spaceone Beta deployed for tests",
+                        "Physics partly reconstructed",
+                        "Spawnscreen mostly reconstructed",
+                        "Graphics partly reconstructed"
+                    ]
+    },
+    {
+        "date":  "2019-09-03",
+        "changes":  [
+                        "Spaceone rebuild project has officially begun",
+                        "Game is basing now on daud.io engine"
+                    ]
+    },
+    {
+        "date":  "2018-11-12",
+        "changes":  [
+                        "Spaceone takedown"
+                    ]
+    },
+    {
+        "date":  "2017-05-17",
+        "changes":  [
+                        "Autofire improvement",
+                        "?"
+                    ]
+    },
+    {
+        "date":  "2017-05-12",
+        "changes":  [
+                        "Server improvements"
+                    ]
+    },
+    {
+        "date":  "2017-05-11",
+        "changes":  [
+                        "Fix autofire bug"
+                    ]
+    },
+    {
+        "date":  "2017-05-05",
+        "changes":  [
+                        "Improved youtube featured system"
+                    ]
+    },
+    {
+        "date":  "2017-05-02",
+        "changes":  [
+                        "Improved flocking algorithm"
+                    ]
+    },
+    {
+        "date":  "2017-04-28",
+        "changes":  [
+                        "Ship selection fixed (left)"
+                    ]
+    },
+    {
+        "date":  "2017-04-27",
+        "changes":  [
+                        "Graphic Settings",
+                        "Instructions Popup",
+                        "Food spawn animation",
+                        "Score announcements",
+                        "Official Twitter account"
+                    ]
+    },
+    {
+        "date":  "2017-04-21",
+        "changes":  [
+                        "Revamp visuals",
+                        "Dash and shoot mechanic",
+                        "Change log history",
+                        "Bug fixing",
+                        "Improvement in overall performance"
+                    ]
+    },
+    {
+        "date":  "2017-04-06",
+        "changes":  [
+                        "Rotating Instruction text",
+                        "Fixed bullets starting velocity",
+                        "Fix soft lock when getting AFK"
+                    ]
+    },
+    {
+        "date":  "2017-03-31",
+        "changes":  [
+                        "Fixed invisible bullets bug"
+                    ]
+    },
+    {
+        "date":  "2017-03-28",
+        "changes":  [
+                        "Bullets are now displayed more accurately",
+                        "Unknown fleets each have a number",
+                        "Improved feedback when failing to connect with Arena Link",
+                        "Added message warning of server shutdown"
+                    ]
+    },
+    {
+        "date":  "2017-03-17",
+        "changes":  [
+                        "Fixed score bug when dying in the Danger Zone",
+                        "Fixed some visual bugs"
+                    ]
+    },
+    {
+        "date":  "2017-03-16",
+        "changes":  [
+                        "Fixed some bugs from previous updates"
+                    ]
+    },
+    {
+        "date":  "2017-03-14",
+        "changes":  [
+                        "Bandwitdh optimisations",
+                        "New Split and Dash Mechanic (\u0027S\u0027 key)",
+                        "Arena Links",
+                        "Check the official subreddit for more info"
+                    ]
+    },
+    {
+        "date":  "2017-02-17",
+        "changes":  [
+                        "Added official Discord server link",
+                        "Last name used is now saved"
+                    ]
+    },
+    {
+        "date":  "2017-02-14",
+        "changes":  [
+                        "Client upgrade mechanism",
+                        "Fixed issue with adblock users not being able to play"
+                    ]
+    },
+    {
+        "date":  "2017-02-13",
+        "changes":  [
+                        "Client upgrade mechanism"
+                    ]
+    },
+    {
+        "date":  "2017-02-09",
+        "changes":  [
+                        "Fixed score bug when dying in the Danger Zone"
+                    ]
+    },
+    {
+        "date":  "2017-02-07",
+        "changes":  [
+                        "Improved ship selection",
+                        "Added high score display",
+                        "Fixed bugs"
+                    ]
+    },
+    {
+        "date":  "2017-02-03",
+        "changes":  [
+                        "Improved mouse deadzone",
+                        "Changed background",
+                        "Added high score display"
+                    ]
+    }
+]
