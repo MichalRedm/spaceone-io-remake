@@ -7,6 +7,7 @@ import { CustomContainer } from "./customContainer";
 import { Interpolator } from "./interpolator";
 import { Cache, GroupState, BodyState } from "../models/cache";
 import { FX } from "../models/fx";
+import { setParticleFrameTime } from "../models/groupParticle";
 import type { Camera } from "./camera";
 
 /**
@@ -50,13 +51,21 @@ export class Renderer {
     fleetID: number,
     isSpectating: boolean,
   ): void {
+    const frameNow = performance.now();
+    setParticleFrameTime(frameNow);
     FX.update();
 
     const cam = this.camera;
 
     cache.foreach((body: BodyState) => {
       if (body.renderer) {
-        body.renderer.preRender(currentTime, interpolator, fleetID, cam);
+        body.renderer.preRender(
+          currentTime,
+          interpolator,
+          fleetID,
+          cam,
+          frameNow,
+        );
       }
     }, this);
 

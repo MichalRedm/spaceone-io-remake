@@ -16,6 +16,24 @@ const BULLET_FADE_IN_MS = 60;
 /** Time window in milliseconds over which a bullet/laser particle fades out before expiry. */
 const BULLET_FADE_OUT_MS = 120;
 
+let _currentFrameTime = 0;
+
+/**
+ * Sets the cached frame timestamp in milliseconds for all particle simulations in the current frame.
+ *
+ * @param time - Current wall-clock time from `performance.now()`.
+ */
+export function setParticleFrameTime(time: number): void {
+  _currentFrameTime = time;
+}
+
+/**
+ * Retrieves the cached frame timestamp, falling back to `performance.now()` if unset.
+ */
+export function getParticleFrameTime(): number {
+  return _currentFrameTime > 0 ? _currentFrameTime : performance.now();
+}
+
 /**
  * Group-aware particle controller.
  *
@@ -30,6 +48,8 @@ export class GroupParticle extends particles.Particle {
   renderedObject?: RenderedObject;
   /** Whether this particle belongs to an active thruster/boost emitter. */
   isBoostParticle: boolean;
+  /** Precomputed boolean indicating if this particle belongs to a bullet or laser projectile. */
+  isBulletOrLaser: boolean;
 
   /**
    * Constructs a GroupParticle instance and attaches it to the appropriate display layer.
@@ -55,6 +75,10 @@ export class GroupParticle extends particles.Particle {
     const texDef = emitterAny.textureDefinition;
     const emitterKey = String(texDef?.emitter || "");
     this.isBoostParticle = emitterKey.startsWith("boost");
+
+    const spriteStr = String((this.body as { Sprite?: string })?.Sprite || "");
+    this.isBulletOrLaser =
+      spriteStr.startsWith("bullet") || spriteStr.startsWith("laser");
   }
 
   /**
@@ -64,21 +88,24 @@ export class GroupParticle extends particles.Particle {
    * @returns Normalized particle age ratio $[0.0, 1.0]$.
    */
   override update(delta: number): number {
+    const ro = this.renderedObject;
+
     // --- Boost trail position lag compensation ---
-    if (this.isBoostParticle && this.renderedObject?.positionDelta) {
-      this.position.x += this.renderedObject.positionDelta.x;
-      this.position.y += this.renderedObject.positionDelta.y;
+    if (this.isBoostParticle && ro?.positionDelta) {
+      this.position.x += ro.positionDelta.x;
+      this.position.y += ro.positionDelta.y;
     }
 
     const ret = super.update(delta);
 
+    const now = getParticleFrameTime();
+
     // --- Boost particle phase-3 alpha fade ---
-    if (this.isBoostParticle && this.renderedObject) {
-      const now = performance.now();
-      if (!this.renderedObject.isBoosting) {
+    if (this.isBoostParticle && ro) {
+      if (!ro.isBoosting) {
         this.alpha = 0.0;
       } else {
-        const boostElapsed = now - this.renderedObject.boostStartTime;
+        const boostElapsed = now - ro.boostStartTime;
         if (boostElapsed >= WorldConfig.boostPhase2BurnMs) {
           const phase3Elapsed = boostElapsed - WorldConfig.boostPhase2BurnMs;
           const phase3Progress = Math.min(
@@ -91,22 +118,17 @@ export class GroupParticle extends particles.Particle {
     }
 
     // --- Body-size scale multiplier ---
-    const spriteStr = String((this.body as { Sprite?: string })?.Sprite || "");
-    const isBulletOrLaser =
-      spriteStr.startsWith("bullet") || spriteStr.startsWith("laser");
     const bodySize = (this.body as { Size?: number })?.Size;
-
-    if (this.body && bodySize && !isBulletOrLaser) {
+    if (this.body && bodySize && !this.isBulletOrLaser) {
       this.scaleMultiplier = Math.max(0.5, bodySize / 50.0);
     } else {
       this.scaleMultiplier = 1.0;
     }
 
     // --- Bullet/laser fade-in + fade-out alpha curve ---
-    if (this.renderedObject && isBulletOrLaser) {
-      const now = performance.now();
-      const age = now - this.renderedObject.spawnTime;
-      const remaining = this.renderedObject.bulletLifetime - age;
+    if (ro && this.isBulletOrLaser) {
+      const age = now - ro.spawnTime;
+      const remaining = ro.bulletLifetime - age;
       const fadeIn = Math.min(1.0, age / BULLET_FADE_IN_MS);
       const fadeOut =
         remaining < BULLET_FADE_OUT_MS

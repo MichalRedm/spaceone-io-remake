@@ -80,11 +80,14 @@ export class Connection {
   reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
   /** Last targeted world key string. */
   lastWorldKey?: string;
+  /** Reusable FlatBuffers builder instance to prevent per-packet allocations. */
+  private builder: flatbuffers.Builder;
 
   /**
    * Initializes the networking connection manager and starts background ping and bandwidth intervals.
    */
   constructor() {
+    this.builder = new flatbuffers.Builder(1024);
     this.onView = () => {};
     this.onLeaderboard = () => {};
     this.onConnected = () => {};
@@ -224,7 +227,8 @@ export class Connection {
    * Encodes and sends a `NetPing` message with client telemetry stats (FPS, VPS, latency, cache count).
    */
   sendPing(): void {
-    const builder = new flatbuffers.Builder(0);
+    const builder = this.builder;
+    builder.clear();
 
     this.fb.NetPing.startNetPing(builder);
     this.pingSent = performance.now();
@@ -253,7 +257,8 @@ export class Connection {
    * Transmits an exit signal (`NetExit`) notifying the server of client departure.
    */
   sendExit(): void {
-    const builder = new flatbuffers.Builder(0);
+    const builder = this.builder;
+    builder.clear();
 
     this.fb.NetExit.startNetExit(builder);
 
@@ -276,7 +281,8 @@ export class Connection {
    * @param token - Auth token string.
    */
   sendAuthenticate(token: string): void {
-    const builder = new flatbuffers.Builder(0);
+    const builder = this.builder;
+    builder.clear();
 
     const stringToken = builder.createString(token || "");
 
@@ -312,7 +318,8 @@ export class Connection {
     color: string,
     token?: string | null,
   ): void {
-    const builder = new flatbuffers.Builder(0);
+    const builder = this.builder;
+    builder.clear();
 
     const stringName = builder.createString(name || "");
     const stringSprite = builder.createString(sprite || "ship_gray");
@@ -359,7 +366,8 @@ export class Connection {
     spectateControl?: string,
     customDataJson?: string,
   ): void {
-    const builder = new flatbuffers.Builder(0);
+    const builder = this.builder;
+    builder.clear();
 
     let spectateOffset: flatbuffers.Offset | null = null;
     let customDataJsonOffset: flatbuffers.Offset | null = null;

@@ -404,6 +404,7 @@ export class RenderedObject {
     interpolator: Interpolator,
     _fleetID?: number,
     camera?: Camera,
+    frameNow = performance.now(),
   ): void {
     if (this.body) {
       const newPosition = interpolator.projectObject(this.body, time);
@@ -439,7 +440,7 @@ export class RenderedObject {
           }
         }
         const ctx = this._buildAnimationContext();
-        _animator.animate(ctx, newPosition, this.body.Size, performance.now());
+        _animator.animate(ctx, newPosition, this.body.Size, frameNow);
       }
     } else if (this.emitterLayers && this.emitterLayers.length) {
       for (let i = 0; i < this.emitterLayers.length; i++) {
@@ -454,7 +455,9 @@ export class RenderedObject {
       const dt = (time - this.lastTime) * 0.001;
       for (let i = 0; i < this.emitterLayers.length; i++) {
         const e = this.emitterLayers[i];
-        if (e) e.update(dt);
+        if (e && (e.emit || e.particleCount > 0)) {
+          e.update(dt);
+        }
       }
     }
 

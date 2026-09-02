@@ -328,10 +328,17 @@ export class Leaderboard {
         let accY = 0;
         let count = 0;
         for (const ship of leaderGroup.renderer.ships) {
-          if (ship.body) {
-            const projected = interpolator.projectObject(ship.body, gameTime);
-            accX += projected.x;
-            accY += projected.y;
+          if (ship && ship.body) {
+            const posX =
+              ship.lastPosition.x !== 0 || ship.lastPosition.y !== 0
+                ? ship.lastPosition.x
+                : (ship.body.Position?.x ?? ship.body.OriginalPosition.x);
+            const posY =
+              ship.lastPosition.x !== 0 || ship.lastPosition.y !== 0
+                ? ship.lastPosition.y
+                : (ship.body.Position?.y ?? ship.body.OriginalPosition.y);
+            accX += posX;
+            accY += posY;
             count++;
           }
         }

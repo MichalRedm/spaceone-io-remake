@@ -111,11 +111,13 @@ class FXManager {
     this.container = container.emitterContainer;
   }
 
+  private static readonly MAX_POOL_SIZE = 100;
+
   /**
    * Obtains a recycled `PIXI.Sprite` from the internal pool or instantiates a new one.
    *
    * @param texture - Texture to assign to the sprite.
-   * @returns Recycled or newly created sprite with additive blending.
+   * @returns Recycled or newly created sprite with additive blending attached to container.
    */
   private getSprite(texture: PIXI.Texture): PIXI.Sprite {
     let sprite: PIXI.Sprite;
@@ -128,22 +130,29 @@ class FXManager {
       sprite = new PIXI.Sprite(texture);
       sprite.anchor.set(0.5, 0.5);
       sprite.blendMode = PIXI.BLEND_MODES.ADD;
-      if (this.container) {
-        this.container.addChild(sprite);
-      }
+    }
+    if (this.container && !sprite.parent) {
+      this.container.addChild(sprite);
     }
     return sprite;
   }
 
   /**
-   * Returns an active sprite back to the pool without detaching from container.
+   * Returns an active sprite back to the pool, detaching from container to keep scene graph lean.
    *
    * @param sprite - Sprite to recycle.
    */
   private releaseSprite(sprite: PIXI.Sprite): void {
     sprite.visible = false;
     sprite.renderable = false;
-    this.particlePool.push(sprite);
+    if (sprite.parent) {
+      sprite.parent.removeChild(sprite);
+    }
+    if (this.particlePool.length < FXManager.MAX_POOL_SIZE) {
+      this.particlePool.push(sprite);
+    } else {
+      sprite.destroy();
+    }
   }
 
   /**

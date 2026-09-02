@@ -177,10 +177,11 @@ document
  * @returns Deserialized BodyState object, or `null` if body pointer is null.
  */
 function bodyFromServer(
-  _cache: Cache,
+  cache: Cache,
   body: FBGame.Engine.Networking.FlatBuffers.NetBody | null,
 ): BodyState | null {
   if (!body) return null;
+  const id = body.id();
   const originalPosition = body.originalPosition();
   const momentum = body.velocity();
   const groupID = body.group();
@@ -190,15 +191,50 @@ function bodyFromServer(
   if (spriteIndex >= 1000) spriteName = `map[${spriteIndex - 1000}]`;
   else spriteName = spriteIndices[spriteIndex] ?? null;
 
+  const existing = cache.getBody(id);
+  if (existing) {
+    existing.DefinitionTime = body.definitionTime();
+    const sz = body.size();
+    if (sz !== -1) existing.Size = sz * 5;
+    if (spriteName !== null) existing.Sprite = spriteName;
+    existing.Mode = body.mode();
+    existing.Group = groupID;
+    const origAngle = body.originalAngle();
+    if (origAngle !== -999) existing.OriginalAngle = origAngle;
+    const angVel = body.angularVelocity();
+    if (angVel !== -999) existing.AngularVelocity = angVel;
+    if (momentum) {
+      if (existing.Momentum) {
+        existing.Momentum.x = momentum.x();
+        existing.Momentum.y = momentum.y();
+      } else {
+        existing.Momentum = new Vector2(momentum.x(), momentum.y());
+      }
+    }
+    if (originalPosition) {
+      if (existing.OriginalPosition) {
+        existing.OriginalPosition.x = originalPosition.x();
+        existing.OriginalPosition.y = originalPosition.y();
+      } else {
+        existing.OriginalPosition = new Vector2(
+          originalPosition.x(),
+          originalPosition.y(),
+        );
+      }
+    }
+    return existing;
+  }
+
   return {
-    ID: body.id(),
+    ID: id,
     DefinitionTime: body.definitionTime(),
-    Size: body.size() * 5,
+    Size: (body.size() === -1 ? 0 : body.size()) * 5,
     Sprite: spriteName,
     Mode: body.mode(),
     Group: groupID,
-    OriginalAngle: body.originalAngle(),
-    AngularVelocity: body.angularVelocity(),
+    OriginalAngle: body.originalAngle() === -999 ? 0 : body.originalAngle(),
+    AngularVelocity:
+      body.angularVelocity() === -999 ? 0 : body.angularVelocity(),
     Momentum: momentum
       ? new Vector2(momentum.x(), momentum.y())
       : new Vector2(0, 0),
@@ -301,17 +337,19 @@ connection.onView = (newView) => {
   serverTimeOffset = 0.95 * serverTimeOffset + 0.05 * lastOffset;
 
   const groupsLength = newView.groupsLength();
-  const groups = [];
+  const groups: GroupState[] = [];
   for (let u = 0; u < groupsLength; u++) {
     const group = newView.groups(u);
-    groups.push(groupFromServer(cache, group));
+    const parsed = groupFromServer(cache, group);
+    if (parsed) groups.push(parsed);
   }
 
   const updatesLength = newView.updatesLength();
-  const updates = [];
+  const updates: BodyState[] = [];
   for (let u = 0; u < updatesLength; u++) {
     const update = newView.updates(u);
-    updates.push(bodyFromServer(cache, update));
+    const parsed = bodyFromServer(cache, update);
+    if (parsed) updates.push(parsed);
   }
 
   const announcementsLength = newView.announcementsLength();
@@ -366,14 +404,7 @@ connection.onView = (newView) => {
     if (gdel !== null) groupDeletes.push(gdel);
   }
 
-  cache.update(
-    updates.filter((u): u is BodyState => u !== null),
-    deletes,
-    groups.filter((g): g is GroupState => g !== null),
-    groupDeletes,
-    gameTime,
-    fleetID,
-  );
+  cache.update(updates, deletes, groups, groupDeletes, gameTime, fleetID);
   overlay.update(newView.customData());
 
   hud.playerCount = newView.playerCount();
@@ -456,13 +487,16 @@ setInterval(() => {
       customData,
     );
 
-    lastControl = {
-      angle,
-      aimTarget: new Vector2(aimTarget.x, aimTarget.y),
-      boost: Controls.boost,
-      shoot: Controls.shoot,
-      chat: message.txt,
-    };
+    lastControl.angle = angle;
+    if (!lastControl.aimTarget) {
+      lastControl.aimTarget = new Vector2(aimTarget.x, aimTarget.y);
+    } else {
+      lastControl.aimTarget.x = aimTarget.x;
+      lastControl.aimTarget.y = aimTarget.y;
+    }
+    lastControl.boost = Controls.boost;
+    lastControl.shoot = Controls.shoot;
+    lastControl.chat = message.txt;
   }
 }, 10);
 
