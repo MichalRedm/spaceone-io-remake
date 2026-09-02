@@ -12,13 +12,32 @@ Use this skill when developing any feature, bugfix, physics calibration, refacto
 ## Process
 
 ### Step 1: Branch Creation & GitHub Issues Protocol
-Before modifying any files, verify you are on `main` and branch out:
+Always base feature branches directly on the latest remote `origin/main` to avoid inheriting stale or squash-merged commits from previous branches:
 
 ```bash
-git checkout main
-git pull origin main
-git checkout -b <branch-name>
+git fetch origin main
+git checkout -b <branch-name> origin/main
 ```
+
+#### Late-Branching / Dirty Working Tree Protocol
+If code modifications were already made before creating a branch:
+1. **If changes are uncommitted**:
+   ```bash
+   git stash
+   git fetch origin main
+   git checkout -b <branch-name> origin/main
+   git stash pop
+   ```
+2. **If commits were already created on top of an old local branch**:
+   Inspect ancestry immediately:
+   ```bash
+   git fetch origin main
+   git log origin/main..HEAD --oneline
+   ```
+   If prior-feature commits appear (because the branch was cut from an old branch rather than `origin/main`), rebase onto `origin/main` before doing any more work:
+   ```bash
+   git rebase --onto origin/main <last-rogue-commit> <branch-name>
+   ```
 
 #### Branch Naming Guidelines
 - **Issue-Linked Work** (if a GitHub issue exists or is assigned):
@@ -95,8 +114,31 @@ Include any necessary `.agents/` updates in your branch commits.
 
 ---
 
-### Step 5: Push Branch & Monitor CI
-Push your branch to GitHub and observe the remote workflow run (if configured):
+### Step 5: Pre-Push Commit Ancestry Audit & Push
+Before executing `git push`, you MUST audit your branch's commit ancestry against `origin/main`.
+
+> [!CAUTION]
+> **The Squash-Merge Duplicate Commit Trap**:
+> GitHub merges pull requests via "Squash and Merge", which produces a **new squashed commit SHA** on `main`.
+> Local branches still point to their pre-squash local commit SHAs.
+> If a branch was cut from an existing local branch instead of `origin/main`, Git does not recognize the old local commit as merged and will include it as a duplicate "rogue" commit in your new PR!
+
+#### Mandatory Pre-Push Verification Check:
+```bash
+git fetch origin main
+git log origin/main..HEAD --oneline
+```
+
+- **Pass Criteria**: The output must list **ONLY** the commits authored specifically for this active branch/task.
+- **Fail Recovery**: If any commits from a previous PR/feature appear in the list:
+  ```bash
+  # Rebase to strip out the rogue commit(s) and re-align cleanly onto origin/main:
+  git rebase --onto origin/main <last-rogue-commit> HEAD
+  # Re-verify:
+  git log origin/main..HEAD --oneline
+  ```
+
+Once verified, push your branch to GitHub and observe the remote workflow run (if configured):
 
 ```bash
 git push -u origin <branch-name>
@@ -132,6 +174,7 @@ To prevent escaping errors and broken markdown on Windows/PowerShell shells, **n
 ## Verification
 - [x] `dotnet build Game.Engine.sln` succeeded with 0 errors
 - [x] `npm run build` succeeded in `Game.Engine/wwwroot`
+- [x] `git log origin/main..HEAD --oneline` contains only commits intended for this PR
 - [x] <Specific gameplay, kinematic benchmark, or manual verification performed>
 ```
 

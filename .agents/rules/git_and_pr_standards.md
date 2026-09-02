@@ -12,13 +12,20 @@ This rule document governs all version control, branching, committing, issue tra
 
 Never commit directly to the `main` branch. The `main` branch is protected by a GitHub Ruleset that strictly blocks direct pushes and force pushes, requiring all changes to pass CI checks and be merged via a Pull Request. Merged feature branches are automatically deleted upon merge (`delete_branch_on_merge`).
 
-Always create a feature, fix, or refactor branch before writing code:
+Always create a feature, fix, or refactor branch directly based on the latest remote `origin/main`:
 
 ```bash
-git checkout main
-git pull origin main
-git checkout -b <branch-name>
+git fetch origin main
+git checkout -b <branch-name> origin/main
 ```
+
+> [!WARNING]
+> **Avoid Branching Off Stale Local Branches**:
+> Never run a bare `git checkout -b <branch-name>` without specifying `origin/main` as the starting point.
+> Because GitHub merges pull requests via "Squash and Merge", merged commits receive new SHAs on `main`.
+> Branching off a local branch that contains old pre-squash commits will drag those old commits into your new PR as duplicate "rogue" commits!
+> If uncommitted modifications already exist in the working directory, stash them first:
+> `git stash && git fetch origin main && git checkout -b <branch-name> origin/main && git stash pop`.
 
 ### Hybrid GitHub Issues Protocol
 We follow a pragmatic, context-aware approach to GitHub Issues:
@@ -122,8 +129,24 @@ python -m py_compile analysis/**/*.py
 
 ---
 
-## 4. Push & CI Workflow Monitoring
+## 4. Pre-Push Commit Ancestry Audit & CI Monitoring
 
+### Mandatory Commit Ancestry Audit
+Before executing `git push`, you MUST audit your branch's commit history relative to `origin/main`:
+
+```bash
+git fetch origin main
+git log origin/main..HEAD --oneline
+```
+
+- **Pass**: The output lists ONLY commits authored specifically for this task.
+- **Fail (Rogue / Duplicate Commits Detected)**: If commits from previous PRs or merged branches appear, rebase cleanly onto `origin/main` to drop them:
+  ```bash
+  git rebase --onto origin/main <last-rogue-commit> HEAD
+  ```
+- Re-run `git log origin/main..HEAD --oneline` to confirm a clean, isolated commit list before pushing.
+
+### Push & Actions Monitoring
 1. Push your branch to the remote origin:
    ```bash
    git push -u origin <branch-name>
