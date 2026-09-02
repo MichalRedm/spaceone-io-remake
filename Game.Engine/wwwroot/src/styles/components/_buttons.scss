@@ -2,6 +2,7 @@
 // COMPONENTS: BUTTONS
 // -----------------------------------------------------------------------------
 
+@use "sass:color";
 @use "../abstracts" as *;
 
 .btn,
@@ -166,7 +167,7 @@
   &--settings-reset {
     background: $color-danger;
     color: $color-text-main;
-    border: 1px solid lighten($color-danger, 15%);
+    border: 1px solid color.adjust($color-danger, $lightness: 15%);
     padding: 8px 16px;
     border-radius: 6px;
   }
