@@ -43,7 +43,7 @@ Every task must progress sequentially through these 5 lifecycle gates:
 4. **Gate 4: Context Self-Maintenance**:
    - Follow [`.agents/skills/agent-maintenance/SKILL.md`](.agents/skills/agent-maintenance/SKILL.md) whenever engine mechanics, models, or roadmap items evolve.
 5. **Gate 5: Git & PR Protocol**:
-   - Follow [`.agents/skills/git-pr-workflow/SKILL.md`](.agents/skills/git-pr-workflow/SKILL.md): Stage and commit with atomic Conventional Commits; push and create PR via temporary `.tmp_pr_body.md`.
+   - Follow [`.agents/skills/git-pr-workflow/SKILL.md`](.agents/skills/git-pr-workflow/SKILL.md): Base branches on `origin/main` (`git checkout -b <branch> origin/main`), stage and commit with atomic Conventional Commits, audit commit ancestry (`git log origin/main..HEAD --oneline`), push and create PR via temporary `.tmp_pr_body.md`.
 
 ---
 
@@ -65,7 +65,8 @@ Always run these commands from their respective working directories:
 
 - **Always**:
   - Consult the *Mandatory Rule Routing Matrix* before writing or modifying code.
-  - Follow [git-pr-workflow](.agents/skills/git-pr-workflow/SKILL.md) for branch naming, atomic commits, and PR creation via `.tmp_pr_body.md`.
+  - Follow [git-pr-workflow](.agents/skills/git-pr-workflow/SKILL.md) for branch naming, atomic commits, pre-push commit ancestry audits (`git log origin/main..HEAD`), and PR creation via `.tmp_pr_body.md`.
+  - Always base branches on `origin/main` (`git checkout -b <branch> origin/main`) to prevent dragging squash-merged commits into new PRs.
   - Verify backend compilation (`dotnet build`) and frontend bundling before committing.
 - **Ask First (Human Escalation Gateways)**:
   - Introducing new native NuGet or npm dependencies.

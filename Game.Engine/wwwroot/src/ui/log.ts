@@ -66,12 +66,17 @@ export class Log {
     if (entry.type === "kill") {
       lastMsg = (entry.text || "") + "!";
       if (scoreCon) {
-        scoreCon.insertAdjacentHTML(
-          "beforeend",
-          "<div class='score-popup plusScore'>+" +
-            escapeHtml(String(entry.pointsDelta ?? "")) +
-            "</div>",
-        );
+        const popup = document.createElement("div");
+        popup.className = "score-popup plusScore";
+        popup.textContent = "+" + (entry.pointsDelta ?? "");
+        scoreCon.appendChild(popup);
+        const cleanup = () => {
+          if (popup.parentNode) {
+            popup.remove();
+          }
+        };
+        popup.addEventListener("animationend", cleanup, { once: true });
+        setTimeout(cleanup, 3000);
       }
     } else if (entry.type === "killed" || entry.type === "universeDeath") {
       const score = entry.extraData?.score ?? 0;

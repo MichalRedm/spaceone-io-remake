@@ -285,7 +285,17 @@ export class Cache {
     for (i = 0; i < updates.length; i++) {
       const update = updates[i];
       if (!update) continue;
-      let existing = this.bodiesMap.get(update.ID);
+      const existing = this.bodiesMap.get(update.ID);
+
+      if (existing && existing === update) {
+        let group: GroupState | null = null;
+        if (update.Group != 0) group = this.getGroup(update.Group) ?? null;
+        update.group = group;
+        update.zIndex = group ? group.ZIndex || 0 : 0;
+
+        if (update.renderer) update.renderer.update(update);
+        continue;
+      }
 
       this.bodiesMap.set(update.ID, update);
 
@@ -304,7 +314,7 @@ export class Cache {
         }
 
         update.renderer = existing.renderer;
-        update.previous = existing;
+        update.previous = false;
 
         existing.previous = false;
         existing.renderer = undefined;

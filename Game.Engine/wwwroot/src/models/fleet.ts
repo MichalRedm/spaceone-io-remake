@@ -180,14 +180,22 @@ export class Fleet {
           accY = 0,
           count = 0;
 
-        this.ships.forEach((ship) => {
-          if (ship.body) {
-            const position = interpolator.projectObject(ship.body, time);
-            accX += position.x;
-            accY += position.y;
+        for (let i = 0; i < this.ships.length; i++) {
+          const ship = this.ships[i];
+          if (ship && ship.body) {
+            const posX =
+              ship.lastPosition.x !== 0 || ship.lastPosition.y !== 0
+                ? ship.lastPosition.x
+                : (ship.body.Position?.x ?? ship.body.OriginalPosition.x);
+            const posY =
+              ship.lastPosition.x !== 0 || ship.lastPosition.y !== 0
+                ? ship.lastPosition.y
+                : (ship.body.Position?.y ?? ship.body.OriginalPosition.y);
+            accX += posX;
+            accY += posY;
             count++;
           }
-        });
+        }
 
         if (count > 0) {
           const offsetY = 0;
