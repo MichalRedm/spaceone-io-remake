@@ -35,6 +35,7 @@ shipSprite.anchor.set(0.5, 0.5);
 | **Loading loose images individually** | Increases HTTP requests and breaks batch rendering in WebGL. | Pack textures into consolidated sprite atlases (`.json` + `.png`) and load via cache. |
 | **Direct DOM manipulation inside render loop** | Forces layout reflows on every 60 FPS frame, degrading framerate. | Update canvas UI via Pixi.js display objects; keep HTML DOM changes to out-of-loop events. |
 | **Using raw network `fleetID` directly for own-fleet visibility checks** | When a player dies, network `fleetID` resets to 0 while dying ships linger in cache, causing the player's own username to briefly flash on screen. | Track `ownFleetID` separately, retaining the player's last alive fleet ID through death until respawning or explicitly spectating. |
+| **Injecting ephemeral arena IDs into browser address bar on world join** | Overwriting `window.location.hash` with ephemeral random arena IDs (`#xK92Lp`) causes bookmarks, page reloads, and server restarts to lose the player's intended game mode (e.g. RoboTrainer) and trigger false "Invalid Arena" modals. | Keep URL clean or use stable mode hashes (`#robo`); only encode instance IDs in shareable clipboard links (`#robo:xK92Lp`) and persist mode in `localStorage`. |
 
 ---
 
