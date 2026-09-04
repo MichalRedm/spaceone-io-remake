@@ -119,3 +119,13 @@
   z-index: $z-index-base;
   pointer-events: none;
 }
+
+// Hide CTF HUD elements on loading or when player is on the spawnscreen / dead
+body.loading,
+body.dead:not(.spectating) {
+  #ctf-arena,
+  #leaderboard-center,
+  #leaderboard-left {
+    display: none !important;
+  }
+}
