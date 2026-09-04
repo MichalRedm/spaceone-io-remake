@@ -72,13 +72,6 @@
     flex-direction: column;
     gap: 14px;
   }
-
-  .worlds-modal__subtitle {
-    font-size: 0.9em;
-    color: $color-text-subtle;
-    margin: 0;
-    line-height: 1.4;
-  }
 }
 
 .worlds-grid {
@@ -147,7 +140,7 @@
     letter-spacing: 0.3px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
 
     i {
       font-size: 0.95em;
