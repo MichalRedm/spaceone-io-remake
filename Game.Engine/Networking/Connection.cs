@@ -663,9 +663,9 @@ namespace Game.Engine.Networking
 
             var worldRequest = httpContext.Request.Query["world"].FirstOrDefault();
 
-            this.Logger.LogInformation($"New Connection: {worldRequest}");
-
             world = Worlds.Find(worldRequest);
+
+            this.Logger.LogInformation($"New Connection: '{worldRequest}' resolved to world '{world?.Hook?.Name}' (WorldKey: '{world?.WorldKey}', ArenaID: '{world?.ArenaID}')");
 
             var builder = new FlatBufferBuilder(1);
             await SendPingAsync();

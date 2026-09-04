@@ -29,6 +29,12 @@ export interface WorldInfo {
   arenaID?: string;
   /** Case-insensitive arena match key. */
   arenaKey?: string;
+  /** Canonical world key (e.g. 'robo', 'ctf', 'default'). */
+  worldKey?: string;
+  /** Gameplay ruleset mode (e.g. 'robo', 'ctf', 'team', 'duel', 'ffa'). */
+  gameMode?: string;
+  /** Whether the arena is private or unlisted. */
+  isPrivate?: boolean;
   /** Allowed ship skin color themes. */
   allowedColors?: string[];
   [key: string]: unknown;
@@ -200,61 +206,136 @@ function refreshList(autoJoinWorld?: string | boolean): void {
             if (targetWorldParam) {
               joinWorld(targetWorldParam);
             } else {
-              const urlTarget = arenaLinkHelper.getArenaIDFromURL();
+              const parsedRoute = arenaLinkHelper.parseArenaRouteFromURL();
 
-              if (urlTarget) {
-                // Search for world by arenaID or world key
-                const matchedWorld = response.find(
-                  (w: WorldInfo) =>
-                    (w.arenaID &&
-                      w.arenaID.toLowerCase() === urlTarget.toLowerCase()) ||
-                    (w.arenaKey &&
-                      w.arenaKey.toLowerCase() === urlTarget.toLowerCase()) ||
-                    w.world === urlTarget ||
-                    w.world
-                      ?.toLowerCase()
-                      .endsWith("/" + urlTarget.toLowerCase()),
-                );
+              if (parsedRoute && parsedRoute.raw) {
+                // Tier 1: Search for world by exact arenaID if specified
+                let matchedWorld: WorldInfo | undefined;
+                if (parsedRoute.arenaId) {
+                  matchedWorld = response.find(
+                    (w: WorldInfo) =>
+                      (w.arenaID &&
+                        w.arenaID.toLowerCase() ===
+                          parsedRoute.arenaId?.toLowerCase()) ||
+                      (w.arenaKey &&
+                        w.arenaKey.toLowerCase() ===
+                          parsedRoute.arenaId?.toLowerCase()),
+                  );
+                }
+
+                // Tier 2: If exact arena not found or not specified, search by mode / worldKey
+                if (!matchedWorld && parsedRoute.worldKey) {
+                  const targetKey = parsedRoute.worldKey.toLowerCase();
+                  matchedWorld = response.find(
+                    (w: WorldInfo) =>
+                      (w.worldKey && w.worldKey.toLowerCase() === targetKey) ||
+                      (w.gameMode && w.gameMode.toLowerCase() === targetKey) ||
+                      w.world?.toLowerCase().endsWith("/" + targetKey) ||
+                      w.world?.toLowerCase() === targetKey,
+                  );
+
+                  // If we had a specific arenaId that expired, notify the user gracefully and update hash
+                  if (matchedWorld && parsedRoute.arenaId) {
+                    console.info(
+                      `Arena ${parsedRoute.arenaId} has expired. Connecting to active ${matchedWorld.name} world.`,
+                    );
+                    arenaLinkHelper.updateURLHash(
+                      matchedWorld.worldKey &&
+                        matchedWorld.worldKey !== "default"
+                        ? matchedWorld.worldKey
+                        : "",
+                    );
+                  }
+                }
+
+                // Tier 3: If still not matched, check if raw matches a world
+                if (!matchedWorld) {
+                  const rawLower = parsedRoute.raw.toLowerCase();
+                  matchedWorld = response.find(
+                    (w: WorldInfo) =>
+                      w.world?.toLowerCase() === rawLower ||
+                      w.world?.toLowerCase().endsWith("/" + rawLower),
+                  );
+                }
 
                 if (matchedWorld) {
                   joinWorld(matchedWorld.world);
                 } else {
-                  // Invalid arena link provided in URL!
+                  // Truly invalid or expired private arena
                   pressPopup("invalidArena");
 
-                  // Fallback to default world
-                  let defaultWorldKey = hostName + "/" + world;
-                  const defaultMatched = response.find(
-                    (w: WorldInfo) =>
-                      w.world === defaultWorldKey ||
-                      w.world?.endsWith("/" + world),
-                  );
-                  if (defaultMatched) {
-                    defaultWorldKey = defaultMatched.world;
-                  } else if (response[0]?.world) {
-                    defaultWorldKey = response[0].world;
+                  // Fallback to preferred world from localStorage, or default
+                  let preferredWorld: string | null = null;
+                  try {
+                    preferredWorld = localStorage.getItem(
+                      "spaceone_preferred_world",
+                    );
+                  } catch {
+                    // ignore localStorage errors
                   }
 
-                  joinWorld(defaultWorldKey);
-                }
-              } else {
-                let targetWorldKey = hostName + "/" + world;
-                if (
-                  response &&
-                  Array.isArray(response) &&
-                  response.length > 0
-                ) {
-                  const matched = response.find(
-                    (w: WorldInfo) =>
-                      w.world === targetWorldKey ||
-                      w.world?.endsWith("/" + world),
-                  );
-                  if (matched) {
-                    targetWorldKey = matched.world;
-                  } else if (response[0]?.world) {
-                    targetWorldKey = response[0].world;
+                  let fallbackWorld: WorldInfo | undefined;
+                  if (preferredWorld) {
+                    fallbackWorld = response.find(
+                      (w: WorldInfo) =>
+                        w.world === preferredWorld ||
+                        w.worldKey === preferredWorld ||
+                        w.world?.endsWith("/" + preferredWorld),
+                    );
+                  }
+
+                  if (!fallbackWorld) {
+                    const defaultWorldKey = hostName + "/" + world;
+                    fallbackWorld =
+                      response.find(
+                        (w: WorldInfo) =>
+                          w.world === defaultWorldKey ||
+                          w.world?.endsWith("/" + world),
+                      ) || response[0];
+                  }
+
+                  if (fallbackWorld) {
+                    joinWorld(fallbackWorld.world);
                   }
                 }
+              } else {
+                // No URL route provided: Check localStorage for preferred world, else default
+                let targetWorldKey: string | undefined;
+                let preferredWorld: string | null = null;
+                try {
+                  preferredWorld = localStorage.getItem(
+                    "spaceone_preferred_world",
+                  );
+                } catch {
+                  // ignore localStorage errors
+                }
+
+                let targetWorld: WorldInfo | undefined;
+                if (preferredWorld) {
+                  targetWorld = response.find(
+                    (w: WorldInfo) =>
+                      w.world === preferredWorld ||
+                      w.worldKey === preferredWorld ||
+                      w.world?.endsWith("/" + preferredWorld),
+                  );
+                }
+
+                if (!targetWorld) {
+                  const defaultWorldKey = hostName + "/" + world;
+                  targetWorld =
+                    response.find(
+                      (w: WorldInfo) =>
+                        w.world === defaultWorldKey ||
+                        w.world?.endsWith("/" + world),
+                    ) || response[0];
+                }
+
+                if (targetWorld) {
+                  targetWorldKey = targetWorld.world;
+                } else {
+                  targetWorldKey = hostName + "/" + world;
+                }
+
                 joinWorld(targetWorldKey);
               }
             }
@@ -300,11 +381,20 @@ function show(): void {
 }
 
 function joinWorld(worldKey: string): void {
+  const worldInfo = allWorlds ? allWorlds[worldKey] : undefined;
+  const canonicalKey =
+    worldInfo?.worldKey ||
+    (worldKey.includes("/") ? worldKey.split("/").pop() : worldKey);
+  if (canonicalKey) {
+    try {
+      localStorage.setItem("spaceone_preferred_world", canonicalKey);
+    } catch {
+      // ignore localStorage write errors
+    }
+  }
+
   if (LobbyCallbacks.onWorldJoin)
-    LobbyCallbacks.onWorldJoin(
-      worldKey,
-      allWorlds ? allWorlds[worldKey] : undefined,
-    );
+    LobbyCallbacks.onWorldJoin(worldKey, worldInfo);
   hide();
 }
 

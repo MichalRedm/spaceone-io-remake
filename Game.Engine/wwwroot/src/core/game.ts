@@ -513,10 +513,22 @@ LobbyCallbacks.onWorldJoin = function (worldKey: string, world?: WorldInfo) {
   }
 
   currentWorld = world ?? false;
-  if (world?.arenaID || world?.arenaKey) {
+  if (world) {
     const arenaId = world.arenaID ?? world.arenaKey;
-    arenaLink.generate(arenaId);
-    arenaLink.updateURLHash(arenaId);
+    const canonicalKey =
+      world.worldKey ||
+      (world.world?.includes("/") ? world.world.split("/").pop() : world.world);
+    arenaLink.generate(canonicalKey, arenaId);
+
+    // Keep clean mode in URL hash if user arrived via hash or switched mode, without polluting with ephemeral arenaId
+    const currentRoute = arenaLink.parseArenaRouteFromURL();
+    if (currentRoute?.raw) {
+      if (canonicalKey && canonicalKey !== "default") {
+        arenaLink.updateURLHash(canonicalKey);
+      } else {
+        arenaLink.clearURLHash();
+      }
+    }
   }
 
   connection.disconnect();

@@ -157,7 +157,10 @@ namespace Game.Engine.Controllers
                                     name,
                                     description,
                                     allowedColors = s.world.Hook.AllowedColors,
-                                    instructions = s.world.Hook.Instructions
+                                    instructions = s.world.Hook.Instructions,
+                                    worldKey = s.world.WorldKey,
+                                    arenaID = s.world.WorldKey,
+                                    gameMode = s.world.WorldKey
                                 };
                         })
                 );
@@ -167,6 +170,7 @@ namespace Game.Engine.Controllers
                 || !GameConfiguration.RegistryEnabled)
             {
                 worlds.AddRange(Worlds.AllWorlds
+                        .Where(w => allWorlds || (!w.Value.Hook.Hidden && !w.Value.IsPrivate))
                         .OrderBy(w => w.Value.Hook.Weight)
                         .Select(s =>
                         {
@@ -175,8 +179,8 @@ namespace Game.Engine.Controllers
 
                             return new
                             {
-                                world = $"{Request.Host}/{s.Value.ArenaID}",
-                                server = Request.Host,
+                                world = $"{Request.Host}/{s.Value.WorldKey}",
+                                server = Request.Host.ToString(),
                                 players = s.Value.AdvertisedPlayerCount,
                                 name = "Local: " + name,
                                 description,
@@ -184,7 +188,9 @@ namespace Game.Engine.Controllers
                                 instructions = s.Value.Hook.Instructions,
                                 arenaID = s.Value.ArenaID,
                                 arenaKey = s.Value.ArenaID,
-                                worldKey = s.Value.WorldKey
+                                worldKey = s.Value.WorldKey,
+                                gameMode = s.Value.GameMode,
+                                isPrivate = s.Value.IsPrivate
                             };
                         }));
             }

@@ -36,3 +36,18 @@ Original recorded telemetry captures tabular states:
 - `angle`: Heading in radians.
 - `ship_count`: Size of player fleet.
 - `score` / `rank`: Game stats and leaderboard standing.
+
+## 5. Arena Links & World Routing Architecture
+
+- **World vs. Game Mode Separation**:
+  - **Server / Region**: Host address (`localhost:5000`, `us.spaceone.io`, `eu.spaceone.io`).
+  - **Game Mode**: Gameplay ruleset (`ffa`, `ctf`, `team`, `robo`, `duel`, `sumo`).
+  - **World Key**: Stable canonical identifier (`default`, `ctf`, `team`, `robo`, `duel`).
+  - **Arena ID**: 6-character random alphanumeric ephemeral session token (e.g. `xK92Lp`).
+- **URL Addressing Rules**:
+  - Normal visits leave the browser address bar clean (`/` or `/#robo`), persisting preferences in `localStorage`.
+  - Shareable clipboard links format as `https://spaceone.io/#<worldKey>:<arenaID>` (e.g. `/#robo:xK92Lp`).
+- **Resilient Fallback Hierarchy**:
+  1. Exact `ArenaID` match connects to the specific room instance.
+  2. If the instance is expired (server restart / room reset), the server and client resolve the `<worldKey>` prefix, auto-joining the active room for that game mode and displaying a friendly notice rather than an error modal.
+  3. Private or unknown links trigger dedicated status dialogs without dropping blindly to default FFA.
