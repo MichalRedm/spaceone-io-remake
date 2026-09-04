@@ -56,13 +56,49 @@ let allWorlds: Record<string, WorldInfo> | null = null;
 let lastKeys: string | null = null;
 let currentJoinedWorldKey: string | null = null;
 
-function getTagForWorld(world: WorldInfo): { label: string; modifier: string } {
+function getModeTheme(world: WorldInfo): {
+  icon: string;
+  defaultDesc: string;
+} {
   const mode = (world.gameMode || world.worldKey || "ffa").toLowerCase();
-  if (mode.includes("robo")) return { label: "Robo Trainer", modifier: "robo" };
-  if (mode.includes("ctf")) return { label: "CTF", modifier: "ctf" };
-  if (mode.includes("team")) return { label: "Team", modifier: "team" };
-  if (mode.includes("duel")) return { label: "1v1 Duel", modifier: "duel" };
-  return { label: "FFA", modifier: "ffa" };
+  if (mode.includes("robo")) {
+    return {
+      icon: "fa-robot",
+      defaultDesc:
+        "Battle against adaptive AI combat drones. Ideal for practicing aim, fleet steering, and dash mechanics.",
+    };
+  }
+  if (mode.includes("ctf")) {
+    return {
+      icon: "fa-flag",
+      defaultDesc:
+        "Team-based tactical warfare. Infiltrate the enemy base, steal their flag, and defend your own. First to 5 wins!",
+    };
+  }
+  if (mode.includes("team")) {
+    return {
+      icon: "fa-users",
+      defaultDesc:
+        "Two teams clash in deep space. Coordinate with teammates (Blue vs. Red) to wipe out the opposition.",
+    };
+  }
+  if (mode.includes("duel")) {
+    return {
+      icon: "fa-bolt",
+      defaultDesc:
+        "Intense 1v1 fleet duel. Test your combat reflexes and dogfighting skills in an enclosed arena.",
+    };
+  }
+  return {
+    icon: "fa-crosshairs",
+    defaultDesc:
+      "Classic free-for-all space combat. Destroy enemy fleets, collect stars, and dominate the leaderboard.",
+  };
+}
+
+function cleanText(raw?: string): string {
+  if (!raw) return "";
+  return raw.replace(/<[^>]*>?/gm, "").trim();
 }
 
 function updateSelectorPill(worldInfo?: WorldInfo): void {
@@ -115,21 +151,28 @@ function buildList(response: WorldInfo[]): void {
 
     const safeWorld = escapeHtml(world.world);
     const safeName = escapeHtml(world.name);
-    const safeDescription = escapeHtml(world.description);
-    const safeInstructions = escapeHtml(world.instructions || "");
+    const { icon, defaultDesc } = getModeTheme(world);
+    const cleanedDesc = cleanText(world.description);
+    const displayDesc =
+      cleanedDesc &&
+      cleanedDesc.length > 15 &&
+      !cleanedDesc.toLowerCase().startsWith("blue vs. red") &&
+      cleanedDesc !== "FFA Arena"
+        ? cleanedDesc
+        : defaultDesc;
+
     const playersCount = world.players ?? 0;
     const isSelected = world.world === currentJoinedWorldKey;
-    const { label: tagLabel, modifier: tagModifier } = getTagForWorld(world);
 
     html += `
       <div id="world-card-${safeWorld}" class="world-card ${isSelected ? "world-card--selected" : ""} ${playersCount === 0 ? "world-card--empty" : ""}" data-world="${safeWorld}">
         <div class="world-card__header">
-          <div class="world-card__title">${safeName}</div>
-          <span class="world-card__tag world-card__tag--${tagModifier}">${tagLabel}</span>
+          <div class="world-card__title">
+            <i class="fas ${icon}"></i> ${safeName}
+          </div>
         </div>
         <div class="world-card__body">
-          <p class="world-card__desc">${safeDescription}</p>
-          ${safeInstructions ? `<p class="world-card__instructions">${safeInstructions}</p>` : ""}
+          <p class="world-card__desc">${escapeHtml(displayDesc)}</p>
         </div>
         <div class="world-card__footer">
           <span class="world-card__players ${playersCount > 0 ? "world-card__players--active" : ""}">

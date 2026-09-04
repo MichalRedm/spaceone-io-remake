@@ -5,21 +5,26 @@
 @use "../abstracts" as *;
 
 .world-selector {
-  display: flex;
+  display: inline-flex !important;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  margin: 12px auto 14px auto;
-  padding: 8px 16px;
-  max-width: 320px;
+  gap: 7px;
+  margin: 4px auto 10px auto;
+  padding: 4px 14px;
+  width: fit-content;
+  max-width: 220px;
+  height: 28px;
+  box-sizing: border-box;
   cursor: pointer;
-  border-radius: 8px;
+  border-radius: 20px;
   user-select: none;
   font-family: $font-family-main;
+  font-size: 0.88em;
   color: $color-text-ice;
-  background: rgba(10, 25, 55, 0.75);
-  border: 1.5px solid rgba(61, 120, 255, 0.4);
-  box-shadow: 0 0 10px rgba(0, 82, 255, 0.2);
+  background: rgba(10, 25, 55, 0.6);
+  border: 1px solid rgba(61, 120, 255, 0.35);
+  box-shadow: 0 0 8px rgba(0, 82, 255, 0.2);
   transition:
     border-color $transition-fast,
     box-shadow $transition-fast,
@@ -27,8 +32,8 @@
 
   &:hover {
     border-color: $color-blue-accent;
-    background: rgba(12, 35, 75, 0.85);
-    box-shadow: 0 0 15px rgba(0, 82, 255, 0.45);
+    background: rgba(15, 35, 75, 0.85);
+    box-shadow: 0 0 12px rgba(0, 82, 255, 0.4);
     color: $color-text-main;
 
     .world-selector__arrow {
@@ -41,14 +46,14 @@
   }
 
   &__icon {
-    font-size: 0.95em;
+    font-size: 0.85em;
     color: $color-blue-accent;
-    display: flex;
+    display: inline-flex;
     align-items: center;
   }
 
   &__name {
-    font-size: 1.05em;
+    font-size: 0.95em;
     font-weight: 700;
     letter-spacing: 0.5px;
     white-space: nowrap;
@@ -57,12 +62,12 @@
   }
 
   &__badge {
-    font-size: 0.8em;
+    font-size: 0.75em;
     font-weight: 600;
-    padding: 2px 8px;
-    border-radius: 12px;
-    background: rgba(61, 120, 255, 0.25);
-    border: 1px solid rgba(61, 120, 255, 0.4);
+    padding: 1px 6px;
+    border-radius: 10px;
+    background: rgba(61, 120, 255, 0.2);
+    border: 1px solid rgba(61, 120, 255, 0.3);
     color: $color-text-ice;
     white-space: nowrap;
 
@@ -74,10 +79,11 @@
   }
 
   &__arrow {
-    font-size: 0.8em;
+    font-size: 0.7em;
     color: $color-text-subtle;
-    display: flex;
+    display: inline-flex;
     align-items: center;
+    margin-left: 1px;
     transition: color $transition-fast;
   }
 }

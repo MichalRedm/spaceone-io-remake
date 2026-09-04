@@ -56,8 +56,11 @@ function getTargetDisplay(el: HTMLElement, defaultDisplay = "block"): string {
   if (tagName === "tr") {
     return "table-row";
   }
-  if (tagName === "td" || tagName === "th") {
+  if (el.tagName.toLowerCase() === "td" || el.tagName.toLowerCase() === "th") {
     return "table-cell";
+  }
+  if (el.classList.contains("world-selector")) {
+    return "inline-flex";
   }
   return defaultDisplay;
 }
