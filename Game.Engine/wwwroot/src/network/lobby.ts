@@ -4,7 +4,7 @@
  */
 
 import { escapeHtml } from "../ui/leaderboard";
-import { pressPopup } from "../ui/popupUtils";
+import { pressPopup, closePopup } from "../ui/popupUtils";
 import { ArenaLink } from "./arenaLink";
 
 const arenaLinkHelper = new ArenaLink();
@@ -52,33 +52,86 @@ export interface LobbyCallbacksType {
   joinWorld: ((worldKey: string) => void) | null;
 }
 
-const worlds = document.getElementById("worlds");
-const worldList = document.getElementById("world-list");
-
 let allWorlds: Record<string, WorldInfo> | null = null;
 let lastKeys: string | null = null;
+let currentJoinedWorldKey: string | null = null;
 
-function selectRow(selectedWorld: string | null): void {
-  if (!allWorlds) return;
-  for (const world in allWorlds) {
-    const row = document.getElementById(`${world}-row`);
-    if (row) {
-      if (world === selectedWorld) row.classList.add("selected");
-      else row.classList.remove("selected");
-    }
+function getModeTheme(world: WorldInfo): {
+  icon: string;
+  defaultDesc: string;
+} {
+  const mode = (world.gameMode || world.worldKey || "ffa").toLowerCase();
+  if (mode.includes("robo")) {
+    return {
+      icon: "fa-robot",
+      defaultDesc:
+        "Battle against adaptive AI combat drones. Ideal for practicing aim, fleet steering, and dash mechanics.",
+    };
+  }
+  if (mode.includes("ctf")) {
+    return {
+      icon: "fa-flag",
+      defaultDesc:
+        "Team-based tactical warfare. Infiltrate the enemy base, steal their flag, and defend your own. First to 5 wins!",
+    };
+  }
+  if (mode.includes("team")) {
+    return {
+      icon: "fa-users",
+      defaultDesc:
+        "Two teams clash in deep space. Coordinate with teammates (Blue vs. Red) to wipe out the opposition.",
+    };
+  }
+  if (mode.includes("duel")) {
+    return {
+      icon: "fa-bolt",
+      defaultDesc:
+        "Intense 1v1 fleet duel. Test your combat reflexes and dogfighting skills in an enclosed arena.",
+    };
+  }
+  return {
+    icon: "fa-crosshairs",
+    defaultDesc:
+      "Classic free-for-all space combat. Destroy enemy fleets, collect stars, and dominate the leaderboard.",
+  };
+}
+
+function cleanText(raw?: string): string {
+  if (!raw) return "";
+  return raw.replace(/<[^>]*>?/gm, "").trim();
+}
+
+function updateSelectorPill(worldInfo?: WorldInfo): void {
+  const nameEl = document.getElementById("world-selector-name");
+  const playersEl = document.getElementById("world-selector-players");
+  if (!nameEl || !playersEl) return;
+
+  if (worldInfo) {
+    nameEl.textContent =
+      worldInfo.name || worldInfo.worldKey?.toUpperCase() || "FFA";
+    const count = worldInfo.players ?? 0;
+    playersEl.textContent = `${count} Online`;
+    playersEl.classList.toggle("world-selector__badge--has-players", count > 0);
   }
 }
 
-const rawWorldImgs = import.meta.glob("../../img/worlds/*.png", {
-  eager: true,
-  import: "default",
-}) as Record<string, string>;
-const imgs: Record<string, string> = {};
-for (const [path, url] of Object.entries(rawWorldImgs)) {
-  const filenameWithExt = path.split("/").pop() || "";
-  const filenameWithoutExt = filenameWithExt.replace(/\.[^/.]+$/, "");
-  imgs[filenameWithExt] = url;
-  imgs[filenameWithoutExt] = url;
+function highlightSelectedCard(selectedWorldKey: string | null): void {
+  if (!allWorlds) return;
+  for (const wKey in allWorlds) {
+    const safeKey = escapeHtml(wKey);
+    const card = document.getElementById(`world-card-${safeKey}`);
+    const statusEl = document.getElementById(`world-status-${safeKey}`);
+    if (card) {
+      const isSelected = wKey === selectedWorldKey;
+      card.classList.toggle("world-card--selected", isSelected);
+      if (statusEl) {
+        statusEl.innerHTML = isSelected
+          ? '<i class="fas fa-check"></i> ACTIVE'
+          : "JOIN &rarr;";
+        statusEl.classList.toggle("world-card__status--current", isSelected);
+      }
+    }
+  }
 }
 
 function buildList(response: WorldInfo[]): void {
@@ -92,55 +145,89 @@ function buildList(response: WorldInfo[]): void {
 
   allWorlds = {};
 
-  let options = "";
+  let html = "";
   for (const world of response) {
     allWorlds[world.world] = world;
 
     const safeWorld = escapeHtml(world.world);
     const safeName = escapeHtml(world.name);
-    const safeDescription = escapeHtml(world.description);
-    const safeInstructions = escapeHtml(world.instructions || "");
-    const safePlayers = escapeHtml(String(world.players ?? 0));
+    const { icon, defaultDesc } = getModeTheme(world);
+    const cleanedDesc = cleanText(world.description);
+    const displayDesc =
+      cleanedDesc &&
+      cleanedDesc.length > 15 &&
+      !cleanedDesc.toLowerCase().startsWith("blue vs. red") &&
+      cleanedDesc !== "FFA Arena"
+        ? cleanedDesc
+        : defaultDesc;
 
-    options += `<tbody id="${safeWorld}-row" world="${safeWorld}" class="worldrow">`;
-    options +=
-      `<tr>` +
-      `<td><button class="button1 button3" id="join">Join</button> (<span id="${safeWorld}-playercount">${safePlayers}</span>)</td>` +
-      `<td id="second-world-td"><b>${safeName}</b>: ${safeDescription}</td>` +
-      `</tr>`;
+    const playersCount = world.players ?? 0;
+    const isSelected = world.world === currentJoinedWorldKey;
 
-    const img =
-      world.image && imgs[world.image]
-        ? `<img src="${imgs[world.image]}" />`
-        : "";
-    if (world.instructions || img)
-      options += `<tr class="details"><td colspan="3">${img}${safeInstructions}</td></tr>`;
-    options += `</tbody>`;
+    html += `
+      <div id="world-card-${safeWorld}" class="world-card ${isSelected ? "world-card--selected" : ""} ${playersCount === 0 ? "world-card--empty" : ""}" data-world="${safeWorld}">
+        <div class="world-card__header">
+          <div class="world-card__title">
+            <i class="fas ${icon}"></i> ${safeName}
+          </div>
+        </div>
+        <div class="world-card__body">
+          <p class="world-card__desc">${escapeHtml(displayDesc)}</p>
+        </div>
+        <div class="world-card__footer">
+          <span class="world-card__players ${playersCount > 0 ? "world-card__players--active" : ""}">
+            <i class="fas fa-users"></i> <span id="world-count-${safeWorld}">${playersCount}</span> online
+          </span>
+          <span id="world-status-${safeWorld}" class="world-card__status ${isSelected ? "world-card__status--current" : ""}">
+            ${isSelected ? '<i class="fas fa-check"></i> ACTIVE' : "JOIN &rarr;"}
+          </span>
+        </div>
+      </div>
+    `;
   }
 
-  if (worldList) worldList.innerHTML = `${options}`;
+  const container = document.getElementById("worlds-grid");
+  if (container) {
+    container.innerHTML = html;
 
-  document.querySelectorAll(".worldrow").forEach((worldRow) =>
-    worldRow.addEventListener("click", (e) => {
-      const worldKey = worldRow.getAttribute("world");
-      if (!worldKey) return;
+    container.querySelectorAll(".world-card").forEach((card) => {
+      card.addEventListener("click", () => {
+        const worldKey = card.getAttribute("data-world");
+        if (worldKey) {
+          joinWorld(worldKey);
+        }
+      });
+    });
+  }
 
-      if ((e.target as HTMLElement | null)?.tagName === "BUTTON")
-        joinWorld(worldKey);
-      else selectRow(worldKey);
-    }),
-  );
+  if (currentJoinedWorldKey && allWorlds[currentJoinedWorldKey]) {
+    updateSelectorPill(allWorlds[currentJoinedWorldKey]);
+  }
 }
 
 function updateList(response: WorldInfo[]): void {
   for (const world of response) {
-    const countEl = document.getElementById(`${world.world}-playercount`);
+    if (allWorlds) allWorlds[world.world] = world;
+    const safeWorld = escapeHtml(world.world);
+    const countEl = document.getElementById(`world-count-${safeWorld}`);
     if (countEl) countEl.textContent = String(world.players ?? 0);
-    const row = document.getElementById(`${world.world}-row`);
-    if (row) {
-      if ((world.players ?? 0) > 0) row.classList.remove("empty");
-      else row.classList.add("empty");
+
+    const card = document.getElementById(`world-card-${safeWorld}`);
+    if (card) {
+      const hasPlayers = (world.players ?? 0) > 0;
+      card.classList.toggle("world-card--empty", !hasPlayers);
+      const playersContainer = card.querySelector(".world-card__players");
+      if (playersContainer) {
+        playersContainer.classList.toggle(
+          "world-card__players--active",
+          hasPlayers,
+        );
+      }
     }
+  }
+
+  if (currentJoinedWorldKey && allWorlds && allWorlds[currentJoinedWorldKey]) {
+    updateSelectorPill(allWorlds[currentJoinedWorldKey]);
   }
 }
 
@@ -361,7 +448,7 @@ function stopPolling(): void {
 }
 
 function hide(): void {
-  worlds?.classList.add("closed");
+  closePopup("worlds");
   controls?.classList.remove("blur");
   social?.classList.remove("blur");
   document.body.classList.remove("lobby");
@@ -376,11 +463,13 @@ function show(): void {
   social?.classList.add("blur");
   document.body.classList.add("lobby");
   showing = true;
+  pressPopup("worlds");
   refreshList(false);
   startPolling();
 }
 
 function joinWorld(worldKey: string): void {
+  currentJoinedWorldKey = worldKey;
   const worldInfo = allWorlds ? allWorlds[worldKey] : undefined;
   const canonicalKey =
     worldInfo?.worldKey ||
@@ -392,6 +481,9 @@ function joinWorld(worldKey: string): void {
       // ignore localStorage write errors
     }
   }
+
+  updateSelectorPill(worldInfo);
+  highlightSelectedCard(worldKey);
 
   if (LobbyCallbacks.onWorldJoin)
     LobbyCallbacks.onWorldJoin(worldKey, worldInfo);
@@ -406,15 +498,32 @@ export function toggleLobby(): void {
   else hide();
 }
 
-document.getElementById("wcancel")?.addEventListener("click", () => {
-  if (showing) hide();
+window.addEventListener("spaceone:popup-opened", (e: Event) => {
+  const customEvent = e as CustomEvent<{ popup?: string }>;
+  if (customEvent.detail?.popup === "worlds") {
+    if (!showing) {
+      controls?.classList.add("blur");
+      social?.classList.add("blur");
+      document.body.classList.add("lobby");
+      showing = true;
+      refreshList(false);
+      startPolling();
+    }
+  }
 });
 
-document.getElementById("arenas")?.addEventListener("click", (e) => {
-  show();
-  worlds?.classList.remove("closed");
-  e.preventDefault();
-  return false;
+window.addEventListener("spaceone:popup-closed", (e: Event) => {
+  const customEvent = e as CustomEvent<{ popup?: string }>;
+  if (customEvent.detail?.popup === "worlds") {
+    if (showing) {
+      controls?.classList.remove("blur");
+      social?.classList.remove("blur");
+      document.body.classList.remove("lobby");
+      showing = false;
+      stopPolling();
+      if (LobbyCallbacks.onLobbyClose) LobbyCallbacks.onLobbyClose();
+    }
+  }
 });
 
 refreshList(false);

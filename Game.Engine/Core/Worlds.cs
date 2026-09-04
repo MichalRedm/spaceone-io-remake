@@ -86,8 +86,8 @@ namespace Game.Engine.Core
         {
             var hook = Hook.Default;
             hook.Name = "FFA";
-            hook.Description = "FFA Arena";
-            hook.Instructions = "Mouse to aim, click to shoot. Press 's' to boost.";
+            hook.Description = "Classic free-for-all space combat. Destroy enemy fleets, collect stars, and dominate the leaderboard.";
+            hook.Instructions = null;
             hook.Weight = 10;
 
             return new World(hook, GameConfiguration);
@@ -115,7 +115,8 @@ namespace Game.Engine.Core
         {
             var hook = Hook.Default;
             hook.Name = "Robo Trainer";
-            hook.Description = "Battle against bots of different difficulty levels";
+            hook.Description = "Battle against adaptive AI combat drones. Ideal for practicing aim, fleet steering, and dash mechanics.";
+            hook.Instructions = null;
             hook.WorldSize = Hook.Default.WorldSize / 2;
             hook.Fishes = Hook.Default.Fishes / 4;
             hook.Obstacles = 0;
@@ -196,7 +197,8 @@ namespace Game.Engine.Core
             hook.Weight = 20;
 
             hook.Name = "Dueling Room";
-            hook.Description = "1 vs. 1";
+            hook.Description = "Intense 1v1 fleet duel. Test your combat reflexes and dogfighting skills in an enclosed arena.";
+            hook.Instructions = null;
             hook.AllowedColors = Hook.AllColors;
 
             hook.WorldResizeEnabled = false;
@@ -217,7 +219,8 @@ namespace Game.Engine.Core
             hook.Weight = 20;
 
             hook.Name = "Team";
-            hook.Description = "Blue vs. Red";
+            hook.Description = "Two teams clash in deep space. Coordinate with teammates (Blue vs. Red) to wipe out the opposition.";
+            hook.Instructions = null;
             hook.AllowedColors = Hook.TeamColors;
 
             hook.WorldResizeEnabled = false;
@@ -244,17 +247,8 @@ namespace Game.Engine.Core
             hook.SpawnLocationMode = "CTF";
 
             hook.Name = "Capture the Flag";
-            hook.Description = "Blue vs. Red - Capture the Flag. First to 5 wins!";
-            hook.Instructions = @"<p>features two teams, blue and red, 
-                    who each try to steal the other team's
-                    flag and bring it back to their own 
-                    base to 'capture'.</p>
-                    <p>each team will have their own base and flag to defend. In order to score, your team's flag must still be 
-                    at your base, which means you'll have to have some good defense to keep
-                    the other team from running off with your flag.</p>
-                    <p>If someone makes off with your flag, frag them and they'll drop your flag -- 
-                    touch the flag and it will be returned
-                    to your base.</p>";
+            hook.Description = "Team-based tactical warfare. Infiltrate the enemy base, steal their flag, and defend your own. First to 5 wins!";
+            hook.Instructions = null;
 
             hook.AllowedColors = Hook.TeamColors;
 

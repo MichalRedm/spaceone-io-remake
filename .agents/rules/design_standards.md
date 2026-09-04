@@ -50,7 +50,8 @@ src/styles/
 │   ├── _ship-selector.scss
 │   ├── _social-links.scss
 │   ├── _support-panel.scss
-│   └── _touch-controls.scss
+│   ├── _touch-controls.scss
+│   └── _world-selector.scss
 ├── layout/         # Major structural view containers & viewports
 │   ├── _container.scss
 │   ├── _footer.scss
