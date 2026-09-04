@@ -22,6 +22,11 @@ import { Leaderboard } from "../ui/leaderboard";
  * on top of player and bot ships (z-order 200).
  */
 export class Flag extends RenderedObject {
+  /** Last calculated world position of the blue CTF flag. */
+  public static blueFlagPosition: { x: number; y: number } | null = null;
+  /** Last calculated world position of the red CTF flag. */
+  public static redFlagPosition: { x: number; y: number } | null = null;
+
   /** Entity cache reference for resolving carrier fleet ships. */
   private cache: Cache;
   /** Active carrier fleet reference when being carried. */
@@ -140,6 +145,11 @@ export class Flag extends RenderedObject {
     if (activeCarrier) {
       const centroid = this.getFleetCentroid(activeCarrier, time, interpolator);
       this.renderedPosition = { x: centroid.x, y: centroid.y };
+      if (spriteName.includes("blue")) {
+        Flag.blueFlagPosition = this.renderedPosition;
+      } else if (spriteName.includes("red")) {
+        Flag.redFlagPosition = this.renderedPosition;
+      }
       return { x: centroid.x, y: centroid.y, Angle: 0 };
     }
 
@@ -161,6 +171,12 @@ export class Flag extends RenderedObject {
         this.renderedPosition.x += dx * alpha;
         this.renderedPosition.y += dy * alpha;
       }
+    }
+
+    if (spriteName.includes("blue")) {
+      Flag.blueFlagPosition = this.renderedPosition;
+    } else if (spriteName.includes("red")) {
+      Flag.redFlagPosition = this.renderedPosition;
     }
 
     return {

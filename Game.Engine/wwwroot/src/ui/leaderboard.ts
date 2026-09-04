@@ -8,6 +8,8 @@ import { Vector2 } from "../math/vector2";
 import { updateHighscore } from "./log";
 import type { Cache } from "../models/cache";
 import type { Interpolator } from "../rendering/interpolator";
+import { getTextureImage } from "../models/renderedObject";
+import { Flag } from "../models/flag";
 
 const record = document.getElementById("record");
 const recordScore = document.getElementById("record-score");
@@ -80,6 +82,8 @@ export interface LeaderboardEntry {
   Position?: { x: number; y: number };
   /** Bitmask mode flags. */
   Mode?: number;
+  /** Optional mode-specific metadata (e.g. CTF flagStatus). */
+  ModeData?: { flagStatus?: string; [key: string]: unknown };
 }
 
 /**
@@ -173,6 +177,8 @@ export class Leaderboard {
   private targetLeaderPosition: Vector2 | null = null;
   private currentLeaderPosition: Vector2 | null = null;
   private hasLeader = false;
+  private cyanFlagPosition: { x: number; y: number } | null = null;
+  private redFlagPosition: { x: number; y: number } | null = null;
 
   public update(
     data: LeaderboardData,
@@ -252,6 +258,18 @@ export class Leaderboard {
         }
       }
       leaderboard.innerHTML = `<tbody>${out}</tbody>`;
+      if (leaderboardCenter) {
+        leaderboardCenter.innerHTML = "";
+        leaderboardCenter.hidden = true;
+        leaderboardCenter.classList.add("is-hidden");
+        leaderboardCenter.style.width = "";
+        leaderboardCenter.style.height = "";
+      }
+      if (leaderboardLeft) {
+        leaderboardLeft.innerHTML = "";
+        leaderboardLeft.hidden = true;
+        leaderboardLeft.classList.add("is-hidden");
+      }
     } else if (data.Type === "Team") {
       let outL = "";
       let outR = "";
@@ -296,20 +314,81 @@ export class Leaderboard {
           (cyanFlag as LeaderboardEntry).FleetID ?? 0;
         Leaderboard.ctfRedFlagCarrierID =
           (redFlag as LeaderboardEntry).FleetID ?? 0;
-        blurText(
-          document.getElementById("ctf_score_left"),
-          document.getElementById("ctf_score_left_blur"),
-          `${(cyanFlag as LeaderboardEntry).Score ?? 0}`,
+
+        if (cyanFlag.Position) {
+          this.cyanFlagPosition = cyanFlag.Position;
+        }
+        if (redFlag.Position) {
+          this.redFlagPosition = redFlag.Position;
+        }
+
+        const cyanScore = Math.min(
+          (cyanFlag as LeaderboardEntry).Score ?? 0,
+          5,
         );
-        blurText(
-          document.getElementById("ctf_score_right"),
-          document.getElementById("ctf_score_right_blur"),
-          `${(redFlag as LeaderboardEntry).Score ?? 0}`,
-        );
+        const redScore = Math.min((redFlag as LeaderboardEntry).Score ?? 0, 5);
+
+        // Update home / taken flag status indicators
+        const flagStatusCyan =
+          cyanFlag.ModeData?.flagStatus ??
+          (cyanFlag.FleetID ? "Taken" : "Home");
+        const flagStatusRed =
+          redFlag.ModeData?.flagStatus ?? (redFlag.FleetID ? "Taken" : "Home");
+
+        const ctfCyanEl = document.getElementById("ctf-cyan");
+        const ctfRedEl = document.getElementById("ctf-red");
+        if (ctfCyanEl) {
+          const homeEl = ctfCyanEl.querySelector(".home");
+          const takenEl = ctfCyanEl.querySelector(".taken");
+          if (homeEl && takenEl) {
+            homeEl.classList.toggle("hide", flagStatusCyan === "Taken");
+            takenEl.classList.toggle("hide", flagStatusCyan !== "Taken");
+          }
+        }
+        if (ctfRedEl) {
+          const homeEl = ctfRedEl.querySelector(".home");
+          const takenEl = ctfRedEl.querySelector(".taken");
+          if (homeEl && takenEl) {
+            homeEl.classList.toggle("hide", flagStatusRed === "Taken");
+            takenEl.classList.toggle("hide", flagStatusRed !== "Taken");
+          }
+        }
+
+        // Render CTF score indicator banner in leaderboardCenter
+        if (leaderboardCenter) {
+          const image = (textureName: string) => {
+            const imgElem = getTextureImage(textureName);
+            const src = imgElem?.src || "";
+            return `<img class="overlap" src="${src}" alt="" />`;
+          };
+
+          const finalSuffix =
+            cyanScore >= 5 ? "_blue" : redScore >= 5 ? "_red" : "";
+
+          leaderboardCenter.hidden = false;
+          leaderboardCenter.classList.remove("is-hidden");
+          leaderboardCenter.style.width = "372px";
+          leaderboardCenter.style.height = "83px";
+          leaderboardCenter.innerHTML =
+            `<tbody><tr>` +
+            `<td class="flag"><img id="ctf-arrow-blue" class="flag-arrow flag-arrow--blue" src="${getTextureImage("ctf_arrow_blue").src}" alt="" /></td>` +
+            `<td class="ctf-score-container">` +
+            image("ctf_score_stripes") +
+            image(`ctf_score_left_${Math.min(cyanScore, 4)}`) +
+            image(`ctf_score_right_${Math.min(redScore, 4)}`) +
+            image(`ctf_score_final${finalSuffix}`) +
+            `</td>` +
+            `<td class="flag"><img id="ctf-arrow-red" class="flag-arrow flag-arrow--red" src="${getTextureImage("ctf_arrow_red").src}" alt="" /></td>` +
+            `</tr></tbody>`;
+        }
       }
 
       if (leaderboard) leaderboard.innerHTML = `<tbody>${outR}</tbody>`;
-      if (leaderboardLeft) leaderboardLeft.innerHTML = `<tbody>${outL}</tbody>`;
+      if (leaderboardLeft) {
+        leaderboardLeft.hidden = false;
+        leaderboardLeft.classList.remove("is-hidden");
+        leaderboardLeft.innerHTML = `<tbody>${outL}</tbody>`;
+      }
     }
   }
 
@@ -327,6 +406,30 @@ export class Leaderboard {
     interpolator?: Interpolator,
     gameTime?: number,
   ): void {
+    // Update CTF flag compass indicator arrows if present
+    const blueArrow = document.getElementById("ctf-arrow-blue");
+    const redArrow = document.getElementById("ctf-arrow-red");
+    if (blueArrow || redArrow) {
+      const bluePos = Flag.blueFlagPosition ?? this.cyanFlagPosition;
+      const redPos = Flag.redFlagPosition ?? this.redFlagPosition;
+
+      if (blueArrow && bluePos) {
+        const blueAngle = Math.atan2(
+          bluePos.y - cameraPosition.y,
+          bluePos.x - cameraPosition.x,
+        );
+        blueArrow.style.transform = `rotate(${blueAngle}rad)`;
+      }
+
+      if (redArrow && redPos) {
+        const redAngle = Math.atan2(
+          redPos.y - cameraPosition.y,
+          redPos.x - cameraPosition.x,
+        );
+        redArrow.style.transform = `rotate(${redAngle}rad)`;
+      }
+    }
+
     if (!leaderArrow) return;
 
     if (!this.hasLeader || !this.targetLeaderPosition) {

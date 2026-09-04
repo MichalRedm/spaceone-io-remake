@@ -7,7 +7,7 @@
 .ctf-hud,
 #ctf-arena {
   position: fixed;
-  top: 10px;
+  top: 90px;
   left: 50%;
   transform: translateX(-50%);
   font-size: 16pt;
@@ -15,6 +15,7 @@
   display: flex;
   gap: 30px;
   z-index: $z-index-base;
+  pointer-events: none;
 
   &.hide {
     display: none;
@@ -45,5 +46,76 @@
     .taken {
       color: $color-yellow-primary;
     }
+
+    .hide {
+      display: none;
+    }
   }
+}
+
+// CTF / Team score indicator & flag direction HUD
+#leaderboard-center {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: $z-index-base;
+  pointer-events: none;
+  border-collapse: collapse;
+
+  td.flag {
+    width: 36px;
+    height: 83px;
+    position: relative;
+    vertical-align: middle;
+    text-align: center;
+  }
+
+  .flag-arrow {
+    width: 27px;
+    height: 27px;
+    display: block;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    margin: auto;
+    pointer-events: none;
+    user-select: none;
+
+    &--blue {
+      right: 0;
+    }
+
+    &--red {
+      left: 0;
+    }
+  }
+
+  .ctf-score-container {
+    width: 300px;
+    height: 83px;
+    position: relative;
+    display: block;
+  }
+
+  .overlap {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 300px;
+    height: 83px;
+    margin: 0;
+    padding: 0;
+    pointer-events: none;
+    user-select: none;
+  }
+}
+
+#leaderboard-left {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  width: 260px;
+  z-index: $z-index-base;
+  pointer-events: none;
 }
