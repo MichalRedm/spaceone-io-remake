@@ -169,6 +169,34 @@ namespace Game.Engine.Controllers
             if (Request.HttpContext.Connection.LocalIpAddress.Equals(Request.HttpContext.Connection.RemoteIpAddress)
                 || !GameConfiguration.RegistryEnabled)
             {
+                // If a specific worldName or arenaID was requested (e.g. joining via private link)
+                if (!string.IsNullOrWhiteSpace(worldName))
+                {
+                    var target = Worlds.FindExact(worldName) ?? Worlds.FindByArenaID(worldName);
+                    if (target != null)
+                    {
+                        var name = target.Hook.Name;
+                        var description = target.Hook.Description;
+
+                        worlds.Add(new
+                        {
+                            world = $"{Request.Host}/{target.WorldKey}",
+                            server = Request.Host.ToString(),
+                            players = target.AdvertisedPlayerCount,
+                            name = GameConfiguration.RegistryEnabled ? "Local: " + name : name,
+                            description,
+                            allowedColors = target.Hook.AllowedColors,
+                            instructions = target.Hook.Instructions,
+                            arenaID = target.ArenaID,
+                            arenaKey = target.ArenaID,
+                            worldKey = target.WorldKey,
+                            gameMode = target.GameMode,
+                            isPrivate = target.IsPrivate
+                        });
+                        return worlds;
+                    }
+                }
+
                 worlds.AddRange(Worlds.AllWorlds
                         .Where(w => allWorlds || (!w.Value.Hook.Hidden && !w.Value.IsPrivate))
                         .OrderBy(w => w.Value.Hook.Weight)
