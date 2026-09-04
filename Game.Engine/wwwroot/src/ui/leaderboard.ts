@@ -27,6 +27,8 @@ const leaderArrowDefaultOpacity = 0.7;
  * Clears all leaderboard table DOM contents and hides the leader arrow.
  */
 export function clear(): void {
+  Leaderboard.ctfBlueFlagCarrierID = 0;
+  Leaderboard.ctfRedFlagCarrierID = 0;
   if (leaderboard) leaderboard.innerHTML = "";
   if (leaderboardLeft) leaderboardLeft.innerHTML = "";
   if (leaderboardCenter) {
@@ -149,6 +151,24 @@ function getOut(
 }
 
 export class Leaderboard {
+  /** Active carrier fleet ID for the blue flag (0 if home or dropped). */
+  public static ctfBlueFlagCarrierID = 0;
+  /** Active carrier fleet ID for the red flag (0 if home or dropped). */
+  public static ctfRedFlagCarrierID = 0;
+
+  /**
+   * Retrieves the authoritative carrier fleet ID for a given flag sprite.
+   *
+   * @param sprite - Flag sprite name (e.g. 'ctf_flag_blue', 'ctf_flag_red').
+   * @returns Fleet ID of carrier, or 0 if not carried.
+   */
+  public static getFlagCarrierFleetID(sprite?: string | false | null): number {
+    const s = String(sprite || "");
+    if (s.includes("blue")) return Leaderboard.ctfBlueFlagCarrierID;
+    if (s.includes("red")) return Leaderboard.ctfRedFlagCarrierID;
+    return 0;
+  }
+
   private leaderFleetID: number | null = null;
   private targetLeaderPosition: Vector2 | null = null;
   private currentLeaderPosition: Vector2 | null = null;
@@ -272,6 +292,10 @@ export class Leaderboard {
       });
 
       if (cyanFlag && redFlag) {
+        Leaderboard.ctfBlueFlagCarrierID =
+          (cyanFlag as LeaderboardEntry).FleetID ?? 0;
+        Leaderboard.ctfRedFlagCarrierID =
+          (redFlag as LeaderboardEntry).FleetID ?? 0;
         blurText(
           document.getElementById("ctf_score_left"),
           document.getElementById("ctf_score_left_blur"),

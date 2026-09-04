@@ -13,6 +13,7 @@ import { Ship } from "./ship";
 import { RenderedObject } from "./renderedObject";
 import { Fleet } from "./fleet";
 import { Tile } from "./tile";
+import { Flag } from "./flag";
 import { CustomContainer } from "../rendering/customContainer";
 import { FX } from "./fx";
 import type { Vector2 } from "../math/vector2";
@@ -293,6 +294,14 @@ export class Cache {
         update.group = group;
         update.zIndex = group ? group.ZIndex || 0 : 0;
 
+        const spriteStr = String(update.Sprite || "");
+        const isFlag =
+          spriteStr.startsWith("ctf_flag") || spriteStr.includes("flag");
+        if (isFlag && !(update.renderer instanceof Flag)) {
+          if (update.renderer) update.renderer.destroy();
+          update.renderer = new Flag(this.container, this);
+        }
+
         if (update.renderer) update.renderer.update(update);
         continue;
       }
@@ -313,7 +322,15 @@ export class Cache {
           }
         }
 
-        update.renderer = existing.renderer;
+        const spriteStr = String(update.Sprite || existing.Sprite || "");
+        const isFlag =
+          spriteStr.startsWith("ctf_flag") || spriteStr.includes("flag");
+        if (isFlag && !(existing.renderer instanceof Flag)) {
+          if (existing.renderer) existing.renderer.destroy();
+          update.renderer = new Flag(this.container, this);
+        } else {
+          update.renderer = existing.renderer;
+        }
         update.previous = false;
 
         existing.previous = false;
@@ -396,8 +413,16 @@ export class Cache {
             update.Size || 50,
           );
         } else {
-          if (!update.renderer)
-            update.renderer = new RenderedObject(this.container);
+          if (!update.renderer) {
+            const spriteStr = String(update.Sprite || "");
+            const isFlag =
+              spriteStr.startsWith("ctf_flag") || spriteStr.includes("flag");
+            if (isFlag) {
+              update.renderer = new Flag(this.container, this);
+            } else {
+              update.renderer = new RenderedObject(this.container);
+            }
+          }
 
           update.group = group;
           update.zIndex = 0;
