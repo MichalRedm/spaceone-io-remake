@@ -18,6 +18,23 @@ namespace Game.Engine.Core
         public string WorldKey { get; set; }
         public string GameID { get; set; }
         public string ArenaID { get; set; }
+        public bool IsPrivate { get; set; } = false;
+
+        public string GameMode
+        {
+            get
+            {
+                if (Hook == null) return "ffa";
+                if (Hook.CTFMode) return "ctf";
+                if (Hook.TeamMode) return "team";
+                if (Hook.RoboTrainerMode) return "robo";
+                if (Hook.SumoMode) return "sumo";
+                if (Hook.SharksAndMinnowsMode) return "sharks";
+                if (Hook.BossMode) return "boss";
+                if (WorldKey == "duel") return "duel";
+                return "ffa";
+            }
+        }
 
         public int AdvertisedPlayerCount { get; set; }
 
