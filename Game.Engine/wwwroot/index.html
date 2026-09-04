@@ -1,538 +1,805 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-
-<head>
+  <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=no"
+    />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="theme-color" content="#072562" />
     <meta name="author" content="Community of Spaceone players" />
     <meta name="keywords" content="spaceone,space1,io,space,slither,agar" />
-    <meta name="description"
-        content="Spaceone.io is a fast-paced real-time strategy shooter game where you take command of spaceship squadrons! Play with your friends, team up, and destroy the enemies! Conquer the arena with your lasers with your mouse and keyboard in this hot online multiplayer game. Join now! Available as a online browser HTML5 io game." />
+    <meta
+      name="description"
+      content="Spaceone.io is a fast-paced real-time strategy shooter game where you take command of spaceship squadrons! Play with your friends, team up, and destroy the enemies! Conquer the arena with your lasers with your mouse and keyboard in this hot online multiplayer game. Join now! Available as a online browser HTML5 io game."
+    />
     <meta property="og:title" content="SPACEONE.io" />
-    <meta property="og:description"
-        content="Spaceone.io is a fast-paced real-time strategy shooter game where you take command of spaceship squadrons! Play with your friends, team up, and destroy the enemies! Conquer the arena with your lasers with your mouse and keyboard in this hot online multiplayer game. Join now! Available as a online browser HTML5 io game." />
+    <meta
+      property="og:description"
+      content="Spaceone.io is a fast-paced real-time strategy shooter game where you take command of spaceship squadrons! Play with your friends, team up, and destroy the enemies! Conquer the arena with your lasers with your mouse and keyboard in this hot online multiplayer game. Join now! Available as a online browser HTML5 io game."
+    />
     <meta property="og:image" content="/img/ui/miniature.png" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:locale" content="en-US" />
     <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:description"
-        content="Spaceone.io is a fast-paced real-time strategy shooter game where you take command of spaceship squadrons! Play with your friends, team up, and destroy the enemies! Conquer the arena with your lasers with your mouse and keyboard in this hot online multiplayer game. Join now! Available as a online browser HTML5 io game." />
+    <meta
+      property="twitter:description"
+      content="Spaceone.io is a fast-paced real-time strategy shooter game where you take command of spaceship squadrons! Play with your friends, team up, and destroy the enemies! Conquer the arena with your lasers with your mouse and keyboard in this hot online multiplayer game. Join now! Available as a online browser HTML5 io game."
+    />
     <title>SPACEONE.io</title>
     <link rel="stylesheet" href="src/styles/main.scss" />
     <link rel="shortcut icon" type="image/png" href="img/ui/ship_icon.png" />
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.1/css/all.css"
-        integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous" />
-    <link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
-    <link href="https://fonts.googleapis.com/css?family=Exo+2&display=swap" rel="stylesheet">
-</head>
+    <link
+      rel="stylesheet"
+      href="https://use.fontawesome.com/releases/v5.7.1/css/all.css"
+      integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr"
+      crossorigin="anonymous"
+    />
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css?family=Exo+2&display=swap"
+      rel="stylesheet"
+    />
+  </head>
 
-<body class="loading dead static_background">
+  <body class="loading dead static_background">
     <div class="container aspectratio">
-
-        <div id="settings" class="graphics-bar box-panel box-panel--blue view-state--menu visibility">
-            <div id="settings-text" class="graphics-bar__label">
-                <span>Graphics:</span><span id="graphics-high" class="graphics-bar__option">HIGH</span>/<span
-                    id="graphics-medium" class="graphics-bar__option">MEDIUM</span>/<span id="graphics-low" class="graphics-bar__option">LOW</span>
-            </div>
+      <div
+        id="settings"
+        class="graphics-bar box-panel box-panel--blue view-state--menu visibility"
+      >
+        <div id="settings-text" class="graphics-bar__label">
+          <span>Graphics:</span
+          ><span id="graphics-high" class="graphics-bar__option">HIGH</span
+          >/<span id="graphics-medium" class="graphics-bar__option">MEDIUM</span
+          >/<span id="graphics-low" class="graphics-bar__option">LOW</span>
         </div>
+      </div>
 
-        <div id="spectate" class="btn btn--spectate view-state--menu visibility">
-            SPECTATE<img id="spectate-eye" class="btn--spectate__icon" src="img/ui/Spectate_Icon.png" alt="Spectate" />
+      <div id="spectate" class="btn btn--spectate view-state--menu visibility">
+        SPECTATE<img
+          id="spectate-eye"
+          class="btn--spectate__icon"
+          src="img/ui/Spectate_Icon.png"
+          alt="Spectate"
+        />
+      </div>
+
+      <div
+        id="fullscreen-button"
+        class="btn btn--fullscreen view-state--menu visibility"
+      >
+        FULLSCREEN&nbsp;&nbsp;<i class="fas fa-expand"></i>
+      </div>
+
+      <div
+        id="support-game"
+        class="support-panel box-panel box-panel--blue view-state--menu visibility"
+      >
+        <div id="support-game-text" class="support-panel__text">
+          Want to be featured here?<br />
+          Contact: spaceoneiogame@gmail.com
         </div>
+        <div id="player" class="support-panel__video"></div>
+      </div>
 
-        <div id="fullscreen-button" class="btn btn--fullscreen view-state--menu visibility">
-            FULLSCREEN&nbsp;&nbsp;<i class="fas fa-expand"></i>
-        </div>
-
-        <div id="support-game" class="support-panel box-panel box-panel--blue view-state--menu visibility">
-            <div id="support-game-text" class="support-panel__text">
-                Want to be featured here?<br />
-                Contact: spaceoneiogame@gmail.com
-            </div>
-            <div id="player" class="support-panel__video"></div>
-        </div>
-
-        <div id="cross-promo" class="social-links view-state--menu visibility">
-            <a href="https://www.reddit.com/r/space1io/" target="_blank" id="reddit-button" class="social-links__item social-links__item--reddit">
-                <img src="img/ui/Reddit_Logo.svg" alt="Reddit" />
-            </a>
-            <a href="https://discord.gg/hDGnWju" target="_blank" id="discord-button" class="social-links__item social-links__item--discord">
-                <img src="img/ui/Discord_Logo.png" alt="Discord" />
-            </a>
-            <a href="#" target="_blank" id="twitter-button" class="social-links__item social-links__item--twitter">
-                <img src="img/ui/Twitter_Logo.webp" alt="Twitter" />
-            </a>
-            <a href="#" target="_blank" id="youtube-button" class="social-links__item social-links__item--youtube">
-                <img src="img/ui/Youtube_Logo.webp" alt="Youtube" />
-            </a>
-        </div>
-
-        <div id="game-area" class="game-area noselect aspectratio">
-            <canvas id="game-canvas" class="game-canvas centered" width="1000" height="500"></canvas>
-
-            <div id="leaderboard-container" class="leaderboard view-state--game visibility2">
-                <h2 id="leaderboard-header" class="leaderboard__header">Leaderboard</h2>
-                <table id="leaderboard" class="leaderboard__table" cellspacing="0"></table>
-            </div>
-
-            <div id="record" class="arena-record view-state--game visibility2">
-                Arena record: <span id="record-score" class="arena-record__score">0</span><br />
-                Fleet: <span id="record-fleet" class="arena-record__fleet">Unknown Fleet #0</span>
-            </div>
-
-            <div id="clock" class="fullscreen-clock"></div>
-
-            <div id="fleet-size-container" class="fleet-size view-state--alive visibility3">Size: <span id="fleet-size">0</span></div>
-
-            <div id="plus-score-container" class="score-popup-container"></div>
-
-            <img src="img/ui/Leader_Arrow.png" id="leader-arrow" class="leader-arrow view-state--alive visibility3" alt="Leader Arrow" />
-
-            <div id="autofire-container" class="autofire-indicator view-state--alive visibility3">Autofire (E): <span id="autofire-toggle" class="autofire-indicator__state">OFF</span></div>
-
-            <img id="danger-zone-warning" class="danger-zone-warning" src="img/ui/Danger_Zone.png" alt="DANGER ZONE" />
-            <div id="big-log" class="kill-banner"></div>
-
-            <div id="ctf-arena" class="ctf-hud hide" hidden>
-                <span id="ctf-cyan" class="ctf-hud__team ctf-hud__team--cyan">
-                    <span class="ctf-hud__flag-status flag_status">
-                        <span class="home">Home</span>
-                        <span class="taken">Taken</span>
-                    </span>
-                </span>
-                <span id="ctf-red" class="ctf-hud__team ctf-hud__team--red">
-                    <span class="ctf-hud__flag-status flag_status">
-                        <span class="home">Home</span>
-                        <span class="taken">Taken</span>
-                    </span>
-                </span>
-            </div>
-
-            <div id="plotly"></div>
-
-            <table id="leaderboard-left" class="leaderboard__table" cellspacing="0" hidden></table>
-            <table id="leaderboard-center" class="leaderboard__table" cellspacing="0" hidden></table>
-
-            <div id="self-nick-container" class="player-name-hud view-state--alive visibility3"></div>
-            <div id="cooldown" class="cooldown-bar view-state--alive visibility3">
-                <div id="cooldown-value" class="cooldown-bar__fill cooldown-bar__fill--ready"></div>
-            </div>
-
-            <table id="chat" hidden>
-                <tr>
-                    <th>⏰</th>
-                    <th>waiting</th>
-                </tr>
-            </table>
-
-            <div id="nipple-controls" class="touch-controls">
-                <div id="nipple-zone" class="touch-controls__zone"></div>
-                <div id="nipple-buttons" class="touch-controls__buttons">
-                    <div id="shoot" class="touch-controls__btn touch-controls__btn--shoot"></div>
-                    <div id="boost" class="touch-controls__btn touch-controls__btn--boost"></div>
-                </div>
-            </div>
-        </div>
-        <div id="overlay" class="screen-fade-overlay"></div>
-        <div id="shadowmaker" class="vignette-overlay view-state--game visibility2" oncontextmenu="return false;"></div>
-        <div class="spawnscreen">
-            <div id="arena-link" class="arena-share box-panel box-panel--blue view-state--menu visibility" data-state="open">
-                <img id="arena-link-close" class="arena-share__close" src="img/ui/Arena_Link_Close.png" alt="Close Arena Link">
-                <span id="arena-link-span" class="arena-share__text">Play with your friends!<br>Share this link:</span>
-                <input id="arena-link-input" class="arena-share__input" type="text" readonly="readonly">
-                <div id="generate-link-button" class="btn btn--gold arena-share__btn">
-                    COPY LINK
-                </div>
-                <img id="arena-link-success" class="arena-share__success" src="img/ui/Arena_Link_Success.png" alt="Success Arena Link">
-            </div>
-            <div class="controls view-state--menu visibility">
-                <div id="container" class="container spawnscreen__content">
-                    <div id="logo" class="spawnscreen__logo">
-                    </div>
-                    <div id="selection-container" class="ship-selector">
-                        <div id="left-arrow" class="ship-selector__arrow ship-selector__arrow--left arrow">
-                            <img src="img/ui/Color_Selector_Arrow_left.png" alt="Left Arrow">
-                        </div>
-                        <div id="right-arrow" class="ship-selector__arrow ship-selector__arrow--right arrow">
-                            <img src="img/ui/Color_Selector_Arrow_right.png" alt="Right Arrow">
-                        </div>
-                        <div class="ship-selector__carousel-wrapper">
-                            <div id="ship-selector-switch" class="ship-selector__carousel"></div>
-                            <div id="selection" class="ship-selector__indicator"></div>
-                        </div>
-                    </div>
-                    <button id="emoji-trigger" class="btn button1" hidden>👋</button>
-                    <div class="main-ui spawnscreen__form">
-                        <div id="high-score" class="spawnscreen__high-score">High Score: <span id="high-score-num">0</span> </div>
-                        <input placeholder="Your fleet name" type="text" id="nick" class="spawnscreen__nick-input" maxlength="15"
-                            ondragstart="return false;" ondrop="return false;" /><br />
-                        <div id="emoji-container" class="emoji-picker" hidden></div>
-                        <div id="launch-container" class="spawnscreen__actions">
-                            <input type="button" id="spawn" class="btn btn--spawn button1" value="PLAY" />
-                            <input type="button" id="dauth" class="btn btn--discord button1" value="Login with Discord" hidden />
-                        </div>
-                        <div id="instructions" class="instructions-hint view-state--menu visibility">
-                            <p id="instructions-text" class="instructions-hint__text">MOVE MOUSE to steer fleet</p>
-                        </div>
-                    </div>
-                    <input type="button" id="arenas" class="btn button1" value="Game Modes" hidden />
-                </div>
-            </div>
-            <div id="error" class="connection-error" hidden>
-                <div id="toast-container" class="toast-bottom-left">
-                    <div class="toast toast-error" aria-live="assertive">
-                        <div class="toast-message">Couldn't connect to an arena. Please try again</div>
-                    </div>
-                </div>
-            </div>
-            
-            <div id="links" hidden>
-                <a href="https://discord.gg/5ak5FsU" target="_blank">
-                    <div class="link">
-                        <div class="linkLogo">
-                            <img src="img/ui/discord-icon.png" alt="Discord" />
-                        </div>
-                        <div class="linkText">
-                            Chat
-                        </div>
-                    </div>
-                </a>
-                <a href="https://new.reddit.com/r/daudio/" target="_blank">
-                    <div class="link">
-                        <div class="linkLogo">
-                            <img src="img/ui/reddit-icon.png" alt="Reddit" />
-                        </div>
-                        <div class="linkText">
-                            Forum
-                        </div>
-                    </div>
-                </a>
-                <div id="links-dropdown">
-                    <div class="link quick-links__item--first">
-                        <div class="linkLogo">
-                            <img src="https://ams-nw.com/wp-content/plugins/bb-plugin/img/svg/play.svg"
-                                class="quick-links__icon" alt="Play" />
-                        </div>
-                        <div class="linkText">
-                            More games
-                        </div>
-                    </div>
-                    <a href="http://iogames.space" target="_blank">
-                        <div class="link">
-                            <div class="linkLogo">
-                                <img src="img/ui/iogames-icon.png" alt="IOGames" />
-                            </div>
-                            <div class="linkText">
-                                Iogames.space
-                            </div>
-                        </div>
-                    </a>
-                    <a href="http://titotu.io/" target="_blank">
-                        <div class="link">
-                            <div class="linkLogo">
-                                <img src="img/ui/titotu-icon.png" alt="Titotu" />
-                            </div>
-                            <div class="linkText">
-                                Titotu
-                            </div>
-                        </div>
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <a id="changelog-button" class="changelog-btn change-log-button view-state--menu visibility">
-            <h4>CAPTAIN'S LOG</h4>
-            <span>19 February 2021</span><br>
-            <span>- Movement physics reworked</span><br>
+      <div id="cross-promo" class="social-links view-state--menu visibility">
+        <a
+          href="https://www.reddit.com/r/space1io/"
+          target="_blank"
+          id="reddit-button"
+          class="social-links__item social-links__item--reddit"
+        >
+          <img src="img/ui/Reddit_Logo.svg" alt="Reddit" />
         </a>
+        <a
+          href="https://discord.gg/hDGnWju"
+          target="_blank"
+          id="discord-button"
+          class="social-links__item social-links__item--discord"
+        >
+          <img src="img/ui/Discord_Logo.png" alt="Discord" />
+        </a>
+        <a
+          href="#"
+          target="_blank"
+          id="twitter-button"
+          class="social-links__item social-links__item--twitter"
+        >
+          <img src="img/ui/Twitter_Logo.webp" alt="Twitter" />
+        </a>
+        <a
+          href="#"
+          target="_blank"
+          id="youtube-button"
+          class="social-links__item social-links__item--youtube"
+        >
+          <img src="img/ui/Youtube_Logo.webp" alt="Youtube" />
+        </a>
+      </div>
 
-        <div id="popup-instructions" class="modal-overlay change-log-overlay instructions-modal" hidden>
-            <div id="instructions-back" class="modal-backdrop invisible-change-log-back"></div>
-            <div id="instructions-popup" class="modal-dialog change-log-popup instructions-modal__dialog">
-                <div class="modal-dialog__header header">
-                    <div class="modal-dialog__title title">Instructions</div>
-                    <div id="instructions-close" class="modal-dialog__close close">✕</div>
-                </div>
-                <div id="instructions-content" class="instructions-modal__content">
-                    <span>MOVE MOUSE to steer fleet</span>
-                    <span>CLICK or SPACE to shoot</span>
-                    <span>'S' to Split &amp; Dash</span>
-                </div>
-            </div>
+      <div id="game-area" class="game-area noselect aspectratio">
+        <canvas
+          id="game-canvas"
+          class="game-canvas centered"
+          width="1000"
+          height="500"
+        ></canvas>
+
+        <div
+          id="leaderboard-container"
+          class="leaderboard view-state--game visibility2"
+        >
+          <h2 id="leaderboard-header" class="leaderboard__header">
+            Leaderboard
+          </h2>
+          <table
+            id="leaderboard"
+            class="leaderboard__table"
+            cellspacing="0"
+          ></table>
         </div>
 
-        <div id="popup-invalid-arena" class="modal-overlay change-log-overlay arena-modal-overlay" hidden>
-            <div id="invalid-arena-back" class="modal-backdrop invisible-change-log-back"></div>
-            <div id="invalid-arena-popup" class="arena-modal arena-modal-popup">
-                <div class="arena-modal__header header">
-                    <div class="arena-modal__title title">Arena Not Found</div>
-                    <div id="invalid-arena-close" class="arena-modal__close close">✕</div>
-                </div>
-                <div class="arena-modal__body arena-modal-body">
-                    <p class="arena-modal__text modal-text">The arena link you followed does not exist or has expired.</p>
-                    <p class="arena-modal__text arena-modal__subtext modal-text modal-subtext">You have been connected to the default arena.</p>
-                    <button id="invalid-arena-ok" class="btn btn--gold arena-modal__btn modal-btn">OK</button>
-                </div>
-            </div>
+        <div id="record" class="arena-record view-state--game visibility2">
+          Arena record:
+          <span id="record-score" class="arena-record__score">0</span><br />
+          Fleet:
+          <span id="record-fleet" class="arena-record__fleet"
+            >Unknown Fleet #0</span
+          >
         </div>
 
-        <div id="popup-changelog" class="modal-overlay change-log-overlay changelog-modal" hidden>
-            <div id="changelog-back" class="modal-backdrop invisible-change-log-back"></div>
-            <div class="modal-dialog change-log-popup">
-                <div class="modal-dialog__header header">
-                    <div class="modal-dialog__title title">Captain's Log History</div>
-                    <div id="changelog-close" class="modal-dialog__close close">✕</div>
-                </div>
-                <div id="changelog-modal-content" class="modal-dialog__content content"></div>
-            </div>
+        <div id="clock" class="fullscreen-clock"></div>
+
+        <div
+          id="fleet-size-container"
+          class="fleet-size view-state--alive visibility3"
+        >
+          Size: <span id="fleet-size">0</span>
         </div>
 
-        <div id="worlds" class="worlds-modal closed" hidden>
-            <div id="topbar" class="worlds-modal__topbar">
-                <span>Arenas</span>
-                <div class="worlds-modal__close close-button" id="wcancel"><img src="img/ui/whiteX.png" alt="Close"></div>
-            </div>
-            <div id="world-list-scroll" class="worlds-modal__scroll">
-                <table id="world-list" class="worlds-modal__list"></table>
-            </div>
+        <div id="plus-score-container" class="score-popup-container"></div>
+
+        <img
+          src="img/ui/Leader_Arrow.png"
+          id="leader-arrow"
+          class="leader-arrow view-state--alive visibility3"
+          alt="Leader Arrow"
+        />
+
+        <div
+          id="autofire-container"
+          class="autofire-indicator view-state--alive visibility3"
+        >
+          Autofire (E):
+          <span id="autofire-toggle" class="autofire-indicator__state"
+            >OFF</span
+          >
         </div>
 
-        <div id="gear" class="settings-modal closed" hidden>
-            <div id="settings-container" class="settings-modal__container">
-                <h1>Settings</h1>
+        <img
+          id="danger-zone-warning"
+          class="danger-zone-warning"
+          src="img/ui/Danger_Zone.png"
+          alt="DANGER ZONE"
+        />
+        <div id="big-log" class="kill-banner"></div>
 
-                    <table>
-                        <tr>
-                            <td>
-                                <h4>Display</h4>
-                                <label for="settings-theme-selector">Theme Selection</label>
-                                <select id="settings-theme-selector" class="btn button1">
-                                    <option value="">default</option>
-                                    <option value="0thqdzjhd6x17ag">Poly</option>
-                                    <option value="gddlfhf0qkm8je7">Bright - Old</option>
-                                    <option value="3ryhaa6boenvv2k">Bitty - Old</option>
-                                    <option value="xn4t5ce2916uxbx">Retro</option>
-                                    <option value="c4yh49qs8uvms87">Universe - Old</option>
-                                </select>
-                                <input placeholder="custom hash" type="text" id="settings-theme-selector-custom"
-                                    class="btn button1" value="">
-                                <br />
-
-                                <label for="settings-background">Background</label>
-                                <select id="settings-background" class="btn button1">
-                                    <option value="none">none</option>
-                                    <option value="on">enabled</option>
-                                </select>
-                                <br />
-
-                                <label for="settings-name-size">Name Size</label>
-                                <select id="settings-name-size" class="btn button1">
-                                    <option value="20">tiny</option>
-                                    <option value="32">smaller</option>
-                                    <option value="48">small</option>
-                                    <option value="64">medium</option>
-                                    <option value="72">big</option>
-                                    <option value="96">woah</option>
-                                </select>
-                                <br />
-
-                                <label for="settings-log">Log Length</label>
-                                <select id="settings-log" class="btn button1">
-                                    <option value="0">none</option>
-                                    <option value="1">1 line</option>
-                                    <option value="2">2 lines</option>
-                                    <option value="3">3 lines</option>
-                                    <option value="4">4 lines</option>
-                                    <option value="10">historian</option>
-                                </select>
-                                <br />
-                            </td>
-                            <td>
-                                <h4>Controls</h4>
-
-                                <label for="settings-mouse-scale">Mouse Sensitivity</label>
-                                <select id="settings-mouse-scale" class="btn button1">
-                                    <option value="1">sensitive</option>
-                                    <option value="4">medium</option>
-                                    <option value="10">straight-shooter</option>
-                                </select>
-                                <br />
-
-                                <label for="settings-bandwidth">Bandwidth</label>
-                                <select id="settings-bandwidth" class="btn button1">
-                                    <option value="100">high</option>
-                                    <option value="50">medium</option>
-                                    <option value="25">low</option>
-                                </select>
-                                <br />
-                            </td>
-                        </tr>
-                    </table>
-
-                    <table id="settings-table">
-                        <tr class="settings-modal__row--hidden">
-                            <td>Display Minimap</td>
-                            <td>
-                                <label class="form-switch switch">
-                                    <input type="checkbox" id="settings-display-minimap">
-                                    <span class="form-switch__slider slider round"></span>
-                                </label>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Big Kill Message</td>
-                            <td>
-                                <label class="form-switch switch">
-                                    <input type="checkbox" id="settings-big-kill-message">
-                                    <span class="form-switch__slider slider round"></span>
-                                </label>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Show Keyboard Hints</td>
-                            <td>
-                                <label class="form-switch switch">
-                                    <input type="checkbox" id="settings-show-keyboard-hints">
-                                    <span class="form-switch__slider slider round"></span>
-                                </label>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Show Leaderboard</td>
-                            <td>
-                                <label class="form-switch switch">
-                                    <input type="checkbox" id="settings-leaderboard-enabled">
-                                    <span class="form-switch__slider slider round"></span>
-                                </label>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Show Stats</td>
-                            <td>
-                                <label class="form-switch switch">
-                                    <input type="checkbox" id="settings-hud-enabled">
-                                    <span class="form-switch__slider slider round"></span>
-                                </label>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Show Names</td>
-                            <td>
-                                <label class="form-switch switch">
-                                    <input type="checkbox" id="settings-names-enabled">
-                                    <span class="form-switch__slider slider round"></span>
-                                </label>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Show OWN name</td>
-                            <td>
-                                <label class="form-switch switch">
-                                    <input type="checkbox" id="settings-show-own-name">
-                                    <span class="form-switch__slider slider round"></span>
-                                </label>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Rendering Tweak (MipMapping)</td>
-                            <td>
-                                <label class="form-switch switch">
-                                    <input type="checkbox" id="settings-mip-mapping">
-                                    <span class="form-switch__slider slider round"></span>
-                                </label>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Show Cooldown Timer</td>
-                            <td>
-                                <label class="form-switch switch">
-                                    <input type="checkbox" id="settings-show-cooldown">
-                                    <span class="form-switch__slider slider round"></span>
-                                </label>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Show Hints</td>
-                            <td>
-                                <label class="form-switch switch">
-                                    <input type="checkbox" id="settings-show-hints">
-                                    <span class="form-switch__slider slider round"></span>
-                                </label>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Allow Darkblue Ships</td>
-                            <td>
-                                <label class="form-switch switch">
-                                    <input type="checkbox" id="settings-allow-darkblue-ships">
-                                    <span class="form-switch__slider slider round"></span>
-                                </label>
-                            </td>
-                        </tr>
-                    </table>
-
-                    <button id="settings-save" class="btn btn--gold button1">
-                        <i class="fas fa-save"></i> Save
-                    </button>
-
-                    <button id="settings-cancel" class="btn button1">
-                        <i class="fas fa-ban"></i> Cancel
-                    </button>
-                    <br>
-                    <button id="settings-reset" class="btn button1">
-                        <i class="fas fa-undo"></i> Reset Defaults
-                    </button>
-                </div>
-            </div>
-
-            <div class="social" hidden>
-                <div id="changelog" data-version='2'>
-                    <h4>Changelog</h4>
-                    <table>
-                        <tr>
-                            <td class="date">
-                                2/23/2019
-                            </td>
-                            <td>
-                                Build a bot: Robot API, sample code,
-                                <a
-                                    href="https://new.reddit.com/r/daudio/comments/au1259/build_a_bot_robot_api_sample_code_killing_of/">
-                                    killing of meatbags
-                                </a>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="date">
-                                1/17/2019
-                            </td>
-                            <td>integrated pixi.js renderer. mini map.</td>
-                        </tr>
-                        <tr>
-                            <td class="date">
-                                12/05/2018
-                            </td>
-                            <td>Physics and rockets updates, see discord for details.</td>
-                        </tr>
-                    </table>
-                </div>
-
-                <div id="social-media-container">
-                    <a href="https://discord.gg/5ak5FsU" target="_blank"><img id="discord" src="img/ui/discord.png" alt="Discord" /></a>
-                    <a href="https://reddit.com/r/daudio" target="_blank"><img id="reddit" src="img/ui/reddit.png" alt="Reddit" /></a>
-                    <a href="https://iogames.space" target="_blank"><img id="iogamesspace"
-                            src="img/ui/linkback.iogames.space.png" alt="IOGames" /></a>
-                    <a href="https://titotu.io" target="_blank"><img id="titotu" src="img/ui/linkback.titotu.io.png" alt="Titotu" /></a>
-                </div>
-            </div>
+        <div id="ctf-arena" class="ctf-hud hide" hidden>
+          <span id="ctf-cyan" class="ctf-hud__team ctf-hud__team--cyan">
+            <span class="ctf-hud__flag-status flag_status">
+              <span class="home">Home</span>
+              <span class="taken">Taken</span>
+            </span>
+          </span>
+          <span id="ctf-red" class="ctf-hud__team ctf-hud__team--red">
+            <span class="ctf-hud__flag-status flag_status">
+              <span class="home">Home</span>
+              <span class="taken">Taken</span>
+            </span>
+          </span>
         </div>
+
+        <div id="plotly"></div>
+
+        <table
+          id="leaderboard-left"
+          class="leaderboard__table"
+          cellspacing="0"
+          hidden
+        ></table>
+        <table
+          id="leaderboard-center"
+          class="leaderboard__table"
+          cellspacing="0"
+          hidden
+        ></table>
+
+        <div
+          id="self-nick-container"
+          class="player-name-hud view-state--alive visibility3"
+        ></div>
+        <div id="cooldown" class="cooldown-bar view-state--alive visibility3">
+          <div
+            id="cooldown-value"
+            class="cooldown-bar__fill cooldown-bar__fill--ready"
+          ></div>
+        </div>
+
+        <table id="chat" hidden>
+          <tr>
+            <th>⏰</th>
+            <th>waiting</th>
+          </tr>
+        </table>
+
+        <div id="nipple-controls" class="touch-controls">
+          <div id="nipple-zone" class="touch-controls__zone"></div>
+          <div id="nipple-buttons" class="touch-controls__buttons">
+            <div
+              id="shoot"
+              class="touch-controls__btn touch-controls__btn--shoot"
+            ></div>
+            <div
+              id="boost"
+              class="touch-controls__btn touch-controls__btn--boost"
+            ></div>
+          </div>
+        </div>
+      </div>
+      <div id="overlay" class="screen-fade-overlay"></div>
+      <div
+        id="shadowmaker"
+        class="vignette-overlay view-state--game visibility2"
+        oncontextmenu="return false;"
+      ></div>
+      <div class="spawnscreen">
+        <div
+          id="arena-link"
+          class="arena-share box-panel box-panel--blue view-state--menu visibility"
+          data-state="open"
+        >
+          <img
+            id="arena-link-close"
+            class="arena-share__close"
+            src="img/ui/Arena_Link_Close.png"
+            alt="Close Arena Link"
+          />
+          <span id="arena-link-span" class="arena-share__text"
+            >Play with your friends!<br />Share this link:</span
+          >
+          <input
+            id="arena-link-input"
+            class="arena-share__input"
+            type="text"
+            readonly="readonly"
+          />
+          <div id="generate-link-button" class="btn btn--gold arena-share__btn">
+            COPY LINK
+          </div>
+          <img
+            id="arena-link-success"
+            class="arena-share__success"
+            src="img/ui/Arena_Link_Success.png"
+            alt="Success Arena Link"
+          />
+        </div>
+        <div class="controls view-state--menu visibility">
+          <div id="container" class="container spawnscreen__content">
+            <div id="logo" class="spawnscreen__logo"></div>
+            <div id="selection-container" class="ship-selector">
+              <div
+                id="left-arrow"
+                class="ship-selector__arrow ship-selector__arrow--left arrow"
+              >
+                <img
+                  src="img/ui/Color_Selector_Arrow_left.png"
+                  alt="Left Arrow"
+                />
+              </div>
+              <div
+                id="right-arrow"
+                class="ship-selector__arrow ship-selector__arrow--right arrow"
+              >
+                <img
+                  src="img/ui/Color_Selector_Arrow_right.png"
+                  alt="Right Arrow"
+                />
+              </div>
+              <div class="ship-selector__carousel-wrapper">
+                <div
+                  id="ship-selector-switch"
+                  class="ship-selector__carousel"
+                ></div>
+                <div id="selection" class="ship-selector__indicator"></div>
+              </div>
+            </div>
+            <button id="emoji-trigger" class="btn button1" hidden>👋</button>
+            <div class="main-ui spawnscreen__form">
+              <div id="high-score" class="spawnscreen__high-score">
+                High Score: <span id="high-score-num">0</span>
+              </div>
+              <input
+                placeholder="Your fleet name"
+                type="text"
+                id="nick"
+                class="spawnscreen__nick-input"
+                maxlength="15"
+                ondragstart="return false;"
+                ondrop="return false;"
+              /><br />
+              <div id="emoji-container" class="emoji-picker" hidden></div>
+              <div id="launch-container" class="spawnscreen__actions">
+                <input
+                  type="button"
+                  id="spawn"
+                  class="btn btn--spawn button1"
+                  value="PLAY"
+                />
+                <input
+                  type="button"
+                  id="dauth"
+                  class="btn btn--discord button1"
+                  value="Login with Discord"
+                  hidden
+                />
+              </div>
+              <div
+                id="world-selector"
+                class="world-selector view-state--menu visibility"
+                role="button"
+                tabindex="0"
+                title="Select Game Mode / Arena"
+              >
+                <span class="world-selector__icon"
+                  ><i class="fas fa-globe-americas"></i
+                ></span>
+                <span id="world-selector-name" class="world-selector__name"
+                  >FFA</span
+                >
+                <span id="world-selector-players" class="world-selector__badge"
+                  >0 Online</span
+                >
+                <span class="world-selector__arrow"
+                  ><i class="fas fa-chevron-down"></i
+                ></span>
+              </div>
+              <div
+                id="instructions"
+                class="instructions-hint view-state--menu visibility"
+              >
+                <p id="instructions-text" class="instructions-hint__text">
+                  MOVE MOUSE to steer fleet
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="error" class="connection-error" hidden>
+          <div id="toast-container" class="toast-bottom-left">
+            <div class="toast toast-error" aria-live="assertive">
+              <div class="toast-message">
+                Couldn't connect to an arena. Please try again
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="links" hidden>
+          <a href="https://discord.gg/5ak5FsU" target="_blank">
+            <div class="link">
+              <div class="linkLogo">
+                <img src="img/ui/discord-icon.png" alt="Discord" />
+              </div>
+              <div class="linkText">Chat</div>
+            </div>
+          </a>
+          <a href="https://new.reddit.com/r/daudio/" target="_blank">
+            <div class="link">
+              <div class="linkLogo">
+                <img src="img/ui/reddit-icon.png" alt="Reddit" />
+              </div>
+              <div class="linkText">Forum</div>
+            </div>
+          </a>
+          <div id="links-dropdown">
+            <div class="link quick-links__item--first">
+              <div class="linkLogo">
+                <img
+                  src="https://ams-nw.com/wp-content/plugins/bb-plugin/img/svg/play.svg"
+                  class="quick-links__icon"
+                  alt="Play"
+                />
+              </div>
+              <div class="linkText">More games</div>
+            </div>
+            <a href="http://iogames.space" target="_blank">
+              <div class="link">
+                <div class="linkLogo">
+                  <img src="img/ui/iogames-icon.png" alt="IOGames" />
+                </div>
+                <div class="linkText">Iogames.space</div>
+              </div>
+            </a>
+            <a href="http://titotu.io/" target="_blank">
+              <div class="link">
+                <div class="linkLogo">
+                  <img src="img/ui/titotu-icon.png" alt="Titotu" />
+                </div>
+                <div class="linkText">Titotu</div>
+              </div>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <a
+        id="changelog-button"
+        class="changelog-btn change-log-button view-state--menu visibility"
+      >
+        <h4>CAPTAIN'S LOG</h4>
+        <span>19 February 2021</span><br />
+        <span>- Movement physics reworked</span><br />
+      </a>
+
+      <div
+        id="popup-instructions"
+        class="modal-overlay change-log-overlay instructions-modal"
+        hidden
+      >
+        <div
+          id="instructions-back"
+          class="modal-backdrop invisible-change-log-back"
+        ></div>
+        <div
+          id="instructions-popup"
+          class="modal-dialog change-log-popup instructions-modal__dialog"
+        >
+          <div class="modal-dialog__header header">
+            <div class="modal-dialog__title title">Instructions</div>
+            <div id="instructions-close" class="modal-dialog__close close">
+              ✕
+            </div>
+          </div>
+          <div id="instructions-content" class="instructions-modal__content">
+            <span>MOVE MOUSE to steer fleet</span>
+            <span>CLICK or SPACE to shoot</span>
+            <span>'S' to Split &amp; Dash</span>
+          </div>
+        </div>
+      </div>
+
+      <div
+        id="popup-invalid-arena"
+        class="modal-overlay change-log-overlay arena-modal-overlay"
+        hidden
+      >
+        <div
+          id="invalid-arena-back"
+          class="modal-backdrop invisible-change-log-back"
+        ></div>
+        <div id="invalid-arena-popup" class="arena-modal arena-modal-popup">
+          <div class="arena-modal__header header">
+            <div class="arena-modal__title title">Arena Not Found</div>
+            <div id="invalid-arena-close" class="arena-modal__close close">
+              ✕
+            </div>
+          </div>
+          <div class="arena-modal__body arena-modal-body">
+            <p class="arena-modal__text modal-text">
+              The arena link you followed does not exist or has expired.
+            </p>
+            <p
+              class="arena-modal__text arena-modal__subtext modal-text modal-subtext"
+            >
+              You have been connected to the default arena.
+            </p>
+            <button
+              id="invalid-arena-ok"
+              class="btn btn--gold arena-modal__btn modal-btn"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div
+        id="popup-changelog"
+        class="modal-overlay change-log-overlay changelog-modal"
+        hidden
+      >
+        <div
+          id="changelog-back"
+          class="modal-backdrop invisible-change-log-back"
+        ></div>
+        <div class="modal-dialog change-log-popup">
+          <div class="modal-dialog__header header">
+            <div class="modal-dialog__title title">Captain's Log History</div>
+            <div id="changelog-close" class="modal-dialog__close close">✕</div>
+          </div>
+          <div
+            id="changelog-modal-content"
+            class="modal-dialog__content content"
+          ></div>
+        </div>
+      </div>
+
+      <div
+        id="popup-worlds"
+        class="modal-overlay change-log-overlay worlds-modal-overlay"
+        hidden
+      >
+        <div
+          id="worlds-back"
+          class="modal-backdrop invisible-change-log-back"
+        ></div>
+        <div id="worlds-popup" class="modal-dialog worlds-modal-dialog">
+          <div class="modal-dialog__header header">
+            <div class="modal-dialog__title title">
+              <i class="fas fa-globe-americas"></i> Select Arena
+            </div>
+            <div id="worlds-close" class="modal-dialog__close close">✕</div>
+          </div>
+          <div
+            id="worlds-modal-content"
+            class="modal-dialog__content worlds-modal__content"
+          >
+            <p class="worlds-modal__subtitle">
+              Select a game mode or arena to join. Your choice will be saved for
+              future sessions.
+            </p>
+            <div id="worlds-grid" class="worlds-grid"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="gear" class="settings-modal closed" hidden>
+        <div id="settings-container" class="settings-modal__container">
+          <h1>Settings</h1>
+
+          <table>
+            <tr>
+              <td>
+                <h4>Display</h4>
+                <label for="settings-theme-selector">Theme Selection</label>
+                <select id="settings-theme-selector" class="btn button1">
+                  <option value="">default</option>
+                  <option value="0thqdzjhd6x17ag">Poly</option>
+                  <option value="gddlfhf0qkm8je7">Bright - Old</option>
+                  <option value="3ryhaa6boenvv2k">Bitty - Old</option>
+                  <option value="xn4t5ce2916uxbx">Retro</option>
+                  <option value="c4yh49qs8uvms87">Universe - Old</option>
+                </select>
+                <input
+                  placeholder="custom hash"
+                  type="text"
+                  id="settings-theme-selector-custom"
+                  class="btn button1"
+                  value=""
+                />
+                <br />
+
+                <label for="settings-background">Background</label>
+                <select id="settings-background" class="btn button1">
+                  <option value="none">none</option>
+                  <option value="on">enabled</option>
+                </select>
+                <br />
+
+                <label for="settings-name-size">Name Size</label>
+                <select id="settings-name-size" class="btn button1">
+                  <option value="20">tiny</option>
+                  <option value="32">smaller</option>
+                  <option value="48">small</option>
+                  <option value="64">medium</option>
+                  <option value="72">big</option>
+                  <option value="96">woah</option>
+                </select>
+                <br />
+
+                <label for="settings-log">Log Length</label>
+                <select id="settings-log" class="btn button1">
+                  <option value="0">none</option>
+                  <option value="1">1 line</option>
+                  <option value="2">2 lines</option>
+                  <option value="3">3 lines</option>
+                  <option value="4">4 lines</option>
+                  <option value="10">historian</option>
+                </select>
+                <br />
+              </td>
+              <td>
+                <h4>Controls</h4>
+
+                <label for="settings-mouse-scale">Mouse Sensitivity</label>
+                <select id="settings-mouse-scale" class="btn button1">
+                  <option value="1">sensitive</option>
+                  <option value="4">medium</option>
+                  <option value="10">straight-shooter</option>
+                </select>
+                <br />
+
+                <label for="settings-bandwidth">Bandwidth</label>
+                <select id="settings-bandwidth" class="btn button1">
+                  <option value="100">high</option>
+                  <option value="50">medium</option>
+                  <option value="25">low</option>
+                </select>
+                <br />
+              </td>
+            </tr>
+          </table>
+
+          <table id="settings-table">
+            <tr class="settings-modal__row--hidden">
+              <td>Display Minimap</td>
+              <td>
+                <label class="form-switch switch">
+                  <input type="checkbox" id="settings-display-minimap" />
+                  <span class="form-switch__slider slider round"></span>
+                </label>
+              </td>
+            </tr>
+            <tr>
+              <td>Big Kill Message</td>
+              <td>
+                <label class="form-switch switch">
+                  <input type="checkbox" id="settings-big-kill-message" />
+                  <span class="form-switch__slider slider round"></span>
+                </label>
+              </td>
+            </tr>
+            <tr>
+              <td>Show Keyboard Hints</td>
+              <td>
+                <label class="form-switch switch">
+                  <input type="checkbox" id="settings-show-keyboard-hints" />
+                  <span class="form-switch__slider slider round"></span>
+                </label>
+              </td>
+            </tr>
+            <tr>
+              <td>Show Leaderboard</td>
+              <td>
+                <label class="form-switch switch">
+                  <input type="checkbox" id="settings-leaderboard-enabled" />
+                  <span class="form-switch__slider slider round"></span>
+                </label>
+              </td>
+            </tr>
+            <tr>
+              <td>Show Stats</td>
+              <td>
+                <label class="form-switch switch">
+                  <input type="checkbox" id="settings-hud-enabled" />
+                  <span class="form-switch__slider slider round"></span>
+                </label>
+              </td>
+            </tr>
+            <tr>
+              <td>Show Names</td>
+              <td>
+                <label class="form-switch switch">
+                  <input type="checkbox" id="settings-names-enabled" />
+                  <span class="form-switch__slider slider round"></span>
+                </label>
+              </td>
+            </tr>
+            <tr>
+              <td>Show OWN name</td>
+              <td>
+                <label class="form-switch switch">
+                  <input type="checkbox" id="settings-show-own-name" />
+                  <span class="form-switch__slider slider round"></span>
+                </label>
+              </td>
+            </tr>
+            <tr>
+              <td>Rendering Tweak (MipMapping)</td>
+              <td>
+                <label class="form-switch switch">
+                  <input type="checkbox" id="settings-mip-mapping" />
+                  <span class="form-switch__slider slider round"></span>
+                </label>
+              </td>
+            </tr>
+            <tr>
+              <td>Show Cooldown Timer</td>
+              <td>
+                <label class="form-switch switch">
+                  <input type="checkbox" id="settings-show-cooldown" />
+                  <span class="form-switch__slider slider round"></span>
+                </label>
+              </td>
+            </tr>
+            <tr>
+              <td>Show Hints</td>
+              <td>
+                <label class="form-switch switch">
+                  <input type="checkbox" id="settings-show-hints" />
+                  <span class="form-switch__slider slider round"></span>
+                </label>
+              </td>
+            </tr>
+            <tr>
+              <td>Allow Darkblue Ships</td>
+              <td>
+                <label class="form-switch switch">
+                  <input type="checkbox" id="settings-allow-darkblue-ships" />
+                  <span class="form-switch__slider slider round"></span>
+                </label>
+              </td>
+            </tr>
+          </table>
+
+          <button id="settings-save" class="btn btn--gold button1">
+            <i class="fas fa-save"></i> Save
+          </button>
+
+          <button id="settings-cancel" class="btn button1">
+            <i class="fas fa-ban"></i> Cancel
+          </button>
+          <br />
+          <button id="settings-reset" class="btn button1">
+            <i class="fas fa-undo"></i> Reset Defaults
+          </button>
+        </div>
+      </div>
+
+      <div class="social" hidden>
+        <div id="changelog" data-version="2">
+          <h4>Changelog</h4>
+          <table>
+            <tr>
+              <td class="date">2/23/2019</td>
+              <td>
+                Build a bot: Robot API, sample code,
+                <a
+                  href="https://new.reddit.com/r/daudio/comments/au1259/build_a_bot_robot_api_sample_code_killing_of/"
+                >
+                  killing of meatbags
+                </a>
+              </td>
+            </tr>
+            <tr>
+              <td class="date">1/17/2019</td>
+              <td>integrated pixi.js renderer. mini map.</td>
+            </tr>
+            <tr>
+              <td class="date">12/05/2018</td>
+              <td>Physics and rockets updates, see discord for details.</td>
+            </tr>
+          </table>
+        </div>
+
+        <div id="social-media-container">
+          <a href="https://discord.gg/5ak5FsU" target="_blank"
+            ><img id="discord" src="img/ui/discord.png" alt="Discord"
+          /></a>
+          <a href="https://reddit.com/r/daudio" target="_blank"
+            ><img id="reddit" src="img/ui/reddit.png" alt="Reddit"
+          /></a>
+          <a href="https://iogames.space" target="_blank"
+            ><img
+              id="iogamesspace"
+              src="img/ui/linkback.iogames.space.png"
+              alt="IOGames"
+          /></a>
+          <a href="https://titotu.io" target="_blank"
+            ><img id="titotu" src="img/ui/linkback.titotu.io.png" alt="Titotu"
+          /></a>
+        </div>
+      </div>
     </div>
 
     <div id="theme-styles" hidden></div>
 
     <script type="module" src="src/core/game.ts"></script>
-</body>
-
+  </body>
 </html>

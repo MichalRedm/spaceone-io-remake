@@ -182,7 +182,7 @@ namespace Game.Engine.Controllers
                                 world = $"{Request.Host}/{s.Value.WorldKey}",
                                 server = Request.Host.ToString(),
                                 players = s.Value.AdvertisedPlayerCount,
-                                name = "Local: " + name,
+                                name = GameConfiguration.RegistryEnabled ? "Local: " + name : name,
                                 description,
                                 allowedColors = s.Value.Hook.AllowedColors,
                                 instructions = s.Value.Hook.Instructions,
