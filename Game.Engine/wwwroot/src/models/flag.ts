@@ -99,7 +99,7 @@ export class Flag extends RenderedObject {
     const isMoving = speedSq > 0.04;
 
     // Check carrier fleet ID from CTF leaderboard
-    const spriteName = this.body.Sprite || this.currentSpriteName;
+    const spriteName = String(this.body.Sprite || this.currentSpriteName || "");
     const carrierID = Leaderboard.getFlagCarrierFleetID(spriteName);
 
     let activeCarrier: Fleet | null = null;
