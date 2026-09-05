@@ -144,7 +144,11 @@ function getOut(
     entry.Color && (entryIsSelf || showTeamColor)
       ? `leaderboard__row--${entry.Color}`
       : "";
-  const selfClass = entryIsSelf ? "leaderboard__row--self" : "";
+  const selfClass = entryIsSelf
+    ? showTeamColor
+      ? "leaderboard__row--self leaderboard__row--team-self"
+      : "leaderboard__row--self"
+    : "";
   const rowClass = ["leaderboard__row", selfClass, colorClass]
     .filter(Boolean)
     .join(" ");

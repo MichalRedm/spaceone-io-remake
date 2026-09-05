@@ -63,7 +63,7 @@
 
   // Safe Color Modifiers for Player Highlight Rows
   &__row {
-    &--self {
+    &--team-self {
       font-weight: 700;
       background: rgba(255, 255, 255, 0.1);
       text-shadow: 0 0 8px currentColor;
