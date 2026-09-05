@@ -104,11 +104,20 @@ function cleanText(raw?: string): string {
 function updateSelectorPill(worldInfo?: WorldInfo): void {
   const nameEl = document.getElementById("world-selector-name");
   const playersEl = document.getElementById("world-selector-players");
+  const iconEl = document.querySelector(".world-selector__icon");
   if (!nameEl || !playersEl) return;
+
+  if (iconEl) {
+    iconEl.innerHTML = worldInfo?.isPrivate
+      ? '<i class="fas fa-lock"></i>'
+      : '<i class="fas fa-globe-americas"></i>';
+  }
 
   if (worldInfo) {
     nameEl.textContent =
-      worldInfo.name || worldInfo.worldKey?.toUpperCase() || "FFA";
+      worldInfo.name ||
+      worldInfo.worldKey?.toUpperCase() ||
+      (worldInfo.isPrivate ? "Private Arena" : "FFA");
     const count = worldInfo.players ?? 0;
     playersEl.textContent = `${count} Online`;
     playersEl.classList.toggle("world-selector__badge--has-players", count > 0);
@@ -267,6 +276,42 @@ LobbyCallbacks.joinWorld = function (worldKey: string) {
   refreshList(worldKey);
 };
 
+function handleInvalidArenaFallback(response: WorldInfo[]): void {
+  // Truly invalid or expired private arena
+  pressPopup("invalidArena");
+
+  // Fallback to preferred world from localStorage, or default
+  let preferredWorld: string | null = null;
+  try {
+    preferredWorld = localStorage.getItem("spaceone_preferred_world");
+  } catch {
+    // ignore localStorage errors
+  }
+
+  let fallbackWorld: WorldInfo | undefined;
+  if (preferredWorld) {
+    fallbackWorld = response.find(
+      (w: WorldInfo) =>
+        w.world === preferredWorld ||
+        w.worldKey === preferredWorld ||
+        w.world?.endsWith("/" + preferredWorld),
+    );
+  }
+
+  if (!fallbackWorld) {
+    const defaultWorldKey = hostName + "/" + worldConnect;
+    fallbackWorld =
+      response.find(
+        (w: WorldInfo) =>
+          w.world === defaultWorldKey || w.world?.endsWith("/" + worldConnect),
+      ) || response[0];
+  }
+
+  if (fallbackWorld) {
+    joinWorld(fallbackWorld.world);
+  }
+}
+
 function refreshList(autoJoinWorld?: string | boolean): void {
   if (!showing && !firstLoad && !autoJoinWorld) return;
 
@@ -348,42 +393,45 @@ function refreshList(autoJoinWorld?: string | boolean): void {
                 if (matchedWorld) {
                   joinWorld(matchedWorld.world);
                 } else {
-                  // Truly invalid or expired private arena
-                  pressPopup("invalidArena");
-
-                  // Fallback to preferred world from localStorage, or default
-                  let preferredWorld: string | null = null;
-                  try {
-                    preferredWorld = localStorage.getItem(
-                      "spaceone_preferred_world",
-                    );
-                  } catch {
-                    // ignore localStorage errors
-                  }
-
-                  let fallbackWorld: WorldInfo | undefined;
-                  if (preferredWorld) {
-                    fallbackWorld = response.find(
-                      (w: WorldInfo) =>
-                        w.world === preferredWorld ||
-                        w.worldKey === preferredWorld ||
-                        w.world?.endsWith("/" + preferredWorld),
-                    );
-                  }
-
-                  if (!fallbackWorld) {
-                    const defaultWorldKey = hostName + "/" + world;
-                    fallbackWorld =
-                      response.find(
-                        (w: WorldInfo) =>
-                          w.world === defaultWorldKey ||
-                          w.world?.endsWith("/" + world),
-                      ) || response[0];
-                  }
-
-                  if (fallbackWorld) {
-                    joinWorld(fallbackWorld.world);
-                  }
+                  // If not found in public list, attempt targeted direct query
+                  // (allows joining unlisted / private worlds via direct link or arena ID)
+                  const queryCandidate = parsedRoute.arenaId || parsedRoute.raw;
+                  fetch(
+                    `/api/v1/world/all?worldName=${encodeURIComponent(queryCandidate)}`,
+                    {
+                      method: "GET",
+                      headers: {
+                        "Content-Type": "application/json; charset=utf-8",
+                      },
+                    },
+                  )
+                    .then((r) => r.json())
+                    .then(
+                      ({
+                        success: targetSuccess,
+                        response: targetResponse,
+                      }: {
+                        success: boolean;
+                        response: WorldInfo[];
+                      }) => {
+                        if (
+                          targetSuccess &&
+                          targetResponse &&
+                          targetResponse.length > 0
+                        ) {
+                          const directMatch = targetResponse[0];
+                          if (allWorlds) {
+                            allWorlds[directMatch.world] = directMatch;
+                          }
+                          joinWorld(directMatch.world);
+                        } else {
+                          handleInvalidArenaFallback(response);
+                        }
+                      },
+                    )
+                    .catch(() => {
+                      handleInvalidArenaFallback(response);
+                    });
                 }
               } else {
                 // No URL route provided: Check localStorage for preferred world, else default
@@ -474,7 +522,7 @@ function joinWorld(worldKey: string): void {
   const canonicalKey =
     worldInfo?.worldKey ||
     (worldKey.includes("/") ? worldKey.split("/").pop() : worldKey);
-  if (canonicalKey) {
+  if (canonicalKey && !worldInfo?.isPrivate) {
     try {
       localStorage.setItem("spaceone_preferred_world", canonicalKey);
     } catch {

@@ -37,8 +37,13 @@ export class ArenaLink {
    *
    * @param worldKey - World or game mode identifier (e.g. 'robo', 'ctf').
    * @param arenaId - Unique arena instance key (e.g. 'xK92Lp').
+   * @param isPrivate - Whether the world is an unlisted private arena.
    */
-  public generate(worldKey?: string, arenaId?: string): void {
+  public generate(
+    worldKey?: string,
+    arenaId?: string,
+    isPrivate?: boolean,
+  ): void {
     if (!arenaId) return;
 
     this.currentArenaID = arenaId;
@@ -50,7 +55,9 @@ export class ArenaLink {
     this.currentWorldKey = cleanWorldKey || null;
 
     let fullLink = `${origin}/#${arenaId}`;
-    if (cleanWorldKey && cleanWorldKey !== "default") {
+    if (isPrivate) {
+      fullLink = `${origin}/#private:${arenaId}`;
+    } else if (cleanWorldKey && cleanWorldKey !== "default") {
       fullLink = `${origin}/#${cleanWorldKey}:${arenaId}`;
     }
 

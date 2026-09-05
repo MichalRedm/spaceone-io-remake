@@ -518,11 +518,14 @@ LobbyCallbacks.onWorldJoin = function (worldKey: string, world?: WorldInfo) {
     const canonicalKey =
       world.worldKey ||
       (world.world?.includes("/") ? world.world.split("/").pop() : world.world);
-    arenaLink.generate(canonicalKey, arenaId);
+    arenaLink.generate(canonicalKey, arenaId, world.isPrivate);
 
-    // Keep clean mode in URL hash if user arrived via hash or switched mode, without polluting with ephemeral arenaId
+    // Keep clean mode in URL hash if user arrived via hash or switched mode
+    // For private worlds, preserve the private route in hash
     const currentRoute = arenaLink.parseArenaRouteFromURL();
-    if (currentRoute?.raw) {
+    if (world.isPrivate && arenaId) {
+      arenaLink.updateURLHash(`private:${arenaId}`);
+    } else if (currentRoute?.raw) {
       if (canonicalKey && canonicalKey !== "default") {
         arenaLink.updateURLHash(canonicalKey);
       } else {
