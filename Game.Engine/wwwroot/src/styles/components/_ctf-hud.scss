@@ -112,12 +112,7 @@
 }
 
 #leaderboard-left {
-  position: fixed;
-  top: 20px;
-  left: 20px;
-  width: 260px;
-  z-index: $z-index-base;
-  pointer-events: none;
+  display: none !important;
 }
 
 // Hide CTF HUD elements on loading or when player is on the spawnscreen / dead

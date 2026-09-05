@@ -63,11 +63,18 @@
 
   // Safe Color Modifiers for Player Highlight Rows
   &__row {
+    &--self {
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.1);
+      text-shadow: 0 0 8px currentColor;
+      border-radius: 4px;
+    }
+
     &--cyan {
       color: #00ffff;
     }
     &--blue {
-      color: #2255ff;
+      color: #3893f7;
     }
     &--green {
       color: lime;
@@ -79,7 +86,7 @@
       color: fuchsia;
     }
     &--red {
-      color: red;
+      color: #ff3333;
     }
     &--yellow {
       color: yellow;
