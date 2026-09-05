@@ -10,6 +10,10 @@ import type { Cache } from "../models/cache";
 import type { Interpolator } from "../rendering/interpolator";
 import { getTextureImage } from "../models/renderedObject";
 import { Flag } from "../models/flag";
+import {
+  showCtfStateNotification,
+  clearCtfNotification,
+} from "./ctfNotification";
 
 const record = document.getElementById("record");
 const recordScore = document.getElementById("record-score");
@@ -31,6 +35,7 @@ const leaderArrowDefaultOpacity = 0.7;
 export function clear(): void {
   Leaderboard.ctfBlueFlagCarrierID = 0;
   Leaderboard.ctfRedFlagCarrierID = 0;
+  clearCtfNotification();
   if (leaderboard) leaderboard.innerHTML = "";
   if (leaderboardLeft) leaderboardLeft.innerHTML = "";
   if (leaderboardCenter) {
@@ -186,6 +191,10 @@ export class Leaderboard {
   private hasLeader = false;
   private cyanFlagPosition: { x: number; y: number } | null = null;
   private redFlagPosition: { x: number; y: number } | null = null;
+  private prevFlagStatusCyan: string | null = null;
+  private prevFlagStatusRed: string | null = null;
+  private prevCyanScore: number | null = null;
+  private prevRedScore: number | null = null;
 
   public update(
     data: LeaderboardData,
@@ -345,6 +354,47 @@ export class Leaderboard {
           (cyanFlag.FleetID ? "Taken" : "Home");
         const flagStatusRed =
           redFlag.ModeData?.flagStatus ?? (redFlag.FleetID ? "Taken" : "Home");
+
+        // Emit notifications on state transitions (deduplicated by showCtfStateNotification)
+        if (
+          this.prevFlagStatusCyan !== null &&
+          this.prevFlagStatusCyan !== flagStatusCyan
+        ) {
+          if (flagStatusCyan === "Taken") {
+            showCtfStateNotification("Red team took the Blue flag!", "red");
+          } else {
+            showCtfStateNotification("Blue flag returned to base!", "cyan");
+          }
+        }
+        if (
+          this.prevFlagStatusRed !== null &&
+          this.prevFlagStatusRed !== flagStatusRed
+        ) {
+          if (flagStatusRed === "Taken") {
+            showCtfStateNotification("Blue team took the Red flag!", "cyan");
+          } else {
+            showCtfStateNotification("Red flag returned to base!", "red");
+          }
+        }
+        if (this.prevCyanScore !== null && cyanScore > this.prevCyanScore) {
+          if (cyanScore >= 5) {
+            showCtfStateNotification("Blue Team Wins!", "gold", 6000);
+          } else {
+            showCtfStateNotification("Blue Team Scored!", "cyan");
+          }
+        }
+        if (this.prevRedScore !== null && redScore > this.prevRedScore) {
+          if (redScore >= 5) {
+            showCtfStateNotification("Red Team Wins!", "gold", 6000);
+          } else {
+            showCtfStateNotification("Red Team Scored!", "red");
+          }
+        }
+
+        this.prevFlagStatusCyan = flagStatusCyan;
+        this.prevFlagStatusRed = flagStatusRed;
+        this.prevCyanScore = cyanScore;
+        this.prevRedScore = redScore;
 
         const ctfCyanEl = document.getElementById("ctf-cyan");
         const ctfRedEl = document.getElementById("ctf-red");
