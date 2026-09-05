@@ -43,10 +43,12 @@
   will-change: transform, opacity;
   pointer-events: none;
   opacity: 0;
+  display: none;
   z-index: $z-index-base;
 
   &--leader {
     width: 160px;
+    height: 160px;
     filter: hue-rotate(235deg);
   }
 
@@ -61,6 +63,13 @@
     height: 48px;
     filter: drop-shadow(0 0 10px rgba(255, 30, 30, 0.85));
   }
+}
+
+body:not(.alive) .tracking-arrow,
+body.dead:not(.spectating) .tracking-arrow,
+body.loading .tracking-arrow {
+  display: none !important;
+  opacity: 0 !important;
 }
 
 .leader-arrow,

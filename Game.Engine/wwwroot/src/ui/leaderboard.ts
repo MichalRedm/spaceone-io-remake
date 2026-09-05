@@ -24,9 +24,9 @@ const leaderboardLeft = document.getElementById("leaderboard-left");
 const leaderboardCenter = document.getElementById("leaderboard-center");
 
 const leaderArrowTracker = new TrackingArrow("leader-arrow", {
-  width: 40,
-  height: 40,
-  edgeTranslate: 50,
+  width: 160,
+  height: 160,
+  edgePadding: 16,
   fadeZoneDist: 600,
   fadeZoneWidth: 200,
   defaultOpacity: 0.7,
@@ -37,7 +37,7 @@ const leaderArrowTracker = new TrackingArrow("leader-arrow", {
 const ctfBlueArrowTracker = new TrackingArrow("ctf-arrow-blue", {
   width: 48,
   height: 48,
-  edgeTranslate: 10,
+  edgePadding: 24,
   fadeZoneDist: 600,
   fadeZoneWidth: 200,
   defaultOpacity: 0.85,
@@ -48,7 +48,7 @@ const ctfBlueArrowTracker = new TrackingArrow("ctf-arrow-blue", {
 const ctfRedArrowTracker = new TrackingArrow("ctf-arrow-red", {
   width: 48,
   height: 48,
-  edgeTranslate: 10,
+  edgePadding: 24,
   fadeZoneDist: 600,
   fadeZoneWidth: 200,
   defaultOpacity: 0.85,
@@ -215,7 +215,7 @@ export class Leaderboard {
   private leaderFleetID: number | null = null;
   private targetLeaderPosition: Vector2 | null = null;
   private hasLeader = false;
-  private currentGameMode = "FFA";
+  private currentGameMode: string | null = null;
   private cyanFlagPosition: { x: number; y: number } | null = null;
   private redFlagPosition: { x: number; y: number } | null = null;
   private prevFlagStatusCyan: string | null = null;
@@ -500,6 +500,13 @@ export class Leaderboard {
     interpolator?: Interpolator,
     gameTime?: number,
   ): void {
+    if (!document.body.classList.contains("alive")) {
+      leaderArrowTracker.hide();
+      ctfBlueArrowTracker.hide();
+      ctfRedArrowTracker.hide();
+      return;
+    }
+
     if (this.currentGameMode === "CTF") {
       leaderArrowTracker.hide();
       const bluePos = Flag.blueFlagPosition ?? this.cyanFlagPosition;
@@ -521,7 +528,11 @@ export class Leaderboard {
     ctfBlueArrowTracker.hide();
     ctfRedArrowTracker.hide();
 
-    if (!this.hasLeader || !this.targetLeaderPosition) {
+    if (
+      this.currentGameMode !== "FFA" ||
+      !this.hasLeader ||
+      !this.targetLeaderPosition
+    ) {
       leaderArrowTracker.hide();
       return;
     }

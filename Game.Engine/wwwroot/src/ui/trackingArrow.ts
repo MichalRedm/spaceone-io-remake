@@ -9,17 +9,17 @@ import { Vector2 } from "../math/vector2";
  * Configuration options for screen-edge tracking arrows.
  */
 export interface TrackingArrowOptions {
-  /** Rendered width of the arrow DOM element in pixels. Defaults to 40. */
+  /** Rendered width of the arrow DOM element in pixels. Defaults to 48. */
   width?: number;
-  /** Rendered height of the arrow DOM element in pixels. Defaults to 40. */
+  /** Rendered height of the arrow DOM element in pixels. Defaults to 48. */
   height?: number;
-  /** Edge offset margin or padding translation from window boundary. Defaults to 50. */
-  edgeTranslate?: number;
+  /** Inset padding margin in pixels from the viewport border. Defaults to 24. */
+  edgePadding?: number;
   /** Distance in world units at which the arrow begins fading into view. Defaults to 600. */
   fadeZoneDist?: number;
   /** Width of the distance transition zone over which opacity scales to maximum. Defaults to 200. */
   fadeZoneWidth?: number;
-  /** Maximum opacity when target is distant. Defaults to 0.7. */
+  /** Maximum opacity when target is distant. Defaults to 0.85. */
   defaultOpacity?: number;
   /**
    * Intrinsic angular offset of the sprite asset in radians.
@@ -56,7 +56,8 @@ export interface TrackingProjectionResult {
  * Computes the screen-edge projection for a world target relative to the camera center.
  *
  * Casts a ray from viewport center towards the target's bearing angle, intersecting the
- * viewport rectangle and applying edge insets and distance-based opacity fading.
+ * inset viewport bounding box and applying distance-based opacity fading. Guarantees that
+ * the indicator stays entirely within the screen boundaries.
  *
  * @param targetWorldPos - World coordinates of the target entity.
  * @param cameraWorldPos - World coordinates of the player camera.
@@ -74,12 +75,12 @@ export function computeScreenEdgeProjection(
   options?: TrackingArrowOptions,
   angularNudge = 0,
 ): TrackingProjectionResult {
-  const width = options?.width ?? 40;
-  const height = options?.height ?? 40;
-  const translate = options?.edgeTranslate ?? 50;
+  const width = options?.width ?? 48;
+  const height = options?.height ?? 48;
+  const padding = options?.edgePadding ?? 24;
   const fadeDist = options?.fadeZoneDist ?? 600;
   const fadeWidth = options?.fadeZoneWidth ?? 200;
-  const maxOpacity = options?.defaultOpacity ?? 0.7;
+  const maxOpacity = options?.defaultOpacity ?? 0.85;
   const baseAngleOffset = options?.baseAngleOffset ?? 0;
 
   const dx = targetWorldPos.x - cameraWorldPos.x;
@@ -105,48 +106,26 @@ export function computeScreenEdgeProjection(
     };
   }
 
-  let angle = Math.atan2(dy, dx) + angularNudge;
-  // Normalize angle to [0, 2pi)
-  angle = ((angle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+  const baseAngle = Math.atan2(dy, dx);
+  const angle = baseAngle + angularNudge;
 
-  const criticalAngle = Math.atan2(viewportHeight, viewportWidth);
-  let screenX = 0;
-  let screenY = 0;
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
 
-  if (angle > 2 * Math.PI - criticalAngle || angle <= criticalAngle) {
-    // Right viewport edge
-    screenX = viewportWidth + translate - width;
-    screenY =
-      (viewportHeight - height) / 2 +
-      (viewportWidth / 2) *
-        Math.tan(angle) *
-        (1 - (height - 2 * translate) / viewportHeight);
-  } else if (angle > criticalAngle && angle <= Math.PI - criticalAngle) {
-    // Bottom viewport edge
-    screenX =
-      (viewportWidth - width) / 2 +
-      (viewportHeight / 2 / Math.tan(angle)) *
-        (1 - (width - 2 * translate) / viewportWidth);
-    screenY = viewportHeight + translate - height;
-  } else if (
-    angle > Math.PI - criticalAngle &&
-    angle <= Math.PI + criticalAngle
-  ) {
-    // Left viewport edge
-    screenX = -translate;
-    screenY =
-      (viewportHeight - height) / 2 -
-      (viewportWidth / 2) *
-        Math.tan(angle) *
-        (1 - (height - 2 * translate) / viewportHeight);
-  } else {
-    // Top viewport edge
-    screenX =
-      (viewportWidth - width) / 2 -
-      (viewportHeight / 2 / Math.tan(angle)) *
-        (1 - (width - 2 * translate) / viewportWidth);
-    screenY = -translate;
-  }
+  // Inset boundary box for the center of the arrow
+  const halfWidth = Math.max(10, viewportWidth / 2 - padding - width / 2);
+  const halfHeight = Math.max(10, viewportHeight / 2 - padding - height / 2);
+
+  // Ray-box intersection from viewport center
+  const tx = Math.abs(cos) > 1e-6 ? halfWidth / Math.abs(cos) : Infinity;
+  const ty = Math.abs(sin) > 1e-6 ? halfHeight / Math.abs(sin) : Infinity;
+  const t = Math.min(tx, ty);
+
+  const centerX = viewportWidth / 2 + t * cos;
+  const centerY = viewportHeight / 2 + t * sin;
+
+  const screenX = centerX - width / 2;
+  const screenY = centerY - height / 2;
 
   const rotation = angle + baseAngleOffset;
 
@@ -226,6 +205,7 @@ export class TrackingArrow {
       this.element = elementOrId;
     }
     this.options = options;
+    this.hide();
   }
 
   private getElement(): HTMLElement | null {
@@ -282,18 +262,20 @@ export class TrackingArrow {
       return;
     }
 
+    el.style.display = "block";
     el.style.opacity = `${projection.opacity}`;
     el.style.transform = `translate3d(${projection.screenX}px, ${projection.screenY}px, 0) rotate(${projection.rotation}rad)`;
     this.isCurrentlyVisible = true;
   }
 
   /**
-   * Hides the tracking arrow element.
+   * Hides the tracking arrow element unconditionally.
    */
   public hide(): void {
     const el = this.getElement();
-    if (el && this.isCurrentlyVisible) {
+    if (el) {
       el.style.opacity = "0";
+      el.style.display = "none";
       this.isCurrentlyVisible = false;
     }
   }
