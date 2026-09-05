@@ -141,39 +141,61 @@ export function computeScreenEdgeProjection(
 }
 
 /**
- * Calculates symmetric angular nudges when two active tracking arrows lie along nearly identical bearings.
+ * Calculates symmetric angular nudges when two active off-screen tracking arrows lie along nearly identical bearings.
  *
- * Prevents overlapping screen-edge indicators from occluding each other.
+ * If either target is close to the camera (e.g. in view, within fade zone, or carried by the local fleet),
+ * that indicator is not rendered on the perimeter and cannot cause overlap, so no nudge is applied.
  *
  * @param posA - Target A world position.
  * @param posB - Target B world position.
  * @param cameraPos - Camera center world position.
- * @param minSeparation - Minimum angular separation in radians. Defaults to 0.25 (~14 degrees).
- * @param nudgeDelta - Angular offset applied to each arrow when overlapping. Defaults to 0.12 (~7 degrees).
+ * @param minDistance - Minimum distance from camera required for both targets to participate in overlap resolution. Defaults to 600.
+ * @param minSeparation - Desired angular separation threshold in radians. Defaults to 0.25 (~14 degrees).
  * @returns Tuple `[nudgeA, nudgeB]` in radians.
  */
 export function resolveTrackingArrowOverlap(
   posA: { x: number; y: number } | null | undefined,
   posB: { x: number; y: number } | null | undefined,
   cameraPos: { x: number; y: number },
+  minDistance = 600,
   minSeparation = 0.25,
-  nudgeDelta = 0.12,
 ): [number, number] {
   if (!posA || !posB) {
     return [0, 0];
   }
 
-  const angleA = Math.atan2(posA.y - cameraPos.y, posA.x - cameraPos.x);
-  const angleB = Math.atan2(posB.y - cameraPos.y, posB.x - cameraPos.x);
+  const dxA = posA.x - cameraPos.x;
+  const dyA = posA.y - cameraPos.y;
+  const distSqA = dxA * dxA + dyA * dyA;
 
-  // Shortest angular difference between two bearings
+  const dxB = posB.x - cameraPos.x;
+  const dyB = posB.y - cameraPos.y;
+  const distSqB = dxB * dxB + dyB * dyB;
+
+  // If either target is close to the camera (within fade zone or carried),
+  // that arrow is faded/hidden on screen and will never collide with the other arrow.
+  const minDistanceSq = minDistance * minDistance;
+  if (distSqA < minDistanceSq || distSqB < minDistanceSq) {
+    return [0, 0];
+  }
+
+  const angleA = Math.atan2(dyA, dxA);
+  const angleB = Math.atan2(dyB, dxB);
+
+  // Shortest angular difference between two bearings (-pi, pi]
   let diff = angleA - angleB;
   while (diff < -Math.PI) diff += 2 * Math.PI;
   while (diff > Math.PI) diff -= 2 * Math.PI;
 
-  if (Math.abs(diff) < minSeparation) {
-    // If diff >= 0, A is counterclockwise of B; separate them further
-    return diff >= 0 ? [nudgeDelta, -nudgeDelta] : [-nudgeDelta, nudgeDelta];
+  const absDiff = Math.abs(diff);
+  if (absDiff < minSeparation) {
+    // Smoothly scale the nudge from 0 at the threshold to full separation at exact collision
+    const halfDelta = (minSeparation - absDiff) / 2;
+    if (diff >= 0) {
+      return [halfDelta, -halfDelta];
+    } else {
+      return [-halfDelta, halfDelta];
+    }
   }
 
   return [0, 0];

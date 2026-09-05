@@ -216,6 +216,7 @@ export class Leaderboard {
   private targetLeaderPosition: Vector2 | null = null;
   private hasLeader = false;
   private currentGameMode: string | null = null;
+  private ownFleetID: number | null = null;
   private cyanFlagPosition: { x: number; y: number } | null = null;
   private redFlagPosition: { x: number; y: number } | null = null;
   private prevFlagStatusCyan: string | null = null;
@@ -229,6 +230,7 @@ export class Leaderboard {
     fleetID?: number,
   ): void {
     this.currentGameMode = data.Type;
+    this.ownFleetID = fleetID ?? null;
     const isEnabled = Settings.leaderboardEnabled;
     if (record) record.classList.toggle("is-hidden", !isEnabled);
     if (leaderboard) leaderboard.classList.toggle("is-hidden", !isEnabled);
@@ -509,14 +511,29 @@ export class Leaderboard {
 
     if (this.currentGameMode === "CTF") {
       leaderArrowTracker.hide();
-      const bluePos = Flag.blueFlagPosition ?? this.cyanFlagPosition;
-      const redPos = Flag.redFlagPosition ?? this.redFlagPosition;
 
-      // When both flags are active and close in bearing, nudge them apart to avoid occlusion
+      const isCarryingBlue =
+        this.ownFleetID !== null &&
+        this.ownFleetID > 0 &&
+        Leaderboard.ctfBlueFlagCarrierID === this.ownFleetID;
+      const isCarryingRed =
+        this.ownFleetID !== null &&
+        this.ownFleetID > 0 &&
+        Leaderboard.ctfRedFlagCarrierID === this.ownFleetID;
+
+      const bluePos = isCarryingBlue
+        ? null
+        : (Flag.blueFlagPosition ?? this.cyanFlagPosition);
+      const redPos = isCarryingRed
+        ? null
+        : (Flag.redFlagPosition ?? this.redFlagPosition);
+
+      // When both flags are active and close in bearing, nudge them apart smoothly
       const [blueNudge, redNudge] = resolveTrackingArrowOverlap(
         bluePos,
         redPos,
         cameraPosition,
+        600,
       );
 
       ctfBlueArrowTracker.update(bluePos, cameraPosition, blueNudge);
