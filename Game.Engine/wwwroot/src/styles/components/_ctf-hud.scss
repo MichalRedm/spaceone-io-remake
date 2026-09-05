@@ -7,7 +7,7 @@
 .ctf-hud,
 #ctf-arena {
   position: fixed;
-  top: 10px;
+  top: 90px;
   left: 50%;
   transform: translateX(-50%);
   font-size: 16pt;
@@ -15,9 +15,10 @@
   display: flex;
   gap: 30px;
   z-index: $z-index-base;
+  pointer-events: none;
 
   &.hide {
-    display: none;
+    display: none !important;
   }
 
   &__team {
@@ -45,5 +46,139 @@
     .taken {
       color: $color-yellow-primary;
     }
+
+    .hide {
+      display: none;
+    }
+  }
+}
+
+// CTF / Team score indicator & flag direction HUD
+#leaderboard-center {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: $z-index-base;
+  pointer-events: none;
+  border-collapse: collapse;
+
+  td.flag {
+    width: 36px;
+    height: 83px;
+    position: relative;
+    vertical-align: middle;
+    text-align: center;
+  }
+
+  .flag-arrow {
+    width: 27px;
+    height: 27px;
+    display: block;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    margin: auto;
+    pointer-events: none;
+    user-select: none;
+
+    &--blue {
+      right: 0;
+    }
+
+    &--red {
+      left: 0;
+    }
+  }
+
+  .ctf-score-container {
+    width: 300px;
+    height: 83px;
+    position: relative;
+    display: block;
+  }
+
+  .overlap {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 300px;
+    height: 83px;
+    margin: 0;
+    padding: 0;
+    pointer-events: none;
+    user-select: none;
+  }
+}
+
+#leaderboard-left {
+  display: none !important;
+}
+
+// CTF in-game match notifications (flag taken, team scored, victory)
+.ctf-notification,
+#ctf-notification {
+  position: fixed;
+  top: 135px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-10px);
+  z-index: $z-index-base;
+  pointer-events: none;
+  font-family: $font-family-main;
+  font-size: 15pt;
+  font-weight: 700;
+  padding: 8px 24px;
+  border-radius: 20px;
+  background: rgba(10, 25, 55, 0.88);
+  backdrop-filter: blur(8px);
+  border: 2px solid $color-blue-border;
+  color: $color-text-main;
+  box-shadow: 0 0 20px rgba(0, 82, 255, 0.5);
+  opacity: 0;
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease;
+  white-space: nowrap;
+
+  &.hide {
+    display: none !important;
+  }
+
+  &--visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  &--cyan {
+    border-color: #00ffff;
+    color: #00ffff;
+    box-shadow: 0 0 25px rgba(0, 255, 255, 0.55);
+  }
+
+  &--red {
+    border-color: #ff3333;
+    color: #ff3333;
+    box-shadow: 0 0 25px rgba(255, 51, 51, 0.55);
+  }
+
+  &--gold,
+  &--win {
+    border-color: #fae40b;
+    color: #fae40b;
+    box-shadow: 0 0 35px rgba(250, 228, 11, 0.8);
+    font-size: 20pt;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+  }
+}
+
+// Hide CTF HUD elements on loading or when player is on the spawnscreen / dead
+body.loading,
+body.dead:not(.spectating) {
+  #ctf-arena,
+  #leaderboard-center,
+  #leaderboard-left,
+  #ctf-notification {
+    display: none !important;
   }
 }

@@ -85,9 +85,12 @@ function resolveEffectiveZ(
   const isShip = spriteStr.startsWith("ship");
   const isBullet =
     spriteStr.startsWith("bullet") || spriteStr.startsWith("laser");
+  const isFlag = spriteStr.startsWith("ctf_flag") || spriteStr.includes("flag");
 
   let effectiveZ = zIndex;
-  if (!effectiveZ || effectiveZ === 0) {
+  if (isFlag) {
+    effectiveZ = 300;
+  } else if (!effectiveZ || effectiveZ === 0) {
     effectiveZ = isShip ? 200 : isBullet ? 100 : 50;
   } else {
     if (isShip && effectiveZ < 200) effectiveZ = 200;
@@ -395,6 +398,18 @@ export class RenderedObject {
   // ── Render pipeline entry points ───────────────────────────────────────────
 
   /**
+   * Computes the projected world position and heading angle for this entity.
+   * Overridden by subclasses (e.g. Flag) for carrier synchronization or smoothing.
+   *
+   * @param time - Authoritative render timestamp in milliseconds.
+   * @param interpolator - Dead-reckoning kinematic interpolator.
+   * @returns Projected 2D spatial point with heading angle in radians.
+   */
+  computePosition(time: number, interpolator: Interpolator): ProjectedPoint {
+    return interpolator.projectObject(this.body!, time);
+  }
+
+  /**
    * Called once per render frame. Resolves the interpolated position,
    * delegates all animation to `SpriteAnimator`, and advances particle emitters.
    * Culls rendering and transform calculations if entity is outside camera frustum.
@@ -407,7 +422,7 @@ export class RenderedObject {
     frameNow = performance.now(),
   ): void {
     if (this.body) {
-      const newPosition = interpolator.projectObject(this.body, time);
+      const newPosition = this.computePosition(time, interpolator);
       this._updatePositionDelta(newPosition);
 
       const isVisible =

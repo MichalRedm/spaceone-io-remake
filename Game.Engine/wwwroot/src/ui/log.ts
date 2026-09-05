@@ -5,6 +5,7 @@
 
 import Cookies from "js-cookie";
 import { escapeHtml } from "./leaderboard";
+import { showCtfAnnouncement } from "./ctfNotification";
 
 const bigLog = document.getElementById("big-log");
 const scoreCon = document.getElementById("plus-score-container");
@@ -81,6 +82,30 @@ export class Log {
     } else if (entry.type === "killed" || entry.type === "universeDeath") {
       const score = entry.extraData?.score ?? 0;
       updateHighscore(score);
+      return;
+    } else if (
+      entry.type === "ctf" ||
+      (entry.text && entry.text.startsWith("CTF:"))
+    ) {
+      let text = entry.text || "";
+      if (text.startsWith("CTF:")) {
+        text = text.slice(4).trim();
+      }
+      const lower = text.toLowerCase();
+      let variant: "cyan" | "red" | "gold" | "default" = "default";
+      if (
+        lower.includes("win") ||
+        lower.includes("won") ||
+        lower.includes("victory") ||
+        lower.includes("game over")
+      ) {
+        variant = "gold";
+      } else if (lower.includes("blue") || lower.includes("cyan")) {
+        variant = "cyan";
+      } else if (lower.includes("red")) {
+        variant = "red";
+      }
+      showCtfAnnouncement(text, variant, variant === "gold" ? 5000 : 3500);
       return;
     } else {
       return;

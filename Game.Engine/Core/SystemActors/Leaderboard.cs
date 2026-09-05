@@ -12,14 +12,63 @@ namespace Game.Engine.Core.SystemActors
         {
             CycleMS = World.Hook.LeaderboardRefresh;
 
+            Leaderboard leaderboard;
             if (World.LeaderboardGenerator != null)
-                World.Leaderboard = World.LeaderboardGenerator();
+                leaderboard = World.LeaderboardGenerator();
+            else if (World.Hook.TeamMode)
+                leaderboard = GenerateTeamLeaderboard();
             else
+                leaderboard = GenerateStandardLeaderboard();
+
+            UpdateArenaRecord(leaderboard);
+            World.Leaderboard = leaderboard;
+        }
+
+        private void UpdateArenaRecord(Leaderboard leaderboard)
+        {
+            if (leaderboard == null) return;
+
+            // Preserve existing arena record or initialize a blank one
+            leaderboard.ArenaRecord = World.Leaderboard?.ArenaRecord
+                ?? new Leaderboard.Entry { Name = "Unknown Fleet", Score = 0 };
+
+            // Find the highest-scoring live player across any game mode (excluding team synthetic entries)
+            var players = Player.GetWorldPlayers(World);
+            Leaderboard.Entry topLivePlayer = null;
+            int maxPlayerScore = -1;
+
+            for (int i = 0; i < players.Count; i++)
             {
-                if (World.Hook.TeamMode)
-                    World.Leaderboard = GenerateTeamLeaderboard();
-                else
-                    World.Leaderboard = GenerateStandardLeaderboard();
+                var p = players[i];
+                if (p != null && p.IsAlive && p.Score > maxPlayerScore)
+                {
+                    maxPlayerScore = p.Score;
+                    topLivePlayer = new Leaderboard.Entry
+                    {
+                        FleetID = p.Fleet?.ID ?? 0,
+                        Name = p.Name,
+                        Score = p.Score,
+                        Color = p.Color,
+                        Position = p.Fleet?.FleetCenter ?? Vector2.Zero,
+                        Token = p.Token
+                    };
+                }
+            }
+
+            if (topLivePlayer != null && topLivePlayer.Score > leaderboard.ArenaRecord.Score)
+            {
+                leaderboard.ArenaRecord = topLivePlayer;
+                World.ArenaRecordResetTime = World.Time + 86400000;
+                World.ArenaRecordHasReset = false;
+            }
+
+            if (!World.ArenaRecordHasReset && World.Time >= World.ArenaRecordResetTime && World.ArenaRecordResetTime > 0)
+            {
+                Console.WriteLine("Arena Record Score Resetting.");
+                leaderboard.ArenaRecord.Score = 0;
+                leaderboard.ArenaRecord.Name = "Unknown Fleet";
+                leaderboard.ArenaRecord.FleetID = 0;
+                World.ArenaRecordHasReset = true;
             }
         }
 
@@ -46,34 +95,12 @@ namespace Game.Engine.Core.SystemActors
 
             entries.Sort((a, b) => b.Score.CompareTo(a.Score));
 
-            var leaderboard = new Leaderboard
+            return new Leaderboard
             {
                 Entries = entries,
                 Type = "FFA",
-                Time = World.Time,
-                ArenaRecord = World.Leaderboard?.ArenaRecord
-                    ?? new Leaderboard.Entry()
+                Time = World.Time
             };
-
-            var firstPlace = leaderboard.Entries.Count > 0 ? leaderboard.Entries[0] : null;
-            if (World.Leaderboard != null && firstPlace?.Score > World.Leaderboard.ArenaRecord.Score)
-            {
-                leaderboard.ArenaRecord = firstPlace;
-                World.ArenaRecordResetTime = World.Time + 86400000;
-                World.ArenaRecordHasReset = false;
-            }
-
-
-            if (World.Leaderboard != null && !World.ArenaRecordHasReset && World.Time >= World.ArenaRecordResetTime)
-            {
-                Console.WriteLine("Arena Record Score Reseting.");
-                leaderboard.ArenaRecord.Score = 0;
-                leaderboard.ArenaRecord.Name = "";
-                leaderboard.ArenaRecord.FleetID = 0;
-                World.ArenaRecordHasReset = true;
-            }
-
-            return leaderboard;
         }
 
         protected Leaderboard GenerateTeamLeaderboard()

@@ -52,6 +52,9 @@ namespace Game.Engine.Core.SystemActors.CTF
                 if (CarriedBy != null)
                 {
                     CarriedBy.Burden = 0;
+                    var returnMsg = $"CTF: {Team.ColorName} flag returned to base!";
+                    foreach (var p in Player.GetWorldPlayers(World))
+                        p.SendMessage(returnMsg, "ctf");
                 }
 
                 CarriedBy = null;
@@ -86,7 +89,15 @@ namespace Game.Engine.Core.SystemActors.CTF
                 {
                     if (fleet.Owner.Color == Team.ColorName)
                     {
+                        bool wasAway = !Base.FlagIsHome();
                         ReturnToBase();
+                        if (wasAway)
+                        {
+                            var name = !string.IsNullOrWhiteSpace(fleet.Owner.Name) ? fleet.Owner.Name : "A player";
+                            var msg = $"CTF: {name} returned the {Team.ColorName} flag!";
+                            foreach (var p in Player.GetWorldPlayers(World))
+                                p.SendMessage(msg, "ctf");
+                        }
                     }
                     else
                     {
@@ -95,6 +106,10 @@ namespace Game.Engine.Core.SystemActors.CTF
                         if (CarriedBy != null)
                         {
                             CarriedBy.Burden = World.Hook.CTFCarryBurden;
+                            var name = !string.IsNullOrWhiteSpace(fleet.Owner.Name) ? fleet.Owner.Name : "A player";
+                            var msg = $"CTF: {name} took the {Team.ColorName} flag!";
+                            foreach (var p in Player.GetWorldPlayers(World))
+                                p.SendMessage(msg, "ctf");
                         }
                     }
                 }

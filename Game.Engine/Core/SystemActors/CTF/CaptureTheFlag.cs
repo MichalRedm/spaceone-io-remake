@@ -182,7 +182,7 @@ namespace Game.Engine.Core.SystemActors.CTF
                 : $"CTF: {team.ColorName} scored!";
 
             foreach (var player in players)
-                player.SendMessage(message);
+                player.SendMessage(message, "ctf");
         }
 
         protected override void CycleThink()

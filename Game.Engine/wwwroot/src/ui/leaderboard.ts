@@ -8,6 +8,12 @@ import { Vector2 } from "../math/vector2";
 import { updateHighscore } from "./log";
 import type { Cache } from "../models/cache";
 import type { Interpolator } from "../rendering/interpolator";
+import { getTextureImage } from "../models/renderedObject";
+import { Flag } from "../models/flag";
+import {
+  showCtfStateNotification,
+  clearCtfNotification,
+} from "./ctfNotification";
 
 const record = document.getElementById("record");
 const recordScore = document.getElementById("record-score");
@@ -27,6 +33,9 @@ const leaderArrowDefaultOpacity = 0.7;
  * Clears all leaderboard table DOM contents and hides the leader arrow.
  */
 export function clear(): void {
+  Leaderboard.ctfBlueFlagCarrierID = 0;
+  Leaderboard.ctfRedFlagCarrierID = 0;
+  clearCtfNotification();
   if (leaderboard) leaderboard.innerHTML = "";
   if (leaderboardLeft) leaderboardLeft.innerHTML = "";
   if (leaderboardCenter) {
@@ -78,6 +87,8 @@ export interface LeaderboardEntry {
   Position?: { x: number; y: number };
   /** Bitmask mode flags. */
   Mode?: number;
+  /** Optional mode-specific metadata (e.g. CTF flagStatus). */
+  ModeData?: { flagStatus?: string; [key: string]: unknown };
 }
 
 /**
@@ -130,29 +141,60 @@ function getOut(
   entry: LeaderboardEntry,
   rank?: number,
   entryIsSelf?: boolean,
+  showTeamColor?: boolean,
 ): string {
   const rankStr = rank === undefined ? "" : `${rank}.`;
   const name = escapeHtml(entry.Name) || "Unknown Fleet";
   const colorClass =
-    entry.Color && entryIsSelf ? `leaderboard__row--${entry.Color}` : "";
-  const selfClass = entryIsSelf ? "leaderboard__row--self" : "";
+    entry.Color && (entryIsSelf || showTeamColor)
+      ? `leaderboard__row--${entry.Color}`
+      : "";
+  const selfClass = entryIsSelf
+    ? showTeamColor
+      ? "leaderboard__row--self leaderboard__row--team-self"
+      : "leaderboard__row--self"
+    : "";
   const rowClass = ["leaderboard__row", selfClass, colorClass]
     .filter(Boolean)
     .join(" ");
 
   return (
     `<tr class="${rowClass}">` +
-    `<td class="name" title="${name}">${rankStr} ${name}</td>` +
+    `<td class="name" title="${name}">${rankStr ? `${rankStr} ` : ""}${name}</td>` +
     `<td class="score">${entry.Score ?? 0}</td>` +
     `</tr>`
   );
 }
 
 export class Leaderboard {
+  /** Active carrier fleet ID for the blue flag (0 if home or dropped). */
+  public static ctfBlueFlagCarrierID = 0;
+  /** Active carrier fleet ID for the red flag (0 if home or dropped). */
+  public static ctfRedFlagCarrierID = 0;
+
+  /**
+   * Retrieves the authoritative carrier fleet ID for a given flag sprite.
+   *
+   * @param sprite - Flag sprite name (e.g. 'ctf_flag_blue', 'ctf_flag_red').
+   * @returns Fleet ID of carrier, or 0 if not carried.
+   */
+  public static getFlagCarrierFleetID(sprite?: string | false | null): number {
+    const s = String(sprite || "");
+    if (s.includes("blue")) return Leaderboard.ctfBlueFlagCarrierID;
+    if (s.includes("red")) return Leaderboard.ctfRedFlagCarrierID;
+    return 0;
+  }
+
   private leaderFleetID: number | null = null;
   private targetLeaderPosition: Vector2 | null = null;
   private currentLeaderPosition: Vector2 | null = null;
   private hasLeader = false;
+  private cyanFlagPosition: { x: number; y: number } | null = null;
+  private redFlagPosition: { x: number; y: number } | null = null;
+  private prevFlagStatusCyan: string | null = null;
+  private prevFlagStatusRed: string | null = null;
+  private prevCyanScore: number | null = null;
+  private prevRedScore: number | null = null;
 
   public update(
     data: LeaderboardData,
@@ -196,29 +238,39 @@ export class Leaderboard {
     }
 
     // Determine rank 1 leader position and fleet ID
-    const firstEntry = data.Entries[0];
-    if (
-      firstEntry &&
-      firstEntry.Position &&
-      firstEntry.FleetID !== undefined &&
-      firstEntry.FleetID !== fleetID
-    ) {
-      this.hasLeader = true;
-      this.leaderFleetID = firstEntry.FleetID;
-      this.targetLeaderPosition = new Vector2(
-        firstEntry.Position.x,
-        firstEntry.Position.y,
-      );
-      if (!this.currentLeaderPosition) {
-        this.currentLeaderPosition = new Vector2(
+    if (data.Type === "FFA") {
+      const firstEntry = data.Entries[0];
+      if (
+        firstEntry &&
+        firstEntry.Position &&
+        firstEntry.FleetID !== undefined &&
+        firstEntry.FleetID !== fleetID
+      ) {
+        this.hasLeader = true;
+        this.leaderFleetID = firstEntry.FleetID;
+        this.targetLeaderPosition = new Vector2(
           firstEntry.Position.x,
           firstEntry.Position.y,
         );
+        if (!this.currentLeaderPosition) {
+          this.currentLeaderPosition = new Vector2(
+            firstEntry.Position.x,
+            firstEntry.Position.y,
+          );
+        }
+      } else {
+        this.hasLeader = false;
+        this.leaderFleetID = null;
+        this.targetLeaderPosition = null;
       }
     } else {
+      // In CTF / Team modes, standard leader arrow is irrelevant (CTF has dedicated flag compasses)
       this.hasLeader = false;
       this.leaderFleetID = null;
       this.targetLeaderPosition = null;
+      if (leaderArrow) {
+        leaderArrow.style.opacity = "0";
+      }
     }
 
     if (data.Type === "FFA" && leaderboard) {
@@ -232,60 +284,187 @@ export class Leaderboard {
         }
       }
       leaderboard.innerHTML = `<tbody>${out}</tbody>`;
+      if (leaderboardCenter) {
+        leaderboardCenter.innerHTML = "";
+        leaderboardCenter.hidden = true;
+        leaderboardCenter.classList.add("is-hidden");
+        leaderboardCenter.style.width = "";
+        leaderboardCenter.style.height = "";
+      }
+      if (leaderboardLeft) {
+        leaderboardLeft.innerHTML = "";
+        leaderboardLeft.hidden = true;
+        leaderboardLeft.classList.add("is-hidden");
+      }
     } else if (data.Type === "Team") {
-      let outL = "";
-      let outR = "";
       let outC = "";
+      if (data.Entries[0])
+        outC += getOut(data.Entries[0], undefined, false, true);
+      if (data.Entries[1])
+        outC += getOut(data.Entries[1], undefined, false, true);
 
-      data.Entries.forEach((entry: LeaderboardEntry, i: number) => {
-        const str = getOut(entry, i + 1);
-        if (i === 0 || i === 1) {
-          outC += str;
-        } else if (entry.Color === "cyan" || entry.Color === "blue") {
-          outL += str;
-        } else {
-          outR += str;
-        }
-      });
-
-      if (leaderboard) leaderboard.innerHTML = `<tbody>${outR}</tbody>`;
-      if (leaderboardLeft) leaderboardLeft.innerHTML = `<tbody>${outL}</tbody>`;
-      if (leaderboardCenter)
+      if (leaderboardCenter) {
+        leaderboardCenter.hidden = false;
+        leaderboardCenter.classList.remove("is-hidden");
         leaderboardCenter.innerHTML = `<tbody>${outC}</tbody>`;
-    } else if (data.Type === "CTF") {
-      let outL = "";
-      let outR = "";
-      let redFlag: LeaderboardEntry | null = null;
-      let cyanFlag: LeaderboardEntry | null = null;
-
-      data.Entries.forEach((entry: LeaderboardEntry, i: number) => {
-        const str = getOut(entry, i + 1);
-        if (i === 0) {
-          cyanFlag = entry;
-        } else if (i === 1) {
-          redFlag = entry;
-        } else if (entry.Color === "cyan" || entry.Color === "blue") {
-          outL += str;
-        } else {
-          outR += str;
-        }
-      });
-
-      if (cyanFlag && redFlag) {
-        blurText(
-          document.getElementById("ctf_score_left"),
-          document.getElementById("ctf_score_left_blur"),
-          `${(cyanFlag as LeaderboardEntry).Score ?? 0}`,
-        );
-        blurText(
-          document.getElementById("ctf_score_right"),
-          document.getElementById("ctf_score_right_blur"),
-          `${(redFlag as LeaderboardEntry).Score ?? 0}`,
-        );
       }
 
-      if (leaderboard) leaderboard.innerHTML = `<tbody>${outR}</tbody>`;
-      if (leaderboardLeft) leaderboardLeft.innerHTML = `<tbody>${outL}</tbody>`;
+      // Players start from index 2; sort by score descending
+      const players = data.Entries.slice(2);
+      players.sort((a, b) => (b.Score ?? 0) - (a.Score ?? 0));
+
+      let out = "";
+      const maxEntries = 10;
+      for (let i = 0; i < players.length; i++) {
+        const entry = players[i];
+        if (!entry) continue;
+        const entryIsSelf = entry.FleetID === fleetID;
+        if (i < maxEntries || entryIsSelf) {
+          out += getOut(entry, i + 1, entryIsSelf, true);
+        }
+      }
+
+      if (leaderboard) leaderboard.innerHTML = `<tbody>${out}</tbody>`;
+      if (leaderboardLeft) {
+        leaderboardLeft.innerHTML = "";
+        leaderboardLeft.hidden = true;
+        leaderboardLeft.classList.add("is-hidden");
+      }
+    } else if (data.Type === "CTF") {
+      const cyanFlag = data.Entries[0];
+      const redFlag = data.Entries[1];
+
+      if (cyanFlag && redFlag) {
+        Leaderboard.ctfBlueFlagCarrierID = cyanFlag.FleetID ?? 0;
+        Leaderboard.ctfRedFlagCarrierID = redFlag.FleetID ?? 0;
+
+        if (cyanFlag.Position) {
+          this.cyanFlagPosition = cyanFlag.Position;
+        }
+        if (redFlag.Position) {
+          this.redFlagPosition = redFlag.Position;
+        }
+
+        const cyanScore = Math.min(cyanFlag.Score ?? 0, 5);
+        const redScore = Math.min(redFlag.Score ?? 0, 5);
+
+        // Update home / taken flag status indicators
+        const flagStatusCyan =
+          cyanFlag.ModeData?.flagStatus ??
+          (cyanFlag.FleetID ? "Taken" : "Home");
+        const flagStatusRed =
+          redFlag.ModeData?.flagStatus ?? (redFlag.FleetID ? "Taken" : "Home");
+
+        // Emit notifications on state transitions (deduplicated by showCtfStateNotification)
+        if (
+          this.prevFlagStatusCyan !== null &&
+          this.prevFlagStatusCyan !== flagStatusCyan
+        ) {
+          if (flagStatusCyan === "Taken") {
+            showCtfStateNotification("Red team took the Blue flag!", "red");
+          } else {
+            showCtfStateNotification("Blue flag returned to base!", "cyan");
+          }
+        }
+        if (
+          this.prevFlagStatusRed !== null &&
+          this.prevFlagStatusRed !== flagStatusRed
+        ) {
+          if (flagStatusRed === "Taken") {
+            showCtfStateNotification("Blue team took the Red flag!", "cyan");
+          } else {
+            showCtfStateNotification("Red flag returned to base!", "red");
+          }
+        }
+        if (this.prevCyanScore !== null && cyanScore > this.prevCyanScore) {
+          if (cyanScore >= 5) {
+            showCtfStateNotification("Blue Team Wins!", "gold", 6000);
+          } else {
+            showCtfStateNotification("Blue Team Scored!", "cyan");
+          }
+        }
+        if (this.prevRedScore !== null && redScore > this.prevRedScore) {
+          if (redScore >= 5) {
+            showCtfStateNotification("Red Team Wins!", "gold", 6000);
+          } else {
+            showCtfStateNotification("Red Team Scored!", "red");
+          }
+        }
+
+        this.prevFlagStatusCyan = flagStatusCyan;
+        this.prevFlagStatusRed = flagStatusRed;
+        this.prevCyanScore = cyanScore;
+        this.prevRedScore = redScore;
+
+        const ctfCyanEl = document.getElementById("ctf-cyan");
+        const ctfRedEl = document.getElementById("ctf-red");
+        if (ctfCyanEl) {
+          const homeEl = ctfCyanEl.querySelector(".home");
+          const takenEl = ctfCyanEl.querySelector(".taken");
+          if (homeEl && takenEl) {
+            homeEl.classList.toggle("hide", flagStatusCyan === "Taken");
+            takenEl.classList.toggle("hide", flagStatusCyan !== "Taken");
+          }
+        }
+        if (ctfRedEl) {
+          const homeEl = ctfRedEl.querySelector(".home");
+          const takenEl = ctfRedEl.querySelector(".taken");
+          if (homeEl && takenEl) {
+            homeEl.classList.toggle("hide", flagStatusRed === "Taken");
+            takenEl.classList.toggle("hide", flagStatusRed !== "Taken");
+          }
+        }
+
+        // Render CTF score indicator banner in leaderboardCenter
+        if (leaderboardCenter) {
+          const image = (textureName: string) => {
+            const imgElem = getTextureImage(textureName);
+            const src = imgElem?.src || "";
+            return `<img class="overlap" src="${src}" alt="" />`;
+          };
+
+          const finalSuffix =
+            cyanScore >= 5 ? "_blue" : redScore >= 5 ? "_red" : "";
+
+          leaderboardCenter.hidden = false;
+          leaderboardCenter.classList.remove("is-hidden");
+          leaderboardCenter.style.width = "372px";
+          leaderboardCenter.style.height = "83px";
+          leaderboardCenter.innerHTML =
+            `<tbody><tr>` +
+            `<td class="flag"><img id="ctf-arrow-blue" class="flag-arrow flag-arrow--blue" src="${getTextureImage("ctf_arrow_blue").src}" alt="" /></td>` +
+            `<td class="ctf-score-container">` +
+            image("ctf_score_stripes") +
+            image(`ctf_score_left_${Math.min(cyanScore, 4)}`) +
+            image(`ctf_score_right_${Math.min(redScore, 4)}`) +
+            image(`ctf_score_final${finalSuffix}`) +
+            `</td>` +
+            `<td class="flag"><img id="ctf-arrow-red" class="flag-arrow flag-arrow--red" src="${getTextureImage("ctf_arrow_red").src}" alt="" /></td>` +
+            `</tr></tbody>`;
+        }
+      }
+
+      // Players start from index 2; sort by score descending
+      const players = data.Entries.slice(2);
+      players.sort((a, b) => (b.Score ?? 0) - (a.Score ?? 0));
+
+      let out = "";
+      const maxEntries = 10;
+      for (let i = 0; i < players.length; i++) {
+        const entry = players[i];
+        if (!entry) continue;
+        const entryIsSelf = entry.FleetID === fleetID;
+        if (i < maxEntries || entryIsSelf) {
+          out += getOut(entry, i + 1, entryIsSelf, true);
+        }
+      }
+
+      if (leaderboard) leaderboard.innerHTML = `<tbody>${out}</tbody>`;
+      if (leaderboardLeft) {
+        leaderboardLeft.innerHTML = "";
+        leaderboardLeft.hidden = true;
+        leaderboardLeft.classList.add("is-hidden");
+      }
     }
   }
 
@@ -303,6 +482,30 @@ export class Leaderboard {
     interpolator?: Interpolator,
     gameTime?: number,
   ): void {
+    // Update CTF flag compass indicator arrows if present
+    const blueArrow = document.getElementById("ctf-arrow-blue");
+    const redArrow = document.getElementById("ctf-arrow-red");
+    if (blueArrow || redArrow) {
+      const bluePos = Flag.blueFlagPosition ?? this.cyanFlagPosition;
+      const redPos = Flag.redFlagPosition ?? this.redFlagPosition;
+
+      if (blueArrow && bluePos) {
+        const blueAngle = Math.atan2(
+          bluePos.y - cameraPosition.y,
+          bluePos.x - cameraPosition.x,
+        );
+        blueArrow.style.transform = `rotate(${blueAngle}rad)`;
+      }
+
+      if (redArrow && redPos) {
+        const redAngle = Math.atan2(
+          redPos.y - cameraPosition.y,
+          redPos.x - cameraPosition.x,
+        );
+        redArrow.style.transform = `rotate(${redAngle}rad)`;
+      }
+    }
+
     if (!leaderArrow) return;
 
     if (!this.hasLeader || !this.targetLeaderPosition) {
