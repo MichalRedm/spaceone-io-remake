@@ -61,35 +61,8 @@
   transform: translateX(-50%);
   z-index: $z-index-base;
   pointer-events: none;
-  border-collapse: collapse;
-
-  td.flag {
-    width: 36px;
-    height: 83px;
-    position: relative;
-    vertical-align: middle;
-    text-align: center;
-  }
-
-  .flag-arrow {
-    width: 27px;
-    height: 27px;
-    display: block;
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    margin: auto;
-    pointer-events: none;
-    user-select: none;
-
-    &--blue {
-      right: 0;
-    }
-
-    &--red {
-      left: 0;
-    }
-  }
+  width: 300px;
+  height: 83px;
 
   .ctf-score-container {
     width: 300px;

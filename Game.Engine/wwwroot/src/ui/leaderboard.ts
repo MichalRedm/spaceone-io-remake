@@ -14,6 +14,7 @@ import {
   showCtfStateNotification,
   clearCtfNotification,
 } from "./ctfNotification";
+import { TrackingArrow, resolveTrackingArrowOverlap } from "./trackingArrow";
 
 const record = document.getElementById("record");
 const recordScore = document.getElementById("record-score");
@@ -21,16 +22,42 @@ const recordFleet = document.getElementById("record-fleet");
 const leaderboard = document.getElementById("leaderboard");
 const leaderboardLeft = document.getElementById("leaderboard-left");
 const leaderboardCenter = document.getElementById("leaderboard-center");
-const leaderArrow = document.getElementById(
-  "leader-arrow",
-) as HTMLImageElement | null;
-const leaderArrowFadeZoneDist = 600;
-const leaderArrowFadeZoneWidth = 200;
-const leaderArrowTranslate = 50;
-const leaderArrowDefaultOpacity = 0.7;
+
+const leaderArrowTracker = new TrackingArrow("leader-arrow", {
+  width: 160,
+  height: 160,
+  edgePadding: 16,
+  fadeZoneDist: 600,
+  fadeZoneWidth: 200,
+  defaultOpacity: 0.7,
+  baseAngleOffset: Math.PI / 2,
+  lerpFactor: 0.15,
+});
+
+const ctfBlueArrowTracker = new TrackingArrow("ctf-arrow-blue", {
+  width: 48,
+  height: 48,
+  edgePadding: 24,
+  fadeZoneDist: 600,
+  fadeZoneWidth: 200,
+  defaultOpacity: 0.85,
+  baseAngleOffset: 0,
+  lerpFactor: 0.15,
+});
+
+const ctfRedArrowTracker = new TrackingArrow("ctf-arrow-red", {
+  width: 48,
+  height: 48,
+  edgePadding: 24,
+  fadeZoneDist: 600,
+  fadeZoneWidth: 200,
+  defaultOpacity: 0.85,
+  baseAngleOffset: 0,
+  lerpFactor: 0.15,
+});
 
 /**
- * Clears all leaderboard table DOM contents and hides the leader arrow.
+ * Clears all leaderboard table DOM contents and hides the leader and CTF tracking arrows.
  */
 export function clear(): void {
   Leaderboard.ctfBlueFlagCarrierID = 0;
@@ -43,9 +70,9 @@ export function clear(): void {
     leaderboardCenter.style.width = "";
     leaderboardCenter.style.height = "";
   }
-  if (leaderArrow) {
-    leaderArrow.style.opacity = "0";
-  }
+  leaderArrowTracker.reset();
+  ctfBlueArrowTracker.reset();
+  ctfRedArrowTracker.reset();
 }
 
 /**
@@ -187,8 +214,9 @@ export class Leaderboard {
 
   private leaderFleetID: number | null = null;
   private targetLeaderPosition: Vector2 | null = null;
-  private currentLeaderPosition: Vector2 | null = null;
   private hasLeader = false;
+  private currentGameMode: string | null = null;
+  private ownFleetID: number | null = null;
   private cyanFlagPosition: { x: number; y: number } | null = null;
   private redFlagPosition: { x: number; y: number } | null = null;
   private prevFlagStatusCyan: string | null = null;
@@ -201,6 +229,8 @@ export class Leaderboard {
     _position: Vector2,
     fleetID?: number,
   ): void {
+    this.currentGameMode = data.Type;
+    this.ownFleetID = fleetID ?? null;
     const isEnabled = Settings.leaderboardEnabled;
     if (record) record.classList.toggle("is-hidden", !isEnabled);
     if (leaderboard) leaderboard.classList.toggle("is-hidden", !isEnabled);
@@ -211,7 +241,9 @@ export class Leaderboard {
 
     if (!isEnabled) {
       this.hasLeader = false;
-      if (leaderArrow) leaderArrow.style.opacity = "0";
+      leaderArrowTracker.hide();
+      ctfBlueArrowTracker.hide();
+      ctfRedArrowTracker.hide();
       return;
     }
 
@@ -252,12 +284,6 @@ export class Leaderboard {
           firstEntry.Position.x,
           firstEntry.Position.y,
         );
-        if (!this.currentLeaderPosition) {
-          this.currentLeaderPosition = new Vector2(
-            firstEntry.Position.x,
-            firstEntry.Position.y,
-          );
-        }
       } else {
         this.hasLeader = false;
         this.leaderFleetID = null;
@@ -268,9 +294,7 @@ export class Leaderboard {
       this.hasLeader = false;
       this.leaderFleetID = null;
       this.targetLeaderPosition = null;
-      if (leaderArrow) {
-        leaderArrow.style.opacity = "0";
-      }
+      leaderArrowTracker.hide();
     }
 
     if (data.Type === "FFA" && leaderboard) {
@@ -428,19 +452,15 @@ export class Leaderboard {
 
           leaderboardCenter.hidden = false;
           leaderboardCenter.classList.remove("is-hidden");
-          leaderboardCenter.style.width = "372px";
+          leaderboardCenter.style.width = "300px";
           leaderboardCenter.style.height = "83px";
           leaderboardCenter.innerHTML =
-            `<tbody><tr>` +
-            `<td class="flag"><img id="ctf-arrow-blue" class="flag-arrow flag-arrow--blue" src="${getTextureImage("ctf_arrow_blue").src}" alt="" /></td>` +
-            `<td class="ctf-score-container">` +
+            `<div class="ctf-score-container">` +
             image("ctf_score_stripes") +
             image(`ctf_score_left_${Math.min(cyanScore, 4)}`) +
             image(`ctf_score_right_${Math.min(redScore, 4)}`) +
             image(`ctf_score_final${finalSuffix}`) +
-            `</td>` +
-            `<td class="flag"><img id="ctf-arrow-red" class="flag-arrow flag-arrow--red" src="${getTextureImage("ctf_arrow_red").src}" alt="" /></td>` +
-            `</tr></tbody>`;
+            `</div>`;
         }
       }
 
@@ -469,7 +489,7 @@ export class Leaderboard {
   }
 
   /**
-   * Renders and updates the leader indicator arrow per animation frame.
+   * Renders and updates off-screen tracking arrows (FFA leader or CTF flag compasses) per animation frame.
    *
    * @param cameraPosition - Current interpolated world camera position.
    * @param cache - Spatial entity cache to track leader fleet ships if in view.
@@ -482,34 +502,55 @@ export class Leaderboard {
     interpolator?: Interpolator,
     gameTime?: number,
   ): void {
-    // Update CTF flag compass indicator arrows if present
-    const blueArrow = document.getElementById("ctf-arrow-blue");
-    const redArrow = document.getElementById("ctf-arrow-red");
-    if (blueArrow || redArrow) {
-      const bluePos = Flag.blueFlagPosition ?? this.cyanFlagPosition;
-      const redPos = Flag.redFlagPosition ?? this.redFlagPosition;
-
-      if (blueArrow && bluePos) {
-        const blueAngle = Math.atan2(
-          bluePos.y - cameraPosition.y,
-          bluePos.x - cameraPosition.x,
-        );
-        blueArrow.style.transform = `rotate(${blueAngle}rad)`;
-      }
-
-      if (redArrow && redPos) {
-        const redAngle = Math.atan2(
-          redPos.y - cameraPosition.y,
-          redPos.x - cameraPosition.x,
-        );
-        redArrow.style.transform = `rotate(${redAngle}rad)`;
-      }
+    if (!document.body.classList.contains("alive")) {
+      leaderArrowTracker.hide();
+      ctfBlueArrowTracker.hide();
+      ctfRedArrowTracker.hide();
+      return;
     }
 
-    if (!leaderArrow) return;
+    if (this.currentGameMode === "CTF") {
+      leaderArrowTracker.hide();
 
-    if (!this.hasLeader || !this.targetLeaderPosition) {
-      leaderArrow.style.opacity = "0";
+      const isCarryingBlue =
+        this.ownFleetID !== null &&
+        this.ownFleetID > 0 &&
+        Leaderboard.ctfBlueFlagCarrierID === this.ownFleetID;
+      const isCarryingRed =
+        this.ownFleetID !== null &&
+        this.ownFleetID > 0 &&
+        Leaderboard.ctfRedFlagCarrierID === this.ownFleetID;
+
+      const bluePos = isCarryingBlue
+        ? null
+        : (Flag.blueFlagPosition ?? this.cyanFlagPosition);
+      const redPos = isCarryingRed
+        ? null
+        : (Flag.redFlagPosition ?? this.redFlagPosition);
+
+      // When both flags are active and close in bearing, nudge them apart smoothly
+      const [blueNudge, redNudge] = resolveTrackingArrowOverlap(
+        bluePos,
+        redPos,
+        cameraPosition,
+        600,
+      );
+
+      ctfBlueArrowTracker.update(bluePos, cameraPosition, blueNudge);
+      ctfRedArrowTracker.update(redPos, cameraPosition, redNudge);
+      return;
+    }
+
+    // Non-CTF: hide CTF flag tracking arrows
+    ctfBlueArrowTracker.hide();
+    ctfRedArrowTracker.hide();
+
+    if (
+      this.currentGameMode !== "FFA" ||
+      !this.hasLeader ||
+      !this.targetLeaderPosition
+    ) {
+      leaderArrowTracker.hide();
       return;
     }
 
@@ -537,7 +578,7 @@ export class Leaderboard {
                 ? ship.lastPosition.x
                 : (ship.body.Position?.x ?? ship.body.OriginalPosition.x);
             const posY =
-              ship.lastPosition.x !== 0 || ship.lastPosition.y !== 0
+              ship.lastPosition.y !== 0 || ship.lastPosition.x !== 0
                 ? ship.lastPosition.y
                 : (ship.body.Position?.y ?? ship.body.OriginalPosition.y);
             accX += posX;
@@ -555,87 +596,7 @@ export class Leaderboard {
       targetWorldPos = this.targetLeaderPosition;
     }
 
-    // Smoothly interpolate leader world coordinate to avoid sudden snapshot leaps
-    if (!this.currentLeaderPosition) {
-      this.currentLeaderPosition = new Vector2(
-        targetWorldPos.x,
-        targetWorldPos.y,
-      );
-    } else {
-      const lerpFactor = 0.15;
-      this.currentLeaderPosition.x +=
-        (targetWorldPos.x - this.currentLeaderPosition.x) * lerpFactor;
-      this.currentLeaderPosition.y +=
-        (targetWorldPos.y - this.currentLeaderPosition.y) * lerpFactor;
-    }
-
-    const dx = this.currentLeaderPosition.x - cameraPosition.x;
-    const dy = this.currentLeaderPosition.y - cameraPosition.y;
-    let angle = Math.atan2(dy, dx);
-    const dist = Math.sqrt(dx * dx + dy * dy);
-
-    // Opacity fade zone
-    if (dist > leaderArrowFadeZoneDist + leaderArrowFadeZoneWidth) {
-      leaderArrow.style.opacity = `${leaderArrowDefaultOpacity}`;
-    } else if (dist >= leaderArrowFadeZoneDist) {
-      const fadeRatio =
-        (dist - leaderArrowFadeZoneDist) / leaderArrowFadeZoneWidth;
-      leaderArrow.style.opacity = `${fadeRatio * leaderArrowDefaultOpacity}`;
-    } else {
-      leaderArrow.style.opacity = "0";
-      return;
-    }
-
-    const arrowHeight = 40;
-    const arrowWidth = 40;
-    const winWidth = window.innerWidth;
-    const winHeight = window.innerHeight;
-
-    const criticalAngle = Math.atan2(winHeight, winWidth);
-    if (angle < 0) {
-      angle += 2 * Math.PI;
-    }
-
-    let screenX = 0;
-    let screenY = 0;
-
-    if (angle > 2 * Math.PI - criticalAngle || angle <= criticalAngle) {
-      // Right edge
-      screenX = winWidth + leaderArrowTranslate - arrowWidth;
-      screenY =
-        (winHeight - arrowHeight) / 2 +
-        (winWidth / 2) *
-          Math.tan(angle) *
-          (1 - (arrowHeight - 2 * leaderArrowTranslate) / winHeight);
-    } else if (angle > criticalAngle && angle <= Math.PI - criticalAngle) {
-      // Bottom edge
-      screenX =
-        (winWidth - arrowWidth) / 2 +
-        (winHeight / 2 / Math.tan(angle)) *
-          (1 - (arrowWidth - 2 * leaderArrowTranslate) / winWidth);
-      screenY = winHeight + leaderArrowTranslate - arrowHeight;
-    } else if (
-      angle > Math.PI - criticalAngle &&
-      angle <= Math.PI + criticalAngle
-    ) {
-      // Left edge
-      screenX = -leaderArrowTranslate;
-      screenY =
-        (winHeight - arrowHeight) / 2 -
-        (winWidth / 2) *
-          Math.tan(angle) *
-          (1 - (arrowHeight - 2 * leaderArrowTranslate) / winHeight);
-    } else {
-      // Top edge
-      screenX =
-        (winWidth - arrowWidth) / 2 -
-        (winHeight / 2 / Math.tan(angle)) *
-          (1 - (arrowWidth - 2 * leaderArrowTranslate) / winWidth);
-      screenY = -leaderArrowTranslate;
-    }
-
-    const rotation = angle + Math.PI / 2;
-    leaderArrow.style.transform = `translate3d(${screenX}px, ${screenY}px, 0) rotate(${rotation}rad)`;
+    leaderArrowTracker.update(targetWorldPos, cameraPosition);
   }
 }
 
