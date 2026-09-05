@@ -18,7 +18,7 @@
   pointer-events: none;
 
   &.hide {
-    display: none;
+    display: none !important;
   }
 
   &__team {
