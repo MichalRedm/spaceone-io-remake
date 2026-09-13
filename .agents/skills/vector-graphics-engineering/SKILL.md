@@ -54,37 +54,40 @@ The skill includes three CLI utilities in `scripts/`:
 | :--- | :--- | :--- |
 | `render_svg.py` | Renders SVG files to transparent PNGs using headless Playwright Chromium with full SVG filter and font fidelity. | `python render_svg.py -i input.svg -o output.png -w 256 -H 256` |
 | `compare_graphics.py` | Compares a candidate graphic against a reference graphic, computing RMSE, PSNR, Alpha IoU, centroid/bbox delta, and outputs a 4-panel diagnostic artifact. | `python compare_graphics.py -r ref.png -c cand.png -o diff.png` |
+| `tune_graphic.py` | Automatically sweeps or optimizes continuous SVG parameters (blur radius, stroke width, opacity, offsets) against a reference target to minimize perceptual loss in seconds without disk I/O. | `python tune_graphic.py -t template.svg -r ref.png --sweep blur=4:24:2 --optimize stroke=10:2:30 -o best.svg --output-diff diff.png` |
 | `pack_spritesheet.py` | Stitches an ordered list of animated frames into a horizontal/vertical spritesheet strip with frame metadata. | `python pack_spritesheet.py -f frame_*.png -o sheet.png -W 128 -H 128` |
 
 ---
 
 ## 🔄 Agentic Workflows
 
-### Workflow 1: Reverse-Engineering an Existing Graphic
+### Workflow 1: Reverse-Engineering an Existing Graphic via Automated Tuning
 
-When matching an existing reference graphic (e.g. creating a flag tracking arrow matching `Leader_Arrow.png`):
+> [!IMPORTANT]
+> **Token & Time Efficiency Rule**: Never manually guess numeric values (such as `stdDeviation` blur radius, stroke widths, opacity percentages, or coordinate offsets) through multiple turns of manual file editing and trial-and-error diffing. This wastes tokens and produces suboptimal approximations.
+> Instead, author a parametric SVG template with named placeholders (e.g. `{blur}`, `{stroke_width}`) and let `tune_graphic.py` converge on the exact mathematically optimal values via in-memory headless rendering.
 
 ```
-[ Step 1: Probe Reference ]
+[ Step 1: Probe Reference Target ]
        │  • Inspect dimensions, alpha bounds, and center of mass using PIL/numpy.
-       │  • Extract apex angle, stroke width, and bloom radius.
+       │  • Extract target color hexes and general geometric structure.
        ▼
-[ Step 2: Author Vector SVG ]
-       │  • Write parametric SVG file matching measured geometric properties.
+[ Step 2: Author Parametric SVG Template ]
+       │  • Write template SVG with {param} placeholders for uncertain continuous values
+       │    (e.g., stdDeviation="{blur_radius:.2f}", stroke-width="{stroke_width:.2f}").
        ▼
-[ Step 3: Render Headless PNG ]
-       │  • Run: python .agents/skills/vector-graphics-engineering/scripts/render_svg.py
+[ Step 3: Run Automated Parameter Optimization ]
+       │  • Execute: python .agents/skills/vector-graphics-engineering/scripts/tune_graphic.py \
+       │               -t template.svg -r target.png \
+       │               --optimize blur_radius=12:2:40 \
+       │               --optimize stroke_width=10:2:30 \
+       │               -o final.svg --output-png final.png --output-diff diagnostic.png
+       │  • Evaluates dozens of candidates in ~1–2 seconds via in-memory Chromium.
        ▼
-[ Step 4: Run Visual Difference Diagnostic ]
-       │  • Run: python .agents/skills/vector-graphics-engineering/scripts/compare_graphics.py \
-       │            -r reference.png -c candidate.png -o diagnostic.png
-       │  • Inspect diagnostic.png using view_file.
+[ Step 4: Inspect 4-Panel Diagnostic Artifact ]
+       │  • Inspect diagnostic.png using view_file to confirm visual parity and glow falloff.
        ▼
-[ Step 5: Iterative Refinement ]
-       │  • Adjust path coordinates, stroke widths, or blur radii based on heatmap and overlay.
-       │  • Repeat Steps 3-4 until RMSE < 15.0 and Alpha IoU > 0.90 (or visual parity is reached).
-       ▼
-[ Step 6: Deploy & Verify in Game Engine ]
+[ Step 5: Deploy & Verify in Game Engine ]
 ```
 
 ### Interpreting the 4-Panel Diagnostic Artifact
