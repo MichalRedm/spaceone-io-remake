@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <filter id="plasma-core-glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="#ff1a40" flood-opacity="0.9" />
+    </filter>
+    <filter id="node-glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#ff3355" flood-opacity="0.95" />
+    </filter>
+    <radialGradient id="plasma-grad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="40%" stop-color="#ff3355" />
+      <stop offset="85%" stop-color="#b30033" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#b30033" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <!-- Background Orbit Ring Tracks -->
+  <g transform="rotate(-25.0 64 64)">
+    <ellipse cx="64" cy="64" rx="38" ry="15" fill="none" stroke="#ff3355" stroke-width="1.6" stroke-opacity="0.45" stroke-dasharray="8 6" />
+  </g>
+  <g transform="rotate(40.0 64 64)">
+    <ellipse cx="64" cy="64" rx="44" ry="18" fill="none" stroke="#b30033" stroke-width="1.4" stroke-opacity="0.35" stroke-dasharray="12 8" />
+  </g>
+
+  <circle cx="41.3" cy="60.3" r="3.6" fill="#ff3355" opacity="0.6" />
+  <!-- Central Plasma Core Relic -->
+  <circle cx="64" cy="64" r="22.0" fill="url(#plasma-grad)" filter="url(#plasma-core-glow)" />
+  <circle cx="64" cy="64" r="16.0" fill="#ff3355" opacity="0.85" />
+  <circle cx="64" cy="64" r="9.6" fill="#ffffff" />
+  <polygon points="64,44.8 83.2,64 64,83.2 44.8,64" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-opacity="0.85" />
+  <circle cx="98.4" cy="47.9" r="4.5" fill="#ff3355" filter="url(#node-glow)" />
+  <circle cx="98.4" cy="47.9" r="2.0" fill="#ffffff" />
+  <circle cx="52.3" cy="83.8" r="4.5" fill="#ff3355" filter="url(#node-glow)" />
+  <circle cx="52.3" cy="83.8" r="2.0" fill="#ffffff" />
+  <circle cx="97.7" cy="92.3" r="3.8" fill="#ffffff" filter="url(#node-glow)" />
+  <circle cx="97.7" cy="92.3" r="1.7" fill="#ffffff" />
+  <circle cx="30.3" cy="35.7" r="3.8" fill="#ffffff" filter="url(#node-glow)" />
+  <circle cx="30.3" cy="35.7" r="1.7" fill="#ffffff" />
+</svg>

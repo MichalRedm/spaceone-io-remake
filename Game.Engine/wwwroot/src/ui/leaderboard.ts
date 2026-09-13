@@ -494,7 +494,7 @@ export class Leaderboard {
           bluePos.y - cameraPosition.y,
           bluePos.x - cameraPosition.x,
         );
-        blueArrow.style.transform = `rotate(${blueAngle}rad)`;
+        blueArrow.style.transform = `rotate(${blueAngle + Math.PI / 2}rad)`;
       }
 
       if (redArrow && redPos) {
@@ -502,7 +502,7 @@ export class Leaderboard {
           redPos.y - cameraPosition.y,
           redPos.x - cameraPosition.x,
         );
-        redArrow.style.transform = `rotate(${redAngle}rad)`;
+        redArrow.style.transform = `rotate(${redAngle + Math.PI / 2}rad)`;
       }
     }
 

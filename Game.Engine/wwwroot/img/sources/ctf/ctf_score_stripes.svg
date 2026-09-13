@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 929 310" width="929" height="310">
+  <defs>
+    <filter id="frame-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="#00ffff" flood-opacity="0.5" />
+    </filter>
+    <linearGradient id="chassis-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#07182e" stop-opacity="0.88" />
+      <stop offset="50%" stop-color="#0a203a" stop-opacity="0.94" />
+      <stop offset="100%" stop-color="#051224" stop-opacity="0.88" />
+    </linearGradient>
+  </defs>
+
+  <!-- Main Chassis Backing Plate (Chamfered Hexagonal HUD container) -->
+  <polygon points="120,70 809,70 869,155 809,240 120,240 60,155" fill="url(#chassis-grad)" stroke="#0077cc" stroke-width="2.5" />
+  <polygon points="125,75 804,75 861,155 804,235 125,235 69,155" fill="none" stroke="#00ffff" stroke-width="1.8" stroke-opacity="0.75" filter="url(#frame-glow)" />
+
+  <!-- Cyber Speedlines & Telemetry Grid -->
+  <line x1="80" y1="100" x2="849" y2="100" stroke="#00d2ff" stroke-width="1.2" stroke-opacity="0.25" stroke-dasharray="12 8" />
+  <line x1="60" y1="155" x2="869" y2="155" stroke="#00f3ff" stroke-width="1.5" stroke-opacity="0.35" />
+  <line x1="80" y1="210" x2="849" y2="210" stroke="#00d2ff" stroke-width="1.2" stroke-opacity="0.25" stroke-dasharray="12 8" />
+
+  <!-- Outer Tech Chevron Brackets -->
+  <polyline points="105,120 75,155 105,190" fill="none" stroke="#00ffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+  <polyline points="824,120 854,155 824,190" fill="none" stroke="#ff3355" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+
+  <!-- Team Zone Accent Glows -->
+  <line x1="140" y1="72" x2="430" y2="72" stroke="#00ffff" stroke-width="3.5" stroke-linecap="round" />
+  <line x1="499" y1="72" x2="789" y2="72" stroke="#ff3355" stroke-width="3.5" stroke-linecap="round" />
+  <line x1="140" y1="238" x2="430" y2="238" stroke="#00a8ff" stroke-width="2" stroke-linecap="round" />
+  <line x1="499" y1="238" x2="789" y2="238" stroke="#ff1a40" stroke-width="2" stroke-linecap="round" />
+
+  <!-- Center Emblem Recessed Silhouette Slot -->
+  <polygon points="432.5,85 496.5,85 509.5,145 464.5,225 419.5,145" fill="#030c18" stroke="#1e293b" stroke-width="2" />
+</svg>

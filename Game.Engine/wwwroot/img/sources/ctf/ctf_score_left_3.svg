@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 929 310" width="929" height="310">
+  <defs>
+    <filter id="bar-glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="#00d0ff" flood-opacity="0.9" />
+    </filter>
+  </defs>
+
+  <!-- LEFT SCORE TALLY BARS (3 of 4 lit) -->
+  <g id="bar-0-lit">
+    <polygon points="232.0,95.0 266.0,95.0 248.0,215.0 214.0,215.0" fill="#00f0ff" stroke="#ffffff" stroke-width="2" filter="url(#bar-glow)" />
+    <line x1="249.0" y1="105.0" x2="231.0" y2="205.0" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" />
+  </g>
+  <g id="bar-1-lit">
+    <polygon points="282.0,95.0 316.0,95.0 298.0,215.0 264.0,215.0" fill="#00f0ff" stroke="#ffffff" stroke-width="2" filter="url(#bar-glow)" />
+    <line x1="299.0" y1="105.0" x2="281.0" y2="205.0" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" />
+  </g>
+  <g id="bar-2-lit">
+    <polygon points="332.0,95.0 366.0,95.0 348.0,215.0 314.0,215.0" fill="#00f0ff" stroke="#ffffff" stroke-width="2" filter="url(#bar-glow)" />
+    <line x1="349.0" y1="105.0" x2="331.0" y2="205.0" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" />
+  </g>
+  <polygon id="bar-3-dim" points="382.0,95.0 416.0,95.0 398.0,215.0 364.0,215.0" fill="#071728" stroke="#1e334d" stroke-width="1.8" opacity="0.6" />
+</svg>

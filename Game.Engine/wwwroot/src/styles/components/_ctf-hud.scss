@@ -72,13 +72,14 @@
   }
 
   .flag-arrow {
-    width: 27px;
-    height: 27px;
+    width: 32px;
+    height: 32px;
     display: block;
     position: absolute;
     top: 0;
     bottom: 0;
     margin: auto;
+    transform-origin: center center;
     pointer-events: none;
     user-select: none;
 
