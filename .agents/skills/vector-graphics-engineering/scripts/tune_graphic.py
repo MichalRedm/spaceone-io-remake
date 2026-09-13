@@ -51,7 +51,12 @@ class GraphicTuner:
 
     def calculate_loss(self, cand_arr: np.ndarray) -> float:
         """Computes loss between candidate and reference."""
-        diff = self.ref_arr - cand_arr
+        ref_clean = np.copy(self.ref_arr)
+        cand_clean = np.copy(cand_arr)
+        ref_clean[ref_clean[:, :, 3] == 0, :3] = 0
+        cand_clean[cand_clean[:, :, 3] == 0, :3] = 0
+
+        diff = ref_clean - cand_clean
         mse = float(np.mean(diff ** 2))
         rmse = math.sqrt(mse)
 

@@ -91,6 +91,10 @@ def compare_images(
     arr_ref = np.array(canvas_ref, dtype=np.float32)
     arr_cand = np.array(canvas_cand, dtype=np.float32)
 
+    # Normalize fully transparent pixels to prevent invisible background colors from distorting metrics
+    arr_ref[arr_ref[:, :, 3] == 0, :3] = 0
+    arr_cand[arr_cand[:, :, 3] == 0, :3] = 0
+
     # 1. Error Metrics (RMSE and PSNR across RGBA)
     diff = arr_ref - arr_cand
     mse = float(np.mean(diff ** 2))
