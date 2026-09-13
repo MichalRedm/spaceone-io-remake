@@ -24,8 +24,8 @@ const leaderboardLeft = document.getElementById("leaderboard-left");
 const leaderboardCenter = document.getElementById("leaderboard-center");
 
 const leaderArrowTracker = new TrackingArrow("leader-arrow", {
-  width: 160,
-  height: 160,
+  width: 40,
+  height: 40,
   edgePadding: 16,
   fadeZoneDist: 600,
   fadeZoneWidth: 200,
