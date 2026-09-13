@@ -46,7 +46,7 @@
   pointer-events: none;
   opacity: 0;
   display: none;
-  z-index: $z-index-base;
+  z-index: $z-index-canvas;
 
   &--leader {
     filter: hue-rotate(235deg);
