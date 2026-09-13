@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <defs>
+    <filter id="neon-glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="{blur_inner:.2f}" result="inner-blur" />
+      <feGaussianBlur in="SourceGraphic" stdDeviation="{blur_outer:.2f}" result="outer-blur" />
+      <feMerge>
+        <feMergeNode in="outer-blur" />
+        <feMergeNode in="inner-blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Glowing background halo -->
+  <g filter="url(#neon-glow)">
+    <path d="M 105 128 L 126 98 L 147 128" fill="none" stroke="{glow_color}" stroke-width="{halo_width:.2f}" stroke-linecap="round" stroke-linejoin="round" />
+    <text x="126" y="155" fill="{glow_color}" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="14" text-anchor="middle" letter-spacing="1">{text}</text>
+  </g>
+
+  <!-- Hot white foreground core -->
+  <path d="M 105 128 L 126 98 L 147 128" fill="none" stroke="#ffffff" stroke-width="{core_width:.2f}" stroke-linecap="round" stroke-linejoin="round" />
+  <text x="126" y="155" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="14" text-anchor="middle" letter-spacing="1">{text}</text>
+</svg>

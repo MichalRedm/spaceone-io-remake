@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 929 310" width="929" height="310">
+  <defs>
+    <filter id="bar-glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="#ff1a40" flood-opacity="0.9" />
+    </filter>
+  </defs>
+
+  <!-- RIGHT SCORE TALLY BARS (1 of 4 lit) -->
+  <g id="bar-0-lit">
+    <polygon points="663.0,95.0 697.0,95.0 715.0,215.0 681.0,215.0" fill="#ff3355" stroke="#ffffff" stroke-width="2" filter="url(#bar-glow)" />
+    <line x1="680.0" y1="105.0" x2="698.0" y2="205.0" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" />
+  </g>
+  <polygon id="bar-1-dim" points="613.0,95.0 647.0,95.0 665.0,215.0 631.0,215.0" fill="#071728" stroke="#1e334d" stroke-width="1.8" opacity="0.6" />
+  <polygon id="bar-2-dim" points="563.0,95.0 597.0,95.0 615.0,215.0 581.0,215.0" fill="#071728" stroke="#1e334d" stroke-width="1.8" opacity="0.6" />
+  <polygon id="bar-3-dim" points="513.0,95.0 547.0,95.0 565.0,215.0 531.0,215.0" fill="#071728" stroke="#1e334d" stroke-width="1.8" opacity="0.6" />
+</svg>

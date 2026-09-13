@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 929 310" width="929" height="310">
+  <defs>
+    <filter id="crest-glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="0" stdDeviation="9" flood-color="#00d0ff" flood-opacity="0.95" />
+      <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#ffffff" flood-opacity="0.9" />
+    </filter>
+  </defs>
+
+  <!-- Center Apex Victory Crest (BLUE) -->
+  <polygon points="438.5,82 490.5,82 497.5,146 464.5,232 431.5,146" fill="#00f0ff" stroke="#00f0ff" stroke-width="2.5" filter="url(#crest-glow)" />
+  <polygon points="464.5,105 482.5,148 464.5,192 446.5,148" fill="#ffffff" stroke="#00f0ff" stroke-width="2" />
+  <circle cx="464.5" cy="148" r="6" fill="#00f0ff" />
+  <circle cx="464.5" cy="148" r="3" fill="#ffffff" />
+  <line x1="464.5" y1="88" x2="464.5" y2="105" stroke="#ffffff" stroke-width="2" stroke-linecap="round" />
+  <line x1="464.5" y1="192" x2="464.5" y2="225" stroke="#ffffff" stroke-width="2" stroke-linecap="round" />
+</svg>

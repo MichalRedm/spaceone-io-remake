@@ -35,16 +35,53 @@
   font-size: 14pt;
 }
 
-.leader-arrow,
-#leader-arrow {
+.tracking-arrow {
   position: fixed;
   top: 0;
   left: 0;
   width: 160px;
+  height: 160px;
   transform-origin: center center;
   will-change: transform, opacity;
   pointer-events: none;
-  filter: hue-rotate(235deg);
+  opacity: 0;
+  display: none;
+  z-index: $z-index-canvas;
+
+  &--leader {
+    filter: hue-rotate(235deg);
+  }
+
+  &--ctf-blue {
+    // Uses native retro-neon vector cyan bloom
+  }
+
+  &--ctf-red {
+    // Uses native retro-neon vector red bloom
+  }
+}
+
+body:not(.alive) .tracking-arrow,
+body.dead:not(.spectating) .tracking-arrow,
+body.loading .tracking-arrow {
+  display: none !important;
+  opacity: 0 !important;
+}
+
+.leader-arrow,
+#leader-arrow {
+  @extend .tracking-arrow;
+  @extend .tracking-arrow--leader;
+}
+
+#ctf-arrow-blue {
+  @extend .tracking-arrow;
+  @extend .tracking-arrow--ctf-blue;
+}
+
+#ctf-arrow-red {
+  @extend .tracking-arrow;
+  @extend .tracking-arrow--ctf-red;
 }
 
 .score-popup-container,

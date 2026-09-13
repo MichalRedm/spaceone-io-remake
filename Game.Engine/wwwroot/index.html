@@ -168,8 +168,20 @@
         <img
           src="img/ui/Leader_Arrow.png"
           id="leader-arrow"
-          class="leader-arrow view-state--alive visibility3"
+          class="leader-arrow tracking-arrow tracking-arrow--leader view-state--alive"
           alt="Leader Arrow"
+        />
+        <img
+          src="img/game/ctf_arrow_blue.png"
+          id="ctf-arrow-blue"
+          class="tracking-arrow tracking-arrow--ctf-blue view-state--alive"
+          alt="Cyan Flag Arrow"
+        />
+        <img
+          src="img/game/ctf_arrow_red.png"
+          id="ctf-arrow-red"
+          class="tracking-arrow tracking-arrow--ctf-red view-state--alive"
+          alt="Red Flag Arrow"
         />
 
         <div
@@ -198,13 +210,13 @@
           <span id="ctf-cyan" class="ctf-hud__team ctf-hud__team--cyan">
             <span class="ctf-hud__flag-status flag_status">
               <span class="home">Home</span>
-              <span class="taken">Taken</span>
+              <span class="taken hide">Taken</span>
             </span>
           </span>
           <span id="ctf-red" class="ctf-hud__team ctf-hud__team--red">
             <span class="ctf-hud__flag-status flag_status">
               <span class="home">Home</span>
-              <span class="taken">Taken</span>
+              <span class="taken hide">Taken</span>
             </span>
           </span>
         </div>

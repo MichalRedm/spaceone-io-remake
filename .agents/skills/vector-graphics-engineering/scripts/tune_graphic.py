@@ -188,8 +188,8 @@ def run_optimization(
 
     print(f"[tune_graphic] Optimization finished in {tuner.eval_count} evaluations.")
     for k in names:
-        print(f"  • {k} = {best_params[k]:.2f}")
-    print(f"  • Final Loss: {res.fun:.2f}")
+        print(f"  * {k} = {best_params[k]:.2f}")
+    print(f"  * Final Loss: {res.fun:.2f}")
 
     return best_params, float(res.fun)
 
@@ -239,11 +239,15 @@ def main() -> int:
         ref_w, ref_h = ref_rgba.size
         ref_arr = np.array(ref_rgba, dtype=np.float32)
 
-    fixed_params: Dict[str, float] = {}
+    fixed_params: Dict[str, Any] = {}
     for fix_str in args.fixed:
         if "=" in fix_str:
             k, v = fix_str.split("=", 1)
-            fixed_params[k.strip()] = float(v.strip())
+            v_clean = v.strip()
+            try:
+                fixed_params[k.strip()] = float(v_clean)
+            except ValueError:
+                fixed_params[k.strip()] = v_clean
 
     tuner = GraphicTuner(
         template_svg=template_str,
@@ -295,14 +299,14 @@ def main() -> int:
         out_svg_path = Path(args.output_svg).resolve()
         out_svg_path.parent.mkdir(parents=True, exist_ok=True)
         out_svg_path.write_text(final_svg, encoding="utf-8")
-        print(f"  • Saved optimal SVG: {out_svg_path}")
+        print(f"  * Saved optimal SVG: {out_svg_path}")
 
     if args.output_png:
         out_png_path = Path(args.output_png).resolve()
         out_png_path.parent.mkdir(parents=True, exist_ok=True)
         cand_im = Image.fromarray(cand_arr.astype(np.uint8), "RGBA")
         cand_im.save(out_png_path)
-        print(f"  • Saved optimal PNG: {out_png_path}")
+        print(f"  * Saved optimal PNG: {out_png_path}")
 
     if args.output_diff:
         # Create candidate file temporarily if needed
@@ -311,7 +315,7 @@ def main() -> int:
         cand_im.save(temp_cand)
         metrics = compare_images(ref_path, temp_cand, diff_image_output=args.output_diff)
         temp_cand.unlink(missing_ok=True)
-        print(f"  • Saved visual diff diagnostic: {args.output_diff}")
+        print(f"  * Saved visual diff diagnostic: {args.output_diff}")
         print(format_report(metrics))
 
     return 0

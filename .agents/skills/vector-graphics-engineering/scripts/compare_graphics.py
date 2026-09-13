@@ -208,17 +208,17 @@ def compare_images(
 def format_report(metrics: Dict[str, Any]) -> str:
     """Formats metrics into an actionable diagnostic report for agents and developers."""
     lines = [
-        "═══════════════════════════════════════════════════════════════════",
+        "===================================================================",
         "         GRAPHIC REVERSE-ENGINEERING QUALITY AUDIT                ",
-        "═══════════════════════════════════════════════════════════════════",
-        f"  • Global RMSE:        {metrics['rmse']:>8}  (Target: < 15.0 for close parity)",
-        f"  • PSNR:               {metrics['psnr_db']:>8} dB (Higher is better, >30 dB is high)",
-        f"  • Alpha Mask IoU:     {metrics['alpha_iou']:>8}  (Target: > 0.90 for identical bounds)",
-        f"  • Overlap Color RMSE: {metrics['color_rmse']:>8}",
-        "───────────────────────────────────────────────────────────────────",
-        f"  • Centroid Shift:     dx = {metrics['delta_centroid'][0]:+5.1f} px, dy = {metrics['delta_centroid'][1]:+5.1f} px",
-        f"  • Bounding Box Delta: dw = {metrics['delta_bbox'][0]:+5d} px, dh = {metrics['delta_bbox'][1]:+5d} px",
-        "───────────────────────────────────────────────────────────────────",
+        "===================================================================",
+        f"  * Global RMSE:        {metrics['rmse']:>8}  (Target: < 15.0 for close parity)",
+        f"  * PSNR:               {metrics['psnr_db']:>8} dB (Higher is better, >30 dB is high)",
+        f"  * Alpha Mask IoU:     {metrics['alpha_iou']:>8}  (Target: > 0.90 for identical bounds)",
+        f"  * Overlap Color RMSE: {metrics['color_rmse']:>8}",
+        "-------------------------------------------------------------------",
+        f"  * Centroid Shift:     dx = {metrics['delta_centroid'][0]:+5.1f} px, dy = {metrics['delta_centroid'][1]:+5.1f} px",
+        f"  * Bounding Box Delta: dw = {metrics['delta_bbox'][0]:+5d} px, dh = {metrics['delta_bbox'][1]:+5d} px",
+        "-------------------------------------------------------------------",
     ]
 
     # Actionable guidance
@@ -247,7 +247,7 @@ def format_report(metrics: Dict[str, Any]) -> str:
     else:
         lines.append("  Visual Parity: EXCELLENT (within high-fidelity thresholds).")
 
-    lines.append("═══════════════════════════════════════════════════════════════════")
+    lines.append("===================================================================")
     return "\n".join(lines)
 
 
