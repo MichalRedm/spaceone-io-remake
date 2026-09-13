@@ -9,11 +9,11 @@ import { Vector2 } from "../math/vector2";
  * Configuration options for screen-edge tracking arrows.
  */
 export interface TrackingArrowOptions {
-  /** Rendered width of the arrow DOM element in pixels. Defaults to 48. */
+  /** Rendered width of the arrow DOM element in pixels. Defaults to 160. */
   width?: number;
-  /** Rendered height of the arrow DOM element in pixels. Defaults to 48. */
+  /** Rendered height of the arrow DOM element in pixels. Defaults to 160. */
   height?: number;
-  /** Inset padding margin in pixels from the viewport border. Defaults to 24. */
+  /** Inset padding margin in pixels from the viewport border. Defaults to 0. */
   edgePadding?: number;
   /** Distance in world units at which the arrow begins fading into view. Defaults to 600. */
   fadeZoneDist?: number;
@@ -23,12 +23,11 @@ export interface TrackingArrowOptions {
   defaultOpacity?: number;
   /**
    * Intrinsic angular offset of the sprite asset in radians.
-   * If the sprite graphic natively points UP (like `Leader_Arrow.png`), set to `Math.PI / 2`.
-   * If the sprite graphic natively points RIGHT (like `ctf_arrow_blue.png`), set to `0`.
-   * Defaults to 0.
+   * If the sprite graphic natively points UP (like `Leader_Arrow.png`, `ctf_arrow_blue.png`), set to `Math.PI / 2`.
+   * Defaults to Math.PI / 2.
    */
   baseAngleOffset?: number;
-  /** Interpolation factor for smoothing target world coordinates (0 = instant snap, 0.15 = smooth lerp). Defaults to 0. */
+  /** Interpolation factor for smoothing target world coordinates (0 = instant snap, 0.15 = smooth lerp). Defaults to 0.15. */
   lerpFactor?: number;
 }
 
@@ -75,13 +74,13 @@ export function computeScreenEdgeProjection(
   options?: TrackingArrowOptions,
   angularNudge = 0,
 ): TrackingProjectionResult {
-  const width = options?.width ?? 48;
-  const height = options?.height ?? 48;
-  const padding = options?.edgePadding ?? 24;
+  const width = options?.width ?? 160;
+  const height = options?.height ?? 160;
+  const padding = options?.edgePadding ?? 0;
   const fadeDist = options?.fadeZoneDist ?? 600;
   const fadeWidth = options?.fadeZoneWidth ?? 200;
   const maxOpacity = options?.defaultOpacity ?? 0.85;
-  const baseAngleOffset = options?.baseAngleOffset ?? 0;
+  const baseAngleOffset = options?.baseAngleOffset ?? Math.PI / 2;
 
   const dx = targetWorldPos.x - cameraWorldPos.x;
   const dy = targetWorldPos.y - cameraWorldPos.y;
@@ -256,7 +255,7 @@ export class TrackingArrow {
     }
 
     // Smoothly lerp target position if configured
-    const lerpFactor = this.options.lerpFactor ?? 0;
+    const lerpFactor = this.options.lerpFactor ?? 0.15;
     if (lerpFactor > 0) {
       if (!this.currentPosition) {
         this.currentPosition = new Vector2(targetWorldPos.x, targetWorldPos.y);

@@ -39,6 +39,8 @@
   position: fixed;
   top: 0;
   left: 0;
+  width: 160px;
+  height: 160px;
   transform-origin: center center;
   will-change: transform, opacity;
   pointer-events: none;
@@ -47,21 +49,15 @@
   z-index: $z-index-base;
 
   &--leader {
-    width: 160px;
-    height: 160px;
     filter: hue-rotate(235deg);
   }
 
   &--ctf-blue {
-    width: 48px;
-    height: 48px;
-    filter: drop-shadow(0 0 10px rgba(0, 150, 255, 0.85));
+    // Uses native retro-neon vector cyan bloom
   }
 
   &--ctf-red {
-    width: 48px;
-    height: 48px;
-    filter: drop-shadow(0 0 10px rgba(255, 30, 30, 0.85));
+    // Uses native retro-neon vector red bloom
   }
 }
 

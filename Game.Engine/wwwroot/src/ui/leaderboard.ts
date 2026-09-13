@@ -14,7 +14,11 @@ import {
   showCtfStateNotification,
   clearCtfNotification,
 } from "./ctfNotification";
-import { TrackingArrow, resolveTrackingArrowOverlap } from "./trackingArrow";
+import {
+  TrackingArrow,
+  type TrackingArrowOptions,
+  resolveTrackingArrowOverlap,
+} from "./trackingArrow";
 
 const record = document.getElementById("record");
 const recordScore = document.getElementById("record-score");
@@ -23,38 +27,31 @@ const leaderboard = document.getElementById("leaderboard");
 const leaderboardLeft = document.getElementById("leaderboard-left");
 const leaderboardCenter = document.getElementById("leaderboard-center");
 
-const leaderArrowTracker = new TrackingArrow("leader-arrow", {
-  width: 40,
-  height: 40,
-  edgePadding: -50,
-  fadeZoneDist: 600,
-  fadeZoneWidth: 200,
-  defaultOpacity: 0.7,
-  baseAngleOffset: Math.PI / 2,
-  lerpFactor: 0.15,
-});
-
-const ctfBlueArrowTracker = new TrackingArrow("ctf-arrow-blue", {
-  width: 48,
-  height: 48,
-  edgePadding: 24,
+const TRACKING_ARROW_CONFIG: TrackingArrowOptions = {
+  width: 160,
+  height: 160,
+  edgePadding: 0,
   fadeZoneDist: 600,
   fadeZoneWidth: 200,
   defaultOpacity: 0.85,
   baseAngleOffset: Math.PI / 2,
   lerpFactor: 0.15,
-});
+};
 
-const ctfRedArrowTracker = new TrackingArrow("ctf-arrow-red", {
-  width: 48,
-  height: 48,
-  edgePadding: 24,
-  fadeZoneDist: 600,
-  fadeZoneWidth: 200,
-  defaultOpacity: 0.85,
-  baseAngleOffset: Math.PI / 2,
-  lerpFactor: 0.15,
-});
+const leaderArrowTracker = new TrackingArrow(
+  "leader-arrow",
+  TRACKING_ARROW_CONFIG,
+);
+
+const ctfBlueArrowTracker = new TrackingArrow(
+  "ctf-arrow-blue",
+  TRACKING_ARROW_CONFIG,
+);
+
+const ctfRedArrowTracker = new TrackingArrow(
+  "ctf-arrow-red",
+  TRACKING_ARROW_CONFIG,
+);
 
 /**
  * Clears all leaderboard table DOM contents and hides the leader and CTF tracking arrows.
