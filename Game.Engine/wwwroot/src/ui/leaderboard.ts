@@ -30,7 +30,7 @@ const leaderboardCenter = document.getElementById("leaderboard-center");
 const TRACKING_ARROW_CONFIG: TrackingArrowOptions = {
   width: 160,
   height: 160,
-  edgePadding: 0,
+  edgePadding: -50,
   fadeZoneDist: 600,
   fadeZoneWidth: 200,
   defaultOpacity: 0.85,

@@ -13,7 +13,7 @@ export interface TrackingArrowOptions {
   width?: number;
   /** Rendered height of the arrow DOM element in pixels. Defaults to 160. */
   height?: number;
-  /** Inset padding margin in pixels from the viewport border. Defaults to 0. */
+  /** Inset padding margin in pixels from the viewport border. Defaults to -50. */
   edgePadding?: number;
   /** Distance in world units at which the arrow begins fading into view. Defaults to 600. */
   fadeZoneDist?: number;
@@ -76,7 +76,7 @@ export function computeScreenEdgeProjection(
 ): TrackingProjectionResult {
   const width = options?.width ?? 160;
   const height = options?.height ?? 160;
-  const padding = options?.edgePadding ?? 0;
+  const padding = options?.edgePadding ?? -50;
   const fadeDist = options?.fadeZoneDist ?? 600;
   const fadeWidth = options?.fadeZoneWidth ?? 200;
   const maxOpacity = options?.defaultOpacity ?? 0.85;
