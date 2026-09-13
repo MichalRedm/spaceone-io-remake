@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
   <defs>
-    <filter id="glow-cyan" x="-100%" y="-100%" width="300%" height="300%">
-      <feFlood flood-color="#00f0ff" flood-opacity="1.0" result="flood" />
+    <filter id="glow-red" x="-100%" y="-100%" width="300%" height="300%">
+      <feFlood flood-color="#ff0010" flood-opacity="1.0" result="flood" />
       <feComposite in="flood" in2="SourceAlpha" operator="in" result="colored" />
       <feGaussianBlur in="colored" stdDeviation="26.0" result="b4" />
       <feGaussianBlur in="colored" stdDeviation="16.0" result="b3" />
@@ -16,8 +16,8 @@
       </feMerge>
     </filter>
   </defs>
-  <g filter="url(#glow-cyan)">
+  <g filter="url(#glow-red)">
     <path d="M 109 126.5 L 126 101.5 L 143 126.5" fill="none" stroke="#ffffff" stroke-width="8.6" stroke-linecap="round" stroke-linejoin="round" />
-    <text x="126" y="155.5" fill="#ffffff" font-family="'Exo 2', 'Arial', sans-serif" font-weight="900" font-size="13" text-anchor="middle" letter-spacing="1.2">FLAG</text>
+    <text x="126" y="155.5" fill="#ffffff" font-family="'Exo 2', 'Arial', sans-serif" font-weight="900" font-size="13" text-anchor="middle" letter-spacing="0.1">LEADER</text>
   </g>
 </svg>

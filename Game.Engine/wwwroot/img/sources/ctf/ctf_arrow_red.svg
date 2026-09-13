@@ -1,10 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
   <defs>
-    <filter id="red-glow" x="-100%" y="-100%" width="300%" height="300%">
-      <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="b1" />
-      <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="b2" />
-      <feGaussianBlur in="SourceGraphic" stdDeviation="22" result="b3" />
+    <filter id="glow-red" x="-100%" y="-100%" width="300%" height="300%">
+      <feFlood flood-color="#ff0010" flood-opacity="1.0" result="flood" />
+      <feComposite in="flood" in2="SourceAlpha" operator="in" result="colored" />
+      <feGaussianBlur in="colored" stdDeviation="26.0" result="b4" />
+      <feGaussianBlur in="colored" stdDeviation="16.0" result="b3" />
+      <feGaussianBlur in="colored" stdDeviation="8.0" result="b2" />
+      <feGaussianBlur in="colored" stdDeviation="2.5" result="b1" />
       <feMerge>
+        <feMergeNode in="b4" />
         <feMergeNode in="b3" />
         <feMergeNode in="b2" />
         <feMergeNode in="b1" />
@@ -12,14 +16,8 @@
       </feMerge>
     </filter>
   </defs>
-
-  <!-- Red Neon Ambient Glow -->
-  <g filter="url(#red-glow)">
-    <path d="M 104 126 L 128 92 L 152 126" fill="none" stroke="#ff2040" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" />
-    <text x="128" y="152" fill="#ff2040" font-family="'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-weight="900" font-size="15" text-anchor="middle" letter-spacing="2">FLAG</text>
+  <g filter="url(#glow-red)">
+    <path d="M 109 126.5 L 126 101.5 L 143 126.5" fill="none" stroke="#ffffff" stroke-width="8.6" stroke-linecap="round" stroke-linejoin="round" />
+    <text x="126" y="155.5" fill="#ffffff" font-family="'Exo 2', 'Arial', sans-serif" font-weight="900" font-size="13" text-anchor="middle" letter-spacing="1.2">FLAG</text>
   </g>
-
-  <!-- Hot White Core Stroke -->
-  <path d="M 104 126 L 128 92 L 152 126" fill="none" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" />
-  <text x="128" y="152" fill="#ffffff" font-family="'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-weight="900" font-size="15" text-anchor="middle" letter-spacing="2">FLAG</text>
 </svg>
