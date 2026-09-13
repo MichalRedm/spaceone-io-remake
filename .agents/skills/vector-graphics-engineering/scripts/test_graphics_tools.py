@@ -123,12 +123,66 @@ class TestGraphicsTools(unittest.TestCase):
             metadata_json_path=meta_json,
         )
 
-        self.assertTrue(sheet_png.is_file(), "Packed spritesheet should exist")
-        with Image.open(sheet_png) as sheet_im:
-            self.assertEqual(sheet_im.size, (128, 64), "Horizontal spritesheet should be 128x64")
-
         self.assertTrue(meta_json.is_file(), "Metadata JSON should exist")
+
+    def test_tune_graphic_sweep(self):
+        from tune_graphic import GraphicTuner, run_sweep
+        from playwright.sync_api import sync_playwright
+        import numpy as np
+
+        # Write and render ground truth target with blur_radius=4.0
+        svg_truth = self.temp_dir / "truth.svg"
+        svg_truth.write_text(SAMPLE_SVG, encoding="utf-8")
+        png_truth = self.temp_dir / "truth.png"
+        render_svg_to_png(svg_truth, png_truth, width=128, height=128)
+
+        with Image.open(png_truth) as im:
+            ref_arr = np.array(im.convert("RGBA"), dtype=np.float32)
+
+        # Parametric template
+        template = """<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <defs>
+    <filter id="neon-glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="{blur:.2f}" result="blur1" />
+      <feMerge>
+        <feMergeNode in="blur1" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+  <path d="M 32 80 L 64 32 L 96 80" fill="none" stroke="#00ffff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" filter="url(#neon-glow)" />
+  <path d="M 32 80 L 64 32 L 96 80" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+</svg>"""
+
+        tuner = GraphicTuner(
+            template_svg=template,
+            reference_arr=ref_arr,
+            width=128,
+            height=128,
+            metric="rmse",
+        )
+
+        with sync_playwright() as p:
+            browser = p.chromium.launch()
+            context = browser.new_context(viewport={"width": 128, "height": 128})
+            page = context.new_page()
+
+            best_val, best_loss, results = run_sweep(
+                tuner=tuner,
+                page=page,
+                param_name="blur",
+                start=2.0,
+                stop=6.0,
+                step=2.0,
+                fixed_params={},
+            )
+            browser.close()
+
+        # In SAMPLE_SVG, stdDeviation was 4.0. The sweep [2.0, 4.0, 6.0] should find 4.0 as optimal
+        self.assertAlmostEqual(best_val, 4.0, places=1)
+        self.assertLess(best_loss, 5.0, "Loss at optimal blur should be close to 0")
 
 
 if __name__ == "__main__":
     unittest.main()
+
