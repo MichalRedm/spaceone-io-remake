@@ -1,25 +1,26 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
   <defs>
-    <filter id="red-glow" x="-100%" y="-100%" width="300%" height="300%">
-      <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="b1" />
-      <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="b2" />
-      <feGaussianBlur in="SourceGraphic" stdDeviation="22" result="b3" />
+    <filter id="glow" x="-100%" y="-100%" width="300%" height="300%">
+      <feFlood flood-color="#ee0000" flood-opacity="1.0" result="flood" />
+      <feComposite in="flood" in2="SourceAlpha" operator="in" result="colored" />
+      
+      <feGaussianBlur in="colored" stdDeviation="26" result="b_wide" />
+      <feGaussianBlur in="colored" stdDeviation="6" result="b_tight" />
+      
       <feMerge>
-        <feMergeNode in="b3" />
-        <feMergeNode in="b2" />
-        <feMergeNode in="b1" />
+        <feMergeNode in="b_wide" />
+        <feMergeNode in="b_wide" />
+        <feMergeNode in="b_wide" />
+        <feMergeNode in="b_wide" />
+        <feMergeNode in="b_wide" />
+        <feMergeNode in="b_wide" />
+        <feMergeNode in="b_tight" />
         <feMergeNode in="SourceGraphic" />
       </feMerge>
     </filter>
   </defs>
-
-  <!-- Red Neon Ambient Glow -->
-  <g filter="url(#red-glow)">
-    <path d="M 104 126 L 128 92 L 152 126" fill="none" stroke="#ff2040" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" />
-    <text x="128" y="152" fill="#ff2040" font-family="'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-weight="900" font-size="15" text-anchor="middle" letter-spacing="2">FLAG</text>
+  <g filter="url(#glow)">
+    <path d="M 126 97 h 1 v 13 h -1 Z M 125 98 h 1 v 13 h -1 Z M 127 98 h 1 v 13 h -1 Z M 124 99 h 1 v 13 h -1 Z M 128 99 h 1 v 13 h -1 Z M 123 101 h 1 v 12 h -1 Z M 129 101 h 1 v 12 h -1 Z M 122 102 h 1 v 13 h -1 Z M 130 102 h 1 v 13 h -1 Z M 121 103 h 1 v 13 h -1 Z M 131 103 h 1 v 13 h -1 Z M 120 104 h 1 v 13 h -1 Z M 132 104 h 1 v 13 h -1 Z M 119 106 h 1 v 12 h -1 Z M 133 106 h 1 v 12 h -1 Z M 118 107 h 1 v 12 h -1 Z M 134 107 h 1 v 12 h -1 Z M 117 108 h 1 v 13 h -1 Z M 135 108 h 1 v 13 h -1 Z M 116 109 h 1 v 13 h -1 Z M 136 109 h 1 v 13 h -1 Z M 115 111 h 1 v 12 h -1 Z M 137 111 h 1 v 12 h -1 Z M 114 112 h 1 v 12 h -1 Z M 138 112 h 1 v 12 h -1 Z M 113 113 h 1 v 13 h -1 Z M 139 113 h 1 v 13 h -1 Z M 112 114 h 1 v 13 h -1 Z M 140 114 h 1 v 13 h -1 Z M 111 116 h 1 v 12 h -1 Z M 141 116 h 1 v 12 h -1 Z M 110 117 h 1 v 12 h -1 Z M 142 117 h 1 v 12 h -1 Z M 109 118 h 1 v 12 h -1 Z M 143 118 h 1 v 12 h -1 Z M 108 119 h 1 v 11 h -1 Z M 144 119 h 1 v 11 h -1 Z M 107 120 h 1 v 10 h -1 Z M 145 120 h 1 v 10 h -1 Z M 106 122 h 1 v 7 h -1 Z M 146 122 h 1 v 7 h -1 Z M 105 123 h 1 v 6 h -1 Z M 147 123 h 1 v 6 h -1 Z M 104 125 h 1 v 2 h -1 Z M 148 125 h 1 v 2 h -1 Z" fill="#ffffff" />
+    <text x="126" y="155.5" fill="#ffffff" font-family="'Exo 2', 'Arial', sans-serif" font-weight="900" font-size="15" text-anchor="middle" letter-spacing="1.1">FLAG</text>
   </g>
-
-  <!-- Hot White Core Stroke -->
-  <path d="M 104 126 L 128 92 L 152 126" fill="none" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" />
-  <text x="128" y="152" fill="#ffffff" font-family="'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-weight="900" font-size="15" text-anchor="middle" letter-spacing="2">FLAG</text>
 </svg>
