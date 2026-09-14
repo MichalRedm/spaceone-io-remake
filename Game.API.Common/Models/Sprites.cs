@@ -73,6 +73,7 @@ namespace Game.API.Common
         shield,
         shield_pickup,
         wormhole,
-        boom
+        boom,
+        ctf_base_red
     }
 }
