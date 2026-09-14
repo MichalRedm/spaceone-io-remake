@@ -84,4 +84,5 @@ export const spriteIndices = [
   "shield_pickup",
   "wormhole",
   "boom",
+  "ctf_base_red",
 ];

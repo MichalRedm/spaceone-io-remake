@@ -517,6 +517,14 @@ shield.pickup {
 
 ctf.base {
   textures: "ctf_base";
+
+  &.red {
+    textures: "ctf_base_red";
+  }
+}
+
+ctf.base.red {
+  textures: "ctf_base_red";
 }
 
 ctf.flag.blue {

@@ -16,7 +16,7 @@ namespace Game.Engine.Core.SystemActors.CTF
         {
             this.Team = team;
             this.Position = position;
-            this.Sprite = Sprites.ctf_base;
+            this.Sprite = team.ColorName == "red" ? Sprites.ctf_base_red : Sprites.ctf_base;
             this.AngularVelocity = SPEED_STOPPED;
             this.Size = 80;
             this.CaptureTheFlag = captureTheFlag;

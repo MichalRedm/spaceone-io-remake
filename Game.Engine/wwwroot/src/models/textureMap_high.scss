@@ -983,9 +983,17 @@ arrow {
 }
 
 // Capture the Flag
+ctf_base,
+ctf_base_red {
+  size: 3.072;
+}
+
 ctf_base {
   file: "ctf_base";
-  size: 3.072;
+}
+
+ctf_base_red {
+  file: "ctf_base_red";
 }
 
 ctf_flag_red,
