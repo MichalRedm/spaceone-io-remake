@@ -80,9 +80,12 @@ python .agents/skills/visual-reverse-engineering/scripts/match_font.py \
 
 ### Phase 3: Parametric SVG Template Drafting
 Create a parametric SVG template `<name>_template.svg` with placeholder variables `{param_name}` for uncalibrated dimensions.
-- **Apex & Join Invariant**: If the target has sharp corners, specify `stroke-linejoin="miter"` or explicit polygonal vertices. Never use rounded joins where the probe or edge diff shows sharp bevels.
+- **Strict Vector Primitives Mandate (NEVER Use Pixel Grids)**:
+  - Vector masters **MUST ALWAYS** be authored using clean, continuous resolution-independent geometric primitives: `<path d="M... L... A...">`, `<circle>`, `<polygon>`, and `<text>`.
+  - **PROHIBITED ANTI-PATTERN**: Never decompose raster scanlines or pixel masks into discrete grids of $1\times 1$ or $W\times H$ pixel rectangles (`M x y h w v h h -w Z`). While pixel run-length rects match low-res raster grids at $1\times$, they become jagged, aliased, pixelated staircases at high DPI or zoom and defeat the entire purpose of vector graphics.
+- **Apex & Join Invariant**: If the target has sharp corners, specify `stroke-linejoin="miter"` with `stroke-linecap="round"` or explicit polygonal vertices. Never use rounded joins where the probe or edge diff shows sharp bevels.
 - **Glow Architecture**: Use multi-pass SVG filters (`feGaussianBlur` + `feMerge`) matching the sigmas extracted in Phase 1.
-- **Typography**: Embed the font family and styling parameters discovered in Phase 2.
+- **Typography**: Embed the font family and styling parameters discovered in Phase 2 using native `<text>` elements.
 
 ### Phase 4: Component-Separated Loss Optimization
 Tune continuous geometric and filter parameters against the reference image using headless Chromium rendering:
@@ -173,5 +176,6 @@ render_svg.py [-h] -i INPUT_SVG -o OUTPUT_PNG [-w WIDTH] [-H HEIGHT] [--scale SC
 
 1. **Zero-Alpha Normalization**: Fully transparent pixels (`A == 0`) often retain arbitrary background colors (e.g. transparent white `[255, 255, 255, 0]` vs transparent black `[0, 0, 0, 0]`). Comparison tools MUST zero-out RGB when `A == 0` before calculating difference metrics, or invisible background variations will distort global RMSE.
 2. **Chromium SetContent Wait Condition**: Always use `wait_until="domcontentloaded"` in Playwright scripts for local SVG rendering. `wait_until="networkidle"` introduces an artificial 500ms sleep per iteration, slowing optimization loops by 100x.
-3. **Miter vs Round Joins**: Chevron and arrowhead apexes in arcade games typically use mitered joins (`stroke-linejoin="miter"` or explicit polygonal points). Avoid `stroke-linejoin="round"` unless specifically identified by `probe_graphic`.
-4. **Diffuse Halo Masking**: Never optimize raw RMSE alone on glowing assets; diffuse blur will dominate the loss function, allowing sharp corner or letterform shape errors to pass undetected. Always use `multi` metric mode.
+3. **Continuous Vectors vs Pixel-Grid Artifacts**: Never create SVG paths by stitching $1\times 1$ pixel rectangles together from bitmap masks. Vector graphics must remain smooth, clean, and scalable at all viewport zoom levels. Use mathematical lines, arcs, polygon hulls, and `<text>` tags.
+4. **Miter vs Round Joins**: Chevron and arrowhead apexes in arcade games typically use mitered joins (`stroke-linejoin="miter"` or explicit polygonal points). Avoid `stroke-linejoin="round"` unless specifically identified by `probe_graphic`.
+5. **Diffuse Halo Masking**: Never optimize raw RMSE alone on glowing assets; diffuse blur will dominate the loss function, allowing sharp corner or letterform shape errors to pass undetected. Always use `multi` metric mode.

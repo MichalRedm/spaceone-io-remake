@@ -3,10 +3,8 @@
     <filter id="glow" x="-100%" y="-100%" width="300%" height="300%">
       <feFlood flood-color="#ee0000" flood-opacity="1.0" result="flood" />
       <feComposite in="flood" in2="SourceAlpha" operator="in" result="colored" />
-      
       <feGaussianBlur in="colored" stdDeviation="26" result="b_wide" />
       <feGaussianBlur in="colored" stdDeviation="6" result="b_tight" />
-      
       <feMerge>
         <feMergeNode in="b_wide" />
         <feMergeNode in="b_wide" />
@@ -21,6 +19,6 @@
   </defs>
   <g filter="url(#glow)">
     <path d="M 108 126 L 126 103 L 144 126" fill="none" stroke="#ffffff" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="miter" />
-    <text x="126" y="155.5" fill="#ffffff" font-family="'Trebuchet MS', 'Segoe UI', Arial, sans-serif" font-weight="700" font-size="16.9" text-anchor="middle" letter-spacing="-0.6">FLAG</text>
+    <text x="126" y="155.5" fill="#ffffff" font-family="'Trebuchet MS', 'Segoe UI', Arial, sans-serif" font-weight="700" font-size="16.9" text-anchor="middle" letter-spacing="-0.6">LEADER</text>
   </g>
 </svg>

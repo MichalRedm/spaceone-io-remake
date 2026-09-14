@@ -1,25 +1,26 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
   <defs>
-    <filter id="cyan-glow" x="-100%" y="-100%" width="300%" height="300%">
-      <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="b1" />
-      <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="b2" />
-      <feGaussianBlur in="SourceGraphic" stdDeviation="22" result="b3" />
+    <filter id="glow" x="-100%" y="-100%" width="300%" height="300%">
+      <feFlood flood-color="#00c8ff" flood-opacity="1.0" result="flood" />
+      <feComposite in="flood" in2="SourceAlpha" operator="in" result="colored" />
+      
+      <feGaussianBlur in="colored" stdDeviation="26" result="b_wide" />
+      <feGaussianBlur in="colored" stdDeviation="6" result="b_tight" />
+      
       <feMerge>
-        <feMergeNode in="b3" />
-        <feMergeNode in="b2" />
-        <feMergeNode in="b1" />
+        <feMergeNode in="b_wide" />
+        <feMergeNode in="b_wide" />
+        <feMergeNode in="b_wide" />
+        <feMergeNode in="b_wide" />
+        <feMergeNode in="b_wide" />
+        <feMergeNode in="b_wide" />
+        <feMergeNode in="b_tight" />
         <feMergeNode in="SourceGraphic" />
       </feMerge>
     </filter>
   </defs>
-
-  <!-- Cyan Neon Ambient Glow -->
-  <g filter="url(#cyan-glow)">
-    <path d="M 104 126 L 128 92 L 152 126" fill="none" stroke="#00d4ff" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" />
-    <text x="128" y="152" fill="#00d4ff" font-family="'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-weight="900" font-size="15" text-anchor="middle" letter-spacing="2">FLAG</text>
+  <g filter="url(#glow)">
+    <path d="M 108 126 L 126 103 L 144 126" fill="none" stroke="#ffffff" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="miter" />
+    <text x="126" y="155.5" fill="#ffffff" font-family="'Trebuchet MS', 'Segoe UI', Arial, sans-serif" font-weight="700" font-size="16.9" text-anchor="middle" letter-spacing="-0.6">FLAG</text>
   </g>
-
-  <!-- Hot White Core Stroke -->
-  <path d="M 104 126 L 128 92 L 152 126" fill="none" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" />
-  <text x="128" y="152" fill="#ffffff" font-family="'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-weight="900" font-size="15" text-anchor="middle" letter-spacing="2">FLAG</text>
 </svg>
