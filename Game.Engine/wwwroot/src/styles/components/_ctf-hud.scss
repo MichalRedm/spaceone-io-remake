@@ -7,15 +7,16 @@
 .ctf-hud,
 #ctf-arena {
   position: fixed;
-  top: 90px;
+  top: 94px;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 16pt;
-  font-weight: 700;
   display: flex;
-  gap: 30px;
+  align-items: center;
+  gap: 20px;
   z-index: $z-index-base;
   pointer-events: none;
+  user-select: none;
+  font-family: $font-family-main;
 
   &.hide {
     display: none !important;
@@ -24,27 +25,51 @@
   &__team {
     display: inline-flex;
     align-items: center;
-
-    &--cyan {
-      color: #00ffff;
-    }
-
-    &--red {
-      color: #ff0000;
-    }
   }
 
   &__flag-status,
   .flag_status {
-    margin: 0 10px;
-    font-size: 12pt;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 14px;
+    border-radius: 12px;
+    font-size: 11pt;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    background: rgba(10, 25, 55, 0.82);
+    backdrop-filter: blur(6px);
+    transition: all $transition-fast;
 
-    .home {
-      color: $color-green-lime;
+    #ctf-cyan & {
+      border: 1.5px solid rgba(0, 255, 255, 0.45);
+      box-shadow: 0 0 12px rgba(0, 255, 255, 0.25);
+
+      .home {
+        color: #00ffff;
+        text-shadow: 0 0 8px rgba(0, 255, 255, 0.7);
+      }
+
+      .taken {
+        color: #fae40b;
+        text-shadow: 0 0 8px rgba(250, 228, 11, 0.7);
+      }
     }
 
-    .taken {
-      color: $color-yellow-primary;
+    #ctf-red & {
+      border: 1.5px solid rgba(255, 51, 85, 0.45);
+      box-shadow: 0 0 12px rgba(255, 51, 85, 0.25);
+
+      .home {
+        color: #ff3355;
+        text-shadow: 0 0 8px rgba(255, 51, 85, 0.7);
+      }
+
+      .taken {
+        color: #fae40b;
+        text-shadow: 0 0 8px rgba(250, 228, 11, 0.7);
+      }
     }
 
     .hide {
@@ -92,7 +117,7 @@
 .ctf-notification,
 #ctf-notification {
   position: fixed;
-  top: 135px;
+  top: 155px;
   left: 50%;
   transform: translateX(-50%) translateY(-10px);
   z-index: $z-index-base;
