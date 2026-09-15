@@ -24,6 +24,7 @@ namespace Game.Engine.Core
                 AddWorld("team", WorldTeam());
                 AddWorld("ctf", WorldCTF());
                 AddWorld("robo", RoboTrainer());
+                AddWorld("bothell", BotHell());
             }
             /*
             AddWorld("sharks", WorldSharks());
@@ -111,13 +112,13 @@ namespace Game.Engine.Core
             return new World(hook, GameConfiguration);
         }
 
-        private static World RoboTrainer()
+        private static World BotHell()
         {
             var hook = Hook.Default;
-            hook.Name = "Robo Trainer";
+            hook.Name = "Bot Hell";
             hook.Description = "Battle against adaptive AI combat drones. Ideal for practicing aim, fleet steering, and dash mechanics.";
             hook.Instructions = null;
-            hook.WorldSize = Hook.Default.WorldSize / 2;
+            hook.WorldSize = (int)(Hook.Default.WorldSize * 0.75f);
             hook.Fishes = Hook.Default.Fishes / 4;
             hook.Obstacles = 0;
             hook.PickupSeekers = 0;
@@ -128,6 +129,27 @@ namespace Game.Engine.Core
             hook.RoboTrainerMode = true;
             hook.RoboTrainerMinBots = 3;
 
+            hook.WorldResizeEnabled = false;
+
+            return new World(hook, GameConfiguration);
+        }
+
+        private static World RoboTrainer()
+        {
+            var hook = Hook.Default;
+            hook.Name = "Robo Trainer";
+            hook.Description = "An empty world for training.";
+            hook.Instructions = null;
+            hook.WorldSize = (int)(Hook.Default.WorldSize * 0.75f);
+            hook.Fishes = 0;
+            hook.Obstacles = 0;
+            hook.PickupSeekers = 0;
+            hook.PickupShields = 0;
+            hook.AllowedColors = Hook.AllColors;
+            hook.Weight = 90;
+            hook.BotBase = 0;
+            hook.RoboTrainerMode = false;
+            
             hook.WorldResizeEnabled = false;
 
             return new World(hook, GameConfiguration);

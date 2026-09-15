@@ -27,6 +27,7 @@ namespace Game.Engine.Core
                 if (Hook == null) return "ffa";
                 if (Hook.CTFMode) return "ctf";
                 if (Hook.TeamMode) return "team";
+                if (WorldKey == "bothell") return "bothell";
                 if (Hook.RoboTrainerMode) return "robo";
                 if (Hook.SumoMode) return "sumo";
                 if (Hook.SharksAndMinnowsMode) return "sharks";
