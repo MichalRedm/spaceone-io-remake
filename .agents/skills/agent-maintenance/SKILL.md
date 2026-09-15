@@ -15,6 +15,8 @@ Use this skill when you finish implementing a major feature, detect a shift in t
    - Update the overarching objective or milestone focus if changed.
 
 2. **Synchronize Data Models & Architecture (`.agents/context/`)**:
+   - **Update Codebase Map (`codebase_map.md`)**: Whenever creating, moving, deleting, or substantially refactoring key classes, files, or subsystems, you MUST update `.agents/context/codebase_map.md` in the same PR.
+   - Run `python analysis/verify_codebase_map.py` to ensure 100% of referenced paths in the map are valid.
    - Update `architecture_overview.md`, `physics_model.md`, or `network_protocol.md` if interfaces, formulas, or schemas changed.
 
 3. **Refine Rules & Standards (`.agents/rules/`)**:

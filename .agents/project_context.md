@@ -1,7 +1,8 @@
 # Project Context - Spaceone.io Remake
 
 ## Master Entry Point
-See [AGENTS.md](../AGENTS.md) at the repository root for immediate orientation and the Rule Routing Matrix.
+- Root Entry Point & Rules: [AGENTS.md](../AGENTS.md)
+- Codebase Map & Architectural Atlas: [codebase_map.md](context/codebase_map.md)
 
 ## Current Goal
 Rebuild and launch a high-fidelity remake of the multiplayer 2D fleet shooter **Spaceone.io**, recreating its original visual aesthetics using reference sprite atlases and calibrating server kinematics to match original recorded gameplay physics.
@@ -18,6 +19,7 @@ Rebuild and launch a high-fidelity remake of the multiplayer 2D fleet shooter **
 - [x] Public GitHub repository published at `MichalRedm/spaceone-io-remake`.
 - [x] Reference assets, original wasm client, decoders, and gameplay recordings imported into `reference/space1-original/`.
 - [x] Agentic context framework and rule routing matrices initialized in `.agents/` and `AGENTS.md`.
+- [x] High-density verified Codebase Map and self-evolving navigation architecture initialized in `.agents/context/codebase_map.md` with link validator (`analysis/verify_codebase_map.py`).
 - [x] Establish authoritative C# coding standards (`.agents/rules/csharp_standards.md`) and complete full backend codebase security, sync, and concurrency remediation.
 - [x] Upgrade/modernize client build toolchain to Vite with Node 20/22+ support.
 - [x] Upgrade/modernize backend solution to .NET 7.0 with 0 build warnings/errors.
