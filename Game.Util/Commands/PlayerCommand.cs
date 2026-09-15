@@ -69,6 +69,17 @@ namespace Game.Util.Commands
             [Option("--bot-params")]
             public string BotParams { get; set; } = null;
 
+            [Option("--batch")]
+            public string Batch { get; set; } = null;
+
+            public class BotBatchEntry
+            {
+                public string Name { get; set; }
+                public string Color { get; set; }
+                public string Sprite { get; set; }
+                public string BotParams { get; set; }
+            }
+
             protected override async Task ExecuteAsync()
             {
                 if (StartupDelay > 0)
@@ -126,7 +137,7 @@ namespace Game.Util.Commands
                 if (Color == null)
                     Color = "red";
 
-                async Task<Robot> CreateRobot(Type innerRobotType = null, string worldKey = null, APIClient apiClient = null)
+                async Task<Robot> CreateRobot(Type innerRobotType = null, string worldKey = null, APIClient apiClient = null, BotBatchEntry entry = null)
                 {
                     var robot = Activator.CreateInstance(innerRobotType ?? robotType) as Robot;
                     robot.AutoSpawn = true;
@@ -142,14 +153,18 @@ namespace Game.Util.Commands
 
 
                     robot.AutoFire = Firing;
-                    robot.Color = Color;
-                    robot.Name = Name;
+                    robot.Color = entry?.Color ?? Color;
+                    robot.Name = entry?.Name ?? Name;
                     robot.Target = Target;
-                    robot.Sprite = Sprite;
+                    robot.Sprite = entry?.Sprite ?? Sprite;
 
-                    if (robot is Game.Robots.Framework.HumanoidBot hb && !string.IsNullOrWhiteSpace(BotParams))
+                    if (robot is Game.Robots.Framework.HumanoidBot hb)
                     {
-                        Newtonsoft.Json.JsonConvert.PopulateObject(BotParams, hb.Parameters);
+                        string botParamsToUse = entry?.BotParams ?? BotParams;
+                        if (!string.IsNullOrWhiteSpace(botParamsToUse))
+                        {
+                            Newtonsoft.Json.JsonConvert.PopulateObject(botParamsToUse, hb.Parameters);
+                        }
                     }
 
                     var connection = await (apiClient ?? API)
@@ -223,11 +238,27 @@ namespace Game.Util.Commands
                 else
                 {
                     var tasks = new List<Task>();
-                    for (int i = 0; i < Replicas; i++)
+                    
+                    if (!string.IsNullOrWhiteSpace(Batch))
                     {
-                        var robot = await CreateRobot();
-                        tasks.Add(robot.StartAsync());
-                    };
+                        var batchData = System.IO.File.ReadAllText(Path.GetFullPath(Batch));
+                        var entries = Newtonsoft.Json.JsonConvert.DeserializeObject<List<BotBatchEntry>>(batchData);
+                        
+                        foreach (var entry in entries)
+                        {
+                            var robot = await CreateRobot(entry: entry);
+                            tasks.Add(robot.StartAsync());
+                            await Task.Delay(200); // Small stagger to not instantly overwhelm server connections
+                        }
+                    }
+                    else
+                    {
+                        for (int i = 0; i < Replicas; i++)
+                        {
+                            var robot = await CreateRobot();
+                            tasks.Add(robot.StartAsync());
+                        }
+                    }
 
                     await Task.WhenAll(tasks);
 

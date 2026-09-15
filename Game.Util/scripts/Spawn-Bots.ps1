@@ -25,6 +25,8 @@ $botProcesses = @()
 
 Write-Host "Spawning $NumPlayers bots... (Press CTRL+C at any time to terminate all spawned bots)"
 
+$batchEntries = @()
+
 try {
     foreach ($name in $names) {
         if ([string]::IsNullOrWhiteSpace($name)) { continue }
@@ -50,27 +52,39 @@ try {
         $overshootStr = $overshoot.ToString([System.Globalization.CultureInfo]::InvariantCulture)
         $curveStr = $curve.ToString([System.Globalization.CultureInfo]::InvariantCulture)
         
-        $jsonParams = "{ `"MinimumShipsToOffensiveDash`": $offDash, `"MinimumShipsToDefensiveDash`": $defDash, `"TargetFleetSize`": $targetFleet, `"FlickAimSpeed`": $flickAimStr, `"CruisingSpeed`": $cruiseSpeedStr, `"SafeDistance`": $safeDist, `"OvershootFactor`": $overshootStr, `"CurveAmount`": $curveStr }"
+        $jsonParams = "{ 'MinimumShipsToOffensiveDash': $offDash, 'MinimumShipsToDefensiveDash': $defDash, 'TargetFleetSize': $targetFleet, 'FlickAimSpeed': $flickAimStr, 'CruisingSpeed': $cruiseSpeedStr, 'SafeDistance': $safeDist, 'OvershootFactor': $overshootStr, 'CurveAmount': $curveStr }"
         
-        $argsList = @("player", "robots", "--type-name", "Game.Robots.Framework.HumanoidBot", "--server", "http://localhost:5000", "--name", $name, "--color", $color, "--sprite", $sprite, "--bot-params", $jsonParams)
-        
-        $proc = Start-Process -PassThru -NoNewWindow $executable -ArgumentList $argsList
-        $botProcesses += $proc
-        
-        Start-Sleep -Milliseconds 500
+        $batchEntries += @{
+            Name = $name
+            Color = $color
+            Sprite = $sprite
+            BotParams = $jsonParams
+        }
     }
     
-    Write-Host "All bots spawned successfully! Script is now holding them open. Press CTRL+C to close them all."
+    $batchFile = Join-Path $scriptDir "bot_batch_temp.json"
+    $batchEntries | ConvertTo-Json -Depth 3 | Set-Content $batchFile
+
+    $argsList = "--server http://localhost:5000 player robots --type-name Game.Robots.Framework.HumanoidBot --batch `"$batchFile`""
+    
+    $proc = Start-Process -PassThru -NoNewWindow $executable -ArgumentList $argsList
+    $botProcesses += $proc
+    
+    Write-Host "All $NumPlayers bots spawned inside a SINGLE process successfully!"
+    Write-Host "Press CTRL+C to close them all."
     while ($true) {
         Start-Sleep -Seconds 1
     }
 }
 finally {
-    Write-Host "`nCaught termination signal. Cleaning up all bot processes..."
+    Write-Host "`nCaught termination signal. Cleaning up bot process..."
     foreach ($proc in $botProcesses) {
         if (-Not $proc.HasExited) {
             Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
         }
+    }
+    if (Test-Path $batchFile) {
+        Remove-Item $batchFile -ErrorAction SilentlyContinue
     }
     Write-Host "Cleanup complete."
 }
