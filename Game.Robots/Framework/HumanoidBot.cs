@@ -86,7 +86,7 @@ namespace Game.Robots.Framework
             {
                 ActiveStrategy = bestStrategy;
                 _lastStrategyChange = GameTime;
-                Log($"Strategy switched to: {bestStrategy?.GetType().Name} (Utility: {bestUtility:F2})");
+                // Log($"Strategy switched to: {bestStrategy?.GetType().Name} (Utility: {bestUtility:F2})");
             }
 
             // 3. Execute Strategy

@@ -13,42 +13,64 @@ if (-Not (Test-Path $namesFile)) {
 $colors = @("red", "pink", "cyan", "orange", "blue", "green", "yellow")
 $names = Get-Content $namesFile | Get-Random -Count $NumPlayers
 
-foreach ($name in $names) {
-    if ([string]::IsNullOrWhiteSpace($name)) { continue }
-    
-    # Generate a deterministic integer seed from the username's characters
-    $seed = $name.GetHashCode()
-    
-    # Pick color deterministically based on the seed
-    $colorIndex = [Math]::Abs($seed) % $colors.Length
-    $color = $colors[$colorIndex]
-    $sprite = "ship_$color"
-    
-    # Initialize a new random number generator using our deterministic seed
-    $rand = New-Object System.Random($seed)
-    
-    # Roll the personality traits (these will now always be exactly the same for this username)
-    $offDash = $rand.Next(10, 31)
-    $defDash = $rand.Next(5, 16)
-    $targetFleet = $rand.Next(15, 41)
-    $flickAim = $rand.Next(85, 100) / 100.0
-    $cruiseSpeed = $rand.Next(15, 30) / 100.0
-    $safeDist = $rand.Next(400, 700)
-    $overshoot = $rand.Next(10, 15) / 10.0
-    $curve = $rand.Next(1, 6) / 10.0
+$projectDir = Join-Path $scriptDir ".."
+$executable = Join-Path $projectDir "bin/Debug/net7.0/Game.Util.exe"
 
-    $flickAimStr = $flickAim.ToString([System.Globalization.CultureInfo]::InvariantCulture)
-    $cruiseSpeedStr = $cruiseSpeed.ToString([System.Globalization.CultureInfo]::InvariantCulture)
-    $overshootStr = $overshoot.ToString([System.Globalization.CultureInfo]::InvariantCulture)
-    $curveStr = $curve.ToString([System.Globalization.CultureInfo]::InvariantCulture)
-    
-    # Create the JSON override payload
-    $jsonParams = "{ `"MinimumShipsToOffensiveDash`": $offDash, `"MinimumShipsToDefensiveDash`": $defDash, `"TargetFleetSize`": $targetFleet, `"FlickAimSpeed`": $flickAimStr, `"CruisingSpeed`": $cruiseSpeedStr, `"SafeDistance`": $safeDist, `"OvershootFactor`": $overshootStr, `"CurveAmount`": $curveStr }"
+if (-Not (Test-Path $executable)) {
+    Write-Host "Could not find Game.Util.exe. Building project..."
+    dotnet build $projectDir
+}
 
-    # Project directory is two levels up from the script
-    $projectDir = Join-Path $scriptDir ".."
+$botProcesses = @()
+
+Write-Host "Spawning $NumPlayers bots... (Press CTRL+C at any time to terminate all spawned bots)"
+
+try {
+    foreach ($name in $names) {
+        if ([string]::IsNullOrWhiteSpace($name)) { continue }
+        
+        $seed = $name.GetHashCode()
+        $colorIndex = [Math]::Abs($seed) % $colors.Length
+        $color = $colors[$colorIndex]
+        $sprite = "ship_$color"
+        
+        $rand = New-Object System.Random($seed)
+        
+        $offDash = $rand.Next(10, 31)
+        $defDash = $rand.Next(5, 16)
+        $targetFleet = $rand.Next(15, 41)
+        $flickAim = $rand.Next(85, 100) / 100.0
+        $cruiseSpeed = $rand.Next(15, 30) / 100.0
+        $safeDist = $rand.Next(400, 700)
+        $overshoot = $rand.Next(10, 15) / 10.0
+        $curve = $rand.Next(1, 6) / 10.0
+
+        $flickAimStr = $flickAim.ToString([System.Globalization.CultureInfo]::InvariantCulture)
+        $cruiseSpeedStr = $cruiseSpeed.ToString([System.Globalization.CultureInfo]::InvariantCulture)
+        $overshootStr = $overshoot.ToString([System.Globalization.CultureInfo]::InvariantCulture)
+        $curveStr = $curve.ToString([System.Globalization.CultureInfo]::InvariantCulture)
+        
+        $jsonParams = "{ `"MinimumShipsToOffensiveDash`": $offDash, `"MinimumShipsToDefensiveDash`": $defDash, `"TargetFleetSize`": $targetFleet, `"FlickAimSpeed`": $flickAimStr, `"CruisingSpeed`": $cruiseSpeedStr, `"SafeDistance`": $safeDist, `"OvershootFactor`": $overshootStr, `"CurveAmount`": $curveStr }"
+        
+        $argsList = @("player", "robots", "--type-name", "Game.Robots.Framework.HumanoidBot", "--server", "http://localhost:5000", "--name", $name, "--color", $color, "--sprite", $sprite, "--bot-params", $jsonParams)
+        
+        $proc = Start-Process -PassThru -NoNewWindow $executable -ArgumentList $argsList
+        $botProcesses += $proc
+        
+        Start-Sleep -Milliseconds 500
+    }
     
-    Start-Process -NoNewWindow dotnet -ArgumentList "run --project `"$projectDir`" --no-build --server http://localhost:5000 player robots --type-name Game.Robots.Framework.HumanoidBot --name `"$name`" --color `"$color`" --sprite `"$sprite`" --bot-params `"$jsonParams`""
-    
-    Start-Sleep -Seconds 0.5
+    Write-Host "All bots spawned successfully! Script is now holding them open. Press CTRL+C to close them all."
+    while ($true) {
+        Start-Sleep -Seconds 1
+    }
+}
+finally {
+    Write-Host "`nCaught termination signal. Cleaning up all bot processes..."
+    foreach ($proc in $botProcesses) {
+        if (-Not $proc.HasExited) {
+            Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+        }
+    }
+    Write-Host "Cleanup complete."
 }
