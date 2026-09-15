@@ -118,8 +118,8 @@ namespace Game.Engine.Core
             hook.Name = "Bot Hell";
             hook.Description = "Battle against adaptive AI combat drones. Ideal for practicing aim, fleet steering, and dash mechanics.";
             hook.Instructions = null;
-            hook.WorldSize = (int)(Hook.Default.WorldSize * 0.75f);
-            hook.Fishes = Hook.Default.Fishes / 4;
+            hook.WorldSize = (int)(1125);
+            hook.Fishes = 87;
             hook.Obstacles = 0;
             hook.PickupSeekers = 0;
             hook.PickupShields = 0;
@@ -140,8 +140,8 @@ namespace Game.Engine.Core
             hook.Name = "Robo Trainer";
             hook.Description = "An empty world for training.";
             hook.Instructions = null;
-            hook.WorldSize = Hook.Default.WorldSize / 2;
-            hook.Fishes = 0;
+            hook.WorldSize = 750;
+            hook.Fishes = 20; // 1/4 of FFA's 350
             hook.Obstacles = 0;
             hook.PickupSeekers = 0;
             hook.PickupShields = 0;
@@ -207,8 +207,8 @@ namespace Game.Engine.Core
         {
             var hook = Hook.Default;
             hook.BotBase = 0;
-            hook.WorldSize = Hook.Default.WorldSize / 2;
-            hook.Fishes = Hook.Default.Fishes / 4;
+            hook.WorldSize = 750;
+            hook.Fishes = 87;
             hook.Obstacles = 0;
             hook.PickupSeekers = 0;
             hook.PickupShields = 0;
@@ -232,8 +232,8 @@ namespace Game.Engine.Core
         {
             var hook = Hook.Default;
             hook.BotBase = 0;
-            hook.WorldSize = Hook.Default.WorldSize;
-            hook.Fishes = Hook.Default.Fishes;
+            hook.WorldSize = 1500;
+            hook.Fishes = 350;
             hook.Obstacles = 0;
             hook.PickupSeekers = 0;
             hook.PickupShields = 0;
@@ -254,8 +254,8 @@ namespace Game.Engine.Core
         {
             var hook = Hook.Default;
             hook.BotBase = 0;
-            hook.WorldSize = Hook.Default.WorldSize;
-            hook.Fishes = Hook.Default.Fishes;
+            hook.WorldSize = 1500;
+            hook.Fishes = 350;
             hook.Obstacles = 0;
             hook.PickupSeekers = 0;
             hook.PickupShields = 0;
@@ -288,7 +288,7 @@ namespace Game.Engine.Core
             hook.PointsPerKillFleet = 1;
             hook.PointsPerKillShip = 0;
             hook.PointsMultiplierDeath = 1.0f;
-            hook.WorldSize /= 2;
+            hook.WorldSize = 750;
             hook.Weight = 100;
 
             hook.Name = "Sharks and Minnows";
