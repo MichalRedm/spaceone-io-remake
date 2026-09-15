@@ -17,7 +17,7 @@ namespace Game.Robots.Senses
             public int Score { get; set; }
         }
 
-        private readonly ContextRobot Robot;
+        public readonly ContextRobot Robot;
         private Leaderboard Leaderboard = null;
 
         public bool CTFModeEnabled { get; private set; }

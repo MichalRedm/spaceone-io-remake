@@ -7,11 +7,11 @@ namespace Game.Robots.Senses
 
     public class SensorAbandoned : ISense
     {
-        private readonly ContextRobot Robot;
+        private readonly Robot Robot;
 
         public IEnumerable<Ship> AllVisibleAbandoned { get; private set; }
 
-        public SensorAbandoned(ContextRobot robot)
+        public SensorAbandoned(Robot robot)
         {
             this.Robot = robot;
             this.AllVisibleAbandoned = null;

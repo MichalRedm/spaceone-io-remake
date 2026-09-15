@@ -8,11 +8,11 @@ namespace Game.Robots.Senses
 
     public class SensorBullets : ISense
     {
-        private readonly ContextRobot Robot;
+        private readonly Robot Robot;
 
         public IEnumerable<Body> VisibleBullets { get; private set; }
 
-        public SensorBullets(ContextRobot robot)
+        public SensorBullets(Robot robot)
         {
             this.Robot = robot;
             this.VisibleBullets = null;

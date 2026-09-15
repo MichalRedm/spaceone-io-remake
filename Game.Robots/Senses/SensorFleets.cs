@@ -8,13 +8,13 @@ namespace Game.Robots.Senses
 
     public class SensorFleets : ISense
     {
-        private readonly ContextRobot Robot;
+        private readonly Robot Robot;
 
         public List<Fleet> AllVisibleFleets { get; private set; }
 
         public Fleet MyFleet { get; private set; }
 
-        public SensorFleets(ContextRobot robot)
+        public SensorFleets(Robot robot)
         {
             this.Robot = robot;
             this.AllVisibleFleets = new List<Fleet>(); ;
