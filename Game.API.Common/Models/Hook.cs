@@ -11,7 +11,7 @@ namespace Game.API.Common.Models
             {
                 return new Hook
                 {
-                    WorldSize = 1500, // smaller arena for testing; default is 5500
+                    WorldSize = 5500, // smaller arena for testing; default is 5500
                     WorldResizeEnabled = false,
                     WorldSizeBasic = 5500,
                     WorldSizeDeltaPerPlayer = 400,
@@ -173,7 +173,7 @@ namespace Game.API.Common.Models
                     SpawnInvulnerabilityTime = 3000,
                     InvulnerabilityBlinkPeriod = 250,
 
-                    Fishes = 50, // smaller for test arena; default is 350; ignored if WorldResizeEnabled = true 
+                    Fishes = 600, // smaller for test arena; default is 350; ignored if WorldResizeEnabled = true 
                     FishesMultiplier = 0.01, // used when WorldResizeEnabled = true
                     FishThrust = 0.0005f,
                     FishFlockAlignment = 10f,

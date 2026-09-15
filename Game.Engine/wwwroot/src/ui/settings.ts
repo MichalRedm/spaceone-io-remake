@@ -72,7 +72,7 @@ export const Settings: SettingsData = {
   leaderboardEnabled: true,
   hudEnabled: false,
   namesEnabled: true,
-  bandwidth: 100,
+  bandwidth: 7500,
   showCooldown: true,
   logLength: 4,
   displayMinimap: false,

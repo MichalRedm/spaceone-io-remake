@@ -7,7 +7,7 @@ namespace Game.Robots.Senses
 
     public class SensorTeam : ISense
     {
-        private readonly ContextRobot Robot;
+        private readonly Robot Robot;
 
         public enum Teams
         {
@@ -18,7 +18,7 @@ namespace Game.Robots.Senses
         public Teams MyTeam { get; private set; }
         public Teams TheirTeam { get; private set; }
 
-        public SensorTeam(ContextRobot robot)
+        public SensorTeam(Robot robot)
         {
             this.Robot = robot;
         }

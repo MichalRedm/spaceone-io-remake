@@ -192,8 +192,10 @@ namespace Game.Engine.Networking
                                 followBody.Position.Y + viewportHeight / 2
                             );
 
+                            var visibleBodies = world.BodiesNear(playerViewport);
+
                             BodyCache.Update(
-                                world.BodiesNear(playerViewport),
+                                visibleBodies,
                                 world.Time
                             );
                         }
@@ -231,7 +233,9 @@ namespace Game.Engine.Networking
 
                         for (int i = 0; i < updatedGroups.Count; i++)
                         {
-                            updatedGroups[i].GroupClient = updatedGroups[i].GroupUpdated.Clone();
+                            if (updatedGroups[i].GroupClient == null)
+                                updatedGroups[i].GroupClient = new Game.Engine.Core.Group();
+                            updatedGroups[i].GroupClient.UpdateFrom(updatedGroups[i].GroupUpdated);
                         }
 
                         var staleGroups = BodyCache.CollectStaleGroups();
@@ -265,7 +269,9 @@ namespace Game.Engine.Networking
 
                         for (int i = 0; i < maxUpdates; i++)
                         {
-                            updates[i].BodyClient = updates[i].BodyUpdated.Clone();
+                            if (updates[i].BodyClient == null)
+                                updates[i].BodyClient = new Body();
+                            updates[i].BodyClient.UpdateFrom(updates[i].BodyUpdated);
                         }
 
                         var staleBuckets = BodyCache.CollectStaleBuckets();

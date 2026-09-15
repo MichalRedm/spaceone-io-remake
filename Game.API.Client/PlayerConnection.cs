@@ -109,7 +109,7 @@ namespace Game.API.Client
         private async Task SendPingAsync()
         {
             var builder = new FlatBufferBuilder(1);
-            var ping = NetPing.CreateNetPing(builder, bandwidthThrottle: 100);
+            var ping = NetPing.CreateNetPing(builder, bandwidthThrottle: 7500);
             var q = NetQuantum.CreateNetQuantum(builder, AllMessages.NetPing, ping.Value);
             builder.Finish(q.Value);
 

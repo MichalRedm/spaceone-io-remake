@@ -1,97 +1,119 @@
 namespace Game.Robots.Senses
 {
+    using Game.API.Client;
     using Game.API.Common;
     using Game.Robots.Models;
-    using System;
     using System.Collections.Generic;
-    using System.Linq;
 
     public class SensorFleets : ISense
     {
-        private readonly ContextRobot Robot;
+        private readonly Robot Robot;
 
-        public List<Fleet> AllVisibleFleets { get; private set; }
+        public List<Fleet> AllVisibleFleets { get; private set; } = new List<Fleet>();
+        private readonly List<Fleet> _others = new List<Fleet>();
 
         public Fleet MyFleet { get; private set; }
 
-        public SensorFleets(ContextRobot robot)
+        public SensorFleets(Robot robot)
         {
             this.Robot = robot;
-            this.AllVisibleFleets = new List<Fleet>(); ;
         }
 
         public Fleet ByID(uint fleetID)
         {
-            return AllVisibleFleets.FirstOrDefault(f => f.ID == fleetID);
+            foreach (var f in AllVisibleFleets)
+                if (f.ID == fleetID) return f;
+            return null;
         }
 
         public void Sense()
         {
-            var newFleets = Robot.Bodies
-                .Where(b => b.Group?.Type == GroupTypes.Fleet) // check the sprite
-                .GroupBy(b => b.Group)
-                .Select(g => new Fleet
-                {
-                    ID = g.Key.ID,
-                    Name = g.Key.Caption,
-                    Sprite = g.Select(b => b.Sprite).FirstOrDefault(),
-                    Color = g.Key.Color,
-                    Ships = g.Select(b => new Ship
-                    {
-                        ID = b.ID,
-                        Angle = b.Angle,
-                        Momentum = b.Momentum,
-                        Position = b.Position,
-                        Size = b.Size
-                    }).ToList()
-                })
-                .ToList();
-
             foreach (var fleet in AllVisibleFleets)
-                fleet.PendingDestruction = true;
-            foreach (var fleet in newFleets)
             {
-                var existing = AllVisibleFleets.FirstOrDefault(f => f.ID == fleet.ID);
-                if (existing != null)
+                fleet.PendingDestruction = true;
+                foreach (var ship in fleet.Ships)
+                    ship.PendingDestruction = true;
+            }
+
+            foreach (var b in Robot.Bodies)
+            {
+                if (b.Group?.Type == GroupTypes.Fleet)
                 {
-                    existing.Name = fleet.Name;
-                    existing.Sprite = fleet.Sprite;
-                    existing.Color = fleet.Color;
-                    existing.PendingDestruction = false;
-
-                    foreach (var ship in existing.Ships)
-                        ship.PendingDestruction = true;
-
-                    foreach (var ship in fleet.Ships)
+                    Fleet existingFleet = null;
+                    foreach (var f in AllVisibleFleets)
                     {
-                        var existingShip = existing.Ships.FirstOrDefault(s => s.ID == ship.ID);
-                        if (existingShip != null)
+                        if (f.ID == b.Group.ID)
                         {
-                            existingShip.Position = ship.Position;
-                            existingShip.Momentum = ship.Momentum;
-                            existingShip.Size = ship.Size;
-                            existingShip.Angle = ship.Angle;
-                            ship.PendingDestruction = false;
+                            existingFleet = f;
+                            break;
                         }
-                        else
-                            existing.Ships.Add(ship);
-
-                        existing.Ships = existing.Ships.Where(s => !s.PendingDestruction).ToList();
                     }
+
+                    if (existingFleet == null)
+                    {
+                        existingFleet = new Fleet { ID = b.Group.ID };
+                        AllVisibleFleets.Add(existingFleet);
+                    }
+
+                    existingFleet.Name = b.Group.Caption;
+                    existingFleet.Sprite = b.Sprite;
+                    existingFleet.Color = b.Group.Color;
+                    existingFleet.PendingDestruction = false;
+
+                    Ship existingShip = null;
+                    foreach (var s in existingFleet.Ships)
+                    {
+                        if (s.ID == b.ID)
+                        {
+                            existingShip = s;
+                            break;
+                        }
+                    }
+
+                    if (existingShip == null)
+                    {
+                        existingShip = new Ship { ID = b.ID };
+                        existingFleet.Ships.Add(existingShip);
+                    }
+
+                    existingShip.Position = b.Position;
+                    existingShip.Momentum = b.Momentum;
+                    existingShip.Size = b.Size;
+                    existingShip.Angle = b.Angle;
+                    existingShip.PendingDestruction = false;
+                }
+            }
+
+            for (int i = AllVisibleFleets.Count - 1; i >= 0; i--)
+            {
+                var fleet = AllVisibleFleets[i];
+                if (fleet.PendingDestruction)
+                {
+                    AllVisibleFleets.RemoveAt(i);
                 }
                 else
-                    AllVisibleFleets.Add(fleet);
+                {
+                    for (int j = fleet.Ships.Count - 1; j >= 0; j--)
+                    {
+                        if (fleet.Ships[j].PendingDestruction)
+                        {
+                            fleet.Ships.RemoveAt(j);
+                        }
+                    }
+                }
             }
-            AllVisibleFleets = AllVisibleFleets.Where(f => !f.PendingDestruction).ToList();
 
-            MyFleet = AllVisibleFleets.FirstOrDefault(f => f.ID == Robot.FleetID);
+            MyFleet = null;
+            _others.Clear();
+            foreach (var f in AllVisibleFleets)
+            {
+                if (f.ID == Robot.FleetID)
+                    MyFleet = f;
+                else
+                    _others.Add(f);
+            }
         }
 
-        public IEnumerable<Fleet> Others
-        {
-            get => MyFleet != null
-                ? AllVisibleFleets.Except(new[] { MyFleet })
-                : AllVisibleFleets;
-        }
+        public IEnumerable<Fleet> Others => _others;
     }
 }

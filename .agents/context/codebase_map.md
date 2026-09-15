@@ -132,6 +132,9 @@ Autonomous context-steering bot framework and genetic evolution controllers.
 | :--- | :--- | :--- |
 | `Game.Robots/Robot.cs` | `Robot` | Base bot agent; connects to game server via WebSocket, consumes world snapshots, and transmits control inputs. |
 | `Game.Robots/ContextRobot.cs` | `ContextRobot` : `Robot` | Context-steering bot; maps environment threats/desires to a radial `ContextRing` and blends steering behaviors. |
+| `Game.Robots/Framework/HumanoidBot.cs` | `HumanoidBot` : `Robot` | High-fidelity human-mimicking bot utilizing utility-based strategy swapping and simulated cursor movement. |
+| `Game.Robots/Framework/BotParameters.cs` | `BotParameters` | Configuration POCO for bot traits, reaction times, and personality parameters. |
+| `Game.Robots/Strategies/` | `IStrategy`, `EngageStrategy`, `CruisingStrategy` | Utility-scored strategy implementations driving `HumanoidBot` execution phases. |
 | `Game.Robots/Behaviors/` | `ContextBehavior`, `Advance`, `Dodge`, `Separation`, `StayInBounds` | Modular steering components calculating directional weights and danger vectors. |
 | `Game.Robots/Breeding/` | `RobotEvolutionController`, `RobotChromosome`, `RobotFitness` | Genetic algorithm tournament harness for evolving bot behavior weights. |
 | `Game.Robots/Senses/` | `SensorFleets`, `SensorFlock`, `SensorWeapons` | Spatial sensory perception layers filtering local radar targets. |
