@@ -140,7 +140,7 @@ namespace Game.Engine.Core
             hook.Name = "Robo Trainer";
             hook.Description = "An empty world for training.";
             hook.Instructions = null;
-            hook.WorldSize = (int)(Hook.Default.WorldSize * 0.75f);
+            hook.WorldSize = Hook.Default.WorldSize / 2;
             hook.Fishes = 0;
             hook.Obstacles = 0;
             hook.PickupSeekers = 0;
