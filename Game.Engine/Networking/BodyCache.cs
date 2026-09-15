@@ -29,6 +29,9 @@ namespace Game.Engine.Networking
                 bucket.CalculateError();
         }
 
+        private static readonly Comparison<BucketBody> _bodyErrorComparer = (a, b) => b.Error.CompareTo(a.Error);
+        private static readonly Comparison<BucketGroup> _groupErrorComparer = (a, b) => b.Error.CompareTo(a.Error);
+
         public List<BucketBody> BodiesByError()
         {
             // find the bodies with the largest error
@@ -38,7 +41,7 @@ namespace Game.Engine.Networking
                 if (!b.Stale && b.Error > 0)
                     _bodiesByErrorList.Add(b);
             }
-            _bodiesByErrorList.Sort((a, b) => b.Error.CompareTo(a.Error));
+            _bodiesByErrorList.Sort(_bodyErrorComparer);
             return _bodiesByErrorList;
         }
 
@@ -51,7 +54,7 @@ namespace Game.Engine.Networking
                 if (!g.Stale && g.Error > 0)
                     _groupsByErrorList.Add(g);
             }
-            _groupsByErrorList.Sort((a, b) => b.Error.CompareTo(a.Error));
+            _groupsByErrorList.Sort(_groupErrorComparer);
             return _groupsByErrorList;
         }
 

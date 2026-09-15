@@ -192,8 +192,10 @@ namespace Game.Engine.Networking
                                 followBody.Position.Y + viewportHeight / 2
                             );
 
+                            var visibleBodies = world.BodiesNear(playerViewport);
+
                             BodyCache.Update(
-                                world.BodiesNear(playerViewport),
+                                visibleBodies,
                                 world.Time
                             );
                         }
