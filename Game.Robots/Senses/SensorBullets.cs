@@ -10,24 +10,30 @@ namespace Game.Robots.Senses
     {
         private readonly Robot Robot;
 
-        public IEnumerable<Body> VisibleBullets { get; private set; }
+        public IEnumerable<Body> VisibleBullets => _visibleBullets;
+        private readonly List<Body> _visibleBullets = new List<Body>();
 
         public SensorBullets(Robot robot)
         {
             this.Robot = robot;
-            this.VisibleBullets = null;
         }
 
         public void Sense()
         {
-            VisibleBullets = Robot.Bodies
-                .Where(b => b.Group != null)
-                .Where(b =>
-                    b.Group.Type == GroupTypes.VolleyBullet
-                    || b.Group.Type == GroupTypes.VolleySeeker)
-                .Where(b => b.Group?.Owner != Robot.FleetID) // make sure it's not owned by this robot
-                .OrderBy(b => Vector2.Distance(b.Position, Robot.Position)) // order them by range
-                .ToList();
+            _visibleBullets.Clear();
+            foreach (var b in Robot.Bodies)
+            {
+                if (b.Group != null)
+                {
+                    if (b.Group.Type == GroupTypes.VolleyBullet || b.Group.Type == GroupTypes.VolleySeeker)
+                    {
+                        if (b.Group.Owner != Robot.FleetID)
+                        {
+                            _visibleBullets.Add(b);
+                        }
+                    }
+                }
+            }
         }
     }
 }

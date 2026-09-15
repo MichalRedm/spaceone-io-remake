@@ -9,26 +9,45 @@ namespace Game.Robots.Senses
     {
         private readonly Robot Robot;
 
-        public IEnumerable<Ship> AllVisibleFish { get; private set; }
+        public IEnumerable<Ship> AllVisibleFish => _allVisibleFish;
+        private readonly List<Ship> _allVisibleFish = new List<Ship>();
+        private readonly List<Ship> _shipPool = new List<Ship>();
 
         public SensorFish(Robot robot)
         {
             this.Robot = robot;
-            this.AllVisibleFish = null;
         }
 
         public void Sense()
         {
-            AllVisibleFish = Robot.Bodies
-                .Where(b => b.Group?.Type == GroupTypes.Fish || b.Sprite == Sprites.fish)
-                .Select(b => new Ship
+            int poolIndex = 0;
+            _allVisibleFish.Clear();
+
+            foreach (var b in Robot.Bodies)
+            {
+                if (b.Group?.Type == GroupTypes.Fish || b.Sprite == Sprites.fish)
                 {
-                    ID = b.ID,
-                    Angle = b.Angle,
-                    Momentum = b.Momentum,
-                    Position = b.Position,
-                    Size = b.Size
-                }).ToList();
+                    Ship s;
+                    if (poolIndex < _shipPool.Count)
+                    {
+                        s = _shipPool[poolIndex];
+                    }
+                    else
+                    {
+                        s = new Ship();
+                        _shipPool.Add(s);
+                    }
+                    
+                    s.ID = b.ID;
+                    s.Angle = b.Angle;
+                    s.Momentum = b.Momentum;
+                    s.Position = b.Position;
+                    s.Size = b.Size;
+
+                    _allVisibleFish.Add(s);
+                    poolIndex++;
+                }
+            }
         }
     }
 }

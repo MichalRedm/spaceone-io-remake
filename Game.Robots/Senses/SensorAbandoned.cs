@@ -9,26 +9,45 @@ namespace Game.Robots.Senses
     {
         private readonly Robot Robot;
 
-        public IEnumerable<Ship> AllVisibleAbandoned { get; private set; }
+        public IEnumerable<Ship> AllVisibleAbandoned => _allVisibleAbandoned;
+        private readonly List<Ship> _allVisibleAbandoned = new List<Ship>();
+        private readonly List<Ship> _shipPool = new List<Ship>();
 
         public SensorAbandoned(Robot robot)
         {
             this.Robot = robot;
-            this.AllVisibleAbandoned = null;
         }
 
         public void Sense()
         {
-            AllVisibleAbandoned = Robot.Bodies
-                .Where(b => b.Sprite == Sprites.ship_gray)
-                .Select(b => new Ship
+            int poolIndex = 0;
+            _allVisibleAbandoned.Clear();
+
+            foreach (var b in Robot.Bodies)
+            {
+                if (b.Sprite == Sprites.ship_gray)
                 {
-                    ID = b.ID,
-                    Angle = b.Angle,
-                    Momentum = b.Momentum,
-                    Position = b.Position,
-                    Size = b.Size
-                }).ToList();
+                    Ship s;
+                    if (poolIndex < _shipPool.Count)
+                    {
+                        s = _shipPool[poolIndex];
+                    }
+                    else
+                    {
+                        s = new Ship();
+                        _shipPool.Add(s);
+                    }
+                    
+                    s.ID = b.ID;
+                    s.Angle = b.Angle;
+                    s.Momentum = b.Momentum;
+                    s.Position = b.Position;
+                    s.Size = b.Size;
+
+                    _allVisibleAbandoned.Add(s);
+                    poolIndex++;
+                }
+            }
         }
     }
 }

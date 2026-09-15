@@ -22,29 +22,46 @@ namespace Game.Robots.Strategies
         {
             // Find closest food or abandoned ship strictly within safe arena bounds
             float safeFoodLimit = bot.EffectiveWorldSize - 400f;
-            var targets = bot.SensorAbandoned.AllVisibleAbandoned
-                .Concat(bot.SensorFish.AllVisibleFish)
-                .Where(t => MathF.Abs(t.Position.X) < safeFoodLimit && MathF.Abs(t.Position.Y) < safeFoodLimit)
-                .ToList();
+            
+            Game.Robots.Models.Ship closestTarget = null;
+            float closestDistSq = float.MaxValue;
+            bool lockedStillValid = false;
+            float lockedDistSq = float.MaxValue;
+
+            void ProcessTarget(Game.Robots.Models.Ship t)
+            {
+                if (MathF.Abs(t.Position.X) < safeFoodLimit && MathF.Abs(t.Position.Y) < safeFoodLimit)
+                {
+                    float distSq = Vector2.DistanceSquared(t.Position, bot.Position);
+                    if (distSq < closestDistSq)
+                    {
+                        closestDistSq = distSq;
+                        closestTarget = t;
+                    }
+                    if (_lockedFishTarget != null && t.ID == _lockedFishTarget.ID)
+                    {
+                        lockedStillValid = true;
+                        lockedDistSq = distSq;
+                    }
+                }
+            }
+
+            foreach (var t in bot.SensorAbandoned.AllVisibleAbandoned) ProcessTarget(t);
+            foreach (var t in bot.SensorFish.AllVisibleFish) ProcessTarget(t);
             
             Game.Robots.Models.Ship target = null;
 
-            if (targets.Any())
+            if (closestTarget != null)
             {
-                if (_lockedFishTarget != null && targets.Any(t => t.ID == _lockedFishTarget.ID))
+                if (lockedStillValid)
                 {
-                    // Stick to locked target unless another one is MUCH closer (hysteresis)
-                    var currentDist = Vector2.DistanceSquared(_lockedFishTarget.Position, bot.Position);
-                    var closest = targets.OrderBy(f => Vector2.DistanceSquared(f.Position, bot.Position)).First();
-                    
-                    if (Vector2.DistanceSquared(closest.Position, bot.Position) < currentDist * 0.5f)
-                        _lockedFishTarget = closest;
+                    if (closestDistSq < lockedDistSq * 0.5f)
+                        _lockedFishTarget = closestTarget;
                 }
                 else
                 {
-                    _lockedFishTarget = targets.OrderBy(f => Vector2.DistanceSquared(f.Position, bot.Position)).FirstOrDefault();
+                    _lockedFishTarget = closestTarget;
                 }
-
                 target = _lockedFishTarget;
             }
             else
@@ -54,9 +71,19 @@ namespace Game.Robots.Strategies
 
             if (target != null)
             {
-                // DEFENSIVE FLICK SHOOTING: Even when cruising for fish, if an enemy is nearby and we can shoot, snap to them!
+                // DEFENSIVE FLICK SHOOTING
                 var enemies = bot.SensorFleets.Others;
-                var dangerousEnemy = enemies.OrderBy(e => Vector2.DistanceSquared(e.Center, bot.Position)).FirstOrDefault();
+                Game.Robots.Models.Fleet dangerousEnemy = null;
+                float minEnemyDistSq = float.MaxValue;
+                foreach (var e in enemies)
+                {
+                    float distSq = Vector2.DistanceSquared(e.Center, bot.Position);
+                    if (distSq < minEnemyDistSq)
+                    {
+                        minEnemyDistSq = distSq;
+                        dangerousEnemy = e;
+                    }
+                }
                 
                 bool isAimingAtEnemy = false;
                 if (dangerousEnemy != null && Vector2.Distance(dangerousEnemy.Center, bot.Position) < bot.Parameters.SafeDistance * 2)
@@ -118,7 +145,17 @@ namespace Game.Robots.Strategies
 
                 // DEFENSIVE FLICK SHOOTING (while wandering)
                 var enemies = bot.SensorFleets.Others;
-                var dangerousEnemy = enemies.OrderBy(e => Vector2.DistanceSquared(e.Center, bot.Position)).FirstOrDefault();
+                Game.Robots.Models.Fleet dangerousEnemy = null;
+                float minEnemyDistSq = float.MaxValue;
+                foreach (var e in enemies)
+                {
+                    float distSq = Vector2.DistanceSquared(e.Center, bot.Position);
+                    if (distSq < minEnemyDistSq)
+                    {
+                        minEnemyDistSq = distSq;
+                        dangerousEnemy = e;
+                    }
+                }
                 
                 bool isAimingAtEnemy = false;
                 if (dangerousEnemy != null && Vector2.Distance(dangerousEnemy.Center, bot.Position) < bot.Parameters.SafeDistance * 2)
