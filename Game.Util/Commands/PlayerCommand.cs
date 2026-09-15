@@ -66,7 +66,10 @@ namespace Game.Util.Commands
             [Option("--scenario")]
             public string Scenario { get; set; } = null;
 
-            protected async override Task ExecuteAsync()
+            [Option("--bot-params")]
+            public string BotParams { get; set; } = null;
+
+            protected override async Task ExecuteAsync()
             {
                 if (StartupDelay > 0)
                     await Task.Delay(StartupDelay);
@@ -91,12 +94,22 @@ namespace Game.Util.Commands
                 }
 
                 if (TypeName != null)
-                    robotType = Type.GetType(TypeName);
+                {
+                    robotType = Type.GetType(TypeName) 
+                             ?? typeof(Robot).Assembly.GetType(TypeName);
+                }
+
+                if (robotType == null && config?.RobotType != null)
+                {
+                    robotType = Type.GetType(config.RobotType)
+                             ?? typeof(Robot).Assembly.GetType(config.RobotType);
+                }
+
                 if (robotType == null)
-                    if (config?.RobotType != null)
-                        robotType = Type.GetType(config.RobotType);
-                if (robotType == null)
+                {
                     robotType = typeof(ContextTurret);
+                    Console.WriteLine($"Warning: Could not find requested robot type, defaulting to {robotType.Name}");
+                }
 
                 if (Name == null && config?.Name != null)
                     Name = config.Name;
@@ -133,6 +146,11 @@ namespace Game.Util.Commands
                     robot.Name = Name;
                     robot.Target = Target;
                     robot.Sprite = Sprite;
+
+                    if (robot is Game.Robots.Framework.HumanoidBot hb && !string.IsNullOrWhiteSpace(BotParams))
+                    {
+                        Newtonsoft.Json.JsonConvert.PopulateObject(BotParams, hb.Parameters);
+                    }
 
                     var connection = await (apiClient ?? API)
                         .Player.ConnectAsync(worldKey ?? World);
