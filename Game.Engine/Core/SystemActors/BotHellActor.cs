@@ -5,12 +5,12 @@ namespace Game.Engine.Core.SystemActors
     using System.Collections.Generic;
 
     /// <summary>
-    /// Adaptive Combat Pressure Controller (ACPC - Frontier Overload) for RoboTrainer.
+    /// Adaptive Combat Pressure Controller (ACPC - Frontier Overload) for BotHell.
     /// Dynamically scales bot populations to stress-test players and find their true skill ceiling,
     /// scaling smoothly from baseline (3 bots) up to 20+ bots based on fleet firepower, survival longevity,
     /// kill streaks, and multi-player demand.
     /// </summary>
-    public sealed class RoboTrainerActor : SystemActorBase
+    public sealed class BotHellActor : SystemActorBase
     {
         private const int EventCapacity = 64;
 
@@ -39,7 +39,7 @@ namespace Game.Engine.Core.SystemActors
         private long _lastAdjustmentTime = 0;
         private int _currentDesiredBots = 3;
 
-        public RoboTrainerActor()
+        public BotHellActor()
         {
             CycleMS = 1000;
         }
@@ -76,7 +76,7 @@ namespace Game.Engine.Core.SystemActors
 
         protected override void CycleThink()
         {
-            if (World == null || !World.Hook.RoboTrainerMode)
+            if (World == null || !World.Hook.BotHellMode)
                 return;
 
             var hook = World.Hook;
@@ -163,7 +163,7 @@ namespace Game.Engine.Core.SystemActors
             }
 
             // Idle state: No active human players -> reset to baseline
-            int minBase = Math.Max(3, hook.RoboTrainerMinBots);
+            int minBase = Math.Max(3, hook.BotHellMinBots);
             if (humanCount == 0)
             {
                 _currentDesiredBots = minBase;
@@ -183,7 +183,7 @@ namespace Game.Engine.Core.SystemActors
 
             // 2. Evaluate progressive overload demand per human player
             int aggregateDemand = 0;
-            int maxIndividualBots = minBase + hook.RoboTrainerMaxBotsPerPlayer;
+            int maxIndividualBots = minBase + hook.BotHellMaxBotsPerPlayer;
 
             for (int i = 0; i < players.Count; i++)
             {
@@ -240,13 +240,13 @@ namespace Game.Engine.Core.SystemActors
 
             // 3. Global Arena Bounds
             int minTarget = Math.Max(minBase, 2 * humanCount);
-            int maxTarget = minBase + (hook.RoboTrainerMaxBotsPerPlayer * humanCount);
+            int maxTarget = minBase + (hook.BotHellMaxBotsPerPlayer * humanCount);
             int targetBots = Math.Clamp(aggregateDemand, minTarget, maxTarget);
 
             // 4. Adaptive Ramp Adjustment with Fast-Track for Dominant Players
             if (targetBots > _currentDesiredBots)
             {
-                if (currentTime >= _lastAdjustmentTime + hook.RoboTrainerRampUpDelay)
+                if (currentTime >= _lastAdjustmentTime + hook.BotHellRampUpDelay)
                 {
                     int step = (targetBots - _currentDesiredBots >= 4) ? 2 : 1;
                     _currentDesiredBots = Math.Min(targetBots, _currentDesiredBots + step);
@@ -255,7 +255,7 @@ namespace Game.Engine.Core.SystemActors
             }
             else if (targetBots < _currentDesiredBots)
             {
-                if (currentTime >= _lastAdjustmentTime + hook.RoboTrainerRampDownDelay)
+                if (currentTime >= _lastAdjustmentTime + hook.BotHellRampDownDelay)
                 {
                     _currentDesiredBots--;
                     _lastAdjustmentTime = currentTime;

@@ -126,8 +126,8 @@ namespace Game.Engine.Core
             hook.AllowedColors = Hook.AllColors;
             hook.Weight = 100;
             hook.BotBase = 3;
-            hook.RoboTrainerMode = true;
-            hook.RoboTrainerMinBots = 3;
+            hook.BotHellMode = true;
+            hook.BotHellMinBots = 3;
 
             hook.WorldResizeEnabled = false;
 
@@ -148,7 +148,7 @@ namespace Game.Engine.Core
             hook.AllowedColors = Hook.AllColors;
             hook.Weight = 90;
             hook.BotBase = 0;
-            hook.RoboTrainerMode = false;
+            hook.BotHellMode = false;
             
             hook.WorldResizeEnabled = false;
 

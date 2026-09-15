@@ -161,11 +161,11 @@ namespace Game.API.Common.Models
                     SumoRingSize = 1000,
 
                     SharksAndMinnowsMode = false,
-                    RoboTrainerMode = false,
-                    RoboTrainerMinBots = 3,
-                    RoboTrainerMaxBotsPerPlayer = 18,
-                    RoboTrainerRampUpDelay = 2500,
-                    RoboTrainerRampDownDelay = 3500,
+                    BotHellMode = false,
+                    BotHellMinBots = 3,
+                    BotHellMaxBotsPerPlayer = 18,
+                    BotHellRampUpDelay = 2500,
+                    BotHellRampDownDelay = 3500,
                     BotSpawnStepDelay = 1200,
                     BotRetireStepDelay = 4000,
 
@@ -375,11 +375,11 @@ namespace Game.API.Common.Models
         public bool SumoMode { get; set; }
         public int SumoRingSize { get; set; }
         public bool SharksAndMinnowsMode { get; set; }
-        public bool RoboTrainerMode { get; set; }
-        public int RoboTrainerMinBots { get; set; } = 3;
-        public int RoboTrainerMaxBotsPerPlayer { get; set; } = 18;
-        public int RoboTrainerRampUpDelay { get; set; } = 2500;
-        public int RoboTrainerRampDownDelay { get; set; } = 3500;
+        public bool BotHellMode { get; set; }
+        public int BotHellMinBots { get; set; } = 3;
+        public int BotHellMaxBotsPerPlayer { get; set; } = 18;
+        public int BotHellRampUpDelay { get; set; } = 2500;
+        public int BotHellRampDownDelay { get; set; } = 3500;
         public int BotSpawnStepDelay { get; set; } = 1200;
         public int BotRetireStepDelay { get; set; } = 4000;
 
