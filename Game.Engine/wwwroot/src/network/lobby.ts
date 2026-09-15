@@ -61,11 +61,18 @@ function getModeTheme(world: WorldInfo): {
   defaultDesc: string;
 } {
   const mode = (world.gameMode || world.worldKey || "ffa").toLowerCase();
+  if (mode.includes("bothell")) {
+    return {
+      icon: "fa-fire",
+      defaultDesc:
+        "Battle against adaptive AI combat drones. Ideal for practicing aim, fleet steering, and dash mechanics.",
+    };
+  }
   if (mode.includes("robo")) {
     return {
       icon: "fa-robot",
       defaultDesc:
-        "Battle against adaptive AI combat drones. Ideal for practicing aim, fleet steering, and dash mechanics.",
+        "An empty world for training.",
     };
   }
   if (mode.includes("ctf")) {

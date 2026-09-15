@@ -27,7 +27,8 @@ namespace Game.Engine.Core
                 if (Hook == null) return "ffa";
                 if (Hook.CTFMode) return "ctf";
                 if (Hook.TeamMode) return "team";
-                if (Hook.RoboTrainerMode) return "robo";
+                if (WorldKey == "bothell") return "bothell";
+                if (Hook.BotHellMode) return "robo";
                 if (Hook.SumoMode) return "sumo";
                 if (Hook.SharksAndMinnowsMode) return "sharks";
                 if (Hook.BossMode) return "boss";
@@ -161,7 +162,7 @@ namespace Game.Engine.Core
             InitializeSystemActor<TeamColors>();
             InitializeSystemActor<RoomReset>();
             InitializeSystemActor<SharksAndMinnows>();
-            InitializeSystemActor<RoboTrainerActor>();
+            InitializeSystemActor<BotHellActor>();
         }
 
         public T GetActor<T>()
