@@ -193,6 +193,25 @@ namespace Game.Engine.Core
             }
         }
 
+        public void UpdateFrom(Body source)
+        {
+            this.ID = source.ID;
+            this.DefinitionTime = source.DefinitionTime;
+            this.IsStatic = source.IsStatic;
+            
+            this.Size = source.Size;
+            this.Mode = source.Mode;
+            this.Sprite = source.Sprite;
+            this.Color = source.Color;
+            
+            this.AngularVelocity = source.AngularVelocity;
+            this.OriginalAngle = source.OriginalAngle;
+            this.Momentum = source.Momentum;
+            this.OriginalPosition = source.OriginalPosition;
+            
+            this.ProjectedOnce = false;
+        }
+
         public Body Clone()
         {
             return this.MemberwiseClone() as Body;
