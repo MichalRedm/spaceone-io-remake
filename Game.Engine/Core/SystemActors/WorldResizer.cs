@@ -25,7 +25,7 @@ namespace Game.Engine.Core.SystemActors
                     hook.WorldSize = hook.WorldSize - hook.WorldResizeSpeed;
 
                 hook.Obstacles = Convert.ToInt32(Math.Floor(hook.WorldSize * hook.ObstaclesMultiplier));
-                hook.Fishes = Convert.ToInt32(Math.Floor(hook.WorldSize * hook.FishesMultiplier));
+                hook.Fishes = (int)Math.Round(4.0 * hook.WorldSize * hook.WorldSize / 1000000.0 * hook.FoodDensity);
                 hook.PickupSeekers = Convert.ToInt32(Math.Floor(hook.WorldSize * hook.PickupSeekersMultiplier));
                 hook.PickupShields = Convert.ToInt32(Math.Floor(hook.WorldSize * hook.PickupShieldsMultiplier));
             }

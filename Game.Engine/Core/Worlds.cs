@@ -91,7 +91,7 @@ namespace Game.Engine.Core
             hook.Instructions = null;
             hook.Weight = 10;
             hook.WorldSize = 5500;
-            hook.Fishes = 1283;
+            hook.Fishes = (int)System.Math.Round(4.0 * hook.WorldSize * hook.WorldSize / 1000000.0 * hook.FoodDensity);
 
             return new World(hook, GameConfiguration);
         }
@@ -121,7 +121,7 @@ namespace Game.Engine.Core
             hook.Description = "Battle against adaptive AI combat drones. Ideal for practicing aim, fleet steering, and dash mechanics.";
             hook.Instructions = null;
             hook.WorldSize = (int)(1125);
-            hook.Fishes = 87;
+            hook.Fishes = (int)System.Math.Round(4.0 * hook.WorldSize * hook.WorldSize / 1000000.0 * hook.FoodDensity);
             hook.Obstacles = 0;
             hook.PickupSeekers = 0;
             hook.PickupShields = 0;
@@ -143,7 +143,7 @@ namespace Game.Engine.Core
             hook.Description = "An empty world for training.";
             hook.Instructions = null;
             hook.WorldSize = 750;
-            hook.Fishes = 20; // 1/4 of FFA's 350
+            hook.Fishes = (int)System.Math.Round(4.0 * hook.WorldSize * hook.WorldSize / 1000000.0 * hook.FoodDensity);
             hook.Obstacles = 0;
             hook.PickupSeekers = 0;
             hook.PickupShields = 0;
@@ -184,7 +184,7 @@ namespace Game.Engine.Core
             hook.BotBase = 0;
             hook.WorldSize = 1500;
             hook.Obstacles = 0;
-            hook.Fishes = 20;
+            hook.Fishes = (int)System.Math.Round(4.0 * hook.WorldSize * hook.WorldSize / 1000000.0 * hook.FoodDensity);
             hook.PickupSeekers = 0;
             hook.SpawnInvulnerabilityTime = 0;
             hook.PickupShields = 0;
@@ -210,7 +210,7 @@ namespace Game.Engine.Core
             var hook = Hook.Default;
             hook.BotBase = 0;
             hook.WorldSize = 750;
-            hook.Fishes = 87;
+            hook.Fishes = (int)System.Math.Round(4.0 * hook.WorldSize * hook.WorldSize / 1000000.0 * hook.FoodDensity);
             hook.Obstacles = 0;
             hook.PickupSeekers = 0;
             hook.PickupShields = 0;
@@ -235,7 +235,7 @@ namespace Game.Engine.Core
             var hook = Hook.Default;
             hook.BotBase = 0;
             hook.WorldSize = 1500;
-            hook.Fishes = 350;
+            hook.Fishes = (int)System.Math.Round(4.0 * hook.WorldSize * hook.WorldSize / 1000000.0 * hook.FoodDensity);
             hook.Obstacles = 0;
             hook.PickupSeekers = 0;
             hook.PickupShields = 0;
@@ -257,7 +257,7 @@ namespace Game.Engine.Core
             var hook = Hook.Default;
             hook.BotBase = 0;
             hook.WorldSize = 1500;
-            hook.Fishes = 350;
+            hook.Fishes = (int)System.Math.Round(4.0 * hook.WorldSize * hook.WorldSize / 1000000.0 * hook.FoodDensity);
             hook.Obstacles = 0;
             hook.PickupSeekers = 0;
             hook.PickupShields = 0;

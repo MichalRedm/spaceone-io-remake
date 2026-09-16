@@ -173,17 +173,14 @@ namespace Game.API.Common.Models
                     SpawnInvulnerabilityTime = 3000,
                     InvulnerabilityBlinkPeriod = 250,
 
-                    Fishes = 350, // default is 350; ignored if WorldResizeEnabled = true 
-                    FishesMultiplier = 0.01, // used when WorldResizeEnabled = true
-                    FishThrust = 0.0005f,
-                    FishFlockAlignment = 10f,
-                    FishFlockCohesion = 0.001f,
-                    FishFlockCohesionMaximumDistance = 3000,
-                    FishFlockSeparation = 80,
-                    FishFlockSeparationMinimumDistance = 300,
-                    FishFlockWeight = 0.9f,
-                    FishOOBWeight = 0.8f,
-                    FishCycle = 1000, // how often do they think
+                    // Food settings
+                    Food = 180,
+                    FoodDensity = 1.5,
+                    FoodSpeed = 1.0f,
+                    FoodSpeedRange = 0.2f,
+                    FoodSectorSize = 1000f,
+                    FoodSelectionPressure = 1.5f,
+                    FoodThrust = 0.0005f, // legacy alias compatibility
 
                     FlockAlignment = 30f,
                     FlockCohesion = 0f,
@@ -385,9 +382,18 @@ namespace Game.API.Common.Models
 
         public int LeaderboardRefresh { get; set; }
 
-        public int Fishes { get; set; } = 0;
+        public int Food { get; set; } = 0;
+        public double FoodDensity { get; set; } = 1.5;
+        public float FoodSpeed { get; set; } = 1.0f;
+        public float FoodSpeedRange { get; set; } = 0.2f;
+        public float FoodSectorSize { get; set; } = 1000f;
+        public float FoodSelectionPressure { get; set; } = 1.5f;
+
+        // Backwards compatibility aliases for Fish / Fishes
+        public int Fishes { get => Food; set => Food = value; }
         public double FishesMultiplier { get; set; }
         public float FishThrust { get; set; } = 0;
+        public float FoodThrust { get => FishThrust; set => FishThrust = value; }
         public float FishFlockAlignment { get; set; }
         public float FishFlockCohesion { get; set; }
         public int FishFlockCohesionMaximumDistance { get; set; }

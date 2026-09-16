@@ -77,6 +77,7 @@ namespace Game.Engine.Core
         public GameConfiguration GameConfiguration { get; set; }
 
         public ScoringBase Scoring = new DefaultScoring();
+        public FoodSpawner FoodSpawner { get; set; }
 
         private int LastObjectID = 0;
         public uint GenerateObjectID() => (uint)Interlocked.Increment(ref LastObjectID);
@@ -119,6 +120,7 @@ namespace Game.Engine.Core
 
             Console.WriteLine($"Initializing World: {this.Hook.Name} (Arena ID: {this.ArenaID})");
 
+            this.FoodSpawner = new FoodSpawner(this);
             InitializeSystemActors();
             InitializeStepTimer();
         }

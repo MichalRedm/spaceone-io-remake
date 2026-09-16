@@ -28,6 +28,8 @@ Authoritative fixed-rate game simulation loop and entity lifecycle.
 | `Game.Engine/Core/Player.cs` | `Player` | Player state container, authentication token, score, fleet reference, spawn management, and spectator tracking. |
 | `Game.Engine/Core/Fleet.cs` | `Fleet` : `ActorGroup` | Central multi-ship fleet controller; handles shot cooldown formula (`CalculateShotCooldown`), boost timers (`BoostUntil`), fleet orientation (`FleetAngle`), aim targets, ship spawning, and weapon firing. |
 | `Game.Engine/Core/Ship.cs` | `Ship` : `ActorBody, ICollide` | Individual fleet ship; manages ship health (`Health`), shield strength, thrust integration, drag, abandoned ship state, bullet sprite mapping (`BulletSprite`), and collision reactions (`Collided`). |
+| `Game.Engine/Core/Food.cs` | `Food` : `ActorBody, ICollide` | Passive item entity (food/stars); spawns randomly, drifts in straight lines, decays in danger zone. |
+| `Game.Engine/Core/FoodSpawner.cs` | `FoodSpawner` | Adaptive inverse-count grid stratified spawner that ensures even density distribution across dynamic arenas. |
 | `Game.Engine/Core/Obstacle.cs` | `Obstacle` : `ActorBody, ICollide` | Static or drifting asteroid obstacles; collision geometry and momentum bounce response. |
 | `Game.Engine/Core/Boom.cs` | `Boom` : `ActorBody` | Temporary explosion particle entity spawned when a ship dies (`FromShip`); handles drag deceleration and timed destruction. |
 
