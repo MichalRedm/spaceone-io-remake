@@ -72,7 +72,7 @@ export const Settings: SettingsData = {
   leaderboardEnabled: true,
   hudEnabled: false,
   namesEnabled: true,
-  bandwidth: 100,
+  bandwidth: 400,
   showCooldown: true,
   logLength: 4,
   displayMinimap: false,
@@ -223,6 +223,9 @@ export function load(): void {
   if (savedSettings) {
     for (const key in savedSettings) Settings[key] = savedSettings[key];
   }
+  
+  // Cap bandwidth from cookies to prevent severe client-side lag
+  if (Settings.bandwidth > 150) Settings.bandwidth = 150;
 
   if (themeSelector) themeSelector.value = Settings.theme;
   if (themeSelectorCustom)

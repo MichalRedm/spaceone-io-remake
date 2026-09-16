@@ -32,6 +32,8 @@ export class Connection {
   onLeaderboard: (leaderboard: LeaderboardData) => void;
   /** Callback fired upon successful WebSocket connection establishment. */
   onConnected: () => void;
+  /** Callback fired upon WebSocket disconnection. */
+  onDisconnected: () => void;
   /** Whether client is in reload transition. */
   reloading: boolean;
   /** Whether disconnection was intentional. */
@@ -91,6 +93,7 @@ export class Connection {
     this.onView = () => {};
     this.onLeaderboard = () => {};
     this.onConnected = () => {};
+    this.onDisconnected = () => {};
     this.reloading = false;
     this.disconnecting = false;
     this.connected = false;
@@ -446,6 +449,7 @@ export class Connection {
   onClose(event: CloseEvent): void {
     console.log("disconnected");
     this.connected = false;
+    this.onDisconnected();
 
     if (!this.disconnecting && this.autoReload) {
       if (event.reason !== "Normal closure") {
