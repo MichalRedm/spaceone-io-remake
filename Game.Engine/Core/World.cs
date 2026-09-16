@@ -181,13 +181,13 @@ namespace Game.Engine.Core
         {
             if (Time > 10000) // lets not get too excited if things slow down when initialized
             {
-                /*var elapsed = DateTime.Now.Subtract(start).TotalMilliseconds;
+                var elapsed = DateTime.Now.Subtract(start).TotalMilliseconds;
                 if (elapsed > Hook.StepTime)
-                    Console.WriteLine($"**** 100% processing time warning: {elapsed}");
+                    Console.WriteLine($"**** 100% processing time warning: {elapsed}ms (Players: {Player.GetWorldPlayers(this).Count})");
                 else if (elapsed > Hook.StepTime * 0.8f)
-                    Console.WriteLine($"*** 80% processing time warning: {elapsed}");
+                    Console.WriteLine($"*** 80% processing time warning: {elapsed}ms (Players: {Player.GetWorldPlayers(this).Count})");
                 else if (elapsed > Hook.StepTime * 0.5f)
-                    Console.WriteLine($"** 50% processing time warning: {elapsed}");*/
+                    Console.WriteLine($"** 50% processing time warning: {elapsed}ms (Players: {Player.GetWorldPlayers(this).Count})");
             }
         }
 
@@ -245,7 +245,7 @@ namespace Game.Engine.Core
         public IEnumerable<Body> BodiesNear(Envelope searchArea)
         {
             return RTreeDynamic.Search(searchArea)
-                    .Union(RTreeStatic.Search(searchArea));
+                    .Concat(RTreeStatic.Search(searchArea));
         }
 
         public IEnumerable<Body> BodiesNear(Vector2 point, int maximumDistance = 0)

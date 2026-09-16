@@ -93,6 +93,17 @@ namespace Game.Engine.Core
             }
         }
 
+        public void UpdateFrom(Group source)
+        {
+            this.ID = source.ID;
+            this.GroupType = source.GroupType;
+            this.Caption = source.Caption;
+            this.Color = source.Color;
+            this.CustomData = source.CustomData;
+            this.ZIndex = source.ZIndex;
+            this.OwnerID = source.OwnerID;
+        }
+
         public Group Clone()
         {
             return this.MemberwiseClone() as Group;

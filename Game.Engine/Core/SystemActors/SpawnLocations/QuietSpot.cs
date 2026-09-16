@@ -8,28 +8,43 @@ namespace Game.Engine.Core.SystemActors
     {
         public static Vector2 GeneratorQuietSpot(Fleet fleet)
         {
-            const int POINTS_TO_TEST = 50;
-            const int MAXIMUM_SEARCH_SIZE = 10000;
+            const int POINTS_TO_TEST = 15;
+            const int SEARCH_RADIUS = 2500;
 
-            var points = new List<Vector2>();
+            var world = fleet.World;
+            var bestPoint = world.RandomPosition();
+            var bestDistance = -1f;
 
             for (var i = 0; i < POINTS_TO_TEST; i++)
-                points.Add(fleet.World.RandomPosition());
+            {
+                var candidate = world.RandomPosition();
+                var closeBodies = world.BodiesNear(candidate, SEARCH_RADIUS);
 
-            return points.Select(p =>
+                var minDistance = float.MaxValue;
+                foreach (var body in closeBodies)
                 {
-                    var closeBodies = fleet.World.BodiesNear(p, MAXIMUM_SEARCH_SIZE)
-                            .OfType<Ship>();
-                    return new
+                    if (body is Ship)
                     {
-                        Closest = closeBodies.Any()
-                            ? closeBodies.Min(s => Vector2.Distance(s.Position, p))
-                            : MAXIMUM_SEARCH_SIZE,
-                        Point = p
-                    };
-                })
-                .OrderByDescending(location => location.Closest)
-                .First().Point;
+                        var d = Vector2.Distance(body.Position, candidate);
+                        if (d < minDistance)
+                        {
+                            minDistance = d;
+                        }
+                    }
+                }
+
+                // If candidate has no ships within SEARCH_RADIUS, it is already an optimal quiet spot
+                if (minDistance >= SEARCH_RADIUS)
+                    return candidate;
+
+                if (minDistance > bestDistance)
+                {
+                    bestDistance = minDistance;
+                    bestPoint = candidate;
+                }
+            }
+
+            return bestPoint;
         }
     }
 }
