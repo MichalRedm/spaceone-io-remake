@@ -29,6 +29,7 @@ Authoritative fixed-rate game simulation loop and entity lifecycle.
 | `Game.Engine/Core/Fleet.cs` | `Fleet` : `ActorGroup` | Central multi-ship fleet controller; handles shot cooldown formula (`CalculateShotCooldown`), boost timers (`BoostUntil`), fleet orientation (`FleetAngle`), aim targets, ship spawning, and weapon firing. |
 | `Game.Engine/Core/Ship.cs` | `Ship` : `ActorBody, ICollide` | Individual fleet ship; manages ship health (`Health`), shield strength, thrust integration, drag, abandoned ship state, bullet sprite mapping (`BulletSprite`), and collision reactions (`Collided`). |
 | `Game.Engine/Core/Food.cs` | `Food` : `ActorBody, ICollide` | Passive item entity (food/stars); spawns randomly, drifts in straight lines, decays in danger zone. |
+| `Game.Engine/Core/FoodSpawner.cs` | `FoodSpawner` | Adaptive inverse-count grid stratified spawner that ensures even density distribution across dynamic arenas. |
 | `Game.Engine/Core/Obstacle.cs` | `Obstacle` : `ActorBody, ICollide` | Static or drifting asteroid obstacles; collision geometry and momentum bounce response. |
 | `Game.Engine/Core/Boom.cs` | `Boom` : `ActorBody` | Temporary explosion particle entity spawned when a ship dies (`FromShip`); handles drag deceleration and timed destruction. |
 
@@ -78,7 +79,6 @@ Kinematic calculations and spatial offsets for multi-ship formations.
 | `Game.Engine/Core/SystemActors/CTF/Flag.cs` | `Flag` : `ActorBody` | CTF flag entity; handles carrying (`CarriedBy`), dropping, and return cooldowns. |
 | `Game.Engine/Core/SystemActors/Leaderboard.cs` | `Leaderboard` | Leaderboard generation; aggregates top fleet scores and team standings. |
 | `Game.Engine/Core/SystemActors/ObstacleTender.cs` | `ObstacleTender` | Maintains ambient obstacle density across the world arena. |
-| `Game.Engine/Core/SystemActors/FoodSpawner.cs` | `FoodSpawner` : `SystemActorBase` | Adaptive inverse-count grid stratified spawner that ensures even density distribution across dynamic arenas. |
 | `Game.Engine/Core/SystemActors/RobotTender.cs` | `RobotTender` | Spawns and manages autonomous AI bot populations in the arena. |
 | `Game.Engine/Core/SystemActors/WorldResizer.cs` | `WorldResizer` | Dynamically expands or shrinks `WorldSize` based on active player count. |
 
