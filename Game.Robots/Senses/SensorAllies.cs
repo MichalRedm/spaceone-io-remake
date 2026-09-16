@@ -7,11 +7,11 @@ namespace Game.Robots.Senses
 
     public class SensorAllies : ISense
     {
-        private readonly ContextRobot Robot;
+        private readonly Robot Robot;
         public List<string> AlliedNames = new List<string>();
         public bool HasAllies { get => AlliedNames?.Any() ?? false; }
 
-        public SensorAllies(ContextRobot robot)
+        public SensorAllies(Robot robot)
         {
             this.Robot = robot;
         }
