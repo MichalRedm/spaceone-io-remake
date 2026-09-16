@@ -69,9 +69,7 @@ namespace Game.Engine.Core
 
         public override void Destroy()
         {
-            if (!(this is Fish)
-                && !(this.Sprite == Sprites.ship_gray)
-            )
+            if (this.Sprite != Sprites.ship_gray)
                 Boom.FromShip(this);
 
             base.Destroy();

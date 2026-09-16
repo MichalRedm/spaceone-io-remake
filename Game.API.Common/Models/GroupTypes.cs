@@ -3,7 +3,8 @@ namespace Game.API.Common
     public enum GroupTypes : byte
     {
         // actors
-        Fish,
+        Food,
+        Fish = Food,
         Fleet,
 
         // other

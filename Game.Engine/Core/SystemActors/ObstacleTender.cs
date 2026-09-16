@@ -19,7 +19,7 @@ namespace Game.Engine.Core.SystemActors
             this.World.Actors.Add(this);
 
             Flock.Add(new GenericTender<Obstacle>(() => World.Hook.Obstacles));
-            Flock.Add(new GenericTender<Fish>(() => World.Hook.Fishes));
+            Flock.Add(new GenericTender<Food>(() => World.Hook.Fishes));
             Flock.Add(new GenericTender<PickupSeeker>(() => World.Hook.PickupSeekers));
             Flock.Add(new GenericTender<PickupShield>(() => World.Hook.PickupShields));
             Flock.Add(new GenericTender<Wormhole>(() => World.Hook.Wormholes));
