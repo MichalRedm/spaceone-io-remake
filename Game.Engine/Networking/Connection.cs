@@ -181,7 +181,7 @@ namespace Game.Engine.Networking
 
                         if (followBody != null)
                         {
-                            var size = 6000;
+                            var size = 2000;
                             var viewportHeight = size * 2;
                             var viewportWidth = size * 2;
 
@@ -192,8 +192,10 @@ namespace Game.Engine.Networking
                                 followBody.Position.Y + viewportHeight / 2
                             );
 
+                            var visibleBodies = world.BodiesNear(playerViewport);
+
                             BodyCache.Update(
-                                world.BodiesNear(playerViewport),
+                                visibleBodies,
                                 world.Time
                             );
                         }
@@ -231,7 +233,9 @@ namespace Game.Engine.Networking
 
                         for (int i = 0; i < updatedGroups.Count; i++)
                         {
-                            updatedGroups[i].GroupClient = updatedGroups[i].GroupUpdated.Clone();
+                            if (updatedGroups[i].GroupClient == null)
+                                updatedGroups[i].GroupClient = new Game.Engine.Core.Group();
+                            updatedGroups[i].GroupClient.UpdateFrom(updatedGroups[i].GroupUpdated);
                         }
 
                         var staleGroups = BodyCache.CollectStaleGroups();
@@ -265,7 +269,9 @@ namespace Game.Engine.Networking
 
                         for (int i = 0; i < maxUpdates; i++)
                         {
-                            updates[i].BodyClient = updates[i].BodyUpdated.Clone();
+                            if (updates[i].BodyClient == null)
+                                updates[i].BodyClient = new Body();
+                            updates[i].BodyClient.UpdateFrom(updates[i].BodyUpdated);
                         }
 
                         var staleBuckets = BodyCache.CollectStaleBuckets();
@@ -455,21 +461,27 @@ namespace Game.Engine.Networking
 
         private async Task SendAsync(ByteBuffer message, CancellationToken cancellationToken)
         {
+            if (disposedValue) return;
             var buffer = message.ToArraySegment(message.Position, message.Length - message.Position);
 
-            await WebsocketSendingSemaphore.WaitAsync();
             try
             {
-                await Socket.SendAsync(
-                    buffer,
-                    WebSocketMessageType.Binary,
-                    endOfMessage: true,
-                    cancellationToken: cancellationToken);
+                await WebsocketSendingSemaphore.WaitAsync(cancellationToken);
+                try
+                {
+                    await Socket.SendAsync(
+                        buffer,
+                        WebSocketMessageType.Binary,
+                        endOfMessage: true,
+                        cancellationToken: cancellationToken);
+                }
+                finally
+                {
+                    WebsocketSendingSemaphore.Release();
+                }
             }
-            finally
-            {
-                WebsocketSendingSemaphore.Release();
-            }
+            catch (ObjectDisposedException) { }
+            catch (OperationCanceledException) { }
         }
 
         private async Task SendPingAsync()
@@ -489,7 +501,7 @@ namespace Game.Engine.Networking
             this.ClientVPS = ping.Vps;
             this.ClientUPS = ping.Ups;
             this.ClientCS = ping.Cs;
-            this.Bandwidth = ping.BandwidthThrottle;
+            this.Bandwidth = Math.Min(ping.BandwidthThrottle, 150u);
             this.Latency = ping.Latency;
 
             if (player != null)
