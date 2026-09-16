@@ -25,6 +25,8 @@ namespace Game.Robots.Behaviors
             DangerousBullets = Robot.SensorBullets.VisibleBullets
                 .Where(b => b.Group.Owner != Robot.FleetID)
                 .Where(b => !teamMode || b.Group.Color != Robot.Color)
+                .OrderBy(b => Vector2.DistanceSquared(b.Position, Robot.Position))
+                .Take(100)
                 .ToList();
 
             Projections = DangerousBullets.Select(b => b.ProjectNew(Robot.GameTime + LookAheadMS).Position).ToList();
