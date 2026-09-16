@@ -286,8 +286,42 @@ let lastAliveState: boolean | null = null;
 let aliveSince: number | null = null;
 let joiningWorld = false;
 
+const spawnButton = document.getElementById("spawn") as HTMLInputElement | null;
+let isSpawning = false;
+let pendingSpawn = false;
+let spawnTimeout: ReturnType<typeof setTimeout> | null = null;
+
+function setSpawnButtonState(state: "ready" | "connecting" | "spawning"): void {
+  if (!spawnButton) return;
+  if (state === "ready") {
+    spawnButton.value = "PLAY";
+    spawnButton.disabled = false;
+    spawnButton.classList.remove("btn--disabled");
+  } else if (state === "connecting") {
+    spawnButton.value = "CONNECTING...";
+    spawnButton.disabled = true;
+    spawnButton.classList.add("btn--disabled");
+  } else if (state === "spawning") {
+    spawnButton.value = "JOINING...";
+    spawnButton.disabled = true;
+    spawnButton.classList.add("btn--disabled");
+  }
+}
+
 connection.onConnected = () => {
   connection.sendAuthenticate(getToken() ?? "");
+  if (pendingSpawn) {
+    pendingSpawn = false;
+    doSpawn();
+  } else if (!isSpawning) {
+    setSpawnButtonState("ready");
+  }
+};
+
+connection.onDisconnected = () => {
+  if (isSpawning || pendingSpawn) {
+    setSpawnButtonState("connecting");
+  }
 };
 
 connection.onView = (newView) => {
@@ -304,6 +338,13 @@ connection.onView = (newView) => {
   }
   if (view.isAlive && !lastAliveState) {
     lastAliveState = true;
+    isSpawning = false;
+    pendingSpawn = false;
+    if (spawnTimeout) {
+      clearTimeout(spawnTimeout);
+      spawnTimeout = null;
+    }
+    setSpawnButtonState("ready");
     isSpectating = false;
     document.body.classList.remove("dead");
     document.body.classList.remove("spectating");
@@ -311,6 +352,7 @@ connection.onView = (newView) => {
     canvas.style.visibility = "initial";
     hide(".visibility");
     hide(".visibility4");
+    show(".visibility2");
     show(".visibility3");
     const overlay = document.getElementById("overlay");
     if (overlay) {
@@ -319,6 +361,13 @@ connection.onView = (newView) => {
     }
   } else if (!view.isAlive && lastAliveState) {
     lastAliveState = false;
+    isSpawning = false;
+    pendingSpawn = false;
+    if (spawnTimeout) {
+      clearTimeout(spawnTimeout);
+      spawnTimeout = null;
+    }
+    setSpawnButtonState("ready");
 
     setTimeout(function () {
       document.body.classList.remove("alive");
@@ -547,6 +596,22 @@ LobbyCallbacks.onWorldJoin = function (worldKey: string, world?: WorldInfo) {
  * Initiates local player fleet spawning request to the connected server.
  */
 function doSpawn(): void {
+  if (isSpawning) return;
+
+  if (
+    !connection.connected ||
+    !connection.socket ||
+    connection.socket.readyState !== WebSocket.OPEN
+  ) {
+    pendingSpawn = true;
+    setSpawnButtonState("connecting");
+    return;
+  }
+
+  pendingSpawn = false;
+  isSpawning = true;
+  setSpawnButtonState("spawning");
+
   isSpectating = false;
   Events.Spawn();
   aliveSince = gameTime;
@@ -556,12 +621,17 @@ function doSpawn(): void {
     Controls.color ?? "gray",
     getToken() ?? "",
   );
-  const overlayEl = document.getElementById("overlay");
-  if (overlayEl) overlayEl.style.opacity = "0";
+
   const selfNickContainer = document.getElementById("self-nick-container");
   if (selfNickContainer) selfNickContainer.textContent = Controls.nick;
-  show(".visibility2");
-  show(".visibility3");
+
+  if (spawnTimeout) clearTimeout(spawnTimeout);
+  spawnTimeout = setTimeout(() => {
+    if (isSpawning && !lastAliveState) {
+      isSpawning = false;
+      setSpawnButtonState("ready");
+    }
+  }, 5000);
 }
 document.getElementById("spawn")?.addEventListener("click", doSpawn);
 document.getElementById("spawn-spectate")?.addEventListener("click", doSpawn);
@@ -572,6 +642,14 @@ document.getElementById("spawn-spectate")?.addEventListener("click", doSpawn);
  * @param hideButton - Whether to hide the spectate toggle button (e.g. when launched via URL query).
  */
 function startSpectate(hideButton = false) {
+  isSpawning = false;
+  pendingSpawn = false;
+  if (spawnTimeout) {
+    clearTimeout(spawnTimeout);
+    spawnTimeout = null;
+  }
+  setSpawnButtonState("ready");
+
   isSpectating = true;
   ownFleetID = 0;
   Events.Spectate();
@@ -599,9 +677,17 @@ document.getElementById("spectate")?.addEventListener("click", () => {
  */
 function stopSpectate() {
   isSpectating = false;
-  ownFleetID = 0;
+  isSpawning = false;
+  pendingSpawn = false;
+  if (spawnTimeout) {
+    clearTimeout(spawnTimeout);
+    spawnTimeout = null;
+  }
+  setSpawnButtonState("ready");
   document.body.classList.remove("spectating");
   document.body.classList.remove("spectate_only");
+  document.body.classList.add("dead");
+  fadeIn(".visibility", 500);
 }
 
 document.getElementById("stop-spectating")?.addEventListener("click", () => {

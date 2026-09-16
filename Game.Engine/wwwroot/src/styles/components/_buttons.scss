@@ -9,6 +9,16 @@
 .button1 {
   @include button-base;
 
+  &:disabled,
+  &--disabled {
+    opacity: 0.65;
+    cursor: wait !important;
+    pointer-events: none;
+    transform: none !important;
+    animation: none !important;
+    filter: grayscale(0.3);
+  }
+
   // Primary Spawn Button (PLAY)
   &--spawn,
   &#spawn {
