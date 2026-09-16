@@ -54,7 +54,6 @@ namespace Game.Engine.Core
             if (oob > World.Hook.OutOfBoundsDeathLine)
             {
                 PendingDestruction = true;
-                Destroy();
             }
         }
 
