@@ -84,7 +84,6 @@ namespace Game.Engine.Core
                 fleet?.KilledShip(null);
 
                 PendingDestruction = true;
-                Destroy();
             }
         }
     }
