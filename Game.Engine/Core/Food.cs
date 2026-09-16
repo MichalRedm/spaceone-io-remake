@@ -27,6 +27,7 @@ namespace Game.Engine.Core
             float baseSpeed = World.Hook.FoodSpeed;
             float speedRange = World.Hook.FoodSpeedRange;
             float speed = baseSpeed + ((float)Random.Shared.NextDouble() * 2f - 1f) * (speedRange * 0.5f);
+            speed /= World.Hook.StepTime;
 
             Momentum = new Vector2(MathF.Cos(Angle), MathF.Sin(Angle)) * speed;
 
