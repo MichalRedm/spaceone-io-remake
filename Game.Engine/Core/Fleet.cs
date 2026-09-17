@@ -10,32 +10,15 @@ namespace Game.Engine.Core
 
     public class Fleet : ActorGroup
     {
-        public virtual float ShotCooldownTimeM { get => World.Hook.ShotCooldownTimeM; }
-        public virtual float ShotCooldownTimeB { get => World.Hook.ShotCooldownTimeB; }
-        public virtual int ShotCooldownTimeShark { get => World.Hook.ShotCooldownTimeShark; }
-
         public virtual int CalculateShotCooldown(int shipCount)
         {
-            if (Shark)
-                return ShotCooldownTimeShark;
-
-            if (ShotCooldownTimeM > 0 || ShotCooldownTimeB > 0)
-                return (int)(ShotCooldownTimeM * shipCount + ShotCooldownTimeB);
-
             int n = Math.Max(1, shipCount);
             return (13 + n - (n + 4) / 10) * World.Hook.StepTime;
         }
-        public virtual float ShotThrustM { get => World.Hook.ShotThrustM; }
-        public virtual float ShotThrustB { get => World.Hook.ShotThrustB; }
-        public virtual float BaseThrustM { get => World.Hook.BaseThrustM; }
-        public virtual float BaseThrustB { get => World.Hook.BaseThrustB; }
         public virtual float[] BaseThrust { get => World.Hook.BaseThrust; }
         public virtual float BaseThrustConverter { get => World.Hook.BaseThrustConverter; }
-        public virtual float BoostThrust { get => World.Hook.BoostThrust; }
 
         public virtual int SpawnShipCount { get => World.Hook.SpawnShipCount; }
-
-        public virtual bool BossMode { get => World.Hook.BossMode && World.Hook.BossModeSprites.Contains(this.Owner.ShipSprite); }
 
         public Player Owner { get; set; }
 
@@ -56,7 +39,6 @@ namespace Game.Engine.Core
         public float FleetTurnSign { get; set; } = 1.0f;
 
         public Vector2 AimTarget { get; set; }
-        public Vector2 AimTarget2 { get; set; }
 
         public List<Ship> Ships { get; set; } = new List<Ship>();
         public List<Ship> NewShips { get; set; } = new List<Ship>();
@@ -64,14 +46,11 @@ namespace Game.Engine.Core
         public List<ShipWeaponBullet> NewBullets { get; set; } = new List<ShipWeaponBullet>();
 
         public IFleetWeapon BaseWeapon { get; set; }
-        public Stack<IFleetWeapon> WeaponStack { get; set; } = new Stack<IFleetWeapon>();
 
         public Vector2 FleetCenter = Vector2.Zero;
         public Vector2 FleetMomentum = Vector2.Zero;
 
         public float Burden { get; set; } = 0f;
-        public bool Shark { get; set; } = false;
-        public bool LastTouchedLeft { get; set; } = false;
         public bool FiringWeapon { get; private set; } = false;
         
         public uint DangerSince { get; set; } = 0;
@@ -251,11 +230,7 @@ namespace Game.Engine.Core
         {
             if (FiringWeapon)
             {
-                var weapon = this.WeaponStack.Count > 0
-                    ? this.WeaponStack.Pop()
-                    : this.BaseWeapon;
-
-                weapon.FireFrom(this);
+                BaseWeapon.FireFrom(this);
                 FiringWeapon = false;
             }
 
@@ -328,14 +303,6 @@ namespace Game.Engine.Core
                 Ships.Remove(ship);
         }
 
-
-        public void PushStackWeapon(IFleetWeapon weapon)
-        {
-            WeaponStack.Push(weapon);
-            if (WeaponStack.Count > World.Hook.FleetWeaponStackDepth)
-                WeaponStack = new Stack<IFleetWeapon>(WeaponStack.TakeLast(World.Hook.FleetWeaponStackDepth));
-        }
-
         public override void Think()
         {
             bool isShooting = ShootRequested && World.Time >= ShootCooldownTime;
@@ -343,17 +310,6 @@ namespace Game.Engine.Core
             bool isBoosting2 = World.Time < BoostUntil2;
             bool isBoostInitial = false;
             float targetLen = AimTarget.Length();
-            if (targetLen > 0.001f)
-            {
-                float MinPointerDistance = (float)(World.Hook.MinPointerDistanceM * Ships.Count + World.Hook.MinPointerDistanceB);
-                float MaxPointerDistance = (float)(World.Hook.MaxPointerDistanceM * Ships.Count + World.Hook.MaxPointerDistanceB);
-                float clampedDist = Math.Clamp(targetLen, MinPointerDistance, MaxPointerDistance);
-                AimTarget2 = (AimTarget / targetLen) * clampedDist;
-            }
-            else
-            {
-                AimTarget2 = Vector2.Zero;
-            }
 
             if (World.Time > BoostCooldownTime && BoostRequested && Ships.Count > 1)
             {
@@ -418,14 +374,6 @@ namespace Game.Engine.Core
             float maxConvergenceAngle = 0.06f * Math.Clamp((targetLen - 30.0f) / 70.0f, 0.0f, 1.0f);
             Vector2 mousePos = FleetCenter + AimTarget;
 
-            bool hasOffense = false;
-            bool hasDefense = false;
-            foreach (var weapon in WeaponStack)
-            {
-                if (weapon.IsOffense) hasOffense = true;
-                if (weapon.IsDefense) hasDefense = true;
-            }
-
             foreach (var ship in Ships)
             {
                 // Align ship visual facing angle with aim target or velocity
@@ -457,50 +405,18 @@ namespace Game.Engine.Core
                     ship.AngleMovement = MathF.Atan2(ship.Momentum.Y, ship.Momentum.X);
                 }
 
-                if (World.Hook.FlockWeight > 0.0001f)
-                    Flocking.Flock(ship);
-
                 float baseThrust = (BaseThrust[Ships.Count] * BaseThrustConverter);
-
-                float boostf = 1f - (float)(BoostUntil - World.Time) / 1000;
-                float boostf2 = 1f - (float)(BoostUntil2 - World.Time) / 1000;
-
-                ship.ThrustAmount = isBoosting
-                    ? baseThrust + (BoostThrust - baseThrust) * 27f/4 * (float)(Math.Pow(boostf, 1.5f) * Math.Pow(1 - Math.Pow(boostf, 1.5f), 2f)) /*(1 - (float)Math.Pow(2 * boostf2 - 1f, 2f))*/ * (1 - Burden) * BoostM 
-                    : baseThrust * (1 - Burden);
-                
-                ship.BoostThrustAmount = isBoosting2
-                    ? 27f/4 * (float)(Math.Pow(boostf2, 0.5f) * Math.Pow(1 - Math.Pow(boostf2, 0.5f), 2f)) * World.Hook.BoostThrust2 * (1 - Burden) * BoostM
-                    : 0f;
-
-                ship.Drag = isBoosting
-                    ? World.Hook.DragBoost/* + (1f - World.Hook.DragBoost) * (float)Math.Pow(boostf2, 2.5f)*/
-                    : World.Hook.Drag;
+                ship.ThrustAmount = baseThrust * (1 - Burden);
 
                 ship.Mode = (byte)
                     (
                         (isBoosting ? ShipModeEnum.boost : ShipModeEnum.none)
-                        | (hasOffense ? ShipModeEnum.offense_upgrade : ShipModeEnum.none)
-                        | (hasDefense ? ShipModeEnum.defense_upgrade : ShipModeEnum.none)
-                        | (!Owner.IsShielded && Owner.IsInvulnerable ? ShipModeEnum.invulnerable : ShipModeEnum.none)
-                        | (Owner.IsShielded && ship.ShieldStrength > 0 ? ShipModeEnum.shield : ShipModeEnum.none)
+                        | (Owner.IsInvulnerable ? ShipModeEnum.invulnerable : ShipModeEnum.none)
                     );
 
                 if (isBoostInitial)
-                    //BoostAngle = angle;
                     if (ship.Momentum != Vector2.Zero)
                         ship.Momentum += Vector2.Normalize(FleetMomentum) * World.Hook.BoostSpeed * BoostM;
-
-                if (!World.Hook.KinematicMovement)
-                {
-                    if (ship.Momentum.Length() > (ship.ThrustAmount + ship.BoostThrustAmount) * World.Hook.MaxMomentumCoefficient) {
-                        ship.Momentum = Vector2.Multiply(Vector2.Normalize(ship.Momentum), (ship.ThrustAmount + ship.BoostThrustAmount) * World.Hook.MaxMomentumCoefficient);
-                    }
-                }
-                
-                /*if (ship.Momentum.LengthSquared() != 0) {
-                    ship.Momentum = Vector2.Multiply(Vector2.Normalize(ship.Momentum), (Single)Math.Round(ship.Momentum.Length()*200)/200);
-                }*/
             }
 
             // Authoritative Fleet Out-of-Bounds Evaluation
@@ -510,7 +426,7 @@ namespace Game.Engine.Core
                 if (DangerSince == 0)
                 {
                     DangerSince = World.Time;
-                    NextDecayTime = World.Time + World.Hook.OutOufBoundsDecayStart;
+                    NextDecayTime = World.Time + World.Hook.OutOfBoundsDecayStart;
                 }
 
                 // Hard outer death boundary: if the fleet centroid exceeds the outer death line,
@@ -536,9 +452,9 @@ namespace Game.Engine.Core
                     float dangerWidth = World.Hook.OutOfBoundsDeathLine > 0 ? World.Hook.OutOfBoundsDeathLine : 750f;
                     float u = Math.Clamp(oob / dangerWidth, 0f, 1f);
 
-                    float minInterval = World.Hook.OutOufBoundsDecayIntervalMin > 0 ? World.Hook.OutOufBoundsDecayIntervalMin : 300f;
-                    float maxInterval = World.Hook.OutOufBoundsDecayIntervalMax > 0 ? World.Hook.OutOufBoundsDecayIntervalMax :
-                                        (World.Hook.OutOufBoundsDecayInterval > 0 ? World.Hook.OutOufBoundsDecayInterval : 2000f);
+                    float minInterval = World.Hook.OutOfBoundsDecayIntervalMin > 0 ? World.Hook.OutOfBoundsDecayIntervalMin : 300f;
+                    float maxInterval = World.Hook.OutOfBoundsDecayIntervalMax > 0 ? World.Hook.OutOfBoundsDecayIntervalMax :
+                                        (World.Hook.OutOfBoundsDecayInterval > 0 ? World.Hook.OutOfBoundsDecayInterval : 2000f);
 
                     uint nextInterval = (uint)Math.Clamp(maxInterval - (maxInterval - minInterval) * u, minInterval, maxInterval);
                     NextDecayTime = World.Time + nextInterval;

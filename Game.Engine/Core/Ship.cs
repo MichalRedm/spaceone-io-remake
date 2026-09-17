@@ -1,7 +1,6 @@
 namespace Game.Engine.Core
 {
     using Game.API.Common;
-    using Game.Engine.Core.Pickups;
     using Game.Engine.Core.Weapons;
     using System;
     using System.Numerics;
@@ -15,12 +14,8 @@ namespace Game.Engine.Core
         public Fleet Fleet { get; set; }
 
         public float Health { get; set; }
-        public int SizeMinimum { get; set; }
-        public int SizeMaximum { get; set; }
 
         public float ThrustAmount { get; set; }
-        public float BoostThrustAmount { get; set; } = 0;
-        public float Drag { get; set; }
 
         public float AngleMovement { get; set; }
 
@@ -34,8 +29,6 @@ namespace Game.Engine.Core
         {
             Size = 10;
         }
-
-        public int ShieldStrength { get; set; }
 
         public Sprites BulletSprite
         {
@@ -62,8 +55,6 @@ namespace Game.Engine.Core
             base.Init(world);
 
             Health = MaxHealth;
-            Drag = World.Hook.Drag;
-
             this.Group = this.Fleet;
         }
 
@@ -99,19 +90,7 @@ namespace Game.Engine.Core
                 var player = fleet?.Owner;
                 bullet.Consumed = true;
 
-                var takesDamage = true;
-                if (this.Fleet?.Owner?.IsShielded ?? false)
-                {
-                    if (this.ShieldStrength == 0)
-                        takesDamage = true;
-                    else
-                    {
-                        this.ShieldStrength--;
-                        takesDamage = false;
-                    }
-                }
-                else
-                    takesDamage = !this.Fleet?.Owner?.IsInvulnerable ?? true;
+                bool takesDamage = !this.Fleet?.Owner?.IsInvulnerable ?? true;
 
                 if (takesDamage)
                 {
@@ -155,8 +134,7 @@ namespace Game.Engine.Core
 
             if (!this.Abandoned)
             {
-                if (projectedBody is PickupBase
-                    || projectedBody is SystemActors.CTF.Base
+                if (projectedBody is SystemActors.CTF.Base
                     || projectedBody is SystemActors.CTF.Flag)
                     return ((Vector2.Distance(projectedBody.Position, this.Position)
                             <= this.Size + projectedBody.Size));
@@ -178,98 +156,84 @@ namespace Game.Engine.Core
             }
 
             Health = Math.Max(Math.Min(Health, MaxHealth), 0) + HealthRegenerationPerFrame;
-            //Size = (int)(SizeMinimum + (Health / MaxHealth) * (SizeMaximum - SizeMinimum));
 
             DoOutOfBoundsRules();
 
-            float AngleQuantized = World.Hook.Quantization
-                ? (float)(Math.Round(AngleMovement / (2 * Math.PI) * World.Hook.QuantizationCount) / World.Hook.QuantizationCount * 2 * Math.PI)
-                : AngleMovement;
-
             if (!Abandoned)
             {
-                if (World.Hook.KinematicMovement)
+                bool isBoosting = Fleet != null && World.Time < Fleet.BoostUntil;
+                float baseCruiseSpeed = ThrustAmount * World.Hook.MaxMomentumCoefficient;
+
+                // Current velocity direction
+                float currentSpeed = Momentum.Length();
+                float targetAngle = AngleMovement;
+                float currentAngle = currentSpeed > 0.0001f
+                    ? MathF.Atan2(Momentum.Y, Momentum.X)
+                    : targetAngle;
+
+                // Wrapped angular steering difference in [-PI, +PI]
+                float angleDiff = (targetAngle - currentAngle + MathF.PI) % (MathF.PI * 2f);
+                if (angleDiff < 0f) angleDiff += MathF.PI * 2f;
+                angleDiff -= MathF.PI;
+
+                // Enforce unified fleet turn direction on sharp / near-180° turns (|angleDiff| > ~150 deg = 2.6 rad)
+                // to prevent symmetry breaking where some ships turn left and others turn right, splitting the fleet
+                if (MathF.Abs(angleDiff) > 2.6f && Fleet != null)
                 {
-                    bool isBoosting = Fleet != null && World.Time < Fleet.BoostUntil;
-                    float baseCruiseSpeed = ThrustAmount * World.Hook.MaxMomentumCoefficient;
+                    angleDiff = Fleet.FleetTurnSign * MathF.Abs(angleDiff);
+                }
 
-                    // Current velocity direction
-                    float currentSpeed = Momentum.Length();
-                    float targetAngle = AngleMovement;
-                    float currentAngle = currentSpeed > 0.0001f
-                        ? MathF.Atan2(Momentum.Y, Momentum.X)
-                        : targetAngle;
+                float maxTurnRate;
+                float effectiveSpeed;
 
-                    // Wrapped angular steering difference in [-PI, +PI]
-                    float angleDiff = (targetAngle - currentAngle + MathF.PI) % (MathF.PI * 2f);
-                    if (angleDiff < 0f) angleDiff += MathF.PI * 2f;
-                    angleDiff -= MathF.PI;
+                if (isBoosting)
+                {
+                    // 3-Phase Kinematic Boost Speed Profile
+                    int fleetSize = Math.Max(1, Fleet?.Ships?.Count ?? 1);
+                    float scale = World.Hook.BaseThrustConverter * World.Hook.MaxMomentumCoefficient * (1f - (Fleet?.Burden ?? 0f));
+                    float vPeak = (World.Hook.BoostPeakBase - World.Hook.BoostPeakSlope * MathF.Log(fleetSize)) * scale;
 
-                    // Enforce unified fleet turn direction on sharp / near-180° turns (|angleDiff| > ~150 deg = 2.6 rad)
-                    // to prevent symmetry breaking where some ships turn left and others turn right, splitting the fleet
-                    if (MathF.Abs(angleDiff) > 2.6f && Fleet != null)
+                    // Elapsed time in ticks (0.0 to 24.0)
+                    long elapsedMs = World.Time - (Fleet.BoostUntil - World.Hook.BoostDuration);
+                    float tBoost = Math.Clamp(elapsedMs / 40f, 0f, 24f);
+
+                    float vSustain = 0.77f * vPeak;
+                    if (tBoost <= 4f)
                     {
-                        angleDiff = Fleet.FleetTurnSign * MathF.Abs(angleDiff);
+                        // Phase 1: Initial Surge Ramp (0 - 160ms)
+                        effectiveSpeed = baseCruiseSpeed + (vPeak - baseCruiseSpeed) * (tBoost / 4f);
+                        maxTurnRate = World.Hook.BoostTurnRate;
                     }
-
-                    float maxTurnRate;
-                    float effectiveSpeed;
-
-                    if (isBoosting)
+                    else if (tBoost <= 9f)
                     {
-                        // 3-Phase Kinematic Boost Speed Profile
-                        int fleetSize = Math.Max(1, Fleet?.Ships?.Count ?? 1);
-                        float scale = World.Hook.BaseThrustConverter * World.Hook.MaxMomentumCoefficient * (1f - (Fleet?.Burden ?? 0f));
-                        float vPeak = (World.Hook.BoostPeakBase - World.Hook.BoostPeakSlope * MathF.Log(fleetSize)) * scale;
-
-                        // Elapsed time in ticks (0.0 to 24.0)
-                        long elapsedMs = World.Time - (Fleet.BoostUntil - World.Hook.BoostDuration);
-                        float tBoost = Math.Clamp(elapsedMs / 40f, 0f, 24f);
-
-                        float vSustain = 0.77f * vPeak;
-                        if (tBoost <= 4f)
-                        {
-                            // Phase 1: Initial Surge Ramp (0 - 160ms)
-                            effectiveSpeed = baseCruiseSpeed + (vPeak - baseCruiseSpeed) * (tBoost / 4f);
-                            maxTurnRate = World.Hook.BoostTurnRate;
-                        }
-                        else if (tBoost <= 9f)
-                        {
-                            // Phase 2: Sustained Jet Burn Plateau (200 - 360ms)
-                            effectiveSpeed = vSustain;
-                            maxTurnRate = World.Hook.BoostTurnRate;
-                        }
-                        else
-                        {
-                            // Phase 3: Linear Exhaust Deceleration smoothly back to baseCruiseSpeed (400 - 1000ms)
-                            float decelProgress = (tBoost - 9f) / 15f;
-                            effectiveSpeed = vSustain - (vSustain - baseCruiseSpeed) * decelProgress;
-                            maxTurnRate = World.Hook.BoostTurnRate + (World.Hook.TurnRate - World.Hook.BoostTurnRate) * decelProgress;
-                        }
+                        // Phase 2: Sustained Jet Burn Plateau (200 - 360ms)
+                        effectiveSpeed = vSustain;
+                        maxTurnRate = World.Hook.BoostTurnRate;
                     }
                     else
                     {
-                        // Dynamic turn speed dip during regular cruising
-                        float turnFraction = MathF.Abs(angleDiff) / MathF.PI;
-                        effectiveSpeed = baseCruiseSpeed * (1.0f - World.Hook.SpeedDip * turnFraction);
-                        maxTurnRate = World.Hook.TurnRate;
+                        // Phase 3: Linear Exhaust Deceleration smoothly back to baseCruiseSpeed (400 - 1000ms)
+                        float decelProgress = (tBoost - 9f) / 15f;
+                        effectiveSpeed = vSustain - (vSustain - baseCruiseSpeed) * decelProgress;
+                        maxTurnRate = World.Hook.BoostTurnRate + (World.Hook.TurnRate - World.Hook.BoostTurnRate) * decelProgress;
                     }
-
-                    // Clamp turn rate
-                    float clampedDelta = Math.Clamp(angleDiff, -maxTurnRate, maxTurnRate);
-                    float newAngle = currentAngle + clampedDelta;
-
-                    Momentum = new Vector2(
-                        effectiveSpeed * MathF.Cos(newAngle),
-                        effectiveSpeed * MathF.Sin(newAngle)
-                    );
                 }
                 else
                 {
-                    Vector2 thrust = new Vector2(MathF.Cos(AngleMovement), MathF.Sin(AngleMovement)) * ThrustAmount;
-                    Vector2 thrustBoost = new Vector2(MathF.Cos(this.Fleet?.BoostAngle ?? 0f), MathF.Sin(this.Fleet?.BoostAngle ?? 0f)) * BoostThrustAmount;
-                    Momentum = (Momentum + thrust + thrustBoost) * Drag;
+                    // Dynamic turn speed dip during regular cruising
+                    float turnFraction = MathF.Abs(angleDiff) / MathF.PI;
+                    effectiveSpeed = baseCruiseSpeed * (1.0f - World.Hook.SpeedDip * turnFraction);
+                    maxTurnRate = World.Hook.TurnRate;
                 }
+
+                // Clamp turn rate
+                float clampedDelta = Math.Clamp(angleDiff, -maxTurnRate, maxTurnRate);
+                float newAngle = currentAngle + clampedDelta;
+
+                Momentum = new Vector2(
+                    effectiveSpeed * MathF.Cos(newAngle),
+                    effectiveSpeed * MathF.Sin(newAngle)
+                );
             }
             else
             {
@@ -281,8 +245,6 @@ namespace Game.Engine.Core
                         AngularVelocity = 0;
                 }
             }
-                
-
         }
 
         private void DoOutOfBoundsRules()
@@ -293,22 +255,6 @@ namespace Game.Engine.Core
 
                 // Immediate fatal destruction if ship crosses beyond the outer map boundary
                 if (World.Hook.OutOfBoundsDeathLine > 0 && World.DistanceOutOfBounds(Position) >= World.Hook.OutOfBoundsDeathLine)
-                {
-                    Die(null, null, null);
-                }
-            }
-            else if (this.Sprite == Sprites.fish_blue ||
-                     this.Sprite == Sprites.fish_cyan ||
-                     this.Sprite == Sprites.fish_green ||
-                     this.Sprite == Sprites.fish_orange ||
-                     this.Sprite == Sprites.fish_pink ||
-                     this.Sprite == Sprites.fish_red ||
-                     this.Sprite == Sprites.fish_yellow)
-            {
-                var oob = World.DistanceOutOfBounds(Position);
-                IsOOB = oob > 0;
-
-                if (oob > World.Hook.OutOfBoundsDeathLine)
                 {
                     Die(null, null, null);
                 }

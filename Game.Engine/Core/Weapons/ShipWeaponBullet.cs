@@ -1,8 +1,6 @@
 namespace Game.Engine.Core.Weapons
 {
-    using Game.Engine.Core.Maps;
     using System;
-    using System.Linq;
     using System.Numerics;
 
     public class ShipWeaponBullet : ActorBody, IShipWeapon
@@ -12,8 +10,6 @@ namespace Game.Engine.Core.Weapons
         public long TimeBirth { get; set; }
 
         public float ThrustAmount { get; set; }
-
-        public float Drag { get => World.Hook.Drag; }
 
         public bool Consumed { get; set; }
 
@@ -100,21 +96,6 @@ namespace Game.Engine.Core.Weapons
             else
                 this.TimeDeath = World.Time + (long)(World.Hook.BulletLifeB + World.Hook.BulletLifeM * shipCount);
             this.Group = group;
-        }
-
-        public virtual void FireFrom(TileBase tile, float angle)
-        {
-            World = tile.World;
-
-            this.TimeDeath = World.Time + (long)(World.Hook.BulletLife);
-            this.Position = tile.Position;
-            this.Angle = angle;
-            this.Sprite = API.Common.Sprites.bullet;
-            this.Size = World.Hook.BulletSize;
-            this.Color = "green";
-            this.ThrustAmount = 1 * World.Hook.ShotThrustM + World.Hook.ShotThrustB;
-            this.TimeBirth = World.Time;
-            this.Group = tile.WorldMap.WeaponGroup;
         }
 
         public bool Active => this.Exists;

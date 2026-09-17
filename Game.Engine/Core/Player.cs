@@ -52,7 +52,6 @@ namespace Game.Engine.Core
 
         public bool IsInvulnerable { get; set; } = false;
         public bool Backgrounded { get; internal set; }
-        public bool IsShielded { get; set; } = false;
 
         public long SpawnTime;
         public int SpawnInvulnerableTime => World.Hook.SpawnInvulnerabilityTime;
@@ -79,8 +78,6 @@ namespace Game.Engine.Core
 
         public Vector2? SpawnLocation { get; set; } = null;
         public Vector2? SpawnMomentum { get; set; } = null;
-
-        private bool IsGearhead = false;
 
         public Player()
         {
@@ -116,18 +113,12 @@ namespace Game.Engine.Core
                     Player = this.ToAuditModelPlayer()
                 }, World);
 
-                if (World.Hook.GearheadName != null && this.Name == World.Hook.GearheadName)
-                {
-                    Fleet.BaseWeapon = new FleetWeaponRobot();
-                    IsGearhead = true;
-                }
-
                 if (SpawnMomentum != null)
                     foreach (var ship in Fleet.NewShips)
                         ship.Momentum = SpawnMomentum.Value;
 
                 if (!DisableSpawnInvulnerability)
-                    SetInvulnerability(SpawnInvulnerableTime, false);
+                    SetInvulnerability(SpawnInvulnerableTime);
 
                 SpawnTime = World.Time;
             }
@@ -204,23 +195,17 @@ namespace Game.Engine.Core
             }
         }
 
-        public void SetInvulnerability(int duration, bool isShield = false)
+        public void SetInvulnerability(int duration)
         {
             if (duration == 0)
             {
                 InvulnerableUntil = 0;
                 IsInvulnerable = false;
-                isShield = false;
             }
             else
             {
                 InvulnerableUntil = World.Time + duration;
                 IsInvulnerable = true;
-                IsShielded = isShield;
-
-                if (isShield && Fleet != null)
-                    foreach (var ship in Fleet.Ships)
-                        ship.ShieldStrength = World.Hook.ShieldStrength;
             }
         }
 
@@ -231,13 +216,6 @@ namespace Game.Engine.Core
 
             if (TimeDeath > 0 && TimeDeath < World.Time)
                 this.PendingDestruction = true;
-
-            if (IsGearhead && Fleet.Ships.Count < 15)
-            {
-                var r = new Random();
-                if (r.NextDouble() < World.Hook.GearheadRegen)
-                    Fleet.AddShip();
-            }
 
 
             if (this.IsControlNew)
@@ -262,14 +240,6 @@ namespace Game.Engine.Core
             {
                 if (World.Time > InvulnerableUntil)
                     IsInvulnerable = false;
-
-                if (!IsInvulnerable)
-                {
-                    IsShielded = false;
-
-                    foreach (var ship in Fleet?.Ships)
-                        ship.ShieldStrength = 0;
-                }
             }
         }
 

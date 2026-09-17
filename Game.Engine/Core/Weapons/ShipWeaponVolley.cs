@@ -30,7 +30,7 @@ namespace Game.Engine.Core.Weapons
                 volley.FiringSequence.Add(
                     new Tuple<Ship, long>(
                         fleet.Ships[i],
-                        fleet.World.Time + i * fleet.World.Hook.FiringSequenceDelay
+                        fleet.World.Time
                     )
                 );
 
