@@ -197,8 +197,11 @@ namespace Game.API.Common.Models
                     SnakeWeight = 0f,
                     BossMode = false,
                     
-                    OutOufBoundsDecayStart = 5000,
-                    OutOufBoundsDecayInterval = 300,
+                    OutOufBoundsDecayStart = 3000,
+                    OutOufBoundsDecayInterval = 2000,
+                    OutOufBoundsDecayIntervalMin = 300,
+                    OutOufBoundsDecayIntervalMax = 2000,
+                    OutOfBoundsDeathLine = 750,
 
                     ShipGainBySizeM = -0.015f,
                     ShipGainBySizeB = 1.5f,
@@ -441,6 +444,8 @@ namespace Game.API.Common.Models
         public float OutOfBoundsDecayDistance { get; set; } = 100;
         public uint OutOufBoundsDecayStart { get; set; }
         public uint OutOufBoundsDecayInterval { get; set; }
+        public uint OutOufBoundsDecayIntervalMin { get; set; } = 300;
+        public uint OutOufBoundsDecayIntervalMax { get; set; } = 2000;
         public int BotRespawnDelay { get; set; }
         public int BotMaxRespawnDelay { get; set; }
         public int PickupShields { get; set; }
