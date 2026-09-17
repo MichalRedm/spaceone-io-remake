@@ -26,20 +26,6 @@ namespace Game.Engine.Controllers
         {
             this.RegistryClient = registryClient;
             this.GameConfiguration = gameConfiguration;
-
-        }
-
-        [HttpPost, Route("map")]
-        public bool SetMap([FromBody] MapModel mapModel, string worldKey)
-        {
-            var world = Worlds.Find(worldKey);
-            if (world != null)
-            {
-                world.GetActor<MapActor>().SetMap(mapModel);
-                return true;
-            }
-            else
-                return false;
         }
 
         [HttpPut]

@@ -124,19 +124,14 @@ namespace Game.Engine.Networking
                         // if we're watching a fleet, watch the center of their fleet
                         if (followFleet != null)
                         {
-                            if (world.Hook.FollowFirstShip)
-                                followBody = followFleet.Ships.Count > 0 ? followFleet.Ships[0] : null;
-                            else
+                            var center = FleetMath.FleetCenterNaive(followFleet.Ships);
+                            followBody = new Body
                             {
-                                var center = FleetMath.FleetCenterNaive(followFleet.Ships);
-                                followBody = new Body
-                                {
-                                    DefinitionTime = world.Time,
-                                    OriginalPosition = center,
-                                    Position = center,
-                                    Momentum = followFleet.FleetMomentum
-                                };
-                            }
+                                DefinitionTime = world.Time,
+                                OriginalPosition = center,
+                                Position = center,
+                                Momentum = followFleet.FleetMomentum
+                            };
                         }
 
                         // if no fleet is being followed:

@@ -26,14 +26,6 @@ namespace Game.Engine.Core
                 AddWorld("robo", RoboTrainer());
                 AddWorld("bothell", BotHell());
             }
-            /*
-            AddWorld("sharks", WorldSharks());
-            AddWorld("sumo", WorldSumo());
-            AddWorld("boss", WorldBoss());
-            */
-            //AddWorld("wormhole", WorldWormhole());
-            //AddWorld("beach", WorldBeach());
-
         }
 
         public static void Destroy(string worldKey)
@@ -91,25 +83,7 @@ namespace Game.Engine.Core
             hook.Instructions = null;
             hook.Weight = 10;
             hook.WorldSize = 5500;
-            hook.Fishes = (int)System.Math.Round(4.0 * hook.WorldSize * hook.WorldSize / 1000000.0 * hook.FoodDensity);
-
-            return new World(hook, GameConfiguration);
-        }
-
-        private static World WorldOther()
-        {
-            var hook = Hook.Default;
-            hook.BotBase = 10;
-            hook.BotRespawnDelay = 0;
-            hook.PickupShields = 10;
-            hook.ComboDelay = 2000;
-
-            hook.Name = "Planet Daud";
-            hook.Description = "AAAAAHHH! Run!";
-            hook.AllowedColors = Hook.AllColors.Append("ship0").ToArray();
-            hook.Weight = 100;
-
-            hook.WorldResizeEnabled = false;
+            hook.Food = (int)System.Math.Round(4.0 * hook.WorldSize * hook.WorldSize / 1000000.0 * hook.FoodDensity);
 
             return new World(hook, GameConfiguration);
         }
@@ -121,10 +95,8 @@ namespace Game.Engine.Core
             hook.Description = "Battle against adaptive AI combat drones. Ideal for practicing aim, fleet steering, and dash mechanics.";
             hook.Instructions = null;
             hook.WorldSize = (int)(1125);
-            hook.Fishes = (int)System.Math.Round(4.0 * hook.WorldSize * hook.WorldSize / 1000000.0 * hook.FoodDensity);
+            hook.Food = (int)System.Math.Round(4.0 * hook.WorldSize * hook.WorldSize / 1000000.0 * hook.FoodDensity);
             hook.Obstacles = 0;
-            hook.PickupSeekers = 0;
-            hook.PickupShields = 0;
             hook.AllowedColors = Hook.AllColors;
             hook.Weight = 100;
             hook.BotBase = 3;
@@ -143,10 +115,8 @@ namespace Game.Engine.Core
             hook.Description = "An empty world for training.";
             hook.Instructions = null;
             hook.WorldSize = 750;
-            hook.Fishes = (int)System.Math.Round(4.0 * hook.WorldSize * hook.WorldSize / 1000000.0 * hook.FoodDensity);
+            hook.Food = (int)System.Math.Round(4.0 * hook.WorldSize * hook.WorldSize / 1000000.0 * hook.FoodDensity);
             hook.Obstacles = 0;
-            hook.PickupSeekers = 0;
-            hook.PickupShields = 0;
             hook.AllowedColors = Hook.AllColors;
             hook.Weight = 90;
             hook.BotBase = 0;
@@ -157,63 +127,13 @@ namespace Game.Engine.Core
             return new World(hook, GameConfiguration);
         }
 
-        private static World WorldSnake()
-        {
-            var hook = Hook.Default;
-            hook.BotBase = 1;
-            hook.FlockWeight = 0;
-            hook.SnakeWeight = 0.01f;
-            hook.FlockWeight = 0.02f;
-            hook.FlockCohesion = 0.0003f;
-            hook.FlockAlignment = 0;
-            hook.FollowFirstShip = true;
-            hook.FiringSequenceDelay = 250;
-
-            hook.Name = "Snake World";
-            hook.Description = "Hisssssss...";
-            hook.AllowedColors = Hook.AllColors.Append("ship0").ToArray();
-
-            hook.WorldResizeEnabled = false;
-
-            return new World(hook, GameConfiguration);
-        }
-
-        private static World WorldSumo()
-        {
-            var hook = Hook.Default;
-            hook.BotBase = 0;
-            hook.WorldSize = 1500;
-            hook.Obstacles = 0;
-            hook.Fishes = (int)System.Math.Round(4.0 * hook.WorldSize * hook.WorldSize / 1000000.0 * hook.FoodDensity);
-            hook.PickupSeekers = 0;
-            hook.SpawnInvulnerabilityTime = 0;
-            hook.PickupShields = 0;
-            hook.SpawnShipCount = 10;
-            hook.PointsPerKillFleet = 1;
-            hook.PointsPerKillShip = 0;
-            hook.PointsPerUniverseDeath = 0;
-            hook.PointsMultiplierDeath = 1.0f;
-            hook.SumoMode = true;
-            hook.SumoRingSize = 1000;
-            hook.Weight = 100;
-
-            hook.Name = "Sumo World";
-            hook.Description = "Bigger Better...";
-
-            hook.WorldResizeEnabled = false;
-
-            return new World(hook, GameConfiguration);
-        }
-
         private static World WorldDuel()
         {
             var hook = Hook.Default;
             hook.BotBase = 0;
             hook.WorldSize = 750;
-            hook.Fishes = (int)System.Math.Round(4.0 * hook.WorldSize * hook.WorldSize / 1000000.0 * hook.FoodDensity);
+            hook.Food = (int)System.Math.Round(4.0 * hook.WorldSize * hook.WorldSize / 1000000.0 * hook.FoodDensity);
             hook.Obstacles = 0;
-            hook.PickupSeekers = 0;
-            hook.PickupShields = 0;
             hook.PointsPerKillFleet = 1;
             hook.PointsPerKillShip = 0;
             hook.PointsPerUniverseDeath = -1;
@@ -235,10 +155,8 @@ namespace Game.Engine.Core
             var hook = Hook.Default;
             hook.BotBase = 0;
             hook.WorldSize = 1500;
-            hook.Fishes = (int)System.Math.Round(4.0 * hook.WorldSize * hook.WorldSize / 1000000.0 * hook.FoodDensity);
+            hook.Food = (int)System.Math.Round(4.0 * hook.WorldSize * hook.WorldSize / 1000000.0 * hook.FoodDensity);
             hook.Obstacles = 0;
-            hook.PickupSeekers = 0;
-            hook.PickupShields = 0;
             hook.TeamMode = true;
             hook.Weight = 20;
 
@@ -257,10 +175,8 @@ namespace Game.Engine.Core
             var hook = Hook.Default;
             hook.BotBase = 0;
             hook.WorldSize = 1500;
-            hook.Fishes = (int)System.Math.Round(4.0 * hook.WorldSize * hook.WorldSize / 1000000.0 * hook.FoodDensity);
+            hook.Food = (int)System.Math.Round(4.0 * hook.WorldSize * hook.WorldSize / 1000000.0 * hook.FoodDensity);
             hook.Obstacles = 0;
-            hook.PickupSeekers = 0;
-            hook.PickupShields = 0;
             hook.CTFMode = true;
             hook.TeamMode = true;
             hook.PointsPerKillFleet = 1;
@@ -275,95 +191,6 @@ namespace Game.Engine.Core
             hook.Instructions = null;
 
             hook.AllowedColors = Hook.TeamColors;
-
-            hook.WorldResizeEnabled = false;
-
-            return new World(hook, GameConfiguration);
-        }
-
-        private static World WorldSharks()
-        {
-            var hook = Hook.Default;
-            hook.BotBase = 0;
-            hook.Obstacles = 0;
-            hook.TeamMode = true;
-            hook.PointsPerKillFleet = 1;
-            hook.PointsPerKillShip = 0;
-            hook.PointsMultiplierDeath = 1.0f;
-            hook.WorldSize = 750;
-            hook.Weight = 100;
-
-            hook.Name = "Sharks and Minnows";
-            hook.Description = "Sharks and Minnows";
-            hook.Instructions = "how to score:<br><br>"
-                    + " - Sharks (red) hunt<br>"
-                    + " - Minnows (blue) run towards borders (left & right)";
-
-            hook.AllowedColors = Hook.TeamColors;
-            hook.SharksAndMinnowsMode = true;
-
-            hook.WorldResizeEnabled = false;
-
-            return new World(hook, GameConfiguration)
-            {
-                NewFleetGenerator = delegate (Player p, string Color)
-                {
-                    return new Fleet
-                    {
-                        Owner = p,
-                        Caption = p.Name,
-                        Color = Color,
-                        Shark = Color == "red",
-                    };
-                }
-            };
-        }
-
-        private static World WorldWormhole()
-        {
-            var hook = Hook.Default;
-            hook.WorldSize = 1000;
-            hook.BotBase = 0;
-            hook.Obstacles = 0;
-            hook.Wormholes = 1;
-            hook.WormholesDestination = "duel";
-            hook.Name = "Wormhole test";
-            hook.Description = "Wormhole test";
-            hook.AllowedColors = Hook.TeamColors;
-            hook.Weight = 1000;
-
-            hook.WorldResizeEnabled = false;
-
-            return new World(hook, GameConfiguration);
-        }
-
-        private static World WorldBoss()
-        {
-            var hook = Hook.Default;
-            hook.BotBase = 3;
-            hook.BossMode = true;
-            hook.BossModeSprites = new API.Common.Sprites[] { API.Common.Sprites.ship0 };
-            hook.ShotCooldownTimeBotB = 200;
-            hook.SpawnShipCount = 3;
-            hook.Name = "Boss Mode";
-            hook.Description = "So many Circles! Much wow!";
-            hook.AllowedColors = Hook.AllColors.Append("ship0").ToArray();
-            hook.Weight = 100;
-
-            hook.WorldResizeEnabled = false;
-
-            return new World(hook, GameConfiguration);
-        }
-
-        private static World WorldBeach()
-        {
-            var hook = Hook.Default;
-            hook.BotBase = 0;
-            hook.MapEnabled = true;
-            hook.SpawnLocationMode = "Static";
-            hook.Name = "Beach World";
-            hook.Description = "Come on in, the water's fine";
-            hook.Weight = 1000;
 
             hook.WorldResizeEnabled = false;
 
