@@ -33,6 +33,12 @@ export function bootstrapPopups(): void {
     worldSelectorBtn.addEventListener("click", () => {
       pressPopup("worlds");
     });
+    worldSelectorBtn.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        pressPopup("worlds");
+      }
+    });
   }
 
   document

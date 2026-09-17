@@ -71,8 +71,7 @@ function getModeTheme(world: WorldInfo): {
   if (mode.includes("robo")) {
     return {
       icon: "fa-robot",
-      defaultDesc:
-        "An empty world for training.",
+      defaultDesc: "An empty world for training.",
     };
   }
   if (mode.includes("ctf")) {
@@ -108,6 +107,68 @@ function cleanText(raw?: string): string {
   return raw.replace(/<[^>]*>?/gm, "").trim();
 }
 
+let lastPillCount: number | null = null;
+
+/**
+ * Resolves WorldInfo from allWorlds by full URL, worldKey, arenaID, or suffix match.
+ */
+export function resolveWorldInfo(
+  worldKey: string | null,
+): WorldInfo | undefined {
+  if (!allWorlds || !worldKey) return undefined;
+  if (allWorlds[worldKey]) return allWorlds[worldKey];
+  const lower = worldKey.toLowerCase();
+  return Object.values(allWorlds).find(
+    (w) =>
+      w.world?.toLowerCase() === lower ||
+      w.worldKey?.toLowerCase() === lower ||
+      w.arenaID?.toLowerCase() === lower ||
+      w.arenaKey?.toLowerCase() === lower ||
+      w.world?.toLowerCase().endsWith("/" + lower),
+  );
+}
+
+/**
+ * Live updates the player count badge for the current world from WebSocket view frames.
+ */
+export function updateCurrentWorldPlayerCount(count: number): void {
+  const worldInfo = resolveWorldInfo(currentJoinedWorldKey);
+  if (worldInfo) {
+    worldInfo.players = count;
+  }
+
+  if (lastPillCount !== count) {
+    lastPillCount = count;
+    const playersEl = document.getElementById("world-selector-players");
+    if (playersEl) {
+      playersEl.textContent = `${count} Online`;
+      playersEl.classList.toggle(
+        "world-selector__badge--has-players",
+        count > 0,
+      );
+    }
+  }
+
+  if (worldInfo) {
+    const safeWorld = escapeHtml(worldInfo.world);
+    const countEl = document.getElementById(`world-count-${safeWorld}`);
+    if (countEl) countEl.textContent = String(count);
+
+    const card = document.getElementById(`world-card-${safeWorld}`);
+    if (card) {
+      const hasPlayers = count > 0;
+      card.classList.toggle("world-card--empty", !hasPlayers);
+      const playersContainer = card.querySelector(".world-card__players");
+      if (playersContainer) {
+        playersContainer.classList.toggle(
+          "world-card__players--active",
+          hasPlayers,
+        );
+      }
+    }
+  }
+}
+
 function updateSelectorPill(worldInfo?: WorldInfo): void {
   const nameEl = document.getElementById("world-selector-name");
   const playersEl = document.getElementById("world-selector-players");
@@ -126,6 +187,7 @@ function updateSelectorPill(worldInfo?: WorldInfo): void {
       worldInfo.worldKey?.toUpperCase() ||
       (worldInfo.isPrivate ? "Private Arena" : "FFA");
     const count = worldInfo.players ?? 0;
+    lastPillCount = count;
     playersEl.textContent = `${count} Online`;
     playersEl.classList.toggle("world-selector__badge--has-players", count > 0);
   }
@@ -151,13 +213,13 @@ function highlightSelectedCard(selectedWorldKey: string | null): void {
 }
 
 function buildList(response: WorldInfo[]): void {
-  if (allWorlds != null) {
-    let keys = "";
-    response.forEach((w) => (keys += ":" + w.world));
+  let keys = "";
+  response.forEach((w) => (keys += ":" + w.world));
 
+  if (allWorlds != null) {
     if (lastKeys === keys) return updateList(response);
-    else lastKeys = keys;
   }
+  lastKeys = keys;
 
   allWorlds = {};
 
@@ -216,8 +278,9 @@ function buildList(response: WorldInfo[]): void {
     });
   }
 
-  if (currentJoinedWorldKey && allWorlds[currentJoinedWorldKey]) {
-    updateSelectorPill(allWorlds[currentJoinedWorldKey]);
+  const activeWorld = resolveWorldInfo(currentJoinedWorldKey);
+  if (activeWorld) {
+    updateSelectorPill(activeWorld);
   }
 }
 
@@ -242,8 +305,9 @@ function updateList(response: WorldInfo[]): void {
     }
   }
 
-  if (currentJoinedWorldKey && allWorlds && allWorlds[currentJoinedWorldKey]) {
-    updateSelectorPill(allWorlds[currentJoinedWorldKey]);
+  const activeWorld = resolveWorldInfo(currentJoinedWorldKey);
+  if (activeWorld) {
+    updateSelectorPill(activeWorld);
   }
 }
 
@@ -320,7 +384,9 @@ function handleInvalidArenaFallback(response: WorldInfo[]): void {
 }
 
 function refreshList(autoJoinWorld?: string | boolean): void {
-  if (!showing && !firstLoad && !autoJoinWorld) return;
+  const isMenuVisible =
+    document.querySelector(".view-state--menu:not([hidden])") !== null;
+  if (!showing && !firstLoad && !autoJoinWorld && !isMenuVisible) return;
 
   const autoJoin = firstLoad || !!autoJoinWorld;
   const targetWorldParam =
@@ -328,8 +394,10 @@ function refreshList(autoJoinWorld?: string | boolean): void {
 
   firstLoad = false;
 
-  fetch("/api/v1/world/all", {
+  const cacheBuster = `_t=${Date.now()}`;
+  fetch(`/api/v1/world/all?${cacheBuster}`, {
     method: "GET",
+    cache: "no-store",
     headers: {
       "Content-Type": "application/json; charset=utf-8",
     },
@@ -404,9 +472,10 @@ function refreshList(autoJoinWorld?: string | boolean): void {
                   // (allows joining unlisted / private worlds via direct link or arena ID)
                   const queryCandidate = parsedRoute.arenaId || parsedRoute.raw;
                   fetch(
-                    `/api/v1/world/all?worldName=${encodeURIComponent(queryCandidate)}`,
+                    `/api/v1/world/all?worldName=${encodeURIComponent(queryCandidate)}&_t=${Date.now()}`,
                     {
                       method: "GET",
+                      cache: "no-store",
                       headers: {
                         "Content-Type": "application/json; charset=utf-8",
                       },
@@ -488,10 +557,11 @@ function refreshList(autoJoinWorld?: string | boolean): void {
 }
 
 let pollTimer: ReturnType<typeof setInterval> | null = null;
+let idleMenuTimer: ReturnType<typeof setInterval> | null = null;
 
 function startPolling(): void {
   if (!pollTimer) {
-    pollTimer = setInterval(refreshList, 1000);
+    pollTimer = setInterval(refreshList, 2000);
   }
 }
 
@@ -499,6 +569,16 @@ function stopPolling(): void {
   if (pollTimer) {
     clearInterval(pollTimer);
     pollTimer = null;
+  }
+}
+
+function startIdlePolling(): void {
+  if (!idleMenuTimer) {
+    idleMenuTimer = setInterval(() => {
+      if (!showing && !document.hidden) {
+        refreshList(false);
+      }
+    }, 20000);
   }
 }
 
@@ -525,7 +605,10 @@ function show(): void {
 
 function joinWorld(worldKey: string): void {
   currentJoinedWorldKey = worldKey;
-  const worldInfo = allWorlds ? allWorlds[worldKey] : undefined;
+  const worldInfo = resolveWorldInfo(worldKey);
+  if (worldInfo?.world) {
+    currentJoinedWorldKey = worldInfo.world;
+  }
   const canonicalKey =
     worldInfo?.worldKey ||
     (worldKey.includes("/") ? worldKey.split("/").pop() : worldKey);
@@ -538,7 +621,7 @@ function joinWorld(worldKey: string): void {
   }
 
   updateSelectorPill(worldInfo);
-  highlightSelectedCard(worldKey);
+  highlightSelectedCard(currentJoinedWorldKey);
 
   if (LobbyCallbacks.onWorldJoin)
     LobbyCallbacks.onWorldJoin(worldKey, worldInfo);
@@ -581,4 +664,15 @@ window.addEventListener("spaceone:popup-closed", (e: Event) => {
   }
 });
 
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) {
+    refreshList(false);
+  }
+});
+
+window.addEventListener("focus", () => {
+  refreshList(false);
+});
+
+startIdlePolling();
 refreshList(false);
