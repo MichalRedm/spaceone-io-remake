@@ -290,6 +290,12 @@ namespace Game.Engine.Core
             if (this.Fleet != null)
             {
                 IsOOB = World.DistanceOutOfBounds(this.Fleet.FleetCenter) > 0;
+
+                // Immediate fatal destruction if ship crosses beyond the outer map boundary
+                if (World.Hook.OutOfBoundsDeathLine > 0 && World.DistanceOutOfBounds(Position) >= World.Hook.OutOfBoundsDeathLine)
+                {
+                    Die(null, null, null);
+                }
             }
             else if (this.Sprite == Sprites.fish_blue ||
                      this.Sprite == Sprites.fish_cyan ||

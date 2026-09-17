@@ -76,6 +76,7 @@ namespace Game.Engine.Core
         
         public uint DangerSince { get; set; } = 0;
         public uint DangerDecayCounter { get; set; } = 0;
+        public uint NextDecayTime { get; set; } = 0;
         
         public uint ShipGainCounter { get; set; } = 0;
 
@@ -507,26 +508,46 @@ namespace Game.Engine.Core
             if (oob > 0)
             {
                 if (DangerSince == 0)
-                    DangerSince = World.Time;
-
-                if (DangerSince != 0 &&
-                    World.Time > DangerSince + World.Hook.OutOufBoundsDecayStart &&
-                    World.Hook.OutOufBoundsDecayInterval > 0)
                 {
-                    uint currentDecayCount = (World.Time - DangerSince - (uint)World.Hook.OutOufBoundsDecayStart) / (uint)World.Hook.OutOufBoundsDecayInterval;
-                    if (currentDecayCount != DangerDecayCounter)
+                    DangerSince = World.Time;
+                    NextDecayTime = World.Time + World.Hook.OutOufBoundsDecayStart;
+                }
+
+                // Hard outer death boundary: if the fleet centroid exceeds the outer death line,
+                // ships suffer rapid fatal destruction
+                if (World.Hook.OutOfBoundsDeathLine > 0 && oob >= World.Hook.OutOfBoundsDeathLine)
+                {
+                    if (Ships.Count > 0)
                     {
-                        if (Ships.Count > 0)
-                        {
-                            Ships[Ships.Count - 1]?.Die(null, null, null);
-                        }
+                        Ships[0]?.Die(null, null, null);
                         DangerDecayCounter++;
                     }
+                }
+                else if (NextDecayTime != 0 && World.Time >= NextDecayTime)
+                {
+                    if (Ships.Count > 0)
+                    {
+                        // FIFO decay: the oldest joined ship (Ships[0]) decays first, matching original Spaceone telemetry
+                        Ships[0]?.Die(null, null, null);
+                        DangerDecayCounter++;
+                    }
+
+                    // Dynamic decay interval: inversely proportional to penetration depth into danger zone
+                    float dangerWidth = World.Hook.OutOfBoundsDeathLine > 0 ? World.Hook.OutOfBoundsDeathLine : 750f;
+                    float u = Math.Clamp(oob / dangerWidth, 0f, 1f);
+
+                    float minInterval = World.Hook.OutOufBoundsDecayIntervalMin > 0 ? World.Hook.OutOufBoundsDecayIntervalMin : 300f;
+                    float maxInterval = World.Hook.OutOufBoundsDecayIntervalMax > 0 ? World.Hook.OutOufBoundsDecayIntervalMax :
+                                        (World.Hook.OutOufBoundsDecayInterval > 0 ? World.Hook.OutOufBoundsDecayInterval : 2000f);
+
+                    uint nextInterval = (uint)Math.Clamp(maxInterval - (maxInterval - minInterval) * u, minInterval, maxInterval);
+                    NextDecayTime = World.Time + nextInterval;
                 }
             }
             else
             {
                 DangerSince = 0;
+                NextDecayTime = 0;
                 DangerDecayCounter = 0;
             }
 
