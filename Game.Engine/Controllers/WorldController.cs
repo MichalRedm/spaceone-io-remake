@@ -102,6 +102,7 @@ namespace Game.Engine.Controllers
         }
 
         [AllowAnonymous, HttpGet, Route("all"), EnableCors("AllowAllOrigins")]
+        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public async Task<IEnumerable<object>> GetWorlds(string worldName = null, bool allWorlds = false)
         {
             var worlds = new List<object>();

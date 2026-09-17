@@ -42,7 +42,11 @@ import { WorldConfig } from "../models/worldConfig";
 import { Settings } from "../ui/settings";
 import { Events } from "./events";
 import { ArenaLink } from "../network/arenaLink";
-import { LobbyCallbacks, toggleLobby } from "../network/lobby";
+import {
+  LobbyCallbacks,
+  toggleLobby,
+  updateCurrentWorldPlayerCount,
+} from "../network/lobby";
 import type { WorldInfo } from "../network/lobby";
 import "pixi-layers";
 import * as pixi_tilemap from "pixi-tilemap";
@@ -456,7 +460,9 @@ connection.onView = (newView) => {
   cache.update(updates, deletes, groups, groupDeletes, gameTime, fleetID);
   overlay.update(newView.customData());
 
-  hud.playerCount = newView.playerCount();
+  const livePlayerCount = newView.playerCount();
+  hud.playerCount = livePlayerCount;
+  updateCurrentWorldPlayerCount(livePlayerCount);
   hud.spectatorCount = newView.spectatorCount();
 
   if (newView.worldSize() !== border.worldSize) {
