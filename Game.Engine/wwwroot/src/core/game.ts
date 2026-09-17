@@ -688,6 +688,7 @@ function stopSpectate() {
   document.body.classList.remove("spectate_only");
   document.body.classList.add("dead");
   fadeIn(".visibility", 500);
+  animateOpacity("#overlay", 0.8, 500);
 }
 
 document.getElementById("stop-spectating")?.addEventListener("click", () => {
