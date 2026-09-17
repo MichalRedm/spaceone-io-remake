@@ -63,11 +63,16 @@ namespace Game.Engine.Networking
 
         public async Task StartSynchronizing(CancellationToken cancellationToken)
         {
-            while (!cancellationToken.IsCancellationRequested)
+            try
             {
-                await WorldUpdateEvent.WaitAsync(cancellationToken);
-                await StepAsync(cancellationToken);
+                while (!cancellationToken.IsCancellationRequested)
+                {
+                    await WorldUpdateEvent.WaitAsync(cancellationToken);
+                    await StepAsync(cancellationToken);
+                }
             }
+            catch (OperationCanceledException) { }
+            catch (WebSocketException) { }
         }
 
         private Offset<Vec2> FromPositionVector(FlatBufferBuilder builder, Vector2 vector)
@@ -447,9 +452,13 @@ namespace Game.Engine.Networking
             {
                 throw;
             }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
             catch (Exception e)
             {
-                Console.WriteLine(e);
+                Logger?.LogError(e, "Error during StepAsync");
                 throw;
             }
         }
@@ -679,6 +688,9 @@ namespace Game.Engine.Networking
 
             ConnectionHeartbeat.Register(this);
 
+            using var connectionCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            var connectionToken = connectionCts.Token;
+
             try
             {
                 lock (world.Bodies)
@@ -691,14 +703,15 @@ namespace Game.Engine.Networking
                     player.Init(world);
                 }
 
-                var updateTask = StartSynchronizing(cancellationToken);
-                var readTask = StartReadAsync(this.HandleIncomingMessage, cancellationToken);
+                var updateTask = StartSynchronizing(connectionToken);
+                var readTask = StartReadAsync(this.HandleIncomingMessage, connectionToken);
 
                 await Task.WhenAny(updateTask, readTask);
-
+                connectionCts.Cancel();
             }
             finally
             {
+                connectionCts.Cancel();
                 ConnectionHeartbeat.Unregister(this);
 
                 if (player != null)
@@ -750,9 +763,21 @@ namespace Game.Engine.Networking
 
                 return true;
             }
+            catch (WebSocketException)
+            {
+                return false;
+            }
+            catch (OperationCanceledException)
+            {
+                return false;
+            }
+            catch (Exception e) when (e is IOException or System.Net.Sockets.SocketException)
+            {
+                return false;
+            }
             catch (Exception e)
             {
-                Console.WriteLine(e);
+                Logger?.LogError(e, "Unexpected error reading from WebSocket");
                 return false;
             }
         }
