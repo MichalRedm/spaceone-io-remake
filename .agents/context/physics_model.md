@@ -77,7 +77,7 @@ Extracted from over **3.8M ship frames**, **413k food orbs**, and **112k laser s
 - **Expiration Dynamics**:
   - Abandoned ships do **not** automatically expire after a fixed timeout in the original game; undisturbed instances survived continuously for $67+\text{ s}$ and several minutes as long as the owner was alive.
   - Destruction triggers: (1) Creator fleet / owner death ($100\%$ immediate deletion), (2) projectile collision damage, or (3) active viewport de-synchronization.
-### Danger Zone & Fleet Decay Invariants (`Hook.OutOufBoundsDecayStart`, `Hook.OutOufBoundsDecayInterval*`, `Hook.OutOfBoundsDeathLine`)
+### Danger Zone & Fleet Decay Invariants (`Hook.OutOfBoundsDecayStart`, `Hook.OutOfBoundsDecayInterval*`, `Hook.OutOfBoundsDeathLine`)
 - **Empirical Invariants**: Extracted across 41 WebSocket playback recordings (`analysis/experiments/01_invariants/danger_zone_decay/measure_danger_zone_decay.py` and `analysis/datasets/danger_zone_decay_results.json`).
 - **Decay Start Latency**: Constant **$3000\text{ ms}$ ($87\text{ server ticks}$)** delay after entering the danger zone ($|x| > 5574.55$ or $|y| > 5574.55$) before the first ship begins decaying ($\mu = 3003.0\text{ ms}, \sigma = 33.3\text{ ms}$).
 - **Decay Ordering**: **FIFO (First-In, First-Out)**. The oldest ships (lowest ID, earliest join time, index 0 of the active fleet `Ships[0]`) decay first, while newer ships gained from combat survive longer.
