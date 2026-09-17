@@ -19,8 +19,6 @@
   "pointsPerKillFleetMax": 55,
   "pointsPerKillFleetStep": 5,
   "pointsPerKillFleetPerStep": 50.0,
-  "comboDelay": 4000,
-  "comboPointsStep": 5,
   "healthHitCost": 100,
   "healthRegenerationPerFrame": 0.0,
   "spawnShipCount": 5,

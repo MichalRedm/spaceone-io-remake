@@ -124,11 +124,6 @@ namespace Game.Robots
                         you = 0,
                         them = 0
                     },
-                    combo = new
-                    {
-                        text = null as string,
-                        score = 0
-                    },
                     stats = new
                     {
                         kills = 0,

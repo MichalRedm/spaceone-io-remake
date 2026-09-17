@@ -111,17 +111,6 @@ body.loading .tracking-arrow {
   font-weight: 700;
 }
 
-.combo-banner,
-#combo-message {
-  position: absolute;
-  top: 6em;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 24px;
-  font-weight: 700;
-  color: $color-yellow-primary;
-  text-shadow: 0 0 10px $color-yellow-primary;
-}
 
 .danger-zone-warning,
 #danger-zone-warning {

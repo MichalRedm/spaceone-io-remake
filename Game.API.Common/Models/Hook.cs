@@ -173,8 +173,6 @@ namespace Game.API.Common.Models
                     PointsPerKillFleetMax = 55,
                     PointsPerKillFleetStep = 5,
                     PointsPerKillFleetPerStep = 50,
-                    ComboDelay = 4000,
-                    ComboPointsStep = 5,
 
                     PlayerCountGracePeriodMS = 15000,
 
@@ -236,8 +234,6 @@ namespace Game.API.Common.Models
         public int PointsPerKillFleetMax { get; set; }
         public int PointsPerKillFleetStep { get; set; }
         public float PointsPerKillFleetPerStep { get; set; }
-        public int ComboDelay { get; set; }
-        public int ComboPointsStep { get; set; }
 
         public int HealthHitCost { get; set; }
         public float HealthRegenerationPerFrame { get; set; }
