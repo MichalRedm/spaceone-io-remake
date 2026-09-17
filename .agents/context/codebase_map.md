@@ -40,10 +40,8 @@ Kinematic calculations and spatial offsets for multi-ship formations.
 
 | File Path | Key Classes / Functions | Responsibilities & Invariants |
 | :--- | :--- | :--- |
-| `Game.Engine/Core/Steering/Flocking.cs` | `Flocking` | Boid-style flocking routines: `Cohesion` (flock center attraction) and `Separation` (inverse-distance repulsion between friendly ships). |
+| `Game.Engine/Core/Steering/Flocking.cs` | `Flocking` | Position-based dynamics (PBD) solid-disc relaxation (`Relaxation`) preventing inter-ship penetration and preserving organic swarm layout. |
 | `Game.Engine/Core/Steering/FleetMath.cs` | `FleetMath` | Fleet centroid (`FleetCenterNaive`) and average momentum (`FleetMomentum`) vector calculations. |
-| `Game.Engine/Core/Steering/Ring.cs` | `Ring` | Ring formation math for multi-ship fleet radial distribution. |
-| `Game.Engine/Core/Steering/Snaking.cs` | `Snaking` | Trailing / snaking formation math for ship trailing behaviors. |
 
 ---
 
@@ -53,20 +51,8 @@ Kinematic calculations and spatial offsets for multi-ship formations.
 | :--- | :--- | :--- |
 | `Game.Engine/Core/Weapons/IShipWeapon.cs` | `IShipWeapon` | Interface for ship weapons (`FireFrom(ship, group)`, `Active`). |
 | `Game.Engine/Core/Weapons/ShipWeaponBullet.cs` | `ShipWeaponBullet` : `ActorBody, IShipWeapon` | Standard laser bullet; applies thrust, manages calibrated lifetime (`TimeDeath`), and marks consumption upon collision. |
-| `Game.Engine/Core/Weapons/ShipWeaponSeeker.cs` | `ShipWeaponSeeker` : `ShipWeaponBullet` | Homing seeker missile; target tracking and trajectory convergence. |
 | `Game.Engine/Core/Weapons/ShipWeaponVolley.cs` | `ShipWeaponVolley` : `IShipWeapon` | Multishot volley weapon controller. |
 | `Game.Engine/Core/Weapons/FleetWeaponGeneric.cs` | `FleetWeaponGeneric` | Fleet-level weapon firing orchestrator. |
-
----
-
-### 4. Pickups & Upgrades (`Game.Engine/Core/Pickups/`)
-
-| File Path | Key Classes | Responsibilities & Invariants |
-| :--- | :--- | :--- |
-| `Game.Engine/Core/Pickups/PickupBase.cs` | `PickupBase` : `ActorBody` | Base class for in-game pickups; handles random field distribution, drift momentum, and `EquipFleet(fleet)` trigger on collision. |
-| `Game.Engine/Core/Pickups/PickupShield.cs` | `PickupShield` : `PickupBase` | Grants energy shield to fleet ships upon collection. |
-| `Game.Engine/Core/Pickups/PickupSeeker.cs` | `PickupSeeker` : `PickupBase` | Equips fleet with seeker homing missiles. |
-| `Game.Engine/Core/Pickups/PickupRobotGun.cs` | `PickupRobotGun` : `PickupBase` | Spawns automated defensive turret / robot escort. |
 
 ---
 

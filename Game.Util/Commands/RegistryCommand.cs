@@ -76,7 +76,6 @@ namespace Game.Util.Commands
                 return new AuditModelPlayer
                 {
                     AliveSince = GetField($"{fieldName}.AliveSince", 0L),
-                    ComboCounter = (int)GetField($"{fieldName}.ComboCounter", 0L),
                     FleetID = (uint)GetField($"{fieldName}.FleetID", 0L),
                     FleetName = GetField($"{fieldName}.FleetName", null as string),
                     FleetSize = (int)GetField($"{fieldName}.FleetSize", 0L),
@@ -85,7 +84,6 @@ namespace Game.Util.Commands
                     Latency = (uint)GetField($"{fieldName}.Latency", 0L),
                     LoginID = (ulong)GetField($"{fieldName}.LoginID", 0L),
                     LoginName = GetField($"{fieldName}.LoginName", null as string),
-                    MaxCombo = (int)GetField($"{fieldName}.MaxCombo", 0L),
                     PlayerID = GetField($"{fieldName}.PlayerID", null as string),
                     Momentum = new System.Numerics.Vector2
                     {

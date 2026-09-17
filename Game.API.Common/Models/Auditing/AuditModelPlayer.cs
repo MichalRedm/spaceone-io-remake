@@ -14,8 +14,6 @@ namespace Game.API.Common.Models.Auditing
         public int FleetSize { get; set; }
         public int Score { get; set; }
         public long AliveSince { get; set; }
-        public int ComboCounter { get; set; }
-        public int MaxCombo { get; set; }
         public uint Latency { get; set; }
         public int KillCount { get; set; }
         public int KillStreak { get; set; }

@@ -29,11 +29,14 @@ namespace Game.Robots
             return (int)(Hook.BulletLifeB + Hook.BulletLifeM * fleetSize);
         }
 
+        public float BoostPeakSpeed(int fleetSize)
+        {
+            int size = System.Math.Max(1, fleetSize);
+            return Hook.BoostPeakBase + Hook.BoostPeakSlope * (1.0f / System.MathF.Sqrt(size));
+        }
+
         public int ShotCooldown(int fleetSize)
         {
-            if (Hook.ShotCooldownTimeM > 0 || Hook.ShotCooldownTimeB > 0)
-                return (int)(Hook.ShotCooldownTimeM * fleetSize + Hook.ShotCooldownTimeB);
-
             int n = System.Math.Max(1, fleetSize);
             int stepTime = Hook.StepTime > 0 ? Hook.StepTime : 40;
             return (13 + n - (n + 4) / 10) * stepTime;

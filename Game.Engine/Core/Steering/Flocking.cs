@@ -1,90 +1,10 @@
 namespace Game.Engine.Core.Steering
 {
-    using Game.API.Common.Models;
     using System;
-    using System.Collections.Generic;
-    using System.Linq;
     using System.Numerics;
 
     public static class Flocking
     {
-        public static Vector2 Cohesion(IEnumerable<Ship> ships, Ship ship, int maximumDistance)
-        {
-            var exclusiveCenter = Vector2.Zero;
-            int shipsIncluded = 0;
-            foreach (var shipOther in ships)
-            {
-                if (shipOther != ship)
-                {
-                    var distance = Vector2.Distance(ship.Position, shipOther.Position);
-                    if (distance < maximumDistance)
-                    {
-                        exclusiveCenter += shipOther.Position;
-                        shipsIncluded++;
-                    }
-                }
-            }
-
-            if (shipsIncluded > 0)
-            {
-                exclusiveCenter /= shipsIncluded;
-                var relative = exclusiveCenter - ship.Position;
-                var distance = Vector2.Distance(ship.Position, exclusiveCenter);
-
-                if (relative == Vector2.Zero)
-                    return Vector2.Zero;
-
-                var vec = Vector2.Normalize(relative) * distance;
-
-                return vec;
-            }
-            else
-                return Vector2.Zero;
-        }
-
-        public static Vector2 Separation(IEnumerable<Ship> ships, Ship ship, float minimumDistanceB, float minimumDistanceM)
-        {
-            int shipCount = (ships is ICollection<Ship> col) ? col.Count : ships.Count();
-            int minimumDistance = (int)(Math.Round(minimumDistanceM * shipCount + minimumDistanceB));
-            if (minimumDistance <= 0)
-                return Vector2.Zero;
-
-            float minSq = minimumDistance * minimumDistance;
-            float invMinSq = 1f / minSq;
-
-            var accumulator = Vector2.Zero;
-            foreach (var shipOther in ships)
-            {
-                if (shipOther != ship)
-                {
-                    var distance = Vector2.Distance(ship.Position, shipOther.Position);
-                    if (distance < minimumDistance)
-                    {
-                        if (distance < 1)
-                            distance = 1;
-
-                        accumulator += (ship.Position - shipOther.Position) * (1 / (distance * distance) - invMinSq);
-                    }
-                }
-            }
-
-            return accumulator;
-        }
-
-        public static Vector2 Alignment(IEnumerable<Ship> ships, Ship ship)
-        {
-            int shipCount = (ships is ICollection<Ship> col) ? col.Count : ships.Count();
-            if (shipCount <= 1)
-                return Vector2.Zero;
-
-            var accumulator = Vector2.Zero;
-            foreach (var shipOther in ships)
-                if (shipOther != ship)
-                    accumulator += shipOther.Momentum;
-
-            return accumulator / (shipCount - 1);
-        }
-
         /// <summary>
         /// Applies authentic solid-disc non-penetration position relaxation (PBD)
         /// and soft straggler cohesion bounding across ships within a fleet.
@@ -187,27 +107,6 @@ namespace Game.Engine.Core.Steering
                     }
                 }
             }
-        }
-
-        public static void Flock(Ship ship)
-        {
-            if (ship.World.Hook.FlockWeight == 0)
-                return;
-
-            var fleet = ship.Fleet;
-            var hook = ship.World.Hook;
-
-            if (fleet?.Ships == null || fleet.Ships.Count < 2)
-                return;
-
-            var shipFlockingVector =
-                (hook.FlockCohesion * Flocking.Cohesion(fleet.Ships, ship, hook.FlockCohesionMaximumDistance))
-                + (hook.FlockSeparation * Flocking.Separation(fleet.Ships, ship, hook.FlockSeparationMinimumDistanceB, hook.FlockSeparationMinimumDistanceM));
-
-            var steeringVector = new Vector2(MathF.Cos(ship.AngleMovement), MathF.Sin(ship.AngleMovement));
-            steeringVector += hook.FlockWeight * shipFlockingVector;
-
-            ship.AngleMovement = MathF.Atan2(steeringVector.Y, steeringVector.X);
         }
     }
 }

@@ -1,6 +1,5 @@
 namespace Game.Engine.Core.SystemActors
 {
-    using Game.Engine.Core.Pickups;
     using System.Collections.Generic;
 
     public class ObstacleTender : IActor
@@ -19,12 +18,7 @@ namespace Game.Engine.Core.SystemActors
             this.World.Actors.Add(this);
 
             Flock.Add(new GenericTender<Obstacle>(() => World.Hook.Obstacles));
-            Flock.Add(new GenericTender<Food>(() => World.Hook.Fishes));
-            Flock.Add(new GenericTender<PickupSeeker>(() => World.Hook.PickupSeekers));
-            Flock.Add(new GenericTender<PickupShield>(() => World.Hook.PickupShields));
-            Flock.Add(new GenericTender<Wormhole>(() => World.Hook.Wormholes));
-            Flock.Add(new GenericTender<PickupRobotGun>(() => World.Hook.PickupRobotGuns));
-
+            Flock.Add(new GenericTender<Food>(() => World.Hook.Food));
 
             foreach (var element in Flock)
                 element.Init(world);

@@ -29,9 +29,6 @@ namespace Game.Engine.Core
                 if (Hook.TeamMode) return "team";
                 if (WorldKey == "bothell") return "bothell";
                 if (Hook.BotHellMode) return "robo";
-                if (Hook.SumoMode) return "sumo";
-                if (Hook.SharksAndMinnowsMode) return "sharks";
-                if (Hook.BossMode) return "boss";
                 if (WorldKey == "duel") return "duel";
                 return "ffa";
             }
@@ -159,11 +156,8 @@ namespace Game.Engine.Core
             InitializeSystemActor<RobotTender>();
             InitializeSystemActor<ObstacleTender>();
             InitializeSystemActor<CaptureTheFlag>();
-            InitializeSystemActor<Sumo>();
-            InitializeSystemActor<MapActor>();
             InitializeSystemActor<TeamColors>();
             InitializeSystemActor<RoomReset>();
-            InitializeSystemActor<SharksAndMinnows>();
             InitializeSystemActor<BotHellActor>();
         }
 

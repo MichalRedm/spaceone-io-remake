@@ -9,15 +9,15 @@ namespace Game.Robots
     {
         public static Vector2[] ProjectClosest(HookComputer hook, float maxTime, Vector2[] fromPosition, Vector2[] targetPosition, int[] fleetSize)
         {
-            var boostSpeed = hook.Hook.BoostThrust;
             int N = fromPosition.Length;
             Vector2[] vout = new Vector2[N];
             for (int i = 0; i < N; i++)
             {
+                var boostSpeed = hook.BoostPeakSpeed(fleetSize[i]);
                 var bulletSpeed = hook.ShotThrust(fleetSize[i]) * 10;
                 var path = targetPosition[i] - fromPosition[i];
                 var pLen = path.Length();
-                var maxD = bulletSpeed * maxTime + boostSpeed * hook.Hook.BoostDuration;
+                var maxD = bulletSpeed * maxTime + boostSpeed * (hook.Hook.BoostDuration / 1000f);
                 vout[i] = fromPosition[i] + path * (1.0f / pLen) * MathF.Min(pLen - 10.0f, maxD);
             }
             return vout;

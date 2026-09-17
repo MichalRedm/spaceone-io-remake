@@ -20,24 +20,13 @@ namespace Game.API.Common.Models
                     
                     // sizes
                     BulletSize = 5,
-                    // ShipSize = 10,
-
-                    FollowFirstShip = false,
-                    FiringSequenceDelay = 0,
 
                     EarnedShipDelay = 0,
                     MutualDestructionCooldown = 100,
 
-                    Quantization = false,
-                    QuantizationCount = 16,
-
                     ShipAddRadius = 3,
                     ShipAddMomentumMultiplier = 0.9f,
 
-                    MaxMomentumCoefficient = 6.5f,
-
-                    BaseThrustM = -0.00015f,
-                    BaseThrustB = 0.015f,
                     // source: https://cdn.discordapp.com/attachments/357878752446906378/357892120427626498/uptodate_-_Sheet1.pdf
                     BaseThrust = new[] {
                         0.000f, // 0 size
@@ -53,6 +42,7 @@ namespace Game.API.Common.Models
                         5.394f, 5.382f, 5.370f, 5.359f, 5.347f, 5.335f, 5.324f, 5.312f, 5.300f, 5.289f // 91 - 100 size
                     },
                     BaseThrustConverter = 0.0024f,
+                    MaxMomentumCoefficient = 6.5f,
 
                     KinematicMovement = true,
                     TurnRate = 0.1393f,
@@ -61,19 +51,13 @@ namespace Game.API.Common.Models
                     BoostPeakBase = 40.12f,
                     BoostPeakSlope = 5.00f,
 
-                    Drag = 1f,
-                    DragBoost = 1f,
                     DragAbandoned = 0.98f,
 
                     BoomDrag = 0.92f,
                     BoomLife = 500,
 
-                    BoostThrust = 0.045f,
-                    BoostThrust2 = 0.045f,
-
                     BoostCooldownTimeM = 14.0f,
                     BoostCooldownTimeB = 1080.0f,
-                    ShotCooldownTimeShark = 300,
 
                     BoostSpeed = 0f,
                     BoostDuration2 = 1000,
@@ -85,14 +69,9 @@ namespace Game.API.Common.Models
                     AbandonNoiseRotation = 0.0005f,
                     AbandonedShipLifespan = 0,
 
-                    ShotCooldownTimeM = 0,
-                    ShotCooldownTimeB = 0,
-
                     ShotCooldownTimeBotM = 22,
                     ShotCooldownTimeBotB = 1100,
 
-                    ShotThrustM = -0.001f,
-                    ShotThrustB = 0.045f,
                     // source: https://cdn.discordapp.com/attachments/357878752446906378/357892120427626498/uptodate_-_Sheet1.pdf
                     ShotThrust = new[] {
                         0.000f, // 0 size
@@ -108,9 +87,6 @@ namespace Game.API.Common.Models
                         12.519f, 12.483f, 12.447f, 12.412f, 12.378f, 12.344f, 12.211f, 12.067f, 12.033f, 12.000f // 91 - 100 size
                     },
                     ShotThrustConverter = 0.00156f,
-
-                    SeekerThrustMultiplier = 1.35f,
-                    SeekerLifeMultiplier = 1.15f,
 
                     HealthHitCost = 100,
                     HealthRegenerationPerFrame = 0.0f,
@@ -141,8 +117,6 @@ namespace Game.API.Common.Models
                     BotMaxRespawnDelay = 60000,
 
                     StepTime = 40,
-                    Wormholes = 0,
-                    WormholesDestination = null,
 
                     Obstacles = 0, // ignored if WorldResizeEnabled = true
                     ObstaclesMultiplier = 0.0005, // used when WorldResizeEnabled = true
@@ -157,10 +131,6 @@ namespace Game.API.Common.Models
                     CTFCarryBurden = 0.2f,
                     CTFSpawnDistance = 1200,
 
-                    SumoMode = false,
-                    SumoRingSize = 1000,
-
-                    SharksAndMinnowsMode = false,
                     BotHellMode = false,
                     BotHellMinBots = 3,
                     BotHellMaxBotsPerPlayer = 18,
@@ -180,44 +150,18 @@ namespace Game.API.Common.Models
                     FoodSpeedRange = 0.2f,
                     FoodSectorSize = 1000f,
                     FoodSelectionPressure = 1.5f,
-                    FoodThrust = 0.0005f, // legacy alias compatibility
 
-                    FlockAlignment = 30f,
-                    FlockCohesion = 0f,
-                    FlockCohesionMaximumDistance = 0,
-                    FlockSeparation = 1f,
-                    FlockSeparationMinimumDistanceB = 38f,
-                    FlockSeparationMinimumDistanceM = 0.2f,
-                    FlockWeight = 0.0f,
                     FlockSolidDiameter = 18.0f,
                     FlockPushStiffness = 0.50f,
                     FlockCohesionDistance = 60.0f,
                     FlockCohesionWeight = 0.003f,
                     FlockRelaxationIterations = 2,
-                    SnakeWeight = 0f,
-                    BossMode = false,
                     
-                    OutOufBoundsDecayStart = 3000,
-                    OutOufBoundsDecayInterval = 2000,
-                    OutOufBoundsDecayIntervalMin = 300,
-                    OutOufBoundsDecayIntervalMax = 2000,
+                    OutOfBoundsDecayStart = 3000,
+                    OutOfBoundsDecayInterval = 2000,
+                    OutOfBoundsDecayIntervalMin = 300,
+                    OutOfBoundsDecayIntervalMax = 2000,
                     OutOfBoundsDeathLine = 750,
-
-                    ShipGainBySizeM = -0.015f,
-                    ShipGainBySizeB = 1.5f,
-
-                    FlockSpeed = 0,
-
-                    PickupShields = 0,
-                    PickupShieldsMultiplier = 0,
-                    ShieldStrength = 3,
-
-                    PickupSeekers = 0,
-                    PickupSeekersMultiplier = 0,
-                    SeekerRange = 2100,
-                    SeekerCycle = 250,
-                    SeekerLead = 150,
-                    SeekerNegotiation = true,
 
                     SpawnLocationMode = "QuietSpot", // Corners, QuietSpot, Static
                     SpawnLocation = Vector2.Zero,
@@ -229,14 +173,8 @@ namespace Game.API.Common.Models
                     PointsPerKillFleetMax = 55,
                     PointsPerKillFleetStep = 5,
                     PointsPerKillFleetPerStep = 50,
-                    ComboDelay = 4000,
-                    ComboPointsStep = 5,
 
                     PlayerCountGracePeriodMS = 15000,
-                    FleetWeaponStackDepth = 1,
-
-                    LifecycleDuration = 10000,
-                    MapEnabled = false,
 
                     AllowedColors = AllColors,
                     Name = "FFA",
@@ -247,11 +185,6 @@ namespace Game.API.Common.Models
                     
                     PrecisionBullets = true,
                     PrecisionBulletsMinimumRange = 16384f,
-
-                    MinPointerDistanceB = 15f,
-                    MinPointerDistanceM = 0.55f,
-                    MaxPointerDistanceB = 50f,
-                    MaxPointerDistanceM = 1.9f,
                 };
             }
         }
@@ -265,23 +198,13 @@ namespace Game.API.Common.Models
         public int WorldMinPlayersToResize { get; set; }
         
         public int BulletSize { get; set; }
-        // public int ShipSize { get; set; }
-
-        public bool Quantization { get; set; }
-        public int QuantizationCount { get; set; }
 
         public int ShipAddRadius { get; set; }
         public float ShipAddMomentumMultiplier { get; set; }
 
-        public float MaxMomentumCoefficient { get; set; }
-
-        public float BaseThrustM { get; set; }
-        public float BaseThrustB { get; set; }
         public float[] BaseThrust { get; set; }
         public float BaseThrustConverter { get; set; }
-
-        public float BoostThrust { get; set; }
-        public float BoostThrust2 { get; set; }
+        public float MaxMomentumCoefficient { get; set; }
 
         public float BoostCooldownTimeM { get; set; }
         public float BoostCooldownTimeB { get; set; }
@@ -290,8 +213,6 @@ namespace Game.API.Common.Models
         public int BoostDuration2 { get; set; }
         public float BoostSpeed { get; set; }
 
-        public float Drag { get; set; }
-        public float DragBoost { get; set; }
         public float DragAbandoned { get; set; }
 
         public bool KinematicMovement { get; set; } = true;
@@ -313,68 +234,44 @@ namespace Game.API.Common.Models
         public int PointsPerKillFleetMax { get; set; }
         public int PointsPerKillFleetStep { get; set; }
         public float PointsPerKillFleetPerStep { get; set; }
-        public int ComboDelay { get; set; }
-        public int ComboPointsStep { get; set; }
 
         public int HealthHitCost { get; set; }
         public float HealthRegenerationPerFrame { get; set; }
 
         public int SpawnShipCount { get; set; }
 
-        public float ShotCooldownTimeM { get; set; }
-        public float ShotCooldownTimeB { get; set; }
-        public int ShotCooldownTimeShark { get; set; }
-
         public float ShotCooldownTimeBotM { get; set; }
         public float ShotCooldownTimeBotB { get; set; }
 
-        public float ShotThrustM { get; set; }
-        public float ShotThrustB { get; set; }
         public float[] ShotThrust { get; set; }
         public float ShotThrustConverter { get; set; }
 
         public int MaxHealth { get; set; }
         public int MaxHealthBot { get; set; }
-        public float SeekerThrustMultiplier { get; set; }
         public float PrecisionBulletsNoise { get; set; }
         public bool PrecisionBullets { get; set; }
         public float PrecisionBulletsMinimumRange { get; set; }
 
-        public float MinPointerDistanceB { get; set; }
-        public float MinPointerDistanceM { get; set; }
-        public float MaxPointerDistanceB { get; set; }
-        public float MaxPointerDistanceM { get; set; }
-
-        public int ShieldCannonballLife { get; set; }
         public int BulletLife { get; set; }
         public int BulletLifeB { get; set; }
         public int BulletLifeM { get; set; }
         public int[] BulletLifeTable { get; set; }
-        public float SeekerLifeMultiplier { get; set; }
         public int BotBase { get; set; }
         public int BotPerXPoints { get; set; }
 
-        public int Wormholes { get; set; }
-        public string WormholesDestination { get; set; }
-
         public int Obstacles { get; set; }
-        public double PickupShieldsMultiplier { get; set; }
 
         public double ObstaclesMultiplier { get; set; }
         public float ObstacleMaxMomentum { get; set; }
         public int ObstacleMinSize { get; set; }
         public int ObstacleMaxSize { get; set; }
         public float ObstacleMaxMomentumWeatherMultiplier { get; set; }
-        public bool ObstaclesSpawnShieldCannons { get; set; }
         public int ObstacleBorderBuffer { get; set; }
 
         public bool TeamMode { get; set; }
         public bool CTFMode { get; set; }
         public float CTFCarryBurden { get; set; }
         public int CTFSpawnDistance { get; set; }
-        public bool SumoMode { get; set; }
-        public int SumoRingSize { get; set; }
-        public bool SharksAndMinnowsMode { get; set; }
         public bool BotHellMode { get; set; }
         public int BotHellMinBots { get; set; } = 3;
         public int BotHellMaxBotsPerPlayer { get; set; } = 18;
@@ -392,78 +289,29 @@ namespace Game.API.Common.Models
         public float FoodSectorSize { get; set; } = 1000f;
         public float FoodSelectionPressure { get; set; } = 1.5f;
 
-        // Backwards compatibility aliases for Fish / Fishes
-        public int Fishes { get => Food; set => Food = value; }
-        public double FishesMultiplier { get; set; }
-        public float FishThrust { get; set; } = 0;
-        public float FoodThrust { get => FishThrust; set => FishThrust = value; }
-        public float FishFlockAlignment { get; set; }
-        public float FishFlockCohesion { get; set; }
-        public int FishFlockCohesionMaximumDistance { get; set; }
-        public float FishFlockSeparation { get; set; }
-        public int FishFlockSeparationMinimumDistance { get; set; }
-        public float FishFlockWeight { get; set; }
-        public float FishOOBWeight { get; set; }
-        public int FishCycle { get; set; }
-
-        public float FlockAlignment { get; set; }
-        public float FlockCohesion { get; set; }
-        public int FlockCohesionMaximumDistance { get; set; }
-        public float FlockSeparation { get; set; }
-        public float FlockSeparationMinimumDistanceB { get; set; }
-        public float FlockSeparationMinimumDistanceM { get; set; }
-        public float FlockWeight { get; set; }
         public float FlockSolidDiameter { get; set; }
         public float FlockPushStiffness { get; set; }
         public float FlockCohesionDistance { get; set; }
         public float FlockCohesionWeight { get; set; }
         public int FlockRelaxationIterations { get; set; }
-        public float SnakeWeight { get; set; }
-        public bool BossMode { get; set; }
-        public Sprites[] BossModeSprites { get; set; }
-
-        public int FlockSpeed { get; set; }
-
-        public int PickupSeekers { get; set; } = 0;
-        public int PickupRobotGuns { get; set; } = 0;
-
-        public double PickupSeekersMultiplier { get; set; }
-        public bool SeekerNegotiation { get; set; }
-        public int SeekerLead { get; set; }
-        public int SeekerRange { get; set; }
-        public int SeekerCycle { get; set; }
-
-        public float ShipGainBySizeM { get; set; }
-        public float ShipGainBySizeB { get; set; }
-
-        public bool MapEnabled { get; set; }
 
         public int StepTime { get; set; }
         public float OutOfBoundsDeathLine { get; set; } = 100;
         public float OutOfBoundsBorder { get; set; } = 0;
         public float OutOfBoundsDecayDistance { get; set; } = 100;
-        public uint OutOufBoundsDecayStart { get; set; }
-        public uint OutOufBoundsDecayInterval { get; set; }
-        public uint OutOufBoundsDecayIntervalMin { get; set; } = 300;
-        public uint OutOufBoundsDecayIntervalMax { get; set; } = 2000;
+        public uint OutOfBoundsDecayStart { get; set; }
+        public uint OutOfBoundsDecayInterval { get; set; }
+        public uint OutOfBoundsDecayIntervalMin { get; set; } = 300;
+        public uint OutOfBoundsDecayIntervalMax { get; set; } = 2000;
         public int BotRespawnDelay { get; set; }
         public int BotMaxRespawnDelay { get; set; }
-        public int PickupShields { get; set; }
-        public int ShieldStrength { get; set; }
-
-        public bool FollowFirstShip { get; set; }
-        public int FiringSequenceDelay { get; set; }
 
         public string SpawnLocationMode { get; set; }
         public Vector2 SpawnLocation { get; set; }
 
-        public int LifecycleDuration { get; set; }
-
         public int PlayerCountGracePeriodMS { get; set; }
-        public int FleetWeaponStackDepth { get; set; }
         public int SpawnInvulnerabilityTime { get; set; }
         public int InvulnerabilityBlinkPeriod { get; set; } = 250;
-
 
         public static readonly string[] AllColors = new[] {
             "ship_blue",
@@ -488,8 +336,6 @@ namespace Game.API.Common.Models
 
         public int Weight { get; set; }
         public int MaxNameLength { get; set; }
-        public string GearheadName { get; set; }
-        public float GearheadRegen { get; set; }
         public int AutoRemoveOnEmptyThreshold { get; set; }
         public uint ExplosionTime { get; set; }
         public int AbandonBuffer { get; set; }
@@ -501,9 +347,6 @@ namespace Game.API.Common.Models
 
         public int CalculateShotCooldown(int shipCount)
         {
-            if (ShotCooldownTimeM > 0 || ShotCooldownTimeB > 0)
-                return (int)(ShotCooldownTimeM * shipCount + ShotCooldownTimeB);
-
             int n = System.Math.Max(1, shipCount);
             return (13 + n - (n + 4) / 10) * (StepTime > 0 ? StepTime : 40);
         }
