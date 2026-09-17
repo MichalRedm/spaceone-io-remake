@@ -23,15 +23,10 @@ namespace Game.Robots
             long ms
         )
         {
-            var thrustAmount = hookComputer.ShipThrust(fleetSize);
-            var stepSize = hookComputer.Hook.StepTime;
-
-            for (var time = 0; time <= ms; time += stepSize)
-            {
-                var thrust = new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * thrustAmount;
-                momentum = (momentum + thrust) * hookComputer.Hook.Drag;
-                position += momentum * stepSize;
-            }
+            var speed = hookComputer.ShipThrust(fleetSize);
+            var dir = new Vector2(MathF.Cos(angle), MathF.Sin(angle));
+            momentum = dir * speed;
+            position += momentum * (ms / 1000f);
 
             return position;
         }
@@ -125,16 +120,12 @@ namespace Game.Robots
         }
         public static Vector2 ProjectClosest(HookComputer hook, Vector2 fromPosition, Vector2 targetPosition, float maxTime, int fleetSize)
         {
-            var boostSpeed = hook.Hook.BoostThrust;
+            var boostSpeed = hook.BoostPeakSpeed(fleetSize);
             var bulletSpeed = hook.ShotThrust(fleetSize) * 10;
             var path = targetPosition - fromPosition;
             var pLen = path.Length();
-            var maxD = bulletSpeed * maxTime + boostSpeed * hook.Hook.BoostDuration;
-            // if(maxD>pLen){
-            //     Console.Write("Switch");
-            // }
+            var maxD = bulletSpeed * maxTime + boostSpeed * (hook.Hook.BoostDuration / 1000f);
             return fromPosition + path * (1.0f / pLen) * MathF.Min(pLen - 10.0f, maxD);
-
         }
         public static float ProjectClosestIntersectionDist(HookComputer hook, API.Client.Body bullet, Vector2 start, Vector2 destination, float maxTime, Robot r)
         {

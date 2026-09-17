@@ -40,7 +40,7 @@ namespace Game.Robots.Behaviors
                         );
                         float momLen = momentum.Length();
                         var momentumBoost = momLen > 0.0001f
-                            ? (momentum / momLen) * Robot.HookComputer.Hook.BoostThrust
+                            ? (momentum / momLen) * Robot.HookComputer.BoostPeakSpeed(Robot.SensorFleets.MyFleet.Ships.Count)
                             : Vector2.Zero;
                         var positionBoost = RoboMath.ShipThrustProjection(Robot.HookComputer,
                             position,
