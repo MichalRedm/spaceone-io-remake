@@ -49,7 +49,8 @@
   z-index: $z-index-canvas;
 
   &--leader {
-    // Displays authentic retro-neon red glow directly from sprite asset
+    // Displays authentic in-game blue retro-neon bloom despite red sprite asset
+    filter: hue-rotate(235deg);
   }
 
   &--ctf-blue {
@@ -110,7 +111,6 @@ body.loading .tracking-arrow {
   font-size: 32px;
   font-weight: 700;
 }
-
 
 .danger-zone-warning,
 #danger-zone-warning {
