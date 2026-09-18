@@ -9,8 +9,7 @@ Authoritative C# simulation engine, Pixi.js WebGL client, and empirical kinemati
 [![Protocol](https://img.shields.io/badge/Protocol-FlatBuffers%20%2B%20WebSockets-009688)](https://flatbuffers.dev/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-<!-- TODO: Replace the src link below with your uploaded gameplay MP4 -->
-<video src="https://github.com/user-attachments/assets/placeholder-video-id" autoplay loop muted playsinline style="max-width: 100%; border-radius: 8px;"></video>
+<video src="https://github.com/user-attachments/assets/3673e589-83f6-4441-b4f6-311024a08ad0" controls autoplay loop muted playsinline style="max-width: 100%; border-radius: 8px;"></video>
 
 [Overview](#overview) &bull; [Quickstart](#quickstart) &bull; [Controls](#controls--how-to-play) &bull; [Architecture](#system-architecture) &bull; [Subsystems](#core-subsystems) &bull; [Swarm Dynamics](#swarm-dynamics--fleet-steering) &bull; [Physics](#physics-calibration--empirical-kinematics) &bull; [Bots](#autonomous-bot-ai)
 
