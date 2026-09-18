@@ -9,7 +9,10 @@ Authoritative C# simulation engine, Pixi.js WebGL client, and empirical kinemati
 [![Protocol](https://img.shields.io/badge/Protocol-FlatBuffers%20%2B%20WebSockets-009688)](https://flatbuffers.dev/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-[System Architecture](#system-architecture) &bull; [Core Subsystems](#core-subsystems) &bull; [Swarm Dynamics](#swarm-dynamics--fleet-steering) &bull; [Kinematic Calibration](#physics-calibration--empirical-kinematics) &bull; [Autonomous Bots](#autonomous-bot-ai) &bull; [Monorepo Layout](#monorepo-layout) &bull; [Quickstart](#quickstart)
+<!-- TODO: Replace the src link below with your uploaded gameplay MP4 -->
+<video src="https://github.com/user-attachments/assets/placeholder-video-id" autoplay loop muted playsinline style="max-width: 100%; border-radius: 8px;"></video>
+
+[Overview](#overview) &bull; [Quickstart](#quickstart) &bull; [Controls](#controls--how-to-play) &bull; [Architecture](#system-architecture) &bull; [Subsystems](#core-subsystems) &bull; [Swarm Dynamics](#swarm-dynamics--fleet-steering) &bull; [Physics](#physics-calibration--empirical-kinematics) &bull; [Bots](#autonomous-bot-ai)
 
 ---
 
@@ -22,6 +25,65 @@ This project reconstructs the original game as a modern, high-performance web pl
 - **Hardware-Accelerated WebGL Client**: A Pixi.js client bundled with Vite 5, featuring coordinate-mapped sprite atlases, multi-layered stage rendering, and inter-tick kinematic interpolation.
 - **Zero-Copy FlatBuffers Wire Protocol**: High-frequency binary delta compression replacing high-overhead JSON serialization for real-time multiplayer updates.
 - **Empirical Kinematic Calibration**: Physics models, projectile speeds, firing cooldowns, and boost envelopes reverse-engineered from 41 historical gameplay recordings containing over 3.8 million ship frames.
+
+---
+
+## Quickstart
+
+### Prerequisites
+- [.NET 7.0 SDK or newer](https://dotnet.microsoft.com/download)
+- [Node.js](https://nodejs.org/) (v18, v20, or v22 LTS) and npm
+- *(Optional)* [Python 3.10+](https://www.python.org/) for running kinematics analysis scripts
+
+### 1. Build the Web Client
+From the repository root, install dependencies and bundle the Pixi.js client:
+
+```bash
+cd Game.Engine/wwwroot
+npm install
+npm run build
+cd ../..
+```
+
+*(For frontend development with hot module replacement, run `npm run dev` within `Game.Engine/wwwroot`.)*
+
+### 2. Build and Launch the Game Server
+Compile the solution and run the game server:
+
+```bash
+dotnet build Game.Engine.sln
+dotnet run --project Game.Engine
+```
+
+### 3. Connect Locally
+Open your web browser and navigate to:
+
+```text
+http://localhost:5000
+```
+
+### 4. Running Kinematic Tests & Verification
+To verify codebase documentation links and validate analysis scripts:
+
+```bash
+# Verify codebase map references
+python analysis/verify_codebase_map.py
+
+# Check analysis scripts compilation
+python -m py_compile analysis/core/*.py
+```
+
+---
+
+## Controls & How to Play
+
+Command your fleet using intuitive arcade controls:
+
+- **Mouse Cursor**: Aims your fleet's direction. Your ships will naturally converge and flock towards the cursor.
+- **Left Click (Hold)**: Fire synchronized laser volleys from all ships. Watch your weapon cooldowns.
+- **Spacebar (Hold)**: Activate boost/dash. Engages the 3-phase kinematic acceleration envelope for rapid evasion or intercepts.
+
+*Tip: Collect floating neon orbs to expand your fleet size and increase your overall firepower!*
 
 ---
 
@@ -183,59 +245,13 @@ spaceone-io-remake/
 
 ---
 
-## Quickstart
-
-### Prerequisites
-- [.NET 7.0 SDK or newer](https://dotnet.microsoft.com/download)
-- [Node.js](https://nodejs.org/) (v18, v20, or v22 LTS) and npm
-- *(Optional)* [Python 3.10+](https://www.python.org/) for running kinematics analysis scripts
-
-### 1. Build the Web Client
-From the repository root, install dependencies and bundle the Pixi.js client:
-
-```bash
-cd Game.Engine/wwwroot
-npm install
-npm run build
-cd ../..
-```
-
-*(For frontend development with hot module replacement, run `npm run dev` within `Game.Engine/wwwroot`.)*
-
-### 2. Build and Launch the Game Server
-Compile the solution and run the game server:
-
-```bash
-dotnet build Game.Engine.sln
-dotnet run --project Game.Engine
-```
-
-### 3. Connect Locally
-Open your web browser and navigate to:
-
-```text
-http://localhost:5000
-```
-
-### 4. Running Kinematic Tests & Verification
-To verify codebase documentation links and validate analysis scripts:
-
-```bash
-# Verify codebase map references
-python analysis/verify_codebase_map.py
-
-# Check analysis scripts compilation
-python -m py_compile analysis/core/*.py
-```
-
----
-
-## AI-Augmented Engineering Governance
+## AI-Augmented Engineering Governance & Contributing
 
 This repository follows a structured engineering workflow documented in [`AGENTS.md`](./AGENTS.md) and [`.agents/`](./.agents/):
 - **Deterministic Rule Routing**: Machine-readable path triggers route specific subsystems (backend physics, frontend WebGL, vector assets, kinematics analysis) to dedicated rule specifications.
 - **5-Phase Operational Lifecycle**: All non-trivial modifications progress through sequential gates: *Rule Intake* $\rightarrow$ *Implementation* $\rightarrow$ *Local CI Verification* $\rightarrow$ *Context Self-Maintenance* $\rightarrow$ *Conventional Commits*.
 - **Architectural Atlas**: An automated codebase map ([`.agents/context/codebase_map.md`](./.agents/context/codebase_map.md)) tracks symbols and invariants across all layers, verified continuously via `analysis/verify_codebase_map.py`.
+- **Contributing**: If you wish to contribute, please refer to the workflow defined in [`AGENTS.md`](./AGENTS.md) to understand the local verification and PR creation process.
 
 ---
 
@@ -250,4 +266,4 @@ This repository follows a structured engineering workflow documented in [`AGENTS
 ## License
 
 This project is open-source under the [MIT License](https://opensource.org/licenses/MIT).
-
+
