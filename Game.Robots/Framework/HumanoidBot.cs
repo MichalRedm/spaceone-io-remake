@@ -12,6 +12,7 @@ namespace Game.Robots.Framework
         public BotParameters Parameters { get; private set; } = new BotParameters();
         
         public VirtualCursor Cursor { get; private set; }
+        public OffScreenTracker OffScreenTracker { get; private set; }
         
         // Sensors
         public SensorFleets SensorFleets { get; private set; }
@@ -24,11 +25,13 @@ namespace Game.Robots.Framework
         private List<IStrategy> _strategies = new List<IStrategy>();
         public IStrategy ActiveStrategy { get; private set; }
         private long _lastStrategyChange = 0;
+
         public HumanoidBot() : base()
         {
-            Name = "Galactica";
+            Name = "Robot";
             
             Cursor = new VirtualCursor(this);
+            OffScreenTracker = new OffScreenTracker(this);
             
             _sensors.Add(SensorFleets = new SensorFleets(this));
             _sensors.Add(SensorBullets = new SensorBullets(this));
@@ -38,13 +41,15 @@ namespace Game.Robots.Framework
             // Load Strategies
             _strategies.Add(new Strategies.CruisingStrategy());
             _strategies.Add(new Strategies.EngageStrategy());
-            // _strategies.Add(new Strategies.EscapeStrategy()); // Disabled, completely folded into EngageStrategy
-            // _strategies.Add(new Strategies.SynchronousBoostStrategy()); // Disabled for now
         }
 
         protected override Task OnSpawnAsync()
         {
-            Log("HumanoidBot Galactica spawned!");
+            // Apply skill and personality variance seeded by the bot's name
+            Parameters.ApplySkillLevel(Parameters.SkillLevel, Parameters.Playstyle, Name?.GetHashCode());
+            OffScreenTracker.Clear();
+
+            Log($"HumanoidBot '{Name}' spawned (Level: {Parameters.SkillLevel:F2}, Style: {Parameters.Playstyle})!");
             return base.OnSpawnAsync();
         }
 
@@ -59,7 +64,10 @@ namespace Game.Robots.Framework
                 sensor.Sense();
             }
 
-            // 2. Evaluate Strategies
+            // 2. Update Off-Screen Perception Belief State
+            OffScreenTracker.Update(GameTime);
+
+            // 3. Evaluate Strategies
             IStrategy bestStrategy = ActiveStrategy;
             float bestUtility = ActiveStrategy?.EvaluateUtility(this) ?? -1f;
 
@@ -86,10 +94,9 @@ namespace Game.Robots.Framework
             {
                 ActiveStrategy = bestStrategy;
                 _lastStrategyChange = GameTime;
-                // Log($"Strategy switched to: {bestStrategy?.GetType().Name} (Utility: {bestUtility:F2})");
             }
 
-            // 3. Execute Strategy
+            // 4. Execute Strategy
             ActiveStrategy?.Execute(this);
 
             // Emergency Danger Zone Override: If we are already in the danger zone, steer directly to arena center
@@ -98,12 +105,103 @@ namespace Game.Robots.Framework
                 Cursor.SetTarget(Vector2.Zero);
             }
 
-            // 4. Update Virtual Cursor and apply steering
+            // 5. Update Virtual Cursor and apply steering
             Cursor.Update(GameTime);
             var target = Cursor.GetRelativePosition();
             SteerPointRelative(target);
 
             return base.AliveAsync();
+        }
+
+        public bool IsPointInViewport(Vector2 worldPos, float margin = 0f)
+        {
+            var offset = worldPos - Position;
+            return MathF.Abs(offset.X) <= (Parameters.ViewportWidth / 2f) + margin &&
+                   MathF.Abs(offset.Y) <= (Parameters.ViewportHeight / 2f) + margin;
+        }
+
+        public float EffectiveBulletSpeed
+        {
+            get
+            {
+                var hook = HookComputer?.Hook ?? Connection?.Hook;
+                int shipCount = Math.Max(1, SensorFleets.MyFleet?.Ships.Count ?? 1);
+                float thrustConverter = hook?.ShotThrustConverter ?? 0.00156f;
+                float shotThrust = 20f;
+                if (hook?.ShotThrust != null && shipCount < hook.ShotThrust.Length)
+                    shotThrust = hook.ShotThrust[shipCount];
+                else
+                    shotThrust = 41.00f * MathF.Pow(shipCount, -0.2633f);
+
+                return shotThrust * thrustConverter * 10f;
+            }
+        }
+
+        public Vector2? LeaderPosition
+        {
+            get
+            {
+                var entries = Leaderboard?.Entries;
+                if (entries != null && entries.Count > 0)
+                {
+                    var first = entries[0];
+                    if (first != null && first.FleetID != FleetID && first.Position != Vector2.Zero)
+                    {
+                        return first.Position;
+                    }
+                }
+                return null;
+            }
+        }
+
+        public uint? LeaderFleetID
+        {
+            get
+            {
+                var entries = Leaderboard?.Entries;
+                if (entries != null && entries.Count > 0)
+                {
+                    var first = entries[0];
+                    if (first != null && first.FleetID != FleetID)
+                    {
+                        return first.FleetID;
+                    }
+                }
+                return null;
+            }
+        }
+
+        public Vector2 ComputeHumanAimPoint(Vector2 targetPos, Vector2 targetVel)
+        {
+            // 1. Kinematic intercept
+            var interceptPoint = InterceptionMath.CalculateInterceptPoint(Position, EffectiveBulletSpeed, targetPos, targetVel);
+            
+            // 2. Blend with direct target position based on skill
+            var predictedAimPoint = Vector2.Lerp(targetPos, interceptPoint, Parameters.PredictiveAimFactor);
+
+            // 3. Blend with flight direction (beginners shoot where flying)
+            var myMomentum = SensorFleets.MyFleet?.Momentum ?? Vector2.Zero;
+            if (Parameters.AimInFlightDirectionWeight > 0.001f && myMomentum.LengthSquared() > 0.001f)
+            {
+                var flightDirPoint = Position + Vector2.Normalize(myMomentum) * 600f;
+                predictedAimPoint = Vector2.Lerp(predictedAimPoint, flightDirPoint, Parameters.AimInFlightDirectionWeight);
+            }
+
+            // 4. Human angular jitter / inaccuracy
+            if (Parameters.AimJitter > 0.001f)
+            {
+                var toAim = predictedAimPoint - Position;
+                float dist = toAim.Length();
+                if (dist > 0.001f)
+                {
+                    float baseAngle = MathF.Atan2(toAim.Y, toAim.X);
+                    float jitter = (float)(Random.Shared.NextDouble() * 2.0 - 1.0) * Parameters.AimJitter;
+                    float jitteredAngle = baseAngle + jitter;
+                    predictedAimPoint = Position + new Vector2(MathF.Cos(jitteredAngle), MathF.Sin(jitteredAngle)) * dist;
+                }
+            }
+
+            return predictedAimPoint;
         }
 
         public float EffectiveWorldSize => WorldSize > 0 ? (float)WorldSize : 3000f;

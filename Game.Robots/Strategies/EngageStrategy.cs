@@ -7,37 +7,37 @@ namespace Game.Robots.Strategies
 
     public class EngageStrategy : IStrategy
     {
-        private Game.Robots.Models.Fleet _targetFleet;
+        private uint _targetFleetId = 0;
 
         public float EvaluateUtility(HumanoidBot bot)
         {
             var myFleet = bot.SensorFleets.MyFleet;
             if (myFleet == null || myFleet.Ships.Count == 0) return -1f;
 
-            var enemies = bot.SensorFleets.Others;
-            Game.Robots.Models.Fleet bestEnemy = null;
+            TrackedEnemy bestEnemy = null;
             float maxUtility = -1f;
             float hysteresis = 0.2f * bot.Parameters.EngageUtilityMultiplier;
 
-            foreach (var enemy in enemies)
+            // Evaluate both directly visible and tracked off-screen enemies
+            foreach (var enemy in bot.OffScreenTracker.TrackedEnemies)
             {
-                float distance = Vector2.Distance(myFleet.Center, enemy.Center);
+                if (enemy.Certainty <= 0.05f) continue;
+
+                float distance = Vector2.Distance(myFleet.Center, enemy.EstimatedPosition);
                 if (distance > 1500f) continue;
 
-                // Unified combat utility: we care about any enemy that is close, regardless of size.
-                // At 1500 distance, utility is 0. At 0 distance, utility is EngageUtilityMultiplier.
+                // Unified combat utility scaled by certainty (1.0 = visible, decaying = off-screen)
                 float distanceUtility = 1.0f - (distance / 1500f);
                 
-                // Add a small bonus if the enemy is either very weak (prey) or very strong (threat)
-                float ratio = (float)myFleet.Ships.Count / Math.Max(1, enemy.Ships.Count);
+                float ratio = (float)myFleet.Ships.Count / Math.Max(1, enemy.ShipCount);
                 float urgencyBonus = 0f;
                 if (ratio < 0.6f) urgencyBonus = 0.2f; // Threat!
                 else if (ratio > 1.5f) urgencyBonus = 0.2f; // Prey!
                 
-                float utility = (distanceUtility + urgencyBonus) * bot.Parameters.EngageUtilityMultiplier;
+                float utility = (distanceUtility + urgencyBonus) * bot.Parameters.EngageUtilityMultiplier * enemy.Certainty;
 
                 // Apply target lock hysteresis to prevent rapid switching between equal targets
-                if (_targetFleet != null && enemy.ID == _targetFleet.ID)
+                if (_targetFleetId != 0 && enemy.FleetID == _targetFleetId)
                 {
                     utility += hysteresis;
                 }
@@ -59,10 +59,15 @@ namespace Game.Robots.Strategies
             if (hasIncomingBullets && maxUtility < bot.Parameters.EngageUtilityMultiplier)
             {
                 maxUtility = bot.Parameters.EngageUtilityMultiplier * 1.5f; // Prioritize combat/dodging movement
-                if (bestEnemy == null) bestEnemy = enemies.OrderBy(e => Vector2.Distance(e.Center, myFleet.Center)).FirstOrDefault();
+                if (bestEnemy == null)
+                {
+                    bestEnemy = bot.OffScreenTracker.TrackedEnemies
+                        .OrderBy(e => Vector2.Distance(e.EstimatedPosition, myFleet.Center))
+                        .FirstOrDefault();
+                }
             }
 
-            _targetFleet = bestEnemy;
+            _targetFleetId = bestEnemy?.FleetID ?? 0;
             return maxUtility;
         }
 
@@ -72,48 +77,54 @@ namespace Game.Robots.Strategies
         public void Execute(HumanoidBot bot)
         {
             var myFleet = bot.SensorFleets.MyFleet;
-            float distance = _targetFleet != null ? Vector2.Distance(myFleet.Center, _targetFleet.Center) : float.MaxValue;
+            if (myFleet == null || myFleet.Ships.Count == 0) return;
+
+            TrackedEnemy target = _targetFleetId != 0 ? bot.OffScreenTracker.Get(_targetFleetId) : null;
+            float distance = target != null ? Vector2.Distance(myFleet.Center, target.EstimatedPosition) : float.MaxValue;
 
             Vector2 predictedPosition = Vector2.Zero;
-            if (_targetFleet != null)
+            if (target != null)
             {
-                // Compute predictive aim point
-                var relativeVelocity = _targetFleet.Momentum - myFleet.Momentum; 
-                float bulletSpeed = 11f; 
-                float timeToTarget = distance / bulletSpeed;
-                predictedPosition = _targetFleet.Center + (relativeVelocity * timeToTarget * bot.Parameters.PredictiveAimFactor);
+                // Compute human-like aim point (kinematic interception + flight direction bias + aim jitter)
+                predictedPosition = bot.ComputeHumanAimPoint(target.EstimatedPosition, target.EstimatedVelocity);
             }
 
             // 1. OFFENSIVE DASH (KILLER INSTINCT):
-            // When enemy has a small fleet (<= 5 ships), we have a decisive advantage (>= 1.2x),
-            // or the enemy is actively fleeing, DASH STRAIGHT AT THEM to close the distance and execute!
-            bool canOffensiveDash = bot.CanBoost && myFleet.Ships.Count >= bot.Parameters.MinimumShipsToOffensiveDash;
-            if (_targetFleet != null && canOffensiveDash && distance > 180f && distance < 950f)
+            // Only players with offensive dash enabled (intermediate/pro) execute aggressive forward dashes
+            bool canOffensiveDash = bot.CanBoost 
+                && bot.Parameters.OffensiveDashEnabled
+                && myFleet.Ships.Count >= bot.Parameters.MinimumShipsToOffensiveDash;
+
+            if (target != null && canOffensiveDash && target.Certainty > 0.7f && distance > 180f && distance < 950f)
             {
-                bool isSmallEnemy = _targetFleet.Ships.Count <= 5;
-                bool hasDecisiveAdvantage = myFleet.Ships.Count >= _targetFleet.Ships.Count * 1.2f;
-                bool isEnemyFleeing = Vector2.Dot(_targetFleet.Momentum, _targetFleet.Center - myFleet.Center) > 0;
-
-                // Ensure the dash won't propel us out of the arena into the danger zone
-                var toEnemy = Vector2.Normalize(_targetFleet.Center - myFleet.Center);
-                var projectedPos = myFleet.Center + toEnemy * 700f;
-                bool isDashSafe = MathF.Abs(projectedPos.X) < bot.EffectiveWorldSize - 350f 
-                               && MathF.Abs(projectedPos.Y) < bot.EffectiveWorldSize - 350f;
-
-                if (isDashSafe && (isSmallEnemy || hasDecisiveAdvantage || (isEnemyFleeing && myFleet.Ships.Count >= 4)))
+                // Check boost hesitancy
+                bool hesitates = bot.Parameters.BoostHesitancy > 0.001f && (Random.Shared.NextDouble() < bot.Parameters.BoostHesitancy);
+                if (!hesitates)
                 {
-                    bot.Cursor.SetTarget(predictedPosition, speed: bot.Parameters.FlickAimSpeed);
-                    // Wait for the virtual cursor to actually align before boosting!
-                    if (bot.Cursor.IsAimedAt(predictedPosition, 0.35f))
+                    bool isSmallEnemy = target.ShipCount <= 5;
+                    bool hasDecisiveAdvantage = myFleet.Ships.Count >= target.ShipCount * 1.2f;
+                    bool isEnemyFleeing = Vector2.Dot(target.EstimatedVelocity, target.EstimatedPosition - myFleet.Center) > 0;
+
+                    // Ensure the dash won't propel us out of the arena into the danger zone
+                    var toEnemy = Vector2.Normalize(target.EstimatedPosition - myFleet.Center);
+                    var projectedPos = myFleet.Center + toEnemy * 700f;
+                    bool isDashSafe = MathF.Abs(projectedPos.X) < bot.EffectiveWorldSize - 350f 
+                                   && MathF.Abs(projectedPos.Y) < bot.EffectiveWorldSize - 350f;
+
+                    if (isDashSafe && (isSmallEnemy || hasDecisiveAdvantage || (isEnemyFleeing && myFleet.Ships.Count >= 4)))
                     {
-                        bot.Boost();
+                        bot.Cursor.SetTarget(predictedPosition, speed: bot.Parameters.FlickAimSpeed);
+                        if (bot.Cursor.IsAimedAt(predictedPosition, 0.35f))
+                        {
+                            bot.Boost();
+                        }
                     }
                 }
             }
 
             // 2. AIMING & SHOOTING PHASE:
-            // When shot is almost ready (CooldownShoot <= 0.15f) or ready (CanShoot), rapidly flick mouse onto opponent!
-            bool isAimingToShoot = _targetFleet != null && (bot.CanShoot || bot.CooldownShoot <= 0.15f || (bot.GameTime - _lastShotTime < 40));
+            // When shot is almost ready (CooldownShoot <= 0.15f) or ready (CanShoot), move mouse onto opponent
+            bool isAimingToShoot = target != null && (bot.CanShoot || bot.CooldownShoot <= 0.15f || (bot.GameTime - _lastShotTime < 40));
 
             if (isAimingToShoot)
             {
@@ -122,12 +133,12 @@ namespace Game.Robots.Strategies
                     _flickStartTime = bot.GameTime;
                 }
 
-                // Rapid wrist flick (high speed Lerp) directly onto the enemy
+                // Cursor tracking speed (snappy wrist flick for pros, slower tracking for noobs)
                 bot.Cursor.SetTarget(predictedPosition, speed: bot.Parameters.FlickAimSpeed);
 
                 long flickDuration = bot.GameTime - _flickStartTime;
 
-                // Fire the instant crosshair aligns on target or flick has completed
+                // Fire when crosshair aligns on target or flick has completed
                 if (bot.CanShoot && (bot.Cursor.IsAimedAt(predictedPosition, 0.35f) || flickDuration > 75))
                 {
                     bot.ShootAt(predictedPosition);
@@ -141,10 +152,10 @@ namespace Game.Robots.Strategies
 
                 Vector2 moveDir = new Vector2(1, 0);
                 
-                if (_targetFleet != null)
+                if (target != null)
                 {
-                    float ratio = (float)myFleet.Ships.Count / Math.Max(1, _targetFleet.Ships.Count);
-                    var toEnemy = _targetFleet.Center - myFleet.Center;
+                    float ratio = (float)myFleet.Ships.Count / Math.Max(1, target.ShipCount);
+                    var toEnemy = target.EstimatedPosition - myFleet.Center;
                     if (toEnemy != Vector2.Zero)
                     {
                         var perp = new Vector2(-toEnemy.Y, toEnemy.X); // 90 degree tangent
@@ -153,10 +164,10 @@ namespace Game.Robots.Strategies
                         float radialWeight = Math.Clamp((ratio - 0.8f) * 2.0f, -1.0f, 1.0f); 
                         float tangentialWeight = 1.0f - Math.Abs(radialWeight);
                         
-                        // If the enemy is too far away, add a slight forward bias to get into engagement range
+                        // If the enemy is too far away, add a forward bias to get into engagement range
                         if (distance > bot.Parameters.PursuitDistance && radialWeight > -0.5f)
                         {
-                            radialWeight = Math.Max(radialWeight, 0.6f); // increased forward bias
+                            radialWeight = Math.Max(radialWeight, 0.6f);
                             tangentialWeight = 1.0f - Math.Abs(radialWeight);
                         }
 
@@ -166,12 +177,20 @@ namespace Game.Robots.Strategies
                         moveDir = Vector2.Normalize(radialVec + tangVec);
                         
                         // Defensive dash if fleeing from overwhelming threat
-                        if (ratio < 0.4f && distance < 450f && bot.CanBoost && myFleet.Ships.Count >= bot.Parameters.MinimumShipsToDefensiveDash)
+                        bool canDefensiveDash = bot.CanBoost
+                            && bot.Parameters.DefensiveDashEnabled
+                            && myFleet.Ships.Count >= bot.Parameters.MinimumShipsToDefensiveDash;
+
+                        if (ratio < 0.4f && distance < 450f && canDefensiveDash)
                         {
-                            bot.Cursor.SetTarget(myFleet.Center + moveDir * 600f, speed: bot.Parameters.FlickAimSpeed);
-                            if (bot.Cursor.IsAimedAt(myFleet.Center + moveDir * 600f, 0.4f))
+                            bool hesitates = bot.Parameters.BoostHesitancy > 0.001f && (Random.Shared.NextDouble() < bot.Parameters.BoostHesitancy);
+                            if (!hesitates)
                             {
-                                bot.Boost();
+                                bot.Cursor.SetTarget(myFleet.Center + moveDir * 600f, speed: bot.Parameters.FlickAimSpeed);
+                                if (bot.Cursor.IsAimedAt(myFleet.Center + moveDir * 600f, 0.4f))
+                                {
+                                    bot.Boost();
+                                }
                             }
                         }
                     }
@@ -208,12 +227,20 @@ namespace Game.Robots.Strategies
                     moveDir = Vector2.Normalize(moveDir + bulletDodge);
                     
                     // Defensive dash if overwhelmed by close bullets
-                    if (closeBullets >= 2 && bot.CanBoost && myFleet.Ships.Count >= bot.Parameters.MinimumShipsToDefensiveDash)
+                    bool canDefensiveDash = bot.CanBoost
+                        && bot.Parameters.DefensiveDashEnabled
+                        && myFleet.Ships.Count >= bot.Parameters.MinimumShipsToDefensiveDash;
+
+                    if (closeBullets >= 2 && canDefensiveDash)
                     {
-                        bot.Cursor.SetTarget(myFleet.Center + moveDir * 600f, speed: bot.Parameters.FlickAimSpeed);
-                        if (bot.Cursor.IsAimedAt(myFleet.Center + moveDir * 600f, 0.4f))
+                        bool hesitates = bot.Parameters.BoostHesitancy > 0.001f && (Random.Shared.NextDouble() < bot.Parameters.BoostHesitancy);
+                        if (!hesitates)
                         {
-                            bot.Boost();
+                            bot.Cursor.SetTarget(myFleet.Center + moveDir * 600f, speed: bot.Parameters.FlickAimSpeed);
+                            if (bot.Cursor.IsAimedAt(myFleet.Center + moveDir * 600f, 0.4f))
+                            {
+                                bot.Boost();
+                            }
                         }
                     }
                 }

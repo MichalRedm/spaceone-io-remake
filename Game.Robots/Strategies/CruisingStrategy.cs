@@ -9,6 +9,7 @@ namespace Game.Robots.Strategies
     {
         private Vector2 _wanderTarget = Vector2.Zero;
         private long _lastWanderUpdate = 0;
+        private bool _isHuntingLeader = false;
 
         public float EvaluateUtility(HumanoidBot bot)
         {
@@ -20,7 +21,7 @@ namespace Game.Robots.Strategies
 
         public void Execute(HumanoidBot bot)
         {
-            // Find closest food or abandoned ship strictly within safe arena bounds
+            // Find closest food or abandoned ship strictly within safe arena bounds AND on-screen viewport
             float safeFoodLimit = bot.EffectiveWorldSize - 400f;
             
             Game.Robots.Models.Ship closestTarget = null;
@@ -30,7 +31,10 @@ namespace Game.Robots.Strategies
 
             void ProcessTarget(Game.Robots.Models.Ship t)
             {
-                if (MathF.Abs(t.Position.X) < safeFoodLimit && MathF.Abs(t.Position.Y) < safeFoodLimit)
+                // Human players only see and target food/abandoned ships that appear on their screen
+                if (bot.IsPointInViewport(t.Position, margin: 60f) 
+                    && MathF.Abs(t.Position.X) < safeFoodLimit 
+                    && MathF.Abs(t.Position.Y) < safeFoodLimit)
                 {
                     float distSq = Vector2.DistanceSquared(t.Position, bot.Position);
                     if (distSq < closestDistSq)
@@ -69,13 +73,13 @@ namespace Game.Robots.Strategies
                 _lockedFishTarget = null;
             }
 
-            if (target != null)
+            // DEFENSIVE SHOOTING CHECK (against nearby enemies during cruising)
+            var enemies = bot.SensorFleets.Others;
+            Game.Robots.Models.Fleet dangerousEnemy = null;
+            float minEnemyDistSq = float.MaxValue;
+            foreach (var e in enemies)
             {
-                // DEFENSIVE FLICK SHOOTING
-                var enemies = bot.SensorFleets.Others;
-                Game.Robots.Models.Fleet dangerousEnemy = null;
-                float minEnemyDistSq = float.MaxValue;
-                foreach (var e in enemies)
+                if (bot.IsPointInViewport(e.Center, margin: 150f))
                 {
                     float distSq = Vector2.DistanceSquared(e.Center, bot.Position);
                     if (distSq < minEnemyDistSq)
@@ -84,102 +88,96 @@ namespace Game.Robots.Strategies
                         dangerousEnemy = e;
                     }
                 }
-                
-                bool isAimingAtEnemy = false;
-                if (dangerousEnemy != null && Vector2.Distance(dangerousEnemy.Center, bot.Position) < bot.Parameters.SafeDistance * 2)
+            }
+            
+            bool isAimingAtEnemy = false;
+            if (dangerousEnemy != null && Vector2.Distance(dangerousEnemy.Center, bot.Position) < bot.Parameters.SafeDistance * 2)
+            {
+                if (bot.CanShoot || bot.CooldownShoot <= 0.15f)
                 {
-                    if (bot.CanShoot || bot.CooldownShoot <= 0.15f)
+                    isAimingAtEnemy = true;
+                    var predictedPosition = bot.ComputeHumanAimPoint(dangerousEnemy.Center, dangerousEnemy.Momentum);
+                    
+                    bot.Cursor.SetTarget(predictedPosition, speed: bot.Parameters.FlickAimSpeed);
+                    
+                    if (bot.CanShoot && (bot.Cursor.IsAimedAt(predictedPosition, 0.4f) || bot.CooldownShoot <= 0f))
                     {
-                        isAimingAtEnemy = true;
-                        var relativeVelocity = dangerousEnemy.Momentum - (bot.SensorFleets.MyFleet?.Momentum ?? Vector2.Zero);
-                        float distanceToEnemy = Vector2.Distance(dangerousEnemy.Center, bot.Position);
-                        var predictedPosition = dangerousEnemy.Center + (relativeVelocity * (distanceToEnemy / 11f) * bot.Parameters.PredictiveAimFactor);
-                        
-                        bot.Cursor.SetTarget(predictedPosition, speed: bot.Parameters.FlickAimSpeed);
-                        
-                        if (bot.CanShoot && (bot.Cursor.IsAimedAt(predictedPosition, 0.4f) || bot.CooldownShoot <= 0f))
-                        {
-                            bot.ShootAt(predictedPosition);
-                        }
+                        bot.ShootAt(predictedPosition);
                     }
                 }
+            }
 
-                if (!isAimingAtEnemy)
+            if (target != null && !isAimingAtEnemy)
+            {
+                bot.Cursor.SetTarget(bot.ClampToSafePlayableArea(target.Position), speed: bot.Parameters.CruisingSpeed);
+
+                // Shoot at food if our fleet hasn't reached target size, or ALWAYS shoot if it's an abandoned ship.
+                // Beginners aim to grow huge swarms (40-60+ ships), while pros stop farming early (12-25 ships) to stay agile.
+                int currentFleetSize = bot.SensorFleets.MyFleet?.Ships.Count ?? 0;
+                bool isAbandoned = bot.SensorAbandoned.AllVisibleAbandoned.Any(a => a.ID == target.ID);
+                
+                if (isAbandoned || (currentFleetSize > 0 && currentFleetSize < bot.Parameters.TargetFleetSize))
                 {
-                    bot.Cursor.SetTarget(bot.ClampToSafePlayableArea(target.Position), speed: bot.Parameters.CruisingSpeed);
-
-                    // Shoot at food if our fleet is too small, or ALWAYS shoot if it's an abandoned ship (huge value)
-                    int currentFleetSize = bot.SensorFleets.MyFleet?.Ships.Count ?? 0;
-                    bool isAbandoned = bot.SensorAbandoned.AllVisibleAbandoned.Any(a => a.ID == target.ID);
-                    
-                    if (isAbandoned || (currentFleetSize > 0 && currentFleetSize < bot.Parameters.TargetFleetSize))
+                    if (bot.CanShoot && Vector2.Distance(target.Position, bot.Position) < 1500)
                     {
-                        if (bot.CanShoot && Vector2.Distance(target.Position, bot.Position) < 1500)
+                        if (bot.Cursor.IsAimedAt(target.Position, 0.25f))
                         {
-                            // Wait until the cursor actually aligns with the target before pulling the trigger
-                            if (bot.Cursor.IsAimedAt(target.Position, 0.25f))
-                            {
-                                bot.ShootAt(target.Position);
-                            }
+                            bot.ShootAt(target.Position);
                         }
                     }
                 }
             }
-            else
+            else if (!isAimingAtEnemy)
             {
-                // Wander safely: If near danger zone, immediately steer towards center of arena
+                // Wander safely or participate in King Hunt (following leader arrow)
                 if (bot.IsNearDangerZone())
                 {
                     _wanderTarget = Vector2.Zero;
                     _lastWanderUpdate = bot.GameTime;
+                    _isHuntingLeader = false;
                 }
                 else if (bot.GameTime - _lastWanderUpdate > 3500 || _wanderTarget == Vector2.Zero)
                 {
-                    // Pick a random target within safe bounds, spreading out nicely
-                    float roamLimit = Math.Max(100f, bot.EffectiveWorldSize - bot.Parameters.DangerZoneBuffer - 100f);
-                    float rx = (float)(Random.Shared.NextDouble() * 2 - 1) * roamLimit;
-                    float ry = (float)(Random.Shared.NextDouble() * 2 - 1) * roamLimit;
-                    _wanderTarget = new Vector2(rx, ry);
+                    int currentFleetSize = bot.SensorFleets.MyFleet?.Ships.Count ?? 0;
+                    bool canHuntLeader = bot.LeaderPosition.HasValue 
+                        && bot.LeaderFleetID.HasValue
+                        && bot.LeaderFleetID.Value != bot.FleetID;
+
+                    // Evaluate King Hunt tendency:
+                    // Cautious bots avoid leader when small; aggressive/kinghunter bots pursue leader enthusiastically
+                    bool shouldHuntLeader = canHuntLeader 
+                        && (Random.Shared.NextDouble() < bot.Parameters.LeaderHuntTendency);
+
+                    if (bot.Parameters.Playstyle.Equals("Cautious", StringComparison.OrdinalIgnoreCase) && currentFleetSize < 15)
+                    {
+                        shouldHuntLeader = false;
+                    }
+
+                    if (shouldHuntLeader)
+                    {
+                        _wanderTarget = bot.ClampToSafePlayableArea(bot.LeaderPosition.Value);
+                        _isHuntingLeader = true;
+                    }
+                    else
+                    {
+                        // Pick a random target within safe bounds, spreading out nicely
+                        float roamLimit = Math.Max(100f, bot.EffectiveWorldSize - bot.Parameters.DangerZoneBuffer - 100f);
+                        float rx = (float)(Random.Shared.NextDouble() * 2 - 1) * roamLimit;
+                        float ry = (float)(Random.Shared.NextDouble() * 2 - 1) * roamLimit;
+                        _wanderTarget = new Vector2(rx, ry);
+                        _isHuntingLeader = false;
+                    }
+
                     _lastWanderUpdate = bot.GameTime;
                 }
 
-                // DEFENSIVE FLICK SHOOTING (while wandering)
-                var enemies = bot.SensorFleets.Others;
-                Game.Robots.Models.Fleet dangerousEnemy = null;
-                float minEnemyDistSq = float.MaxValue;
-                foreach (var e in enemies)
+                // If currently hunting leader, keep refreshing target towards the leader's dynamic position
+                if (_isHuntingLeader && bot.LeaderPosition.HasValue)
                 {
-                    float distSq = Vector2.DistanceSquared(e.Center, bot.Position);
-                    if (distSq < minEnemyDistSq)
-                    {
-                        minEnemyDistSq = distSq;
-                        dangerousEnemy = e;
-                    }
-                }
-                
-                bool isAimingAtEnemy = false;
-                if (dangerousEnemy != null && Vector2.Distance(dangerousEnemy.Center, bot.Position) < bot.Parameters.SafeDistance * 2)
-                {
-                    if (bot.CanShoot || bot.CooldownShoot <= 0.15f)
-                    {
-                        isAimingAtEnemy = true;
-                        var relativeVelocity = dangerousEnemy.Momentum - (bot.SensorFleets.MyFleet?.Momentum ?? Vector2.Zero);
-                        float distanceToEnemy = Vector2.Distance(dangerousEnemy.Center, bot.Position);
-                        var predictedPosition = dangerousEnemy.Center + (relativeVelocity * (distanceToEnemy / 11f) * bot.Parameters.PredictiveAimFactor);
-                        
-                        bot.Cursor.SetTarget(predictedPosition, speed: bot.Parameters.FlickAimSpeed);
-                        
-                        if (bot.CanShoot && (bot.Cursor.IsAimedAt(predictedPosition, 0.4f) || bot.CooldownShoot <= 0f))
-                        {
-                            bot.ShootAt(predictedPosition);
-                        }
-                    }
+                    _wanderTarget = bot.ClampToSafePlayableArea(bot.LeaderPosition.Value);
                 }
 
-                if (!isAimingAtEnemy)
-                {
-                    bot.Cursor.SetTarget(bot.ClampToSafePlayableArea(_wanderTarget), speed: bot.Parameters.CruisingSpeed);
-                }
+                bot.Cursor.SetTarget(bot.ClampToSafePlayableArea(_wanderTarget), speed: bot.Parameters.CruisingSpeed);
             }
         }
     }
