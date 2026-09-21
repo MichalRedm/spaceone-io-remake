@@ -69,6 +69,12 @@ namespace Game.Util.Commands
             [Option("--bot-params")]
             public string BotParams { get; set; } = null;
 
+            [Option("--level", Description = "Skill level from 0.0 (noob) to 1.0 (pro) for HumanoidBot")]
+            public float? SkillLevel { get; set; } = null;
+
+            [Option("--playstyle", Description = "Playstyle for HumanoidBot (Balanced, Aggressive, Cautious, KingHunter, Swarm)")]
+            public string Playstyle { get; set; } = null;
+
             [Option("--batch")]
             public string Batch { get; set; } = null;
 
@@ -164,6 +170,15 @@ namespace Game.Util.Commands
                         if (!string.IsNullOrWhiteSpace(botParamsToUse))
                         {
                             Newtonsoft.Json.JsonConvert.PopulateObject(botParamsToUse, hb.Parameters);
+                        }
+
+                        if (SkillLevel.HasValue)
+                        {
+                            hb.Parameters.SkillLevel = SkillLevel.Value;
+                        }
+                        if (!string.IsNullOrWhiteSpace(Playstyle))
+                        {
+                            hb.Parameters.Playstyle = Playstyle;
                         }
                     }
 

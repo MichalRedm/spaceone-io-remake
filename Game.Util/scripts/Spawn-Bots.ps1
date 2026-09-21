@@ -1,5 +1,6 @@
 param (
-    [int]$NumPlayers = 40
+    [int]$NumPlayers = 40,
+    [string]$SkillDistribution = "mixed" # mixed, noob, pro, intermediate
 )
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
@@ -23,9 +24,10 @@ if (-Not (Test-Path $executable)) {
 
 $botProcesses = @()
 
-Write-Host "Spawning $NumPlayers bots... (Press CTRL+C at any time to terminate all spawned bots)"
+Write-Host "Spawning $NumPlayers bots (Distribution: $SkillDistribution)... (Press CTRL+C at any time to terminate all spawned bots)"
 
 $batchEntries = @()
+$playstyles = @("Balanced", "Balanced", "Aggressive", "Cautious", "KingHunter", "Swarm")
 
 try {
     foreach ($name in $names) {
@@ -38,21 +40,36 @@ try {
         
         $rand = New-Object System.Random($seed)
         
-        $offDash = $rand.Next(10, 31)
-        $defDash = $rand.Next(5, 16)
-        $targetFleet = $rand.Next(5, 50)
-        $flickAim = $rand.Next(85, 100) / 100.0
-        $cruiseSpeed = $rand.Next(15, 30) / 100.0
-        $safeDist = $rand.Next(400, 700)
-        $overshoot = $rand.Next(10, 15) / 10.0
-        $curve = $rand.Next(1, 6) / 10.0
-
-        $flickAimStr = $flickAim.ToString([System.Globalization.CultureInfo]::InvariantCulture)
-        $cruiseSpeedStr = $cruiseSpeed.ToString([System.Globalization.CultureInfo]::InvariantCulture)
-        $overshootStr = $overshoot.ToString([System.Globalization.CultureInfo]::InvariantCulture)
-        $curveStr = $curve.ToString([System.Globalization.CultureInfo]::InvariantCulture)
+        # Determine skill level based on distribution
+        $skill = 0.5
+        switch ($SkillDistribution.ToLowerInvariant()) {
+            "noob" {
+                $skill = 0.05 + ($rand.NextDouble() * 0.25) # 0.05 - 0.30
+            }
+            "pro" {
+                $skill = 0.75 + ($rand.NextDouble() * 0.23) # 0.75 - 0.98
+            }
+            "intermediate" {
+                $skill = 0.35 + ($rand.NextDouble() * 0.35) # 0.35 - 0.70
+            }
+            default {
+                # Mixed lobby: 30% noobs, 45% intermediate, 25% pro
+                $pct = $rand.NextDouble()
+                if ($pct -lt 0.30) {
+                    $skill = 0.05 + ($rand.NextDouble() * 0.30) # 0.05 - 0.35
+                } elseif ($pct -lt 0.75) {
+                    $skill = 0.35 + ($rand.NextDouble() * 0.35) # 0.35 - 0.70
+                } else {
+                    $skill = 0.70 + ($rand.NextDouble() * 0.28) # 0.70 - 0.98
+                }
+            }
+        }
         
-        $jsonParams = "{ 'MinimumShipsToOffensiveDash': $offDash, 'MinimumShipsToDefensiveDash': $defDash, 'TargetFleetSize': $targetFleet, 'FlickAimSpeed': $flickAimStr, 'CruisingSpeed': $cruiseSpeedStr, 'SafeDistance': $safeDist, 'OvershootFactor': $overshootStr, 'CurveAmount': $curveStr }"
+        $styleIndex = $rand.Next(0, $playstyles.Length)
+        $playstyle = $playstyles[$styleIndex]
+        
+        $skillStr = [Math]::Round($skill, 3).ToString([System.Globalization.CultureInfo]::InvariantCulture)
+        $jsonParams = "{ 'SkillLevel': $skillStr, 'Playstyle': '$playstyle' }"
         
         $batchEntries += @{
             Name = $name
