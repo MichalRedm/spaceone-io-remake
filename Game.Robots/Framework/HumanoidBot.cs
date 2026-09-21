@@ -176,18 +176,10 @@ namespace Game.Robots.Framework
             // 1. Kinematic intercept
             var interceptPoint = InterceptionMath.CalculateInterceptPoint(Position, EffectiveBulletSpeed, targetPos, targetVel);
             
-            // 2. Blend with direct target position based on skill
+            // 2. Blend with direct target position based on skill (1.0 = pro lead, 0.0 = direct at enemy)
             var predictedAimPoint = Vector2.Lerp(targetPos, interceptPoint, Parameters.PredictiveAimFactor);
 
-            // 3. Blend with flight direction (beginners shoot where flying)
-            var myMomentum = SensorFleets.MyFleet?.Momentum ?? Vector2.Zero;
-            if (Parameters.AimInFlightDirectionWeight > 0.001f && myMomentum.LengthSquared() > 0.001f)
-            {
-                var flightDirPoint = Position + Vector2.Normalize(myMomentum) * 600f;
-                predictedAimPoint = Vector2.Lerp(predictedAimPoint, flightDirPoint, Parameters.AimInFlightDirectionWeight);
-            }
-
-            // 4. Human angular jitter / inaccuracy
+            // 3. Human angular jitter / inaccuracy (higher for noobs, tight for pros)
             if (Parameters.AimJitter > 0.001f)
             {
                 var toAim = predictedAimPoint - Position;

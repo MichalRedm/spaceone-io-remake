@@ -96,7 +96,7 @@ namespace Game.Robots.Strategies
             Vector2 predictedPosition = Vector2.Zero;
             if (target != null)
             {
-                // Compute human-like aim point (kinematic interception + flight direction bias + aim jitter)
+                // Compute human-like aim point (kinematic interception for pros, direct at enemy + jitter for noobs)
                 predictedPosition = bot.ComputeHumanAimPoint(target.EstimatedPosition, target.EstimatedVelocity);
             }
 
@@ -172,15 +172,29 @@ namespace Game.Robots.Strategies
                     {
                         var perp = new Vector2(-toEnemy.Y, toEnemy.X); // 90 degree tangent
 
-                        // Compute continuous graduality based on fleet size ratio
-                        float radialWeight = Math.Clamp((ratio - 0.8f) * 2.0f, -1.0f, 1.0f); 
-                        float tangentialWeight = 1.0f - Math.Abs(radialWeight);
-                        
-                        // If the enemy is too far away, add a forward bias to get into engagement range
-                        if (distance > bot.Parameters.PursuitDistance && radialWeight > -0.5f)
+                        float radialWeight;
+                        float tangentialWeight;
+
+                        if (bot.Parameters.SkillLevel < 0.40f)
                         {
-                            radialWeight = Math.Max(radialWeight, 0.6f);
+                            // Beginners do NOT tactically avoid or kite enemies!
+                            // They charge directly towards the player they are fighting, aiming and shooting at them.
+                            radialWeight = 1.0f;
+                            tangentialWeight = 0.0f;
+                        }
+                        else
+                        {
+                            // Intermediate and pro players: tactical spacing and kiting based on fleet ratio
+                            float retreatThreshold = Math.Clamp(0.3f + 0.5f * bot.Parameters.SkillLevel, 0.4f, 0.85f);
+                            radialWeight = Math.Clamp((ratio - retreatThreshold) * 2.0f, -1.0f, 1.0f);
                             tangentialWeight = 1.0f - Math.Abs(radialWeight);
+
+                            // If the enemy is too far away, add a forward bias to get into engagement range
+                            if (distance > bot.Parameters.PursuitDistance && radialWeight > -0.5f)
+                            {
+                                radialWeight = Math.Max(radialWeight, 0.6f);
+                                tangentialWeight = 1.0f - Math.Abs(radialWeight);
+                            }
                         }
 
                         var radialVec = Vector2.Normalize(toEnemy) * radialWeight;
@@ -188,9 +202,10 @@ namespace Game.Robots.Strategies
 
                         moveDir = Vector2.Normalize(radialVec + tangVec);
                         
-                        // Defensive dash if fleeing from overwhelming threat
+                        // Defensive dash if fleeing from overwhelming threat (only for intermediate/pro)
                         bool canDefensiveDash = bot.CanBoost
                             && bot.Parameters.DefensiveDashEnabled
+                            && bot.Parameters.SkillLevel >= 0.40f
                             && myFleet.Ships.Count >= bot.Parameters.MinimumShipsToDefensiveDash;
 
                         if (ratio < 0.4f && distance < 450f && canDefensiveDash)
