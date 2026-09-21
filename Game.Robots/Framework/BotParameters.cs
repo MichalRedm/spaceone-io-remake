@@ -64,6 +64,8 @@ namespace Game.Robots.Framework
         public float PredictiveAimFactor { get; set; } = 1.0f; // 1.0 = full lead calculation, 0.0 = direct/no lead
         public float AimInFlightDirectionWeight { get; set; } = 0.0f; // 1.0 = shoot where flying (complete noob), 0.0 = decoupled aim
         public float AimJitter { get; set; } = 0.03f; // Angular jitter in radians (imperfect human aim)
+        public float FiringAngleTolerance { get; set; } = 0.25f; // Maximum angular error to pull the trigger
+        public float BulletDodgeSkill { get; set; } = 1.0f; // 1.0 = matrix dodger, 0.0 = noob walks into bullets
 
         // Dash behavior parameters
         public bool OffensiveDashEnabled { get; set; } = true;
@@ -77,7 +79,7 @@ namespace Game.Robots.Framework
         public bool TracksOffscreenBullets { get; set; } = true; // Whether incoming bullets reveal off-screen shooters
 
         // Leader hunt / King hunt parameters
-        public float LeaderHuntTendency { get; set; } = 0.35f; // Tendency to roam towards leader arrow in FFA
+        public float LeaderHuntTendency { get; set; } = 0.50f; // Tendency to roam towards leader arrow in FFA
 
         /// <summary>
         /// Maps a high-level skill level [0.0 - 1.0] and playstyle to low-level behavioral parameters,
@@ -96,41 +98,61 @@ namespace Game.Robots.Framework
             }
 
             // 1. Aiming & Mouse Mechanics:
-            // Beginners: slow mouse, high jitter, aim where flying, 0 prediction
+            // Beginners: slow mouse, high jitter, aim where flying, 0 prediction, loose firing discipline
             // Pros: snappy wrist flicks, tight tracking, kinematic lead prediction, zero flight-direction bias
-            PredictiveAimFactor = Math.Clamp(MathF.Pow(_skillLevel, 1.3f) * Jitter(1.0f, 0.08f), 0f, 1f);
-            AimInFlightDirectionWeight = Math.Clamp((1.0f - MathF.Pow(_skillLevel, 0.7f)) * 0.85f * Jitter(1.0f, 0.12f), 0f, 0.95f);
+            PredictiveAimFactor = Math.Clamp(MathF.Pow(_skillLevel, 1.4f) * Jitter(1.0f, 0.08f), 0f, 1f);
+            AimInFlightDirectionWeight = Math.Clamp((1.0f - MathF.Pow(_skillLevel, 0.6f)) * 0.95f * Jitter(1.0f, 0.10f), 0f, 0.98f);
             
-            // Aim jitter in radians: ~0.28 rad (~16 deg) for noobs down to ~0.02 rad (~1.1 deg) for pros
-            AimJitter = Math.Clamp((0.28f * (1.0f - _skillLevel) + 0.02f) * Jitter(1.0f, 0.15f), 0.01f, 0.40f);
+            // Aim jitter in radians: ~0.42 rad (~24 deg) for noobs down to ~0.02 rad (~1.1 deg) for pros
+            AimJitter = Math.Clamp((0.42f * (1.0f - _skillLevel) + 0.02f) * Jitter(1.0f, 0.15f), 0.01f, 0.50f);
 
-            // Flick and cruising speeds
-            FlickAimSpeed = Math.Clamp((0.22f + 0.73f * MathF.Pow(_skillLevel, 0.85f)) * Jitter(1.0f, 0.06f), 0.15f, 0.98f);
-            CruisingSpeed = Math.Clamp((0.08f + 0.17f * _skillLevel) * Jitter(1.0f, 0.08f), 0.06f, 0.35f);
+            // Firing angle tolerance: Noobs spam fire even when off by 40 degrees; pros wait for alignment (~10-15 degrees)
+            FiringAngleTolerance = Math.Clamp(0.70f - 0.52f * MathF.Pow(_skillLevel, 0.7f), 0.15f, 0.75f);
 
-            // Reaction time: 420ms (noob) down to 135ms (pro)
-            ReactionLatencyMs = (int)Math.Clamp(Jitter(420f - 285f * _skillLevel, 0.10f), 110f, 500f);
+            // Bullet evasion skill: Noobs do NOT dodge bullets (skill^1.6 => 0 for noobs, 1 for pros)
+            BulletDodgeSkill = Math.Clamp(MathF.Pow(_skillLevel, 1.6f) * Jitter(1.0f, 0.10f), 0f, 1f);
+
+            // Flick and cruising speeds: Noobs have very slow cursor tracking
+            FlickAimSpeed = Math.Clamp((0.10f + 0.85f * MathF.Pow(_skillLevel, 1.1f)) * Jitter(1.0f, 0.06f), 0.08f, 0.98f);
+            CruisingSpeed = Math.Clamp((0.05f + 0.20f * _skillLevel) * Jitter(1.0f, 0.08f), 0.04f, 0.35f);
+
+            // Reaction time: 520ms (noob) down to 130ms (pro)
+            ReactionLatencyMs = (int)Math.Clamp(Jitter(520f - 390f * _skillLevel, 0.10f), 110f, 600f);
+
+            // Danger zone awareness: Noobs hug the border and only react when right at edge (80 units)
+            DangerZoneBuffer = Math.Clamp(80f + 320f * _skillLevel, 60f, 450f);
 
             // 2. Dash & Boost Mechanics:
-            // Beginners rarely or never boost offensively; hesitant to waste ships.
+            // Beginners rarely or never boost; hesitant to waste ships.
             // Pros dash decisively for executions and evasions.
-            if (_skillLevel < 0.30f)
+            if (_skillLevel < 0.22f)
             {
                 OffensiveDashEnabled = false;
-                BoostHesitancy = Math.Clamp(Jitter(0.70f - _skillLevel, 0.15f), 0.3f, 0.95f);
+                DefensiveDashEnabled = false; // True noobs don't even know how to boost defensively
+                BoostHesitancy = 0.95f;
                 MinimumShipsToOffensiveDash = 999;
-                MinimumShipsToDefensiveDash = (int)Jitter(14, 0.15f);
+                MinimumShipsToDefensiveDash = 999;
             }
-            else if (_skillLevel < 0.65f)
+            else if (_skillLevel < 0.45f)
             {
-                OffensiveDashEnabled = rand.NextDouble() < 0.6;
-                BoostHesitancy = Math.Clamp(Jitter(0.35f * (1.0f - _skillLevel), 0.15f), 0.05f, 0.4f);
+                OffensiveDashEnabled = false;
+                DefensiveDashEnabled = rand.NextDouble() < 0.4;
+                BoostHesitancy = Math.Clamp(Jitter(0.60f * (1.0f - _skillLevel), 0.15f), 0.2f, 0.8f);
+                MinimumShipsToOffensiveDash = 999;
+                MinimumShipsToDefensiveDash = (int)Jitter(16, 0.15f);
+            }
+            else if (_skillLevel < 0.70f)
+            {
+                OffensiveDashEnabled = rand.NextDouble() < 0.7;
+                DefensiveDashEnabled = true;
+                BoostHesitancy = Math.Clamp(Jitter(0.25f * (1.0f - _skillLevel), 0.15f), 0.05f, 0.35f);
                 MinimumShipsToOffensiveDash = (int)Jitter(20 - (int)(_skillLevel * 10), 0.15f);
                 MinimumShipsToDefensiveDash = (int)Jitter(10, 0.15f);
             }
             else
             {
                 OffensiveDashEnabled = true;
+                DefensiveDashEnabled = true;
                 BoostHesitancy = 0.0f;
                 MinimumShipsToOffensiveDash = (int)Jitter(12, 0.15f);
                 MinimumShipsToDefensiveDash = (int)Jitter(6, 0.15f);
@@ -139,15 +161,15 @@ namespace Game.Robots.Framework
             // 3. Perception & Off-screen Tracking:
             // Beginners have almost no off-screen tracking (forget enemies in 400ms, ignore bullet cues).
             // Pros maintain belief states for 4-6 seconds and deduce enemy positions from incoming fire.
-            if (_skillLevel < 0.30f)
+            if (_skillLevel < 0.25f)
             {
-                OffscreenMemoryDurationMs = (long)Jitter(300 + (long)(_skillLevel * 1000), 0.2f);
+                OffscreenMemoryDurationMs = (long)Jitter(200 + (long)(_skillLevel * 800), 0.2f);
                 TracksOffscreenBullets = false;
             }
-            else if (_skillLevel < 0.70f)
+            else if (_skillLevel < 0.65f)
             {
-                OffscreenMemoryDurationMs = (long)Jitter(1500 + (long)(_skillLevel * 2500), 0.15f);
-                TracksOffscreenBullets = rand.NextDouble() < 0.7;
+                OffscreenMemoryDurationMs = (long)Jitter(1200 + (long)(_skillLevel * 2500), 0.15f);
+                TracksOffscreenBullets = rand.NextDouble() < 0.65;
             }
             else
             {
@@ -158,9 +180,9 @@ namespace Game.Robots.Framework
             // 4. Fleet Size Preference:
             // Beginners love amassing huge swarms (40-65 ships).
             // Pros often keep it smaller, faster, and tighter (12-25 ships).
-            if (_skillLevel < 0.35f)
+            if (_skillLevel < 0.30f)
             {
-                TargetFleetSize = (int)Math.Clamp(Jitter(45 + (int)((0.35f - _skillLevel) * 40), 0.15f), 30, 70);
+                TargetFleetSize = (int)Math.Clamp(Jitter(50 + (int)((0.30f - _skillLevel) * 40), 0.15f), 35, 75);
             }
             else if (_skillLevel < 0.70f)
             {
@@ -175,10 +197,10 @@ namespace Game.Robots.Framework
             switch (_playstyle.ToLowerInvariant())
             {
                 case "aggressive":
-                    EngageAdvantageRatio = Jitter(1.2f, 0.1f);
+                    EngageAdvantageRatio = Jitter(1.1f, 0.1f);
                     SafeDistance = Jitter(450f, 0.1f);
                     PursuitDistance = Jitter(350f, 0.1f);
-                    LeaderHuntTendency = Math.Clamp(Jitter(0.65f, 0.15f), 0.4f, 0.95f);
+                    LeaderHuntTendency = Math.Clamp(Jitter(0.75f, 0.15f), 0.5f, 0.95f);
                     TargetFleetSize = Math.Max(8, TargetFleetSize - 5);
                     break;
 
@@ -187,26 +209,26 @@ namespace Game.Robots.Framework
                     EngageAdvantageRatio = Jitter(2.2f, 0.1f); // Only fight with heavy advantage
                     SafeDistance = Jitter(680f, 0.1f);
                     PursuitDistance = Jitter(500f, 0.1f);
-                    LeaderHuntTendency = Math.Clamp(Jitter(0.10f, 0.15f), 0.0f, 0.25f);
+                    LeaderHuntTendency = Math.Clamp(Jitter(0.20f, 0.15f), 0.05f, 0.35f);
                     TargetFleetSize = TargetFleetSize + 10;
                     break;
 
                 case "kinghunter":
-                    EngageAdvantageRatio = Jitter(1.4f, 0.1f);
-                    LeaderHuntTendency = Math.Clamp(Jitter(0.85f, 0.10f), 0.6f, 1.0f);
+                    EngageAdvantageRatio = Jitter(1.3f, 0.1f);
+                    LeaderHuntTendency = Math.Clamp(Jitter(0.90f, 0.08f), 0.75f, 1.0f);
                     break;
 
                 case "swarm":
-                    TargetFleetSize = Math.Max(40, (int)Jitter(55, 0.15f));
-                    LeaderHuntTendency = 0.3f;
+                    TargetFleetSize = Math.Max(45, (int)Jitter(60, 0.15f));
+                    LeaderHuntTendency = 0.40f;
                     break;
 
                 case "balanced":
                 default:
-                    EngageAdvantageRatio = Jitter(1.6f, 0.1f);
+                    EngageAdvantageRatio = Jitter(1.5f, 0.1f);
                     SafeDistance = Jitter(550f, 0.1f);
                     PursuitDistance = Jitter(400f, 0.1f);
-                    LeaderHuntTendency = Math.Clamp(Jitter(0.35f, 0.15f), 0.1f, 0.6f);
+                    LeaderHuntTendency = Math.Clamp(Jitter(0.50f, 0.15f), 0.25f, 0.75f);
                     break;
             }
         }
