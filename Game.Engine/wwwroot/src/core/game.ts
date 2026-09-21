@@ -326,6 +326,21 @@ connection.onDisconnected = () => {
   if (isSpawning || pendingSpawn) {
     setSpawnButtonState("connecting");
   }
+
+  if (lastAliveState || isSpectating) {
+    lastAliveState = false;
+    isSpawning = false;
+    pendingSpawn = false;
+    if (spawnTimeout) {
+      clearTimeout(spawnTimeout);
+      spawnTimeout = null;
+    }
+    document.body.classList.remove("alive");
+    document.body.classList.remove("spectating");
+    document.body.classList.add("dead");
+    fadeIn(".visibility", 1500);
+    hide(".visibility3");
+  }
 };
 
 connection.onView = (newView) => {

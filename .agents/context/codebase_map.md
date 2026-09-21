@@ -110,6 +110,7 @@ Pixi.js WebGL client application.
 | `Game.Engine/wwwroot/src/ui/leaderboard.ts` | `Leaderboard` | High-score table, player rankings, and CTF team score displays. |
 | `Game.Engine/wwwroot/src/ui/minimap.ts` | `Minimap` | Radar minimap rendering (friendly fleets, flags, bases, world bounds). |
 | `Game.Engine/wwwroot/src/ui/controls.ts` | `Controls` | Mouse and keyboard input aggregator (thrust, boost, aim angle, fire). |
+| `Game.Engine/wwwroot/src/ui/toast.ts` | `showConnectionErrorToast`, `dismissToast` | Toast notification manager matching original Spaceone.io error toast fidelity. |
 
 ---
 
