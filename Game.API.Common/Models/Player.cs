@@ -6,6 +6,8 @@ namespace Game.API.Common.Models
         public string IP { get; set; }
         public int Score { get; set; }
         public bool IsAlive { get; set; }
+        public int KillCount { get; set; }
+        public int DeathCount { get; set; }
 
         public bool Backgrounded { get; set; }
         public uint ClientFPS { get; set; }
