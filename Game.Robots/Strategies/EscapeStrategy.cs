@@ -12,8 +12,7 @@ namespace Game.Robots.Strategies
         private long _escapeStartTime = 0;
         private long _lastEscapeDashTime = 0;
         private long _lastKitingShotTime = 0;
-        private long _kitingUntil = 0;
-        private Vector2 _kitingAimTarget = Vector2.Zero;
+        private long _kitingStartTime = 0;
 
         public float EvaluateUtility(HumanoidBot bot)
         {
@@ -144,92 +143,114 @@ namespace Game.Robots.Strategies
             }
 
             // 2. RETALIATION / KITING (Shooting back at pursuer for advanced players):
-            // Players with SkillLevel >= 0.35 quickly flick back to fire at pursuers when weapon is ready,
-            // deterring pursuit or thinning the enemy fleet.
+            // Players with SkillLevel >= 0.35 cleanly flick back to fire at pursuers when weapon is ready,
+            // exactly like regular aiming in EngageStrategy:
+            // - Enter aiming phase when shot is ready or almost ready (CooldownShoot <= 0.15f)
+            // - Track kinematic intercept point at FlickAimSpeed
+            // - Wait for crosshair to fully align (using FiringAngleTolerance) before pulling the trigger
+            // - Once fired, immediately resume escape steering
             bool isAdvanced = bot.Parameters.SkillLevel >= 0.35f;
-            bool canKite = isAdvanced 
-                && (bot.CanShoot || bot.CooldownShoot <= 0.12f)
-                && distance < 850f 
-                && (bot.GameTime - _lastEscapeDashTime > 300)
-                && (bot.GameTime - _lastKitingShotTime > 400)
-                && bot.GameTime >= _kitingUntil;
+            bool isPursuerThreatening = threat != null && distance < 850f;
 
-            if (canKite)
-            {
-                _kitingAimTarget = bot.ComputeHumanAimPoint(threat.EstimatedPosition, threat.EstimatedVelocity);
-                _kitingUntil = bot.GameTime + 180; // 180ms committed flick window
-            }
+            bool isAimingToShootPursuer = isAdvanced
+                && isPursuerThreatening
+                && (bot.CanShoot || bot.CooldownShoot <= 0.15f || (bot.GameTime - _lastKitingShotTime < 40))
+                && (bot.GameTime - _lastEscapeDashTime > 250)
+                && (bot.GameTime - _lastKitingShotTime > 450 || _kitingStartTime > 0);
 
-            bool isKiting = bot.GameTime < _kitingUntil && _kitingAimTarget != Vector2.Zero;
-            if (isKiting)
+            if (isAimingToShootPursuer)
             {
-                bot.Cursor.SetTarget(_kitingAimTarget, speed: bot.Parameters.FlickAimSpeed);
-                if (bot.CanShoot && (bot.Cursor.IsAimedAt(_kitingAimTarget, 0.45f) || (bot.GameTime - (_kitingUntil - 180) > 100)))
+                if (_kitingStartTime == 0)
                 {
-                    bot.ShootAt(_kitingAimTarget);
+                    _kitingStartTime = bot.GameTime;
+                }
+
+                // Continuously track predicted intercept position
+                Vector2 aimPoint = bot.ComputeHumanAimPoint(threat.EstimatedPosition, threat.EstimatedVelocity);
+
+                // Flick cursor onto opponent
+                bot.Cursor.SetTarget(aimPoint, speed: bot.Parameters.FlickAimSpeed);
+
+                long flickDuration = bot.GameTime - _kitingStartTime;
+                long maxFlickWait = Math.Max(280, (long)(bot.Parameters.ReactionLatencyMs * 1.5f));
+
+                // Only fire when crosshair actually aligns on target (using skill-scaled angle tolerance)
+                if (bot.CanShoot && bot.Cursor.IsAimedAt(aimPoint, bot.Parameters.FiringAngleTolerance))
+                {
+                    bot.ShootAt(aimPoint);
                     _lastKitingShotTime = bot.GameTime;
-                    _kitingUntil = 0;
-                    _kitingAimTarget = Vector2.Zero;
-                    isKiting = false;
+                    _kitingStartTime = 0;
+                }
+                else if (flickDuration > maxFlickWait)
+                {
+                    // If alignment could not be achieved in time, abort kiting shot and resume escape
+                    _lastKitingShotTime = bot.GameTime;
+                    _kitingStartTime = 0;
                 }
             }
-
-            // 3. HARVESTING FOOD / STARS ON THE RUN:
-            // Advanced players (SkillLevel >= 0.30) do not ignore food/stars in front of them while escaping.
-            // Shooting food ahead regenerates fleet mass and boost fuel while maintaining escape momentum!
-            if (!isKiting && isAdvanced && bot.CanShoot && (bot.GameTime - _lastKitingShotTime > 250))
+            else
             {
-                // Look for nearby abandoned ships (highest value) or food in the forward escape cone
-                Game.Robots.Models.Ship foodTarget = null;
-                float bestScore = float.MinValue;
+                _kitingStartTime = 0;
 
-                void CheckTarget(Game.Robots.Models.Ship item, bool isAbandoned)
+                // 3. HARVESTING FOOD / STARS ON THE RUN:
+                // Advanced players (SkillLevel >= 0.30) do not ignore food/stars in front of them while escaping.
+                // Shooting food ahead regenerates fleet mass and boost fuel while maintaining escape momentum!
+                bool isAimingAtFood = false;
+                if (isAdvanced && bot.CanShoot && (bot.GameTime - _lastKitingShotTime > 250))
                 {
-                    var toItem = item.Position - myFleet.Center;
-                    float itemDist = toItem.Length();
-                    if (itemDist > 550f || itemDist < 10f) return;
+                    // Look for nearby abandoned ships (highest value) or food in the forward escape cone
+                    Game.Robots.Models.Ship foodTarget = null;
+                    float bestScore = float.MinValue;
 
-                    float dot = Vector2.Dot(toItem / itemDist, escapeHeading);
-                    // Must be in the forward escape direction (~65 deg cone)
-                    if (dot > 0.40f)
+                    void CheckTarget(Game.Robots.Models.Ship item, bool isAbandoned)
                     {
-                        float score = dot * 2.0f + (1.0f - itemDist / 550f) + (isAbandoned ? 3.0f : 0f);
-                        if (score > bestScore)
+                        var toItem = item.Position - myFleet.Center;
+                        float itemDist = toItem.Length();
+                        if (itemDist > 550f || itemDist < 10f) return;
+
+                        float dot = Vector2.Dot(toItem / itemDist, escapeHeading);
+                        // Must be in the forward escape direction (~65 deg cone)
+                        if (dot > 0.40f)
                         {
-                            bestScore = score;
-                            foodTarget = item;
+                            float score = dot * 2.0f + (1.0f - itemDist / 550f) + (isAbandoned ? 3.0f : 0f);
+                            if (score > bestScore)
+                            {
+                                bestScore = score;
+                                foodTarget = item;
+                            }
                         }
                     }
-                }
 
-                foreach (var a in bot.SensorAbandoned.AllVisibleAbandoned) CheckTarget(a, true);
-                foreach (var f in bot.SensorFish.AllVisibleFish) CheckTarget(f, false);
+                    foreach (var a in bot.SensorAbandoned.AllVisibleAbandoned) CheckTarget(a, true);
+                    foreach (var f in bot.SensorFish.AllVisibleFish) CheckTarget(f, false);
 
-                if (foodTarget != null)
-                {
-                    var toTarget = foodTarget.Position - myFleet.Center;
-                    float dot = Vector2.Dot(Vector2.Normalize(toTarget), escapeHeading);
-
-                    // If food is nearly straight ahead (dot > 0.75), shoot immediately without diverting cursor much
-                    if (dot > 0.75f)
+                    if (foodTarget != null)
                     {
-                        bot.ShootAt(foodTarget.Position);
-                    }
-                    else if (distance > 400f) // If not in immediate point-blank peril, quick-aim and shoot food
-                    {
-                        bot.Cursor.SetTarget(foodTarget.Position, speed: bot.Parameters.FlickAimSpeed);
-                        if (bot.Cursor.IsAimedAt(foodTarget.Position, 0.40f))
+                        var toTarget = foodTarget.Position - myFleet.Center;
+                        float dot = Vector2.Dot(Vector2.Normalize(toTarget), escapeHeading);
+
+                        // If food is nearly straight ahead (dot > 0.75), shoot immediately without diverting cursor
+                        if (dot > 0.75f)
                         {
                             bot.ShootAt(foodTarget.Position);
                         }
+                        else if (distance > 400f) // Quick-aim and shoot food if not in point-blank peril
+                        {
+                            isAimingAtFood = true;
+                            bot.Cursor.SetTarget(foodTarget.Position, speed: bot.Parameters.FlickAimSpeed);
+                            if (bot.Cursor.IsAimedAt(foodTarget.Position, bot.Parameters.FiringAngleTolerance + 0.10f))
+                            {
+                                bot.ShootAt(foodTarget.Position);
+                            }
+                        }
                     }
                 }
-            }
 
-            if (!isKiting)
-            {
-                // Normal escape steering: fly at full cruising speed away from threat along safe escape heading
-                bot.Cursor.SetTarget(escapeTarget, speed: bot.Parameters.CruisingSpeed);
+                if (!isAimingAtFood)
+                {
+                    // Normal escape steering: fly at full cruising speed away from threat along safe escape heading
+                    bot.Cursor.SetTarget(escapeTarget, speed: bot.Parameters.CruisingSpeed);
+                }
             }
         }
     }
