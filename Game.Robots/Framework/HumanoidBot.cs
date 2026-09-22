@@ -41,6 +41,7 @@ namespace Game.Robots.Framework
             // Load Strategies
             _strategies.Add(new Strategies.CruisingStrategy());
             _strategies.Add(new Strategies.EngageStrategy());
+            _strategies.Add(new Strategies.EscapeStrategy());
         }
 
         protected override Task OnSpawnAsync()

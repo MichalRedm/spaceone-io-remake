@@ -1,85 +1,72 @@
 namespace Game.Robots.Strategies
 {
     using Game.Robots.Framework;
+    using System;
     using System.Linq;
     using System.Numerics;
 
     public class EscapeStrategy : IStrategy
     {
-        private Vector2 _threatCentroid;
-        private Vector2 _lockedThreatCentroid;
-        private Vector2 _lockedEscapeVector;
+        private uint _threatFleetId = 0;
         private bool _isEscaping = false;
-        private bool _isDodgingBullets = false;
         private long _escapeStartTime = 0;
-        private int _escapePhase = 0; // 0 = steering away, 1 = boosting, 2 = turning back to shoot, 3 = shooting
-
-        private int _threatFleetSize = 0;
-        private float _threatDistance = 0;
+        private long _lastEscapeDashTime = 0;
+        private long _lastKitingShotTime = 0;
 
         public float EvaluateUtility(HumanoidBot bot)
         {
             var myFleet = bot.SensorFleets.MyFleet;
             if (myFleet == null || myFleet.Ships.Count == 0) return -1f;
 
-            var enemies = bot.SensorFleets.Others;
-            var bullets = bot.SensorBullets.VisibleBullets;
+            TrackedEnemy primaryThreat = null;
+            float maxThreatScore = -1f;
 
-            float utility = -1f;
-            _threatCentroid = Vector2.Zero;
-            _threatFleetSize = 0;
-            _threatDistance = float.MaxValue;
-            int threatCount = 0;
-            bool dodging = false;
-
-            // 1. Evaluate threat from incoming bullets (dodging)
-            var incomingBullets = bullets.Where(b => 
-                b.Group?.Owner != myFleet.ID && 
-                Vector2.Distance(b.Position, myFleet.Center) < 800f &&
-                Vector2.Dot(b.Momentum, myFleet.Center - b.Position) > 0 // Bullet is moving towards us
-            ).ToList();
-
-            if (incomingBullets.Count >= 1)
+            // Search for decisive, overwhelming threats
+            foreach (var enemy in bot.OffScreenTracker.TrackedEnemies)
             {
-                // Force a massive utility (e.g., 5.0) so bullet dodging ALWAYS overrides EngageStrategy and CruisingStrategy.
-                float bulletUtility = 5.0f * bot.Parameters.EscapeUtilityMultiplier;
-                if (bulletUtility > utility) 
-                {
-                    utility = bulletUtility;
-                    _threatDistance = incomingBullets.Average(b => Vector2.Distance(b.Position, myFleet.Center));
-                    
-                    // Trick the execution logic into thinking there's a massive fleet so it performs a defensive dash
-                    // Only trigger the defensive dash trick if there are several bullets, otherwise just sidestep
-                    _threatFleetSize = incomingBullets.Count >= 3 ? myFleet.Ships.Count * 3 : 0; 
-                    dodging = true;
-                }
+                if (enemy.Certainty <= 0.05f) continue;
 
-                foreach (var b in incomingBullets)
+                float distance = Vector2.Distance(myFleet.Center, enemy.EstimatedPosition);
+                if (distance > 1000f) continue;
+
+                float ratio = (float)myFleet.Ships.Count / Math.Max(1, enemy.ShipCount);
+
+                // Check if the enemy is overwhelmingly stronger than our playstyle retreat threshold
+                if (ratio < bot.Parameters.RetreatThreshold)
                 {
-                    _threatCentroid += b.Position;
-                    threatCount++;
+                    float ratioDeficit = (bot.Parameters.RetreatThreshold - ratio) / bot.Parameters.RetreatThreshold;
+                    float distanceFactor = 1.0f - (distance / 1000f);
+                    float threatScore = (ratioDeficit * 1.5f + distanceFactor * 1.5f) * enemy.Certainty;
+
+                    // Critical health bonus: if fleet has <= 4 ships and enemy has >= 10, maximum escape urgency!
+                    if (myFleet.Ships.Count <= 4 && enemy.ShipCount >= 10)
+                    {
+                        threatScore += 1.0f;
+                    }
+
+                    if (threatScore > maxThreatScore)
+                    {
+                        maxThreatScore = threatScore;
+                        primaryThreat = enemy;
+                    }
                 }
             }
 
-            if (threatCount > 0)
-            {
-                _threatCentroid /= threatCount;
-            }
-
-            // Lock in escape for a brief moment if we started it
-            if (_isEscaping && bot.GameTime - _escapeStartTime < 600)
-            {
-                return bot.Parameters.EscapeUtilityMultiplier * 1.1f;
-            }
-
-            if (utility < 0)
+            if (primaryThreat == null)
             {
                 _isEscaping = false;
-                _isDodgingBullets = false;
+                _threatFleetId = 0;
+                return -1f;
             }
-            else if (!_isEscaping)
+
+            _threatFleetId = primaryThreat.FleetID;
+
+            float utility = maxThreatScore * bot.Parameters.EscapeUtilityMultiplier;
+
+            // Strategy lock-in hysteresis: maintain escape until distance opens up or threat is gone
+            if (_isEscaping && bot.GameTime - _escapeStartTime < 800)
             {
-                _isDodgingBullets = dodging;
+                utility += 0.35f * bot.Parameters.EscapeUtilityMultiplier;
             }
 
             return utility;
@@ -88,84 +75,86 @@ namespace Game.Robots.Strategies
         public void Execute(HumanoidBot bot)
         {
             var myFleet = bot.SensorFleets.MyFleet;
-            if (myFleet == null) return;
+            if (myFleet == null || myFleet.Ships.Count == 0) return;
+
+            TrackedEnemy threat = _threatFleetId != 0 ? bot.OffScreenTracker.Get(_threatFleetId) : null;
+            if (threat == null)
+            {
+                _isEscaping = false;
+                return;
+            }
 
             if (!_isEscaping)
             {
                 _isEscaping = true;
                 _escapeStartTime = bot.GameTime;
-
-                _lockedThreatCentroid = _threatCentroid;
-                
-                Vector2 rawAway;
-                if (_lockedThreatCentroid != myFleet.Center)
-                {
-                    var awayVector = Vector2.Normalize(myFleet.Center - _lockedThreatCentroid);
-                    if (_isDodgingBullets)
-                    {
-                        // Sidestep the bullets by moving perpendicular to the threat direction
-                        rawAway = new Vector2(-awayVector.Y, awayVector.X);
-                    }
-                    else
-                    {
-                        rawAway = awayVector;
-                    }
-                }
-                else
-                {
-                    rawAway = new Vector2(1, 0);
-                }
-
-                // Blend with boundary repulsion so escape vector NEVER heads into danger zone
-                Vector2 repulsion = bot.GetDangerZoneRepulsion();
-                if (repulsion != Vector2.Zero)
-                {
-                    // Strongly bias towards safe zone / arena center
-                    rawAway = Vector2.Normalize(rawAway * 0.4f + Vector2.Normalize(repulsion) * 1.2f);
-                }
-
-                _lockedEscapeVector = rawAway * 1000f;
             }
 
-            long elapsed = bot.GameTime - _escapeStartTime;
-            var escapeTarget = bot.ClampToSafePlayableArea(myFleet.Center + _lockedEscapeVector);
+            float distance = Vector2.Distance(myFleet.Center, threat.EstimatedPosition);
+            var toThreat = threat.EstimatedPosition - myFleet.Center;
+            Vector2 awayFromThreat = toThreat != Vector2.Zero ? -Vector2.Normalize(toThreat) : new Vector2(1, 0);
 
-            // Escape maneuver: Steer safely away
-            bool shouldBoost = bot.CanBoost 
-                && myFleet.Ships.Count >= 3 
-                && _threatDistance < 450f 
-                && _threatFleetSize >= myFleet.Ships.Count * 1.5f;
-
-            if (shouldBoost && elapsed > 100 && elapsed < 300)
+            // Blend with boundary repulsion so escape vector NEVER heads into danger zone
+            Vector2 repulsion = bot.GetDangerZoneRepulsion();
+            Vector2 escapeHeading;
+            if (repulsion != Vector2.Zero)
             {
-                // Wait for the virtual cursor to actually align before boosting!
-                if (bot.Cursor.IsAimedAt(escapeTarget, 0.4f) || elapsed > 250)
+                // Strongly steer towards arena center / safe area away from wall
+                escapeHeading = Vector2.Normalize(awayFromThreat * 0.4f + Vector2.Normalize(repulsion) * 1.4f);
+            }
+            else
+            {
+                escapeHeading = awayFromThreat;
+            }
+
+            var escapeTarget = bot.ClampToSafePlayableArea(myFleet.Center + escapeHeading * 800f);
+
+            // 1. DEFENSIVE ESCAPE BOOST:
+            // When in critical danger (distance < 700f), boost away to open up a gap!
+            // Minimum ships for emergency escape is 3 (engine minimum to boost).
+            bool canEscapeBoost = bot.CanBoost 
+                && bot.Parameters.DefensiveDashEnabled
+                && myFleet.Ships.Count >= 3
+                && distance < 700f
+                && (bot.GameTime - _lastEscapeDashTime > 1500);
+
+            if (canEscapeBoost)
+            {
+                bool hesitates = bot.Parameters.BoostHesitancy > 0.001f && (Random.Shared.NextDouble() < bot.Parameters.BoostHesitancy);
+                if (!hesitates)
                 {
-                    bot.Boost();
+                    bot.Cursor.SetTarget(escapeTarget, speed: bot.Parameters.FlickAimSpeed);
+                    if (bot.Cursor.IsAimedAt(escapeTarget, 0.40f) || (bot.GameTime - _escapeStartTime > 200))
+                    {
+                        bot.Boost();
+                        _lastEscapeDashTime = bot.GameTime;
+                    }
                 }
             }
 
-            // FLICK AIM & SHOOT: When shot is almost ready, turn back and fire at pursuer!
-            bool isAimingToShoot = bot.CanShoot || bot.CooldownShoot <= 0.15f;
-            
-            if (isAimingToShoot)
+            // 2. KITING / PARTING SHOTS (Intermediate/Pro players only):
+            // Skilled players (SkillLevel >= 0.50) quickly flick back to fire at pursuers when weapon is ready,
+            // then immediately snap back to escaping. Beginners just run forward in a straight line.
+            bool canKite = bot.Parameters.SkillLevel >= 0.50f 
+                && bot.CanShoot 
+                && distance < 750f 
+                && (bot.GameTime - _lastEscapeDashTime > 350)
+                && (bot.GameTime - _lastKitingShotTime > 500);
+
+            if (canKite)
             {
-                // Flick cursor back to shoot pursuer
-                bot.Cursor.SetTarget(_lockedThreatCentroid, speed: bot.Parameters.FlickAimSpeed);
-                if (bot.CanShoot && (bot.Cursor.IsAimedAt(_lockedThreatCentroid, 0.4f) || bot.CooldownShoot <= 0f)) 
+                Vector2 aimPoint = bot.ComputeHumanAimPoint(threat.EstimatedPosition, threat.EstimatedVelocity);
+                bot.Cursor.SetTarget(aimPoint, speed: bot.Parameters.FlickAimSpeed);
+                if (bot.Cursor.IsAimedAt(aimPoint, 0.40f))
                 {
-                    bot.ShootAt(_lockedThreatCentroid);
+                    bot.ShootAt(aimPoint);
+                    _lastKitingShotTime = bot.GameTime;
                 }
             }
             else
             {
-                // Resume safe movement away from pursuer
+                // Normal escape steering: fly at full cruising speed away from threat
                 bot.Cursor.SetTarget(escapeTarget, speed: bot.Parameters.CruisingSpeed);
-            }
-            
-            if (elapsed > 700)
-            {
-                _isEscaping = false;
             }
         }
     }

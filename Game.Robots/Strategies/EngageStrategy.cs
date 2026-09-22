@@ -43,6 +43,12 @@ namespace Game.Robots.Strategies
                 
                 float utility = (distanceUtility + urgencyBonus + leaderBonus) * bot.Parameters.EngageUtilityMultiplier * enemy.Certainty;
 
+                // If outmatched beyond retreat threshold, defer combat to EscapeStrategy
+                if (ratio < bot.Parameters.RetreatThreshold)
+                {
+                    utility *= 0.3f;
+                }
+
                 // Apply target lock hysteresis to prevent rapid switching between equal targets
                 if (_targetFleetId != 0 && enemy.FleetID == _targetFleetId)
                 {
@@ -92,6 +98,8 @@ namespace Game.Robots.Strategies
         private long _activeDodgeStartTime = 0;
         private long _activeDodgeUntil = 0;
         private long _lastDefensiveDashTime = 0;
+        private long _flashDashUntil = 0;
+        private Vector2 _flashDashTarget = Vector2.Zero;
 
         public void Execute(HumanoidBot bot)
         {
@@ -196,14 +204,14 @@ namespace Game.Robots.Strategies
             bool isDodging = bot.GameTime >= _activeDodgeStartTime && bot.GameTime < _activeDodgeUntil && _activeDodgeImpulse != Vector2.Zero;
 
             // 2. DEFENSIVE DASH AGAINST INCOMING FIRE (FLASH DODGE):
-            // Stronger players (SkillLevel >= 0.40) execute a quick boost sideways to flash-dodge lethal volleys
+            // Stronger players (SkillLevel >= 0.35) execute a quick boost sideways to flash-dodge lethal volleys
             bool canDefensiveDash = bot.CanBoost 
                 && bot.Parameters.DefensiveDashEnabled
-                && bot.Parameters.SkillLevel >= 0.40f
+                && bot.Parameters.SkillLevel >= 0.35f
                 && (bot.GameTime - _lastDefensiveDashTime > 1200)
                 && myFleet.Ships.Count >= bot.Parameters.MinimumShipsToDefensiveDash;
 
-            if (isDodging && canDefensiveDash && threateningBulletDist < 450f)
+            if (isDodging && canDefensiveDash && threateningBulletDist < 450f && bot.GameTime >= _flashDashUntil)
             {
                 bool hesitates = bot.Parameters.BoostHesitancy > 0.001f && (Random.Shared.NextDouble() < bot.Parameters.BoostHesitancy);
                 if (!hesitates)
@@ -215,13 +223,23 @@ namespace Game.Robots.Strategies
 
                     if (isDashSafe)
                     {
-                        bot.Cursor.SetTarget(projectedPos, speed: bot.Parameters.FlickAimSpeed);
-                        if (bot.Cursor.IsAimedAt(projectedPos, 0.45f))
-                        {
-                            bot.Boost();
-                            _lastDefensiveDashTime = bot.GameTime;
-                        }
+                        _flashDashTarget = projectedPos;
+                        _flashDashUntil = bot.GameTime + 220; // Committed window to flick and boost
                     }
+                }
+            }
+
+            bool isFlashDashing = bot.GameTime < _flashDashUntil && _flashDashTarget != Vector2.Zero;
+            if (isFlashDashing)
+            {
+                bot.Cursor.SetTarget(_flashDashTarget, speed: bot.Parameters.FlickAimSpeed);
+                if (bot.CanBoost && (bot.Cursor.IsAimedAt(_flashDashTarget, 0.45f) || (bot.GameTime - (_flashDashUntil - 220) > 120)))
+                {
+                    bot.Boost();
+                    _lastDefensiveDashTime = bot.GameTime;
+                    _flashDashUntil = 0;
+                    _flashDashTarget = Vector2.Zero;
+                    isFlashDashing = false;
                 }
             }
 
@@ -260,7 +278,9 @@ namespace Game.Robots.Strategies
 
             // 4. AIMING & SHOOTING PHASE:
             // When shot is almost ready (CooldownShoot <= 0.15f) or ready (CanShoot), move mouse onto opponent
-            bool isAimingToShoot = target != null && (bot.CanShoot || bot.CooldownShoot <= 0.15f || (bot.GameTime - _lastShotTime < 40));
+            bool isAimingToShoot = target != null 
+                && !isFlashDashing 
+                && (bot.CanShoot || bot.CooldownShoot <= 0.15f || (bot.GameTime - _lastShotTime < 40));
 
             if (isAimingToShoot)
             {
@@ -347,20 +367,6 @@ namespace Game.Robots.Strategies
                             float cos = MathF.Cos(wanderAngle);
                             float sin = MathF.Sin(wanderAngle);
                             moveDir = new Vector2(moveDir.X * cos - moveDir.Y * sin, moveDir.X * sin + moveDir.Y * cos);
-                        }
-                        
-                        // Defensive dash if fleeing from overwhelming threat (only for intermediate/pro)
-                        if (ratio < 0.4f && distance < 450f && canDefensiveDash)
-                        {
-                            bool hesitates = bot.Parameters.BoostHesitancy > 0.001f && (Random.Shared.NextDouble() < bot.Parameters.BoostHesitancy);
-                            if (!hesitates)
-                            {
-                                bot.Cursor.SetTarget(myFleet.Center + moveDir * 600f, speed: bot.Parameters.FlickAimSpeed);
-                                if (bot.Cursor.IsAimedAt(myFleet.Center + moveDir * 600f, 0.4f))
-                                {
-                                    bot.Boost();
-                                }
-                            }
                         }
                     }
                 }

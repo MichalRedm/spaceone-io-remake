@@ -58,6 +58,7 @@ namespace Game.Robots.Framework
         public float EscapeUtilityMultiplier { get; set; } = 1.0f;
         
         // Escape parameters
+        public float RetreatThreshold { get; set; } = 0.45f; // Flee if fleet ratio < this
         public float ThreatDistanceThreshold { get; set; } = 550f;
         public int MinimumBulletsToEscape { get; set; } = 15;
         public float DangerZoneBuffer { get; set; } = 400f; // Distance from world edge considered danger zone
@@ -158,33 +159,33 @@ namespace Game.Robots.Framework
             {
                 OffensiveDashEnabled = false;
                 DefensiveDashEnabled = false; // True noobs don't even know how to boost defensively
-                BoostHesitancy = 0.95f;
+                BoostHesitancy = 0.90f;
                 MinimumShipsToOffensiveDash = 999;
                 MinimumShipsToDefensiveDash = 999;
             }
             else if (_skillLevel < 0.45f)
             {
                 OffensiveDashEnabled = false;
-                DefensiveDashEnabled = rand.NextDouble() < 0.4;
-                BoostHesitancy = Math.Clamp(Jitter(0.60f * (1.0f - _skillLevel), 0.15f), 0.2f, 0.8f);
+                DefensiveDashEnabled = rand.NextDouble() < 0.45;
+                BoostHesitancy = Math.Clamp(Jitter(0.50f * (1.0f - _skillLevel), 0.15f), 0.30f, 0.65f);
                 MinimumShipsToOffensiveDash = 999;
-                MinimumShipsToDefensiveDash = (int)Jitter(16, 0.15f);
+                MinimumShipsToDefensiveDash = (int)Jitter(6, 0.15f);
             }
             else if (_skillLevel < 0.70f)
             {
                 OffensiveDashEnabled = rand.NextDouble() < 0.7;
                 DefensiveDashEnabled = true;
-                BoostHesitancy = Math.Clamp(Jitter(0.25f * (1.0f - _skillLevel), 0.15f), 0.05f, 0.35f);
-                MinimumShipsToOffensiveDash = (int)Jitter(20 - (int)(_skillLevel * 10), 0.15f);
-                MinimumShipsToDefensiveDash = (int)Jitter(10, 0.15f);
+                BoostHesitancy = Math.Clamp(Jitter(0.20f * (1.0f - _skillLevel), 0.15f), 0.08f, 0.25f);
+                MinimumShipsToOffensiveDash = (int)Jitter(16 - (int)(_skillLevel * 8), 0.15f);
+                MinimumShipsToDefensiveDash = (int)Jitter(5, 0.15f);
             }
             else
             {
                 OffensiveDashEnabled = true;
                 DefensiveDashEnabled = true;
-                BoostHesitancy = 0.05f; // Even pros don't boost recklessly
-                MinimumShipsToOffensiveDash = (int)Jitter(14, 0.15f);
-                MinimumShipsToDefensiveDash = (int)Jitter(7, 0.15f);
+                BoostHesitancy = 0.03f; // Even pros don't boost recklessly
+                MinimumShipsToOffensiveDash = (int)Jitter(12, 0.15f);
+                MinimumShipsToDefensiveDash = 4;
             }
 
             // 6. Perception & Off-screen Tracking:
@@ -224,6 +225,7 @@ namespace Game.Robots.Framework
                 case "aggressive":
                 case "hunter":
                     EngageAdvantageRatio = Jitter(1.1f, 0.1f);
+                    RetreatThreshold = 0.30f;
                     SafeDistance = Jitter(420f, 0.1f);
                     PursuitDistance = Jitter(330f, 0.1f);
                     LeaderHuntTendency = Math.Clamp(Jitter(0.75f, 0.15f), 0.5f, 0.95f);
@@ -234,6 +236,8 @@ namespace Game.Robots.Framework
                 case "cautious":
                 case "farmer":
                     EngageAdvantageRatio = Jitter(2.2f, 0.1f); // Only fight with heavy advantage
+                    RetreatThreshold = 0.65f;
+                    DefensiveDashEnabled = true; // Cautious players always enable defensive dash
                     SafeDistance = Jitter(680f, 0.1f);
                     PursuitDistance = Jitter(500f, 0.1f);
                     LeaderHuntTendency = Math.Clamp(Jitter(0.20f, 0.15f), 0.05f, 0.35f);
@@ -242,11 +246,13 @@ namespace Game.Robots.Framework
 
                 case "kinghunter":
                     EngageAdvantageRatio = Jitter(1.3f, 0.1f);
+                    RetreatThreshold = 0.35f;
                     LeaderHuntTendency = Math.Clamp(Jitter(0.92f, 0.06f), 0.80f, 1.0f);
                     SafeDistance = Jitter(500f, 0.1f);
                     break;
 
                 case "swarm":
+                    RetreatThreshold = 0.38f;
                     TargetFleetSize = Math.Max(45, (int)Jitter(60, 0.15f));
                     LeaderHuntTendency = 0.35f;
                     SafeDistance = Jitter(620f, 0.1f);
@@ -255,6 +261,7 @@ namespace Game.Robots.Framework
                 case "balanced":
                 default:
                     EngageAdvantageRatio = Jitter(1.5f, 0.1f);
+                    RetreatThreshold = 0.45f;
                     SafeDistance = Jitter(550f, 0.1f);
                     PursuitDistance = Jitter(400f, 0.1f);
                     LeaderHuntTendency = Math.Clamp(Jitter(0.50f, 0.15f), 0.25f, 0.75f);
