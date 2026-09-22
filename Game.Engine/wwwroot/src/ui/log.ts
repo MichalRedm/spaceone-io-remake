@@ -65,7 +65,11 @@ export class Log {
 
     let lastMsg = "";
     if (entry.type === "kill") {
-      lastMsg = (entry.text || "") + "!";
+      let msgText = entry.text || "";
+      if (msgText.startsWith("You Killed ")) {
+        msgText = "You killed " + msgText.slice(11);
+      }
+      lastMsg = msgText + "!";
       if (scoreCon) {
         const popup = document.createElement("div");
         popup.className = "score-popup plusScore";

@@ -35,7 +35,7 @@ namespace Game.Engine.Core.Scoring
                     killer.Score += plusScore;
                     killer.KillStreak++;
                     killer.KillCount++;
-                    killer.SendMessage($"You Killed {victim.Name}", "kill",
+                    killer.SendMessage($"You killed {victim.Name}", "kill",
                         plusScore,
                         new
                         {
