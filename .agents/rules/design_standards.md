@@ -225,7 +225,7 @@ $transition-fade: 0.5s ease;
 
 * **Leaderboard (`.leaderboard`)**:
   * Positioned at `top: 20px; right: 20px; width: 260px;`.
-  * **Table Layout & Truncation Rule**: Tables declare `table-layout: fixed; width: 100%; border-collapse: collapse;` with strict `24px` row heights. Name cells (`.name`) must declare `white-space: nowrap; overflow: hidden; text-overflow: ellipsis;` to prevent multiline breakage, and score cells (`.score`) declare `width: 60px; text-align: right; font-variant-numeric: tabular-nums;`.
+  * **Table Layout & Truncation Rule**: Tables declare `table-layout: fixed; width: 100%; border-collapse: collapse;` with strict `24px` row heights. Name cells (`.name`) must declare `white-space: nowrap; overflow: hidden; text-overflow: ellipsis;` to prevent multiline breakage, and score cells (`.score`) declare `width: 60px; text-align: right;`.
   * **Player Row Highlighting Rule**: All opposing player rows MUST render in default white (`#ffffff`). ONLY the local player's own row (`.leaderboard__row--self`) receives the dynamic ship color modifier (`.leaderboard__row--cyan`, `.leaderboard__row--pink`, etc.).
 * **Danger Zone Warning (`.danger-zone-warning`)**:
   * Positioned at `top: 10em; left: 50%; transform: translate(-50%, -50%); width: 128px; display: none;`.

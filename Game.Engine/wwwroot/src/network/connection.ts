@@ -16,8 +16,8 @@ import { Cache } from "../models/cache";
 import { Settings } from "../ui/settings";
 import { Vector2 } from "../math/vector2";
 import { Controls } from "../ui/controls";
-import { fadeIn, hide } from "../ui/domUtils";
 import type { LeaderboardData } from "../ui/leaderboard";
+import { showConnectionErrorToast, dismissToast } from "../ui/toast";
 import { WorldConfig } from "../models/worldConfig";
 
 type NetFB = typeof Game.Engine.Networking.FlatBuffers;
@@ -137,6 +137,7 @@ export class Connection {
       clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = null;
     }
+    dismissToast();
     if (this.socket) {
       this.disconnecting = true;
       this.socket.close();
@@ -210,14 +211,14 @@ export class Connection {
     this.socket.onerror = () => {
       if (self.connectionStatusReporting) {
         document.body.classList.add("connectionerror");
-        fadeIn("#toast-container", 300);
+        showConnectionErrorToast();
       }
     };
 
     this.socket.onopen = (event: Event) => {
       if (self.connectionStatusReporting) {
         document.body.classList.remove("connectionerror");
-        hide("#toast-container");
+        dismissToast();
       }
       self.onOpen(event);
     };
@@ -451,26 +452,33 @@ export class Connection {
     this.connected = false;
     this.onDisconnected();
 
-    if (!this.disconnecting && this.autoReload) {
-      if (event.reason !== "Normal closure") {
-        this.reloading = true;
+    if (!this.disconnecting) {
+      if (this.connectionStatusReporting) {
+        document.body.classList.add("connectionerror");
+        showConnectionErrorToast();
       }
 
-      const baseDelay = Math.min(
-        10000,
-        500 * Math.pow(1.5, this.reconnectAttempts),
-      );
-      const jitter = Math.random() * 500;
-      const delay = Math.round(baseDelay + jitter);
+      if (this.autoReload) {
+        if (event.reason !== "Normal closure") {
+          this.reloading = true;
+        }
 
-      this.reconnectAttempts++;
-      console.log(
-        `Scheduling reconnect in ${delay}ms (attempt #${this.reconnectAttempts})...`,
-      );
+        const baseDelay = Math.min(
+          10000,
+          500 * Math.pow(1.5, this.reconnectAttempts),
+        );
+        const jitter = Math.random() * 500;
+        const delay = Math.round(baseDelay + jitter);
 
-      this.reconnectTimeout = setTimeout(() => {
-        this.connect(this.lastWorldKey);
-      }, delay);
+        this.reconnectAttempts++;
+        console.log(
+          `Scheduling reconnect in ${delay}ms (attempt #${this.reconnectAttempts})...`,
+        );
+
+        this.reconnectTimeout = setTimeout(() => {
+          this.connect(this.lastWorldKey);
+        }, delay);
+      }
     }
     this.disconnecting = false;
   }
