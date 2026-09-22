@@ -45,11 +45,14 @@ namespace Game.Robots.Framework
 
         protected override Task OnSpawnAsync()
         {
-            // Apply skill and personality variance seeded by the bot's name
-            Parameters.ApplySkillLevel(Parameters.SkillLevel, Parameters.Playstyle, Name?.GetHashCode());
+            if (!Parameters.IsCustom)
+            {
+                // Apply skill and personality variance seeded by the bot's name
+                Parameters.ApplySkillLevel(Parameters.SkillLevel, Parameters.Playstyle, Name?.GetHashCode());
+            }
             OffScreenTracker.Clear();
 
-            Log($"HumanoidBot '{Name}' spawned (Level: {Parameters.SkillLevel:F2}, Style: {Parameters.Playstyle})!");
+            Log($"HumanoidBot '{Name}' spawned (Level: {Parameters.SkillLevel:F2}, Style: {Parameters.Playstyle}, Custom: {Parameters.IsCustom})!");
             return base.OnSpawnAsync();
         }
 
@@ -81,6 +84,13 @@ namespace Game.Robots.Framework
                 if (strategy != ActiveStrategy)
                 {
                     utility -= hysteresis;
+                }
+
+                // Perceptual noise: beginners are easily distracted or hesitant; pros are consistent
+                if (Parameters.PerceptualNoise > 0.001f)
+                {
+                    float noise = (float)(Random.Shared.NextDouble() + Random.Shared.NextDouble() - 1.0) * Parameters.PerceptualNoise;
+                    utility += noise;
                 }
 
                 if (utility > bestUtility)

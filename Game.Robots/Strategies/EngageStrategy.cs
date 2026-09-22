@@ -85,10 +85,23 @@ namespace Game.Robots.Strategies
         private long _flickStartTime = 0;
         private long _lastShotTime = 0;
 
+        private float _orbitSign = 0f;
+        private long _lastOrbitDecisionTime = 0;
+        private long _nextBulletScanTime = 0;
+        private Vector2 _activeDodgeImpulse = Vector2.Zero;
+        private long _activeDodgeStartTime = 0;
+        private long _activeDodgeUntil = 0;
+        private long _lastDefensiveDashTime = 0;
+
         public void Execute(HumanoidBot bot)
         {
             var myFleet = bot.SensorFleets.MyFleet;
             if (myFleet == null || myFleet.Ships.Count == 0) return;
+
+            if (_orbitSign == 0f)
+            {
+                _orbitSign = (bot.FleetID % 2 == 0) ? 1.0f : -1.0f;
+            }
 
             TrackedEnemy target = _targetFleetId != 0 ? bot.OffScreenTracker.Get(_targetFleetId) : null;
             float distance = target != null ? Vector2.Distance(myFleet.Center, target.EstimatedPosition) : float.MaxValue;
@@ -100,7 +113,119 @@ namespace Game.Robots.Strategies
                 predictedPosition = bot.ComputeHumanAimPoint(target.EstimatedPosition, target.EstimatedVelocity);
             }
 
-            // 1. OFFENSIVE DASH (KILLER INSTINCT):
+            // 1. BULLET SCANNING & PERCEPTION CHECK:
+            // Humans periodically scan for incoming fire (perception check).
+            // Stronger players notice incoming fire with high reliability and react with fast latency and tight angles.
+            // Dodge Commitment: do not re-scan or interrupt if already committed to an active dodge maneuver.
+            float threateningBulletDist = float.MaxValue;
+            bool isCommittedToDodge = bot.GameTime < _activeDodgeUntil;
+
+            if (!isCommittedToDodge && bot.GameTime >= _nextBulletScanTime)
+            {
+                _nextBulletScanTime = bot.GameTime + 120; // Visual scan interval ~120ms
+
+                var bullets = bot.SensorBullets.VisibleBullets;
+                Game.API.Client.Body mostThreateningBullet = null;
+
+                foreach (var b in bullets)
+                {
+                    if (b.Group?.Owner == myFleet.ID) continue;
+                    var toBullet = b.Position - myFleet.Center;
+                    float dist = toBullet.Length();
+
+                    if (dist < 800f && Vector2.Dot(b.Momentum, -toBullet) > 0) // Bullet incoming towards fleet
+                    {
+                        if (dist < threateningBulletDist)
+                        {
+                            threateningBulletDist = dist;
+                            mostThreateningBullet = b;
+                        }
+                    }
+                }
+
+                if (mostThreateningBullet != null)
+                {
+                    // Probabilistic perception check
+                    bool noticed = Random.Shared.NextDouble() < bot.Parameters.BulletDodgeProbability;
+                    if (noticed)
+                    {
+                        var toBullet = mostThreateningBullet.Position - myFleet.Center;
+                        var perpB = Vector2.Normalize(new Vector2(-mostThreateningBullet.Momentum.Y, mostThreateningBullet.Momentum.X));
+
+                        // Hysteresis & Momentum Alignment:
+                        // If the fleet already has momentum, dodge along existing movement to avoid jarring 180-degree reversals.
+                        if (myFleet.Momentum.LengthSquared() > 0.05f)
+                        {
+                            if (Vector2.Dot(perpB, myFleet.Momentum) < 0)
+                            {
+                                perpB = -perpB;
+                            }
+                        }
+                        else
+                        {
+                            // If stationary, break symmetry consistently using cross-track offset
+                            if (Vector2.Dot(perpB, -toBullet) < 0)
+                            {
+                                perpB = -perpB;
+                            }
+                        }
+
+                        // Apply human angular error in dodge direction
+                        if (bot.Parameters.BulletDodgeAngularError > 0.01f)
+                        {
+                            float errAngle = (float)(Random.Shared.NextDouble() * 2.0 - 1.0) * bot.Parameters.BulletDodgeAngularError;
+                            float cos = MathF.Cos(errAngle);
+                            float sin = MathF.Sin(errAngle);
+                            perpB = new Vector2(perpB.X * cos - perpB.Y * sin, perpB.X * sin + perpB.Y * cos);
+                        }
+
+                        // Dodge strength scales up with skill level: 5.5 (noobs) to 9.5 (pros)
+                        float dodgeStrength = 5.5f + 4.0f * bot.Parameters.BulletDodgeSkill;
+                        float weight = Math.Clamp(1.0f - (threateningBulletDist / 800f), 0.25f, 1.0f);
+                        _activeDodgeImpulse = perpB * (weight * weight * dodgeStrength);
+                        
+                        // Stronger players react much faster:
+                        long latency = (long)(bot.Parameters.ReactionLatencyMs * (0.60f - 0.25f * bot.Parameters.SkillLevel));
+                        _activeDodgeStartTime = bot.GameTime + Math.Max(35, latency);
+                        _activeDodgeUntil = _activeDodgeStartTime + 350; // Committed evasion burst duration (~350ms)
+                        _nextBulletScanTime = _activeDodgeUntil + 120; // Refractory period before scanning for next dodge
+                    }
+                }
+            }
+
+            bool isDodging = bot.GameTime >= _activeDodgeStartTime && bot.GameTime < _activeDodgeUntil && _activeDodgeImpulse != Vector2.Zero;
+
+            // 2. DEFENSIVE DASH AGAINST INCOMING FIRE (FLASH DODGE):
+            // Stronger players (SkillLevel >= 0.40) execute a quick boost sideways to flash-dodge lethal volleys
+            bool canDefensiveDash = bot.CanBoost 
+                && bot.Parameters.DefensiveDashEnabled
+                && bot.Parameters.SkillLevel >= 0.40f
+                && (bot.GameTime - _lastDefensiveDashTime > 1200)
+                && myFleet.Ships.Count >= bot.Parameters.MinimumShipsToDefensiveDash;
+
+            if (isDodging && canDefensiveDash && threateningBulletDist < 450f)
+            {
+                bool hesitates = bot.Parameters.BoostHesitancy > 0.001f && (Random.Shared.NextDouble() < bot.Parameters.BoostHesitancy);
+                if (!hesitates)
+                {
+                    var dodgeVector = Vector2.Normalize(_activeDodgeImpulse);
+                    var projectedPos = myFleet.Center + dodgeVector * 650f;
+                    bool isDashSafe = MathF.Abs(projectedPos.X) < bot.EffectiveWorldSize - 350f 
+                                   && MathF.Abs(projectedPos.Y) < bot.EffectiveWorldSize - 350f;
+
+                    if (isDashSafe)
+                    {
+                        bot.Cursor.SetTarget(projectedPos, speed: bot.Parameters.FlickAimSpeed);
+                        if (bot.Cursor.IsAimedAt(projectedPos, 0.45f))
+                        {
+                            bot.Boost();
+                            _lastDefensiveDashTime = bot.GameTime;
+                        }
+                    }
+                }
+            }
+
+            // 3. OFFENSIVE DASH (KILLER INSTINCT):
             // Only players with offensive dash enabled (intermediate/pro) execute aggressive forward dashes
             bool canOffensiveDash = bot.CanBoost 
                 && bot.Parameters.OffensiveDashEnabled
@@ -133,7 +258,7 @@ namespace Game.Robots.Strategies
                 }
             }
 
-            // 2. AIMING & SHOOTING PHASE:
+            // 4. AIMING & SHOOTING PHASE:
             // When shot is almost ready (CooldownShoot <= 0.15f) or ready (CanShoot), move mouse onto opponent
             bool isAimingToShoot = target != null && (bot.CanShoot || bot.CooldownShoot <= 0.15f || (bot.GameTime - _lastShotTime < 40));
 
@@ -144,8 +269,10 @@ namespace Game.Robots.Strategies
                     _flickStartTime = bot.GameTime;
                 }
 
+                Vector2 aimTarget = predictedPosition;
+
                 // Cursor tracking speed (snappy wrist flick for pros, slower tracking for noobs)
-                bot.Cursor.SetTarget(predictedPosition, speed: bot.Parameters.FlickAimSpeed);
+                bot.Cursor.SetTarget(aimTarget, speed: bot.Parameters.FlickAimSpeed);
 
                 long flickDuration = bot.GameTime - _flickStartTime;
                 long maxFlickWait = Math.Max(60, (long)(bot.Parameters.ReactionLatencyMs * 0.6f));
@@ -159,7 +286,7 @@ namespace Game.Robots.Strategies
             }
             else
             {
-                // 3. MANEUVER & PURSUIT PHASE:
+                // 5. MANEUVER & PURSUIT PHASE:
                 _flickStartTime = 0;
 
                 Vector2 moveDir = new Vector2(1, 0);
@@ -170,17 +297,27 @@ namespace Game.Robots.Strategies
                     var toEnemy = target.EstimatedPosition - myFleet.Center;
                     if (toEnemy != Vector2.Zero)
                     {
-                        var perp = new Vector2(-toEnemy.Y, toEnemy.X); // 90 degree tangent
+                        // Symmetry breaking: dynamically select and periodically reverse orbit direction in close combat
+                        if (distance < 700f && (bot.GameTime - _lastOrbitDecisionTime > 1800))
+                        {
+                            _lastOrbitDecisionTime = bot.GameTime;
+                            float flipChance = Math.Clamp(0.25f + 0.35f * (1.0f - bot.Parameters.SkillLevel), 0.15f, 0.60f);
+                            if (Random.Shared.NextDouble() < flipChance)
+                            {
+                                _orbitSign = -_orbitSign;
+                            }
+                        }
+
+                        var perp = new Vector2(-toEnemy.Y * _orbitSign, toEnemy.X * _orbitSign); // Dynamic tangent
 
                         float radialWeight;
                         float tangentialWeight;
 
-                        if (bot.Parameters.SkillLevel < 0.40f)
+                        if (bot.Parameters.SkillLevel < 0.35f)
                         {
-                            // Beginners do NOT tactically avoid or kite enemies!
-                            // They charge directly towards the player they are fighting, aiming and shooting at them.
-                            radialWeight = 1.0f;
-                            tangentialWeight = 0.0f;
+                            // Beginners charge aggressively but with small tangential bias to avoid perfect linear head-ons
+                            radialWeight = 0.85f;
+                            tangentialWeight = 0.25f;
                         }
                         else
                         {
@@ -201,13 +338,18 @@ namespace Game.Robots.Strategies
                         var tangVec = Vector2.Normalize(perp) * tangentialWeight;
 
                         moveDir = Vector2.Normalize(radialVec + tangVec);
+
+                        // Organic steering noise: break smooth consistency and lockstep orbits
+                        if (bot.Parameters.SteeringNoiseAmplitude > 0.01f)
+                        {
+                            float noiseTime = bot.GameTime * 0.003f + (bot.FleetID * 19.17f);
+                            float wanderAngle = (MathF.Sin(noiseTime) + MathF.Sin(noiseTime * 2.3f) * 0.5f) * bot.Parameters.SteeringNoiseAmplitude;
+                            float cos = MathF.Cos(wanderAngle);
+                            float sin = MathF.Sin(wanderAngle);
+                            moveDir = new Vector2(moveDir.X * cos - moveDir.Y * sin, moveDir.X * sin + moveDir.Y * cos);
+                        }
                         
                         // Defensive dash if fleeing from overwhelming threat (only for intermediate/pro)
-                        bool canDefensiveDash = bot.CanBoost
-                            && bot.Parameters.DefensiveDashEnabled
-                            && bot.Parameters.SkillLevel >= 0.40f
-                            && myFleet.Ships.Count >= bot.Parameters.MinimumShipsToDefensiveDash;
-
                         if (ratio < 0.4f && distance < 450f && canDefensiveDash)
                         {
                             bool hesitates = bot.Parameters.BoostHesitancy > 0.001f && (Random.Shared.NextDouble() < bot.Parameters.BoostHesitancy);
@@ -223,57 +365,13 @@ namespace Game.Robots.Strategies
                     }
                 }
 
-                // 4. BULLET AVOIDANCE INTEGRATION:
-                // Only experienced players with BulletDodgeSkill actively evade bullet trajectories.
-                // Complete beginners tunnel-vision and fly straight through incoming fire.
-                if (bot.Parameters.BulletDodgeSkill > 0.05f)
+                // Apply active dodge impulse with smooth sinusoidal bell-curve envelope
+                if (isDodging)
                 {
-                    Vector2 bulletDodge = Vector2.Zero;
-                    var bullets = bot.SensorBullets.VisibleBullets;
-                    int closeBullets = 0;
-                    
-                    foreach (var b in bullets)
-                    {
-                        if (b.Group?.Owner == myFleet.ID) continue;
-                        var toBullet = b.Position - myFleet.Center;
-                        float dist = toBullet.Length();
-                        
-                        if (dist < 800f && Vector2.Dot(b.Momentum, -toBullet) > 0) // Bullet moving towards us
-                        {
-                            var perpB = Vector2.Normalize(new Vector2(-b.Momentum.Y, b.Momentum.X));
-                            if (Vector2.Dot(perpB, -toBullet) < 0) perpB = -perpB;
-                            
-                            float weight = 1.0f - (dist / 800f);
-                            bulletDodge += perpB * (weight * weight * 5.0f);
-                            
-                            if (dist < 450f) closeBullets++;
-                        }
-                    }
-                    
-                    if (bulletDodge != Vector2.Zero)
-                    {
-                        // Scale evasion influence by player's dodging skill
-                        moveDir = Vector2.Normalize(moveDir + bulletDodge * bot.Parameters.BulletDodgeSkill);
-                        
-                        // Defensive dash if overwhelmed by close bullets
-                        bool canDefensiveDash = bot.CanBoost
-                            && bot.Parameters.DefensiveDashEnabled
-                            && bot.Parameters.BulletDodgeSkill > 0.35f
-                            && myFleet.Ships.Count >= bot.Parameters.MinimumShipsToDefensiveDash;
-
-                        if (closeBullets >= 2 && canDefensiveDash)
-                        {
-                            bool hesitates = bot.Parameters.BoostHesitancy > 0.001f && (Random.Shared.NextDouble() < bot.Parameters.BoostHesitancy);
-                            if (!hesitates)
-                            {
-                                bot.Cursor.SetTarget(myFleet.Center + moveDir * 600f, speed: bot.Parameters.FlickAimSpeed);
-                                if (bot.Cursor.IsAimedAt(myFleet.Center + moveDir * 600f, 0.4f))
-                                {
-                                    bot.Boost();
-                                }
-                            }
-                        }
-                    }
+                    float duration = Math.Max(1, _activeDodgeUntil - _activeDodgeStartTime);
+                    float progress = Math.Clamp((float)(bot.GameTime - _activeDodgeStartTime) / duration, 0f, 1f);
+                    float envelope = MathF.Sin(progress * MathF.PI); // Smooth bell curve (0 -> 1 -> 0)
+                    moveDir = Vector2.Normalize(moveDir + _activeDodgeImpulse * envelope);
                 }
 
                 // Blend with danger zone repulsion so we never maneuver out of bounds

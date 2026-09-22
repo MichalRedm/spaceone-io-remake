@@ -38,6 +38,7 @@ namespace Game.Robots.Framework
         }
 
         private long _lastGameTime = 0;
+        private float _tremorPhase = 0f;
 
         public void Update(long gameTime)
         {
@@ -47,10 +48,23 @@ namespace Game.Robots.Framework
             float dt = (gameTime - _lastGameTime);
             if (dt <= 0) return; // Prevent multiple updates if GameTime hasn't progressed
 
+            // Calculate organic hand tremor based on player skill and CursorTremorRadius
+            _tremorPhase += dt * 0.006f;
+            float tremorRadius = _bot.Parameters.CursorTremorRadius;
+            Vector2 tremor = Vector2.Zero;
+            if (tremorRadius > 0.5f)
+            {
+                tremor = new Vector2(
+                    MathF.Sin(_tremorPhase * 2.3f) + MathF.Cos(_tremorPhase * 4.1f) * 0.4f,
+                    MathF.Cos(_tremorPhase * 1.9f) + MathF.Sin(_tremorPhase * 3.7f) * 0.4f
+                ) * (tremorRadius * 0.6f);
+            }
+
             // Calculate a time-scaled Lerp factor based on the current movement speed (smooth vs flick)
             float factor = 1f - MathF.Pow(1f - _currentSpeed, dt / 25f);
             
-            CurrentRelativePosition = Vector2.Lerp(CurrentRelativePosition, _perceivedTarget, factor);
+            var targetWithTremor = _perceivedTarget + tremor;
+            CurrentRelativePosition = Vector2.Lerp(CurrentRelativePosition, targetWithTremor, factor);
             _lastGameTime = gameTime;
         }
         
