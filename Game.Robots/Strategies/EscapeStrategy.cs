@@ -12,6 +12,8 @@ namespace Game.Robots.Strategies
         private long _escapeStartTime = 0;
         private long _lastEscapeDashTime = 0;
         private long _lastKitingShotTime = 0;
+        private long _kitingUntil = 0;
+        private Vector2 _kitingAimTarget = Vector2.Zero;
 
         public float EvaluateUtility(HumanoidBot bot)
         {
@@ -78,6 +80,15 @@ namespace Game.Robots.Strategies
             if (myFleet == null || myFleet.Ships.Count == 0) return;
 
             TrackedEnemy threat = _threatFleetId != 0 ? bot.OffScreenTracker.Get(_threatFleetId) : null;
+            // If the locked threat is gone or far, find the closest active threat
+            if (threat == null || Vector2.Distance(myFleet.Center, threat.EstimatedPosition) > 1200f)
+            {
+                threat = bot.OffScreenTracker.TrackedEnemies
+                    .Where(e => e.Certainty > 0.1f && Vector2.Distance(myFleet.Center, e.EstimatedPosition) < 1000f)
+                    .OrderBy(e => Vector2.Distance(myFleet.Center, e.EstimatedPosition))
+                    .FirstOrDefault();
+            }
+
             if (threat == null)
             {
                 _isEscaping = false;
@@ -132,28 +143,92 @@ namespace Game.Robots.Strategies
                 }
             }
 
-            // 2. KITING / PARTING SHOTS (Intermediate/Pro players only):
-            // Skilled players (SkillLevel >= 0.50) quickly flick back to fire at pursuers when weapon is ready,
-            // then immediately snap back to escaping. Beginners just run forward in a straight line.
-            bool canKite = bot.Parameters.SkillLevel >= 0.50f 
-                && bot.CanShoot 
-                && distance < 750f 
-                && (bot.GameTime - _lastEscapeDashTime > 350)
-                && (bot.GameTime - _lastKitingShotTime > 500);
+            // 2. RETALIATION / KITING (Shooting back at pursuer for advanced players):
+            // Players with SkillLevel >= 0.35 quickly flick back to fire at pursuers when weapon is ready,
+            // deterring pursuit or thinning the enemy fleet.
+            bool isAdvanced = bot.Parameters.SkillLevel >= 0.35f;
+            bool canKite = isAdvanced 
+                && (bot.CanShoot || bot.CooldownShoot <= 0.12f)
+                && distance < 850f 
+                && (bot.GameTime - _lastEscapeDashTime > 300)
+                && (bot.GameTime - _lastKitingShotTime > 400)
+                && bot.GameTime >= _kitingUntil;
 
             if (canKite)
             {
-                Vector2 aimPoint = bot.ComputeHumanAimPoint(threat.EstimatedPosition, threat.EstimatedVelocity);
-                bot.Cursor.SetTarget(aimPoint, speed: bot.Parameters.FlickAimSpeed);
-                if (bot.Cursor.IsAimedAt(aimPoint, 0.40f))
+                _kitingAimTarget = bot.ComputeHumanAimPoint(threat.EstimatedPosition, threat.EstimatedVelocity);
+                _kitingUntil = bot.GameTime + 180; // 180ms committed flick window
+            }
+
+            bool isKiting = bot.GameTime < _kitingUntil && _kitingAimTarget != Vector2.Zero;
+            if (isKiting)
+            {
+                bot.Cursor.SetTarget(_kitingAimTarget, speed: bot.Parameters.FlickAimSpeed);
+                if (bot.CanShoot && (bot.Cursor.IsAimedAt(_kitingAimTarget, 0.45f) || (bot.GameTime - (_kitingUntil - 180) > 100)))
                 {
-                    bot.ShootAt(aimPoint);
+                    bot.ShootAt(_kitingAimTarget);
                     _lastKitingShotTime = bot.GameTime;
+                    _kitingUntil = 0;
+                    _kitingAimTarget = Vector2.Zero;
+                    isKiting = false;
                 }
             }
-            else
+
+            // 3. HARVESTING FOOD / STARS ON THE RUN:
+            // Advanced players (SkillLevel >= 0.30) do not ignore food/stars in front of them while escaping.
+            // Shooting food ahead regenerates fleet mass and boost fuel while maintaining escape momentum!
+            if (!isKiting && isAdvanced && bot.CanShoot && (bot.GameTime - _lastKitingShotTime > 250))
             {
-                // Normal escape steering: fly at full cruising speed away from threat
+                // Look for nearby abandoned ships (highest value) or food in the forward escape cone
+                Game.Robots.Models.Ship foodTarget = null;
+                float bestScore = float.MinValue;
+
+                void CheckTarget(Game.Robots.Models.Ship item, bool isAbandoned)
+                {
+                    var toItem = item.Position - myFleet.Center;
+                    float itemDist = toItem.Length();
+                    if (itemDist > 550f || itemDist < 10f) return;
+
+                    float dot = Vector2.Dot(toItem / itemDist, escapeHeading);
+                    // Must be in the forward escape direction (~65 deg cone)
+                    if (dot > 0.40f)
+                    {
+                        float score = dot * 2.0f + (1.0f - itemDist / 550f) + (isAbandoned ? 3.0f : 0f);
+                        if (score > bestScore)
+                        {
+                            bestScore = score;
+                            foodTarget = item;
+                        }
+                    }
+                }
+
+                foreach (var a in bot.SensorAbandoned.AllVisibleAbandoned) CheckTarget(a, true);
+                foreach (var f in bot.SensorFish.AllVisibleFish) CheckTarget(f, false);
+
+                if (foodTarget != null)
+                {
+                    var toTarget = foodTarget.Position - myFleet.Center;
+                    float dot = Vector2.Dot(Vector2.Normalize(toTarget), escapeHeading);
+
+                    // If food is nearly straight ahead (dot > 0.75), shoot immediately without diverting cursor much
+                    if (dot > 0.75f)
+                    {
+                        bot.ShootAt(foodTarget.Position);
+                    }
+                    else if (distance > 400f) // If not in immediate point-blank peril, quick-aim and shoot food
+                    {
+                        bot.Cursor.SetTarget(foodTarget.Position, speed: bot.Parameters.FlickAimSpeed);
+                        if (bot.Cursor.IsAimedAt(foodTarget.Position, 0.40f))
+                        {
+                            bot.ShootAt(foodTarget.Position);
+                        }
+                    }
+                }
+            }
+
+            if (!isKiting)
+            {
+                // Normal escape steering: fly at full cruising speed away from threat along safe escape heading
                 bot.Cursor.SetTarget(escapeTarget, speed: bot.Parameters.CruisingSpeed);
             }
         }
