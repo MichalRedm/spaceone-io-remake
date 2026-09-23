@@ -253,16 +253,9 @@ namespace Game.Engine.Core
                     effectiveSpeed * MathF.Sin(newAngle)
                 );
 
-                if (World.Hook.FlockVelocityPushStiffness > 0.000001f)
-                {
-                    // Blend target kinematic velocity with existing momentum, preserving the
-                    // internal velocity dispersion imparted by pairwise flocking relaxation
-                    Momentum = targetVelocity * 0.85f + Momentum * 0.15f;
-                }
-                else
-                {
-                    Momentum = targetVelocity;
-                }
+                // Pure kinematic velocity assignment — no blend needed since Flocking
+                // uses PBD position corrections only (no velocity impulses).
+                Momentum = targetVelocity;
             }
             else
             {

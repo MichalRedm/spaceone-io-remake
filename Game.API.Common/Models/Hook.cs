@@ -152,14 +152,16 @@ namespace Game.API.Common.Models
 
                     FlockSolidDiameter = 18.0f,
                     FlockPushStiffness = 0.60f,
-                    FlockVelocityPushStiffness = 0.00875f,
-                    FlockVelocityDamping = 0.12f,
+                    FlockVelocityPushStiffness = 0.0f,   // zeroed: original had PBD position-only, no velocity impulses
+                    FlockVelocityDamping = 0.0f,         // unused (velocity impulses disabled)
+                    FlockAttractionDiameter = 26.0f,     // outer edge of soft attraction zone (18-26px), matches observed 20-25px closing
+                    FlockAttractionWeight = 0.12f,       // spring strength: ~0.73 px/tick at 26px, matching ground-truth pairwise profile
                     FlockCohesionDistance = 60.0f,
                     FlockCohesionWeight = 0.0056f,
                     FlockRelaxationIterations = 2,
 
-                    FlockMouseAttractionRadius = 100.0f,
-                    FlockMouseAttractionWeight = 0.20f,
+                    FlockMouseAttractionRadius = 0.0f,   // unused (cursor compaction handled by distScale)
+                    FlockMouseAttractionWeight = 0.0f,
 
                     ShipSpawnVelocityRatio = 0.455f,
                     ShipSpawnCatchUpBoost = 1.191f,
@@ -300,6 +302,8 @@ namespace Game.API.Common.Models
         public float FlockPushStiffness { get; set; }
         public float FlockVelocityPushStiffness { get; set; }
         public float FlockVelocityDamping { get; set; }
+        public float FlockAttractionDiameter { get; set; }
+        public float FlockAttractionWeight { get; set; }
         public float FlockCohesionDistance { get; set; }
         public float FlockCohesionWeight { get; set; }
         public int FlockRelaxationIterations { get; set; }
