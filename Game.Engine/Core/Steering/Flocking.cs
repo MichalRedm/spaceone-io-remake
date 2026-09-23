@@ -7,7 +7,7 @@ namespace Game.Engine.Core.Steering
     {
         /// <summary>
         /// Applies authentic solid-disc non-penetration position relaxation (PBD)
-        /// and soft straggler cohesion bounding across ships within a fleet.
+        /// coupled with velocity separation impulses and soft straggler cohesion across ships within a fleet.
         /// </summary>
         public static void Relaxation(Fleet fleet)
         {
@@ -19,37 +19,39 @@ namespace Game.Engine.Core.Steering
             if (hook == null)
                 return;
 
-            float targetLen = fleet.AimTarget.Length();
-            // Linear reduction in inter-ship distance as the mouse gets closer to the fleet (down to 75% at 0px, starts below 200px)
-            float distScale = 0.75f + 0.25f * MathF.Min(1.0f, targetLen / 200.0f);
-
-            float solidDiameter = hook.FlockSolidDiameter * distScale;
+            float solidDiameter = hook.FlockSolidDiameter;
             if (solidDiameter <= 0.001f)
                 return;
 
             float pushStiffness = hook.FlockPushStiffness;
-            float cohesionDistance = hook.FlockCohesionDistance * distScale;
+            float velPushStiffness = hook.FlockVelocityPushStiffness;
+            float velDamping = hook.FlockVelocityDamping;
+            float cohesionDistance = hook.FlockCohesionDistance;
             float cohesionWeight = hook.FlockCohesionWeight;
             int iterations = Math.Max(1, hook.FlockRelaxationIterations);
 
             int count = ships.Count;
 
             Span<Vector2> displacements = count <= 128 ? stackalloc Vector2[count] : new Vector2[count];
+            Span<Vector2> velImpulses = count <= 128 ? stackalloc Vector2[count] : new Vector2[count];
             Span<float> weights = count <= 128 ? stackalloc float[count] : new float[count];
 
             for (int iter = 0; iter < iterations; iter++)
             {
                 displacements.Clear();
+                velImpulses.Clear();
                 weights.Clear();
 
-                // 1. Pairwise solid-disc non-penetration pass
+                // 1. Pairwise solid-disc non-penetration and velocity impulse pass
                 for (int i = 0; i < count; i++)
                 {
                     var posA = ships[i].Position;
+                    var velA = ships[i].Momentum;
 
                     for (int j = i + 1; j < count; j++)
                     {
                         var posB = ships[j].Position;
+                        var velB = ships[j].Momentum;
                         var rVec = posB - posA;
                         float distSq = rVec.LengthSquared();
 
@@ -59,10 +61,23 @@ namespace Game.Engine.Core.Steering
                             float overlap = solidDiameter - dist;
                             // Smooth quadratic factor: goes smoothly to 0 as dist approaches solidDiameter
                             float smooth = 1.0f - (dist / solidDiameter);
-                            Vector2 push = (rVec / dist) * (overlap * 0.5f * pushStiffness * (0.5f + 0.5f * smooth));
+                            Vector2 rDir = rVec / dist;
+                            Vector2 push = rDir * (overlap * 0.5f * pushStiffness * (0.5f + 0.5f * smooth));
 
                             displacements[i] -= push;
                             displacements[j] += push;
+
+                            // Velocity separation impulse + relative velocity damping
+                            if (velPushStiffness > 0.0001f)
+                            {
+                                Vector2 vImpulse = rDir * (overlap * 0.5f * velPushStiffness);
+                                Vector2 relVel = velB - velA;
+                                Vector2 vDamp = rDir * (Vector2.Dot(relVel, rDir) * 0.5f * velDamping);
+
+                                velImpulses[i] -= (vImpulse - vDamp);
+                                velImpulses[j] += (vImpulse - vDamp);
+                            }
+
                             weights[i] += 1f;
                             weights[j] += 1f;
                         }
@@ -80,12 +95,17 @@ namespace Game.Engine.Core.Steering
                     }
                 }
 
-                // Apply accumulated pairwise displacements smoothly
+                // Apply accumulated pairwise displacements and velocity impulses smoothly
                 for (int i = 0; i < count; i++)
                 {
                     if (weights[i] > 0.001f)
                     {
-                        ships[i].Position += displacements[i] / MathF.Max(1.0f, MathF.Sqrt(weights[i]));
+                        float invWeight = 1.0f / MathF.Max(1.0f, MathF.Sqrt(weights[i]));
+                        ships[i].Position += displacements[i] * invWeight;
+                        if (velPushStiffness > 0.0001f)
+                        {
+                            ships[i].Momentum += velImpulses[i] * invWeight;
+                        }
                     }
                 }
 
@@ -103,6 +123,10 @@ namespace Game.Engine.Core.Steering
                             float dist = MathF.Sqrt(distSq);
                             Vector2 pull = (toCenter / dist) * ((dist - cohesionDistance) * cohesionWeight);
                             ship.Position += pull;
+                            if (velPushStiffness > 0.0001f)
+                            {
+                                ship.Momentum += pull * 0.5f;
+                            }
                         }
                     }
                 }

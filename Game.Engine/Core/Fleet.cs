@@ -197,9 +197,18 @@ namespace Game.Engine.Core
                     count++;
                 }
 
-                ship.Position = position / count + offset;
-                ship.Momentum = momentum / count * World.Hook.ShipAddMomentumMultiplier;
+                Vector2 fleetVel = momentum / count;
+                Vector2 forwardDir = fleetVel.LengthSquared() > 0.0001f
+                    ? Vector2.Normalize(fleetVel)
+                    : Vector2.UnitX;
+
+                // Spawn offset: placed behind the fleet centroid (-10px to -15px along heading)
+                Vector2 spawnOffset = -forwardDir * 10.0f + offset;
+
+                ship.Position = position / count + spawnOffset;
+                ship.Momentum = fleetVel * (World.Hook.ShipSpawnVelocityRatio > 0.001f ? World.Hook.ShipSpawnVelocityRatio : World.Hook.ShipAddMomentumMultiplier);
                 ship.Angle = angle / count;
+                ship.SpawnTicksRemaining = World.Hook.ShipSpawnRampTicks;
             }
             else
             {
@@ -370,31 +379,51 @@ namespace Game.Engine.Core
                 FleetAngle = MathF.Atan2(FleetMomentum.Y, FleetMomentum.X);
             }
 
-            // Minimal, smooth mouse convergence: ships steer towards the mouse cursor
-            // with a bounded convergence angle (max ~3.5 deg = 0.06 rad).
-            // Smoothly fade to 0 when cursor is within 30-100px of fleet center to eliminate radial divergence when passing through the fleet
-            float maxConvergenceAngle = 0.06f * Math.Clamp((targetLen - 30.0f) / 70.0f, 0.0f, 1.0f);
+            // Authentic local mouse convergence:
+            // Ships in the vicinity of the mouse cursor steer towards it, producing authentic local compaction,
+            // while ships far from the cursor continue moving along parallel fleet heading rays.
+            // All ships strictly retain synchronized visual facing angle (ship.Angle = angle).
             Vector2 mousePos = FleetCenter + AimTarget;
+            float attractRadius = World.Hook.FlockMouseAttractionRadius;
+            float attractWeight = World.Hook.FlockMouseAttractionWeight;
 
             foreach (var ship in Ships)
             {
-                // Align ship visual facing angle with aim target or velocity
+                // Align ship visual facing angle with aim target or fleet heading (all ships face the exact same direction)
                 if (targetLen > 0.001f)
                     ship.Angle = angle;
-                else if (ship.Momentum.Length() > 0.001f)
-                    ship.Angle = MathF.Atan2(ship.Momentum.Y, ship.Momentum.X);
+                else
+                    ship.Angle = FleetAngle;
 
                 if (targetLen > 0.001f)
                 {
-                    if (maxConvergenceAngle > 0.001f)
+                    Vector2 toMouse = mousePos - ship.Position;
+                    float distToMouse = toMouse.Length();
+
+                    if (distToMouse > 0.001f && distToMouse < attractRadius && attractWeight > 0.0001f)
                     {
-                        Vector2 toMouse = mousePos - ship.Position;
+                        // Local compaction around mouse cursor with deadzone to eliminate singularity jitter
+                        float deadzone = Math.Clamp(distToMouse / 20.0f, 0.0f, 1.0f);
+                        float proximity = (1.0f - (distToMouse / attractRadius)) * deadzone;
+
                         float rawAngle = MathF.Atan2(toMouse.Y, toMouse.X);
                         float angleDiff = (rawAngle - angle + MathF.PI) % (MathF.PI * 2f);
                         if (angleDiff < 0) angleDiff += MathF.PI * 2f;
                         angleDiff -= MathF.PI;
 
-                        float clampedDiff = Math.Clamp(angleDiff, -maxConvergenceAngle, maxConvergenceAngle);
+                        float maxAttractDeflection = 0.45f * attractWeight;
+                        float clampedDiff = Math.Clamp(angleDiff, -maxAttractDeflection, maxAttractDeflection) * proximity;
+                        ship.AngleMovement = angle + clampedDiff;
+                    }
+                    else if (targetLen > 200f)
+                    {
+                        // Distant gentle ray convergence (max ~3.5 deg = 0.06 rad) for subtle formation elongation
+                        float rawAngle = MathF.Atan2(toMouse.Y, toMouse.X);
+                        float angleDiff = (rawAngle - angle + MathF.PI) % (MathF.PI * 2f);
+                        if (angleDiff < 0) angleDiff += MathF.PI * 2f;
+                        angleDiff -= MathF.PI;
+
+                        float clampedDiff = Math.Clamp(angleDiff, -0.06f, 0.06f);
                         ship.AngleMovement = angle + clampedDiff;
                     }
                     else
@@ -402,9 +431,9 @@ namespace Game.Engine.Core
                         ship.AngleMovement = angle;
                     }
                 }
-                else if (ship.Momentum.Length() > 0.001f)
+                else
                 {
-                    ship.AngleMovement = MathF.Atan2(ship.Momentum.Y, ship.Momentum.X);
+                    ship.AngleMovement = FleetAngle;
                 }
 
                 float baseThrust = (BaseThrust[Ships.Count] * BaseThrustConverter);

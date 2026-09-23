@@ -64,7 +64,7 @@ namespace Game.API.Common.Models
                     BoostDuration = 1000,
 
                     AbandonBuffer = 120,
-                    AbandonNoiseVelocity = 0.030f,
+                    AbandonNoiseVelocity = 0.0f,
                     AbandonNoiseRotation = 0.0004f,
                     AbandonedShipLifespan = 0,
 
@@ -150,11 +150,20 @@ namespace Game.API.Common.Models
                     FoodSectorSize = 1000f,
                     FoodSelectionPressure = 1.5f,
 
-                    FlockSolidDiameter = 18.0f,
-                    FlockPushStiffness = 0.50f,
-                    FlockCohesionDistance = 60.0f,
-                    FlockCohesionWeight = 0.003f,
+                    FlockSolidDiameter = 24.0f,
+                    FlockPushStiffness = 0.36f,
+                    FlockVelocityPushStiffness = 0.35f,
+                    FlockVelocityDamping = 0.12f,
+                    FlockCohesionDistance = 40.0f,
+                    FlockCohesionWeight = 0.010f,
                     FlockRelaxationIterations = 2,
+
+                    FlockMouseAttractionRadius = 180.0f,
+                    FlockMouseAttractionWeight = 0.20f,
+
+                    ShipSpawnVelocityRatio = 0.455f,
+                    ShipSpawnCatchUpBoost = 1.191f,
+                    ShipSpawnRampTicks = 4,
                     
                     OutOfBoundsDecayStart = 3000,
                     OutOfBoundsDecayInterval = 2000,
@@ -289,9 +298,18 @@ namespace Game.API.Common.Models
 
         public float FlockSolidDiameter { get; set; }
         public float FlockPushStiffness { get; set; }
+        public float FlockVelocityPushStiffness { get; set; }
+        public float FlockVelocityDamping { get; set; }
         public float FlockCohesionDistance { get; set; }
         public float FlockCohesionWeight { get; set; }
         public int FlockRelaxationIterations { get; set; }
+
+        public float FlockMouseAttractionRadius { get; set; }
+        public float FlockMouseAttractionWeight { get; set; }
+
+        public float ShipSpawnVelocityRatio { get; set; }
+        public float ShipSpawnCatchUpBoost { get; set; }
+        public int ShipSpawnRampTicks { get; set; }
 
         public int StepTime { get; set; }
         public float OutOfBoundsDeathLine { get; set; } = 100;
@@ -337,7 +355,7 @@ namespace Game.API.Common.Models
         public int AutoRemoveOnEmptyThreshold { get; set; }
         public uint ExplosionTime { get; set; }
         public int AbandonBuffer { get; set; }
-        public float AbandonNoiseVelocity { get; set; } = 0.030f;
+        public float AbandonNoiseVelocity { get; set; } = 0.0f;
         public float AbandonNoiseRotation { get; set; } = 0.0004f;
         public int AbandonedShipLifespan { get; set; } = 0;
         public int EarnedShipDelay { get; set; }
