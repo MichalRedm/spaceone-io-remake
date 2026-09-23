@@ -278,7 +278,6 @@ namespace Game.Engine.Core
             }
             ship.Color = "gray";
             ship.Abandoned = true;
-            ship.Momentum = ship.Momentum * World.Hook.AbandonMomentumMultiplier;
 
             // Apply slight random translational velocity noise and angular spin noise to each abandoned ship
             if (World.Hook.AbandonNoiseVelocity > 0)
@@ -290,7 +289,10 @@ namespace Game.Engine.Core
 
             if (World.Hook.AbandonNoiseRotation > 0)
             {
-                ship.AngularVelocity = ((float)Random.Shared.NextDouble() - 0.5f) * 2f * World.Hook.AbandonNoiseRotation;
+                float sign = Random.Shared.NextDouble() > 0.5 ? 1f : -1f;
+                // Bimodal distribution: guaranteed minimum spin of 25% max, matching original cp5::random() * 0.015 + 0.005 formula
+                float magnitude = 0.25f * World.Hook.AbandonNoiseRotation + 0.75f * (float)Random.Shared.NextDouble() * World.Hook.AbandonNoiseRotation;
+                ship.AngularVelocity = sign * magnitude;
             }
 
             ship.Group = null;
