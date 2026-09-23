@@ -379,13 +379,11 @@ namespace Game.Engine.Core
                 FleetAngle = MathF.Atan2(FleetMomentum.Y, FleetMomentum.X);
             }
 
-            // Authentic local mouse convergence:
-            // Ships in the vicinity of the mouse cursor steer towards it, producing authentic local compaction,
-            // while ships far from the cursor continue moving along parallel fleet heading rays.
-            // All ships strictly retain synchronized visual facing angle (ship.Angle = angle).
+            // Minimal, smooth mouse convergence: ships steer towards the mouse cursor
+            // with a bounded convergence angle (max ~3.5 deg = 0.06 rad).
+            // Smoothly fade to 0 when cursor is within 30-100px of fleet center to eliminate radial divergence when passing through the fleet
+            float maxConvergenceAngle = 0.06f * Math.Clamp((targetLen - 30.0f) / 70.0f, 0.0f, 1.0f);
             Vector2 mousePos = FleetCenter + AimTarget;
-            float attractRadius = World.Hook.FlockMouseAttractionRadius;
-            float attractWeight = World.Hook.FlockMouseAttractionWeight;
 
             foreach (var ship in Ships)
             {
@@ -397,33 +395,15 @@ namespace Game.Engine.Core
 
                 if (targetLen > 0.001f)
                 {
-                    Vector2 toMouse = mousePos - ship.Position;
-                    float distToMouse = toMouse.Length();
-
-                    if (distToMouse > 0.001f && distToMouse < attractRadius && attractWeight > 0.0001f)
+                    if (maxConvergenceAngle > 0.001f)
                     {
-                        // Local compaction around mouse cursor with deadzone to eliminate singularity jitter
-                        float deadzone = Math.Clamp(distToMouse / 20.0f, 0.0f, 1.0f);
-                        float proximity = (1.0f - (distToMouse / attractRadius)) * deadzone;
-
+                        Vector2 toMouse = mousePos - ship.Position;
                         float rawAngle = MathF.Atan2(toMouse.Y, toMouse.X);
                         float angleDiff = (rawAngle - angle + MathF.PI) % (MathF.PI * 2f);
                         if (angleDiff < 0) angleDiff += MathF.PI * 2f;
                         angleDiff -= MathF.PI;
 
-                        float maxAttractDeflection = 0.45f * attractWeight;
-                        float clampedDiff = Math.Clamp(angleDiff, -maxAttractDeflection, maxAttractDeflection) * proximity;
-                        ship.AngleMovement = angle + clampedDiff;
-                    }
-                    else if (targetLen > 200f)
-                    {
-                        // Distant gentle ray convergence (max ~3.5 deg = 0.06 rad) for subtle formation elongation
-                        float rawAngle = MathF.Atan2(toMouse.Y, toMouse.X);
-                        float angleDiff = (rawAngle - angle + MathF.PI) % (MathF.PI * 2f);
-                        if (angleDiff < 0) angleDiff += MathF.PI * 2f;
-                        angleDiff -= MathF.PI;
-
-                        float clampedDiff = Math.Clamp(angleDiff, -0.06f, 0.06f);
+                        float clampedDiff = Math.Clamp(angleDiff, -maxConvergenceAngle, maxConvergenceAngle);
                         ship.AngleMovement = angle + clampedDiff;
                     }
                     else

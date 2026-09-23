@@ -120,12 +120,14 @@ Future physics tuning will follow a modular, isolated sequence:
        $$\vec{v}_{\text{impulse}} = \hat{r} \cdot (\text{overlap} \cdot 0.5 \cdot \alpha_{v\text{-push}})$$
        $$\vec{v}_{\text{damp}} = \hat{r} \cdot ((\vec{v}_B - \vec{v}_A) \cdot \hat{r} \cdot 0.5 \cdot \gamma_v)$$
      - Blends forward target velocity with accumulated flock momentum: $\vec{v}_{\text{ship}} = 0.85 \cdot \vec{v}_{\text{target}} + 0.15 \cdot \vec{v}_{\text{prev}}$, sustaining natural ~18.9% speed variation within the formation.
-     - Calibrated parameters: `FlockSolidDiameter = 24.0f`, `FlockPushStiffness = 0.36f`, `FlockVelocityPushStiffness = 0.35f`, `FlockVelocityDamping = 0.12f`, `FlockRelaxationIterations = 2`.
+     - Calibrated parameters with consistent $\text{px/ms}$ server units: `FlockSolidDiameter = 18.0f`, `FlockPushStiffness = 0.60f`, `FlockVelocityPushStiffness = 0.00875f` ($0.35 / 40\text{ms}$), `FlockVelocityDamping = 0.12f`, `FlockRelaxationIterations = 2`.
      - Zero allocations: uses stack-allocated buffers (`stackalloc Vector2[count]`) for fleets up to 128 ships.
-   - **Authentic Local Mouse Compaction (`Fleet.cs`)**:
-     - Replaces artificial global fleet shrinking (`distScale`).
-     - Ships in the vicinity of the mouse cursor within attraction radius $R_{\text{attract}} = 180.0\text{ px}$ (`FlockMouseAttractionRadius`) deflect towards the cursor with weight $w = 0.20$ (`FlockMouseAttractionWeight`).
-     - Includes a $20\text{ px}$ cursor deadzone to prevent singularity twitching when the cursor hovers directly over a ship. Ships distant from the cursor cruise parallel without contraction.
+   - **Authentic Local Mouse Compaction (`Flocking.cs`, `Fleet.cs`)**:
+     - Operates pairwise in `Flocking.cs` based on proximity of each ship pair to the mouse cursor:
+       $$\text{localScale} = 0.75 + 0.25 \cdot \operatorname{clamp}\left(\frac{\min(d_{mA}, d_{mB})}{R_{\text{attract}}}, 0, 1\right)$$
+       $$D_{\text{pair}} = D_{\text{solid}} \cdot \text{localScale}$$
+       with $R_{\text{attract}} = 100.0\text{ px}$. Ships near the cursor pack tightly to $13.5\text{px}$ without shrinking distant ships across the arena.
+     - Steering maintains PR #23's smooth ray convergence with cursor deadzone fade ($\le 0.06\text{ rad}$), preventing head-on collisions when hovering near the fleet center.
    - **Visual Facing Synchronization Invariant**:
      - Crucial visual rule: **all ships in the fleet strictly face the exact same direction** (`ship.Angle = targetLen > 0.001f ? angle : FleetAngle`). Visual sprite orientation is never perturbed by internal velocity spread or local steering deflection.
    - **Spawn Kickback Kinematics (`Fleet.cs`, `Ship.cs`)**:
@@ -134,7 +136,7 @@ Future physics tuning will follow a modular, isolated sequence:
      - Spawn catch-up ramp: over 4 server ticks ($160\text{ ms}$, `ShipSpawnRampTicks = 4`), the new ship surges at $1.191\times$ cruise speed (`ShipSpawnCatchUpBoost = 1.191f`) to smoothly close into the formation before settling to cruise speed.
      - Confirmed via original WASM client audit (`Cell.cpp`) as 100% authoritative server physics.
    - **Unified Turn Direction Synchronization**: Authoritative fleet turn sign ($\text{sign}(\Delta\theta_{\text{fleet}})$) enforces uniform angular sweep on sharp / near-$180^\circ$ U-turns ($|\Delta\theta| > 150^\circ$), completely preventing symmetry-breaking fleet splitting.
-   - **Straggler Cohesion ($D_{\text{coh}}, w_{\text{coh}}$)**: Soft inward pull for ships separated beyond $D_{\text{coh}} = 40.0\text{ px}$ with $w_{\text{coh}} = 0.010$.
+   - **Straggler Cohesion ($D_{\text{coh}}, w_{\text{coh}}$)**: Soft inward pull for ships separated beyond $D_{\text{coh}} = 60.0\text{ px}$ with $w_{\text{coh}} = 0.0056$.
 4. **Phase 4: Global Game Pacing & Viewport Alignment (Completed)**:
    - **Historical Measurement Baseline**: A previous playback measurement treated $1920.0 \times 1080.0\text{ units}$ ($16:9$) and $V_{\text{bullet, orig}} = 1025.0\text{ px/s}$ as the reference, yielding `Hook.BaseThrustConverter = 0.002f` and `Hook.ShotThrustConverter = 0.0013f`. This calibration is now superseded as an implementation setting, but remains the comparison point for future measurement work.
    - **Current Video-Observed Rescaling (`Hook.cs`)**: Visual comparison against original-game recordings indicates that the previous values are too slow. The remake now uses `Hook.BaseThrustConverter = 0.0024f` and `Hook.ShotThrustConverter = 0.00156f` (a uniform $1.2\times$ increase), preserving the velocity-ratio invariant $\text{ShotThrustConverter} \times 10 = \text{BaseThrustConverter} \times 6.5 = 0.0156$.

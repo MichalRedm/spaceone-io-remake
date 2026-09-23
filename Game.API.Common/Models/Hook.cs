@@ -150,15 +150,15 @@ namespace Game.API.Common.Models
                     FoodSectorSize = 1000f,
                     FoodSelectionPressure = 1.5f,
 
-                    FlockSolidDiameter = 24.0f,
-                    FlockPushStiffness = 0.36f,
-                    FlockVelocityPushStiffness = 0.35f,
+                    FlockSolidDiameter = 18.0f,
+                    FlockPushStiffness = 0.60f,
+                    FlockVelocityPushStiffness = 0.00875f,
                     FlockVelocityDamping = 0.12f,
-                    FlockCohesionDistance = 40.0f,
-                    FlockCohesionWeight = 0.010f,
+                    FlockCohesionDistance = 60.0f,
+                    FlockCohesionWeight = 0.0056f,
                     FlockRelaxationIterations = 2,
 
-                    FlockMouseAttractionRadius = 180.0f,
+                    FlockMouseAttractionRadius = 100.0f,
                     FlockMouseAttractionWeight = 0.20f,
 
                     ShipSpawnVelocityRatio = 0.455f,
