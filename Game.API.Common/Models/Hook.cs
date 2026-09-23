@@ -64,9 +64,8 @@ namespace Game.API.Common.Models
                     BoostDuration = 1000,
 
                     AbandonBuffer = 120,
-                    AbandonMomentumMultiplier = 0.4f,
-                    AbandonNoiseVelocity = 0.015f,
-                    AbandonNoiseRotation = 0.0005f,
+                    AbandonNoiseVelocity = 0.030f,
+                    AbandonNoiseRotation = 0.0004f,
                     AbandonedShipLifespan = 0,
 
                     ShotCooldownTimeBotM = 22,
@@ -222,7 +221,6 @@ namespace Game.API.Common.Models
         public float BoostPeakBase { get; set; } = 40.12f;
         public float BoostPeakSlope { get; set; } = 5.00f;
 
-        public float AbandonMomentumMultiplier { get; set; }
 
         public int BoomLife { get; set; }
         public float BoomDrag { get; set; }
@@ -339,8 +337,8 @@ namespace Game.API.Common.Models
         public int AutoRemoveOnEmptyThreshold { get; set; }
         public uint ExplosionTime { get; set; }
         public int AbandonBuffer { get; set; }
-        public float AbandonNoiseVelocity { get; set; } = 0.015f;
-        public float AbandonNoiseRotation { get; set; } = 0.0005f;
+        public float AbandonNoiseVelocity { get; set; } = 0.030f;
+        public float AbandonNoiseRotation { get; set; } = 0.0004f;
         public int AbandonedShipLifespan { get; set; } = 0;
         public int EarnedShipDelay { get; set; }
         public int MutualDestructionCooldown { get; set; }
