@@ -71,9 +71,11 @@ Extracted from over **3.8M ship frames**, **413k food orbs**, and **112k laser s
 ### Abandoned Ships & Fleet Splitting (`Hook.AbandonedShipLifespan`, `Hook.DragAbandoned`, `Hook.AbandonNoiseVelocity`, `Hook.AbandonNoiseRotation`)
 - **Empirical Invariant**: Extracted across 3,147 split ship trajectories (`analysis/datasets/abandoned_ship_experiment_results.json`).
 - **Persistence Model**: When a fleet dashes/splits (opcode `0x19`), abandoned ships (`isSplitting`, flag 8) lose active engine thrust and drift with linear and angular damping (`DragAbandoned = 0.98`).
+- **Deceleration Dynamics**:
+  - In the original game, abandoned ships experience no immediate momentum drop (instantaneous speed ratio = 1.0000 across 5,923 events). Continuous deceleration is governed solely by `DragAbandoned = 0.98f` (empirical decay rate per tick: median 0.9829).
 - **Noise & Dispersion**:
-  - `Hook.AbandonNoiseVelocity = 0.015f`: Applies subtle random linear velocity noise to each abandoned ship individually on separation so ships drift slightly relative to each other.
-  - `Hook.AbandonNoiseRotation = 0.0005f`: Applies small random angular velocity perturbation (`[-AbandonNoiseRotation, +AbandonNoiseRotation]`) individually on separation, which decays to 0 under `DragAbandoned`.
+  - `Hook.AbandonNoiseVelocity = 0.030f`: Recreates the ~15% internal flock velocity dispersion observed in active original fleets ($\mu = 1.801$ on cruise speed ~11.5, angle std dev $11.7^\circ$), causing abandoned ships to naturally fan out as they coast.
+  - `Hook.AbandonNoiseRotation = 0.0004f`: Applies bimodal angular spin ($0.25 R + 0.75 R \cdot U(0,1)$ with random sign $\pm 1$) matching original WASM client bounds ($0.06 - 0.24\text{ rad/s}$), which decays to 0 alongside linear momentum under `DragAbandoned`.
 - **Expiration Dynamics**:
   - Abandoned ships do **not** automatically expire after a fixed timeout in the original game; undisturbed instances survived continuously for $67+\text{ s}$ and several minutes as long as the owner was alive.
   - Destruction triggers: (1) Creator fleet / owner death ($100\%$ immediate deletion), (2) projectile collision damage, or (3) active viewport de-synchronization.
