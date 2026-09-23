@@ -127,6 +127,74 @@ def sim_solid_disc_pbd(pos: np.ndarray, vel: np.ndarray, dbf: np.ndarray, N: int
     return new_pos, new_vel
 
 
+def sim_velocity_coupled_flocking(pos: np.ndarray, vel: np.ndarray, dbf: np.ndarray, N: int, speed: float,
+                                 d_solid: float = 28.0, push_stiffness: float = 0.366,
+                                 vel_push_stiffness: float = 0.350, vel_damping: float = 0.128,
+                                 coh_dist: float = 40.0, coh_weight: float = 0.010) -> Tuple[np.ndarray, np.ndarray]:
+    turn_rate = 0.1393
+    target_angle = math.atan2(dbf[1], dbf[0])
+    new_pos = np.copy(pos)
+    new_vel = np.copy(vel)
+
+    # 1. Kinematic forward step with heading steering
+    for i in range(N):
+        curr_spd = float(np.linalg.norm(new_vel[i]))
+        curr_ang = math.atan2(new_vel[i, 1], new_vel[i, 0]) if curr_spd > 0.1 else target_angle
+        diff = wrap_angle(target_angle - curr_ang)
+        clamped_diff = np.clip(diff, -turn_rate, turn_rate)
+        steer_ang = curr_ang + clamped_diff
+        target_v = speed * np.array([math.cos(steer_ang), math.sin(steer_ang)])
+        new_vel[i] = 0.85 * target_v + 0.15 * new_vel[i]
+        new_pos[i] += new_vel[i]
+
+    # 2. Pairwise solid-disc non-penetration relaxation with velocity impulse
+    displacements = np.zeros_like(new_pos)
+    vel_impulses = np.zeros_like(new_vel)
+    counts = np.zeros(N)
+
+    for i in range(N):
+        for j in range(i + 1, N):
+            r_vec = new_pos[j] - new_pos[i]
+            d = float(np.linalg.norm(r_vec))
+            if 0.001 < d < d_solid:
+                overlap = d_solid - d
+                r_dir = r_vec / d
+                push = r_dir * (overlap * 0.5 * push_stiffness)
+                displacements[i] -= push
+                displacements[j] += push
+                
+                v_impulse = r_dir * (overlap * 0.5 * vel_push_stiffness)
+                vel_impulses[i] -= v_impulse
+                vel_impulses[j] += v_impulse
+
+                rel_v = new_vel[j] - new_vel[i]
+                v_damp = r_dir * (float(np.dot(rel_v, r_dir)) * 0.5 * vel_damping)
+                vel_impulses[i] += v_damp
+                vel_impulses[j] -= v_damp
+
+                counts[i] += 1
+                counts[j] += 1
+
+    for i in range(N):
+        if counts[i] > 0:
+            scale = 1.0 / max(1.0, math.sqrt(counts[i]))
+            new_pos[i] += displacements[i] * scale
+            new_vel[i] += vel_impulses[i] * scale
+
+    # 3. Soft straggler cohesion bounding
+    if coh_weight > 1e-6 and N >= 3:
+        center = np.mean(new_pos, axis=0)
+        for i in range(N):
+            to_center = center - new_pos[i]
+            d_c = float(np.linalg.norm(to_center))
+            if d_c > coh_dist:
+                pull = (to_center / d_c) * ((d_c - coh_dist) * coh_weight)
+                new_pos[i] += pull
+                new_vel[i] += pull * 0.5
+
+    return new_pos, new_vel
+
+
 def evaluate_rollout(sim_fn, track: Dict[str, Any], steps: int = 25) -> Dict[str, float]:
     N = track["fleet_size"]
     p_sim = np.copy(track["positions"][0])
@@ -161,6 +229,17 @@ def evaluate_rollout(sim_fn, track: Dict[str, Any], steps: int = 25) -> Dict[str
     
     collision_rate = float(np.mean(np.array(min_dists) < 20.0))
     mean_min_dist = float(np.mean(min_dists))
+
+    # Velocity metrics at end of rollout
+    final_v = v_sim
+    speeds = np.linalg.norm(final_v, axis=1)
+    mean_spd = float(np.mean(speeds))
+    speed_cv = float(np.std(speeds) / mean_spd) if mean_spd > 0.1 else 0.0
+
+    mean_v = np.mean(final_v, axis=0)
+    mean_d = mean_v / (np.linalg.norm(mean_v) + 1e-6)
+    c_sim = np.clip(np.dot(final_v, mean_d) / (speeds + 1e-6), -1.0, 1.0)
+    heading_std = float(np.mean(np.degrees(np.arccos(c_sim))))
     
     return {
         "pos_rmse": pos_rmse,
@@ -168,6 +247,8 @@ def evaluate_rollout(sim_fn, track: Dict[str, Any], steps: int = 25) -> Dict[str
         "internal_rmse": internal_rmse,
         "collision_rate": collision_rate,
         "mean_min_dist": mean_min_dist,
+        "speed_cv": speed_cv,
+        "heading_std_deg": heading_std,
     }
 
 
@@ -260,6 +341,7 @@ def main():
     res_baseline = [evaluate_rollout(sim_baseline_kinematic, tr, steps=25) for tr in eval_tracks]
     res_boids = [evaluate_rollout(sim_angle_boids, tr, steps=25) for tr in eval_tracks]
     res_solid_pbd = [evaluate_rollout(sim_solid_disc_pbd, tr, steps=25) for tr in eval_tracks]
+    res_vel_coupled = [evaluate_rollout(sim_velocity_coupled_flocking, tr, steps=25) for tr in eval_tracks]
 
     benchmark_summary = {
         "num_evaluated_tracks": len(eval_tracks),
@@ -272,6 +354,8 @@ def main():
                 "mean_internal_rmse": float(np.mean([r["internal_rmse"] for r in res_baseline])),
                 "mean_collision_rate": float(np.mean([r["collision_rate"] for r in res_baseline])),
                 "mean_min_dist": float(np.mean([r["mean_min_dist"] for r in res_baseline])),
+                "mean_speed_cv": float(np.mean([r["speed_cv"] for r in res_baseline])),
+                "mean_heading_std": float(np.mean([r["heading_std_deg"] for r in res_baseline])),
             },
             "AngleSpaceBoids": {
                 "description": "Angle-space steering vector fusion (previous remake model)",
@@ -280,14 +364,28 @@ def main():
                 "mean_internal_rmse": float(np.mean([r["internal_rmse"] for r in res_boids])),
                 "mean_collision_rate": float(np.mean([r["collision_rate"] for r in res_boids])),
                 "mean_min_dist": float(np.mean([r["mean_min_dist"] for r in res_boids])),
+                "mean_speed_cv": float(np.mean([r["speed_cv"] for r in res_boids])),
+                "mean_heading_std": float(np.mean([r["heading_std_deg"] for r in res_boids])),
             },
             "KinematicSolidDiscPBD": {
-                "description": "Kinematic heading + Solid-Disc PBD non-penetration relaxation (proposed)",
+                "description": "Kinematic heading + Solid-Disc PBD non-penetration relaxation (PR #23)",
                 "mean_pos_rmse": float(np.mean([r["pos_rmse"] for r in res_solid_pbd])),
                 "mean_centroid_rmse": float(np.mean([r["centroid_rmse"] for r in res_solid_pbd])),
                 "mean_internal_rmse": float(np.mean([r["internal_rmse"] for r in res_solid_pbd])),
                 "mean_collision_rate": float(np.mean([r["collision_rate"] for r in res_solid_pbd])),
                 "mean_min_dist": float(np.mean([r["mean_min_dist"] for r in res_solid_pbd])),
+                "mean_speed_cv": float(np.mean([r["speed_cv"] for r in res_solid_pbd])),
+                "mean_heading_std": float(np.mean([r["heading_std_deg"] for r in res_solid_pbd])),
+            },
+            "VelocityCoupledFlocking": {
+                "description": "Velocity-Coupled Relaxation + Pairwise Impulses (calibrated authentic model)",
+                "mean_pos_rmse": float(np.mean([r["pos_rmse"] for r in res_vel_coupled])),
+                "mean_centroid_rmse": float(np.mean([r["centroid_rmse"] for r in res_vel_coupled])),
+                "mean_internal_rmse": float(np.mean([r["internal_rmse"] for r in res_vel_coupled])),
+                "mean_collision_rate": float(np.mean([r["collision_rate"] for r in res_vel_coupled])),
+                "mean_min_dist": float(np.mean([r["mean_min_dist"] for r in res_vel_coupled])),
+                "mean_speed_cv": float(np.mean([r["speed_cv"] for r in res_vel_coupled])),
+                "mean_heading_std": float(np.mean([r["heading_std_deg"] for r in res_vel_coupled])),
             },
         },
     }
@@ -306,6 +404,8 @@ def main():
         print(f"  Internal Rel RMSE: {stats['mean_internal_rmse']:.2f} px")
         print(f"  Collision Rate:    {stats['mean_collision_rate']*100:.1f}%")
         print(f"  Mean Min Distance: {stats['mean_min_dist']:.1f} px")
+        print(f"  Speed CV:          {stats['mean_speed_cv']*100:.1f}%")
+        print(f"  Heading Std:       {stats['mean_heading_std']:.2f} deg")
 
     print(f"\n[+] Full benchmark results saved to {args.output}")
 

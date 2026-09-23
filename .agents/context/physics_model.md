@@ -73,8 +73,10 @@ Extracted from over **3.8M ship frames**, **413k food orbs**, and **112k laser s
 - **Persistence Model**: When a fleet dashes/splits (opcode `0x19`), abandoned ships (`isSplitting`, flag 8) lose active engine thrust and drift with linear and angular damping (`DragAbandoned = 0.98`).
 - **Deceleration Dynamics**:
   - In the original game, abandoned ships experience no immediate momentum drop (instantaneous speed ratio = 1.0000 across 5,923 events). Continuous deceleration is governed solely by `DragAbandoned = 0.98f` (empirical decay rate per tick: median 0.9829).
-- **Noise & Dispersion**:
-  - `Hook.AbandonNoiseVelocity = 0.030f`: Recreates the ~15% internal flock velocity dispersion observed in active original fleets ($\mu = 1.801$ on cruise speed ~11.5, angle std dev $11.7^\circ$), causing abandoned ships to naturally fan out as they coast.
+- **Natural Dispersion vs. Synthetic Noise**:
+  - Active ships within a cruising flock naturally possess an empirical ~18.9% speed variation (CV) and ~2.7°–3.4° angular spread due to the continuous pairwise solid-disc PBD position corrections and the soft attraction zone between fleet members.
+  - When abandoned, preserving their genuine internal momentum causes them to naturally fan out organically along their distinct velocity vectors, eliminating the need for synthetic linear noise.
+  - `Hook.AbandonNoiseVelocity = 0.0f`: Synthetic velocity noise is set to 0 and deprecated in favor of authentic momentum-preserved fan-out (backward-compatible if set > 0).
   - `Hook.AbandonNoiseRotation = 0.0004f`: Applies bimodal angular spin ($0.25 R + 0.75 R \cdot U(0,1)$ with random sign $\pm 1$) matching original WASM client bounds ($0.06 - 0.24\text{ rad/s}$), which decays to 0 alongside linear momentum under `DragAbandoned`.
 - **Expiration Dynamics**:
   - Abandoned ships do **not** automatically expire after a fixed timeout in the original game; undisturbed instances survived continuously for $67+\text{ s}$ and several minutes as long as the owner was alive.
@@ -111,14 +113,39 @@ Future physics tuning will follow a modular, isolated sequence:
 2. **Phase 2: Single-Ship Motion Model Identification**:
    - Isolate single-ship ($N=1$) turn and straight trajectories from playback data.
    - Benchmark discrete drag vs. kinematic heading velocity models to determine the true underlying motion equation before tuning multi-ship parameters.
-3. **Phase 3: Fleet Swarm & Formation Dynamics (Completed)**:
-   - **Model**: Kinematic Target Ray Convergence + Pairwise Solid-Disc Position-Based Dynamics (PBD) Relaxation.
-   - **Solid Diameter ($D_{\text{solid}}$)**: [DONE] $25.0\text{ px}$ ($r \approx 12.5\text{ px}$, matching the core ship sprite bounds), verified across 80k+ multi-ship frames (`analysis/datasets/flocking_experiment_results.json`).
-   - **Push Stiffness ($\alpha_{\text{push}}$)**: $0.60$ with $2$ relaxation iterations per tick.
-   - **Ray Convergence & Elongation**: Each ship steers towards mouse ray $\vec{T}_i = \text{AimTarget} + (\text{FleetCenter} - \vec{p}_i)$, generating inward lateral compression that stretches the fleet longitudinally ($L/W$ ratio $1.1\times - 3.5\times$) while solid discs prevent overlap. Fades smoothly within cursor deadzone ($< 30\text{ px}$) to prevent radial divergence during cursor passes.
-   - **Unified Turn Direction Synchronization**: Authoritative fleet turn sign ($\text{sign}(\Delta\theta_{\text{fleet}})$) enforces uniform angular sweep on sharp / near-$180^\circ$ U-turns ($|\Delta\theta| > 150^\circ$), completely preventing symmetry-breaking fleet splitting.
-   - **Straggler Cohesion ($D_{\text{coh}}, w_{\text{coh}}$)**: Soft inward pull for ships separated beyond $D_{\text{coh}} = 80.0\text{ px}$ with $w_{\text{coh}} = 0.0056$.
-   - **Collision Rate**: Reduced from $66.9\%$ (baseline) and $29.0\%$ (angular Boids) down to $3.2\%$ in 25-step turning rollouts (`analysis/datasets/flocking_model_benchmark_results.json`).
+3. **Phase 3: Fleet Swarm & Formation Dynamics (Completed & Calibrated)**:
+   - **Empirical Pairwise Relative Velocity Profile** (from 2.8M pair samples across 17 recordings):
+     | Distance Range | Mean Rel. Velocity (px/tick) | Regime |
+     |:---|:---|:---|
+     | 0–15 px | **+1.34** | Strong repulsion |
+     | 15–20 px | **+0.79** | Moderate repulsion |
+     | 20–25 px | **−0.73** | **Soft attraction** (ships close together) |
+     | 25–60 px | ~0 | Near equilibrium |
+   - **Model**: PBD Solid-Disc Relaxation with Soft Attraction Zone + Global `distScale` Cursor Compaction (`Flocking.cs`) + Spawn Kickback (`Fleet.cs`, `Ship.cs`).
+   - **Position-Based Dynamics Only (`Flocking.cs`)**:
+     - Pure position corrections — **no velocity impulses** added to `Momentum`. This matches the original game's physics which produced the observed velocity profile purely through positional displacement.
+     - Adding velocity impulses (tested in prior iteration) fights the kinematic `Momentum = targetVelocity` assignment each tick, causing oscillation during spawn entry. Removed.
+     - Solid-disc repulsion (smoothed quadratic):
+       $$\text{push} = \hat{r} \cdot \left(\text{overlap} \cdot 0.5 \cdot k_{\text{push}} \cdot (0.5 + 0.5 \cdot \text{smooth})\right)$$
+     - Soft attraction zone just outside the solid disc:
+       $$\text{pull} = \hat{r} \cdot \left(\text{penetration} \cdot 0.5 \cdot k_{\text{attract}} \cdot \frac{\text{penetration}}{D_{\text{attract}} - D_{\text{solid}}}\right)$$
+       applied when $D_{\text{solid}} < d < D_{\text{attract}}$ (ships inside the attraction zone pull toward each other).
+     - Calibrated parameters: `FlockSolidDiameter = 18.0f`, `FlockPushStiffness = 0.60f`, `FlockAttractionDiameter = 26.0f`, `FlockAttractionWeight = 0.12f`, `FlockVelocityPushStiffness = 0.0f`, `FlockRelaxationIterations = 2`.
+     - Zero allocations: uses stack-allocated buffers (`stackalloc Vector2[count]`) for fleets up to 128 ships.
+   - **Global Cursor Compaction (`distScale`, PR #23 mechanism)**:
+     - A single global scale factor shrinks the fleet's equilibrium resting diameter based on cursor distance:
+       $$\text{distScale} = 0.75 + 0.25 \cdot \operatorname{clamp}\left(\frac{\|\vec{u}_{aim}\|}{200}, 0, 1\right)$$
+       Applied to both `solidDiameter` and `attractDiameter`. When cursor is at fleet center: `distScale = 0.75` → ships rest at $0.75 \times 18 = 13.5\text{ px}$ solid diameter → visibly tighter formation.
+     - This is an **active equilibrium compression** (not reactive): the attraction zone draws ships to the new shorter equilibrium without requiring a separate attractive steering force.
+   - **Visual Facing Synchronization Invariant**:
+     - Crucial visual rule: **all ships in the fleet strictly face the exact same direction** (`ship.Angle = targetLen > 0.001f ? angle : FleetAngle`). Visual sprite orientation is never perturbed by internal position corrections.
+   - **Spawn Kickback Kinematics (`Fleet.cs`, `Ship.cs`)**:
+     - Newly added ships spawn with longitudinal offset $-10\text{ px}$ behind the fleet centroid along the fleet heading vector (confirmed empirically: `fwd_disp_median = -6.3 px` at step 0 relative to the other ships' centroid, which is slightly forward of the true centroid).
+     - Spawn initial speed ratio: $0.455\times$ cruise speed (`ShipSpawnVelocityRatio = 0.455f`, empirically measured: step 0 median = 0.458).
+     - Spawn catch-up ramp: over 4 server ticks ($160\text{ ms}$), the new ship surges at $1.191\times$ cruise (`ShipSpawnCatchUpBoost = 1.191f`, empirically measured: step 1 median = 1.195) before settling to cruise.
+     - No velocity impulses during spawn: the PBD position push alone handles overlap resolution; kinematic velocity is always set directly (`Momentum = targetVelocity`) without momentum blending.
+   - **Unified Turn Direction Synchronization**: Authoritative fleet turn sign ($\text{sign}(\Delta\theta_{\text{fleet}})$) enforces uniform angular sweep on sharp / near-$180^\circ$ U-turns ($|\Delta\theta| > 150^\circ$), preventing symmetry-breaking fleet splitting.
+   - **Straggler Cohesion ($D_{\text{coh}}, w_{\text{coh}}$)**: Soft inward pull for ships separated beyond $D_{\text{coh}} = 60.0\text{ px}$ with $w_{\text{coh}} = 0.0056$.
 4. **Phase 4: Global Game Pacing & Viewport Alignment (Completed)**:
    - **Historical Measurement Baseline**: A previous playback measurement treated $1920.0 \times 1080.0\text{ units}$ ($16:9$) and $V_{\text{bullet, orig}} = 1025.0\text{ px/s}$ as the reference, yielding `Hook.BaseThrustConverter = 0.002f` and `Hook.ShotThrustConverter = 0.0013f`. This calibration is now superseded as an implementation setting, but remains the comparison point for future measurement work.
    - **Current Video-Observed Rescaling (`Hook.cs`)**: Visual comparison against original-game recordings indicates that the previous values are too slow. The remake now uses `Hook.BaseThrustConverter = 0.0024f` and `Hook.ShotThrustConverter = 0.00156f` (a uniform $1.2\times$ increase), preserving the velocity-ratio invariant $\text{ShotThrustConverter} \times 10 = \text{BaseThrustConverter} \times 6.5 = 0.0156$.

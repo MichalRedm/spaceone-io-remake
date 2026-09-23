@@ -22,6 +22,7 @@ namespace Game.Engine.Core
         public bool Abandoned { get; set; }
         public Fleet AbandonedByFleet { get; set; }
         public long AbandonedTime { get; set; }
+        public int SpawnTicksRemaining { get; set; } = 0;
 
         protected bool IsOOB = false;
 
@@ -224,16 +225,37 @@ namespace Game.Engine.Core
                     float turnFraction = MathF.Abs(angleDiff) / MathF.PI;
                     effectiveSpeed = baseCruiseSpeed * (1.0f - World.Hook.SpeedDip * turnFraction);
                     maxTurnRate = World.Hook.TurnRate;
+
+                    if (SpawnTicksRemaining > 0)
+                    {
+                        // Authentic spawn catch-up profile:
+                        // Step 1: surge at ~1.19x catch-up boost to close distance to formation
+                        // Steps 2-4: smoothly settle to 1.0x cruise speed
+                        if (SpawnTicksRemaining == World.Hook.ShipSpawnRampTicks)
+                        {
+                            effectiveSpeed *= World.Hook.ShipSpawnCatchUpBoost;
+                        }
+                        else
+                        {
+                            float ramp = (float)SpawnTicksRemaining / World.Hook.ShipSpawnRampTicks;
+                            effectiveSpeed *= (1.0f + (World.Hook.ShipSpawnCatchUpBoost - 1.0f) * ramp);
+                        }
+                        SpawnTicksRemaining--;
+                    }
                 }
 
                 // Clamp turn rate
                 float clampedDelta = Math.Clamp(angleDiff, -maxTurnRate, maxTurnRate);
                 float newAngle = currentAngle + clampedDelta;
 
-                Momentum = new Vector2(
+                Vector2 targetVelocity = new Vector2(
                     effectiveSpeed * MathF.Cos(newAngle),
                     effectiveSpeed * MathF.Sin(newAngle)
                 );
+
+                // Pure kinematic velocity assignment — no blend needed since Flocking
+                // uses PBD position corrections only (no velocity impulses).
+                Momentum = targetVelocity;
             }
             else
             {

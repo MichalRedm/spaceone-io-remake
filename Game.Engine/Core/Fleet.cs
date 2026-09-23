@@ -197,9 +197,18 @@ namespace Game.Engine.Core
                     count++;
                 }
 
-                ship.Position = position / count + offset;
-                ship.Momentum = momentum / count * World.Hook.ShipAddMomentumMultiplier;
+                Vector2 fleetVel = momentum / count;
+                Vector2 forwardDir = fleetVel.LengthSquared() > 0.0001f
+                    ? Vector2.Normalize(fleetVel)
+                    : Vector2.UnitX;
+
+                // Spawn offset: placed behind the fleet centroid (-10px to -15px along heading)
+                Vector2 spawnOffset = -forwardDir * 10.0f + offset;
+
+                ship.Position = position / count + spawnOffset;
+                ship.Momentum = fleetVel * (World.Hook.ShipSpawnVelocityRatio > 0.001f ? World.Hook.ShipSpawnVelocityRatio : World.Hook.ShipAddMomentumMultiplier);
                 ship.Angle = angle / count;
+                ship.SpawnTicksRemaining = World.Hook.ShipSpawnRampTicks;
             }
             else
             {
@@ -378,11 +387,11 @@ namespace Game.Engine.Core
 
             foreach (var ship in Ships)
             {
-                // Align ship visual facing angle with aim target or velocity
+                // Align ship visual facing angle with aim target or fleet heading (all ships face the exact same direction)
                 if (targetLen > 0.001f)
                     ship.Angle = angle;
-                else if (ship.Momentum.Length() > 0.001f)
-                    ship.Angle = MathF.Atan2(ship.Momentum.Y, ship.Momentum.X);
+                else
+                    ship.Angle = FleetAngle;
 
                 if (targetLen > 0.001f)
                 {
@@ -402,9 +411,9 @@ namespace Game.Engine.Core
                         ship.AngleMovement = angle;
                     }
                 }
-                else if (ship.Momentum.Length() > 0.001f)
+                else
                 {
-                    ship.AngleMovement = MathF.Atan2(ship.Momentum.Y, ship.Momentum.X);
+                    ship.AngleMovement = FleetAngle;
                 }
 
                 float baseThrust = (BaseThrust[Ships.Count] * BaseThrustConverter);
