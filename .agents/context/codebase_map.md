@@ -40,7 +40,7 @@ Kinematic calculations and spatial offsets for multi-ship formations.
 
 | File Path | Key Classes / Functions | Responsibilities & Invariants |
 | :--- | :--- | :--- |
-| `Game.Engine/Core/Steering/Flocking.cs` | `Flocking` | Position-based dynamics (PBD) solid-disc relaxation (`Relaxation`) preventing inter-ship penetration and preserving organic swarm layout. |
+| `Game.Engine/Core/Steering/Flocking.cs` | `Flocking` | Position-based dynamics (PBD) solid-disc relaxation with pairwise velocity separation impulses and damping (`Relaxation`), preventing inter-ship penetration while sustaining authentic internal velocity dispersion and zero-alloc execution. |
 | `Game.Engine/Core/Steering/FleetMath.cs` | `FleetMath` | Fleet centroid (`FleetCenterNaive`) and average momentum (`FleetMomentum`) vector calculations. |
 
 ---
@@ -152,6 +152,9 @@ Autonomous context-steering bot framework and genetic evolution controllers.
 | `analysis/core/kinematics.py` | Velocity, acceleration, drag, and curvature calculations from telemetry. |
 | `analysis/experiments/01_invariants/` | Ground-truth measurement scripts: bullet lifetimes, bullet speeds, and shot cooldown formulas. |
 | `analysis/experiments/02_movement_models/` | Trajectory loss comparison and kinematic model parameter fitting. |
+| `analysis/experiments/03_flocking_physics/measure_flocking_kinematics.py` | Telemetry extraction of in-flock pairwise velocities, relative speed CV, heading dispersion, and spawn birth profiles. |
+| `analysis/experiments/03_flocking_physics/tune_flocking_optimizer.py` | Multi-objective parameter optimization for velocity-coupled solid-disc flocking dynamics. |
+| `analysis/experiments/03_flocking_physics/benchmark_flocking.py` | Multi-horizon benchmark comparing kinematic, boids, solid-disc PBD, and velocity-coupled flocking models. |
 
 ---
 
