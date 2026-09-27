@@ -38,7 +38,7 @@ Data extracted from 41 binary playback sessions (`reference/space1-original/serv
 ### A. Localized PBD Spatial Pull & Local Scale (`Flocking.cs`)
 - In `Game.Engine/Core/Steering/Flocking.cs`:
   - Solid-disc Position-Based Dynamics (PBD) relaxation applies a localized pairwise scale factor:
-    $$\text{localScale} = 0.95 + 0.05 \cdot \operatorname{clamp}\left(\frac{d_{\text{mouse}}}{60.0}, 0.0, 1.0\right)$$
+    $$\text{localScale} = 0.95 + 0.05 \cdot \mathrm{clamp}\left(\frac{d_{\text{mouse}}}{60.0}, 0.0, 1.0\right)$$
   - Ships within $60\text{ px}$ of the cursor receive a gentle physical spatial pull (up to $0.4\text{ px}$ per tick at the center), pulling them into the relaxed $0.95\times$ solid bounds.
   - Because this is a 2D spatial pull rather than a directional heading alteration, small fleets (3–5 ships) maintain their natural 2D formation (triangle/circle) and do not collapse into single-file lines.
 
@@ -46,7 +46,7 @@ Data extracted from 41 binary playback sessions (`reference/space1-original/serv
 - In `Game.Engine/Core/Fleet.cs`:
   - When the cursor is distant, ships bias their heading towards the target ray (up to $\omega_{\max} = 0.08\text{ rad} \approx 4.5^\circ$).
   - As a ship approaches the cursor ($< 100\text{ px}$), this angular convergence smoothly fades to zero:
-    $$\omega_{\text{conv}} = 0.08 \cdot \operatorname{clamp}\left(\frac{d_{\text{mouse}}}{100.0}, 0.0, 1.0\right)$$
+    $$\omega_{\text{conv}} = 0.08 \cdot \mathrm{clamp}\left(\frac{d_{\text{mouse}}}{100.0}, 0.0, 1.0\right)$$
   - Fading to zero prevents ships from crossing the cursor axis, eliminating tornado orbits and high-frequency heading chatter.
 
 ---
