@@ -152,6 +152,7 @@ Autonomous context-steering bot framework and genetic evolution controllers.
 | `analysis/core/kinematics.py` | Velocity, acceleration, drag, and curvature calculations from telemetry. |
 | `analysis/experiments/01_invariants/` | Ground-truth measurement scripts: bullet lifetimes, bullet speeds, and shot cooldown formulas. |
 | `analysis/experiments/02_movement_models/` | Trajectory loss comparison and kinematic model parameter fitting. |
+| `analysis/experiments/03_flocking_physics/README.md` | Flocking formation dynamics, local cursor compaction, in-flock velocity variance experiments, and multi-body modeling directives. |
 
 ---
 

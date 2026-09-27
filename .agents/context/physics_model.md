@@ -111,11 +111,20 @@ Future physics tuning will follow a modular, isolated sequence:
 2. **Phase 2: Single-Ship Motion Model Identification**:
    - Isolate single-ship ($N=1$) turn and straight trajectories from playback data.
    - Benchmark discrete drag vs. kinematic heading velocity models to determine the true underlying motion equation before tuning multi-ship parameters.
-3. **Phase 3: Fleet Swarm & Formation Dynamics (Completed)**:
-   - **Model**: Kinematic Target Ray Convergence + Pairwise Solid-Disc Position-Based Dynamics (PBD) Relaxation.
+3. **Phase 3: Fleet Swarm & Formation Dynamics (Calibrated & Open Research)**:
+   - **Model**: Kinematic Target Ray Convergence + Pairwise Solid-Disc Position-Based Dynamics (PBD) Relaxation + Localized Compaction.
    - **Solid Diameter ($D_{\text{solid}}$)**: [DONE] $25.0\text{ px}$ ($r \approx 12.5\text{ px}$, matching the core ship sprite bounds), verified across 80k+ multi-ship frames (`analysis/datasets/flocking_experiment_results.json`).
    - **Push Stiffness ($\alpha_{\text{push}}$)**: $0.60$ with $2$ relaxation iterations per tick.
-   - **Ray Convergence & Elongation**: Each ship steers towards mouse ray $\vec{T}_i = \text{AimTarget} + (\text{FleetCenter} - \vec{p}_i)$, generating inward lateral compression that stretches the fleet longitudinally ($L/W$ ratio $1.1\times - 3.5\times$) while solid discs prevent overlap. Fades smoothly within cursor deadzone ($< 30\text{ px}$) to prevent radial divergence during cursor passes.
+   - **Local Cursor Compaction**:
+     - *Empirical Baseline*: Telemetry confirms compaction around the cursor is subtle and localized, reducing mean neighbor spacing by $\approx 5\%$ (from $34.9\text{ px}$ to $33.2\text{ px}$) within a $60\text{ px}$ falloff radius (`analysis/experiments/03_flocking_physics/tune_compaction_curve.py`).
+     - *Implementation (`Flocking.cs`, `Fleet.cs`)*: Localized pairwise scaling $\text{localScale} = 0.95 + 0.05 \cdot \mathrm{clamp}(d_{\text{mouse}}/60.0, 0, 1)$ combined with gentle 2D spatial pull ($\le 0.4\text{ px}$/tick) and proximity steering fade ($d_{\text{mouse}} < 100\text{ px}$) replaces the flawed global 200px/25% scale from PR #23. This prevents line-collapse in small fleets and eliminates heading jitter and tornado orbits.
+   - **In-Flock Velocity Variance & Abandoned Dispersion Discovery**:
+     - *Telemetry Invariant*: Cruising fleets exhibit an internal heading standard deviation of $\sigma = 5.46^\circ$ ($95\text{th percentile} = 14.14^\circ$). Ships naturally possess non-parallel velocity vectors due to continuous internal swarm forces (`analysis/experiments/03_flocking_physics/measure_in_flock_velocity_variance.py`).
+     - *Dispersion Mechanics*: Natural dispersion upon abandonment in original Spaceone is directly explained by this inherent velocity variance, indicating that synthetic `Hook.AbandonNoiseVelocity` is an artifact of zero-variance parallel kinematics.
+     - *Coupling Failure Mode*: Direct per-tick coupling of discrete PBD displacement into continuous `AngleMovement` induces high-frequency chatter/jitter due to alternating relaxation oscillations, necessitating deeper continuous multi-body modeling.
+   - **Future Research Directives (Advanced Model Optimization)**:
+     - Formulate a continuous, smoothed multi-body swarm model (e.g. continuous spring-damper separation or low-pass filtered momentum integration) to capture the authentic $5.5^\circ$ in-flock variance without discrete chatter.
+     - Apply trajectory loss minimization or ML parameter inversion against raw telemetry to concurrently tune separation stiffness, cohesion, and turn damping, paving the way to retire `AbandonNoiseVelocity`.
    - **Unified Turn Direction Synchronization**: Authoritative fleet turn sign ($\text{sign}(\Delta\theta_{\text{fleet}})$) enforces uniform angular sweep on sharp / near-$180^\circ$ U-turns ($|\Delta\theta| > 150^\circ$), completely preventing symmetry-breaking fleet splitting.
    - **Straggler Cohesion ($D_{\text{coh}}, w_{\text{coh}}$)**: Soft inward pull for ships separated beyond $D_{\text{coh}} = 80.0\text{ px}$ with $w_{\text{coh}} = 0.0056$.
    - **Collision Rate**: Reduced from $66.9\%$ (baseline) and $29.0\%$ (angular Boids) down to $3.2\%$ in 25-step turning rollouts (`analysis/datasets/flocking_model_benchmark_results.json`).

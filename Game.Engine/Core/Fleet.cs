@@ -370,10 +370,10 @@ namespace Game.Engine.Core
                 FleetAngle = MathF.Atan2(FleetMomentum.Y, FleetMomentum.X);
             }
 
-            // Minimal, smooth mouse convergence: ships steer towards the mouse cursor
-            // with a bounded convergence angle (max ~3.5 deg = 0.06 rad).
-            // Smoothly fade to 0 when cursor is within 30-100px of fleet center to eliminate radial divergence when passing through the fleet
-            float maxConvergenceAngle = 0.06f * Math.Clamp((targetLen - 30.0f) / 70.0f, 0.0f, 1.0f);
+            // Bounded geometric steering: ships bias their heading towards the mouse cursor.
+            // We smoothly fade this convergence to 0 when near the mouse to prevent jittering 
+            // and to prevent small fleets from collapsing into a single-file line.
+            float maxConvergenceAngle = 0.08f;
             Vector2 mousePos = FleetCenter + AimTarget;
 
             foreach (var ship in Ships)
@@ -386,21 +386,19 @@ namespace Game.Engine.Core
 
                 if (targetLen > 0.001f)
                 {
-                    if (maxConvergenceAngle > 0.001f)
-                    {
-                        Vector2 toMouse = mousePos - ship.Position;
-                        float rawAngle = MathF.Atan2(toMouse.Y, toMouse.X);
-                        float angleDiff = (rawAngle - angle + MathF.PI) % (MathF.PI * 2f);
-                        if (angleDiff < 0) angleDiff += MathF.PI * 2f;
-                        angleDiff -= MathF.PI;
+                    Vector2 toMouse = mousePos - ship.Position;
+                    float rawAngle = MathF.Atan2(toMouse.Y, toMouse.X);
+                    
+                    float angleDiff = (rawAngle - angle + MathF.PI) % (MathF.PI * 2f);
+                    if (angleDiff < 0) angleDiff += MathF.PI * 2f;
+                    angleDiff -= MathF.PI;
 
-                        float clampedDiff = Math.Clamp(angleDiff, -maxConvergenceAngle, maxConvergenceAngle);
-                        ship.AngleMovement = angle + clampedDiff;
-                    }
-                    else
-                    {
-                        ship.AngleMovement = angle;
-                    }
+                    // Fade convergence to 0 near the cursor
+                    float distToMouse = toMouse.Length();
+                    float dynamicMaxAngle = maxConvergenceAngle * Math.Clamp(distToMouse / 100.0f, 0.0f, 1.0f);
+
+                    float clampedDiff = Math.Clamp(angleDiff, -dynamicMaxAngle, dynamicMaxAngle);
+                    ship.AngleMovement = angle + clampedDiff;
                 }
                 else if (ship.Momentum.Length() > 0.001f)
                 {
