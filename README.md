@@ -1,17 +1,40 @@
-# Spaceone.io Remake
+<h1 align="center">
+    <img src="./Game.Engine/wwwroot/img/ui/Space1_Logo.png" alt="Spaceone.io Remake" />
+    <!-- TODO: add light theme logo -->
+    <!-- <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="./Game.Engine/wwwroot/img/ui/Space1_Logo.png">
+      <img src="./Game.Engine/wwwroot/img/ui/Space1_Logo_Light.png" alt="Spaceone.io Remake" />
+    </picture> -->
+</h1>
 
-Authoritative C# simulation engine, Pixi.js WebGL client, and empirical kinematic calibration for the classic 2D multiplayer fleet combat game.
+<p align="center">
+    <strong>A faithful open-source replica of the classic 2D multiplayer fleet combat game.</strong><br>
+    Authoritative C# simulation engine, Pixi.js WebGL client, and empirical kinematic calibration.
+</p>
 
-[![CI Pipeline](https://github.com/MichalRedm/spaceone-io-remake/actions/workflows/ci.yml/badge.svg)](https://github.com/MichalRedm/spaceone-io-remake/actions/workflows/ci.yml)
-[![C# .NET 7.0](https://img.shields.io/badge/.NET-7.0-512BD4?logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
-[![Pixi.js](https://img.shields.io/badge/Pixi.js-WebGL-E72264?logo=pixiv&logoColor=white)](https://pixijs.com/)
-[![Vite](https://img.shields.io/badge/Bundler-Vite%205-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
-[![Protocol](https://img.shields.io/badge/Protocol-FlatBuffers%20%2B%20WebSockets-009688)](https://flatbuffers.dev/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+<p align="center">
+    <a href="https://github.com/MichalRedm/spaceone-io-remake/actions/workflows/ci.yml"><img src="https://github.com/MichalRedm/spaceone-io-remake/actions/workflows/ci.yml/badge.svg" alt="CI Pipeline" /></a>
+    <a href="https://dotnet.microsoft.com/"><img src="https://img.shields.io/badge/.NET-7.0-512BD4?logo=dotnet&logoColor=white" alt="C# .NET 7.0" /></a>
+    <a href="https://pixijs.com/"><img src="https://img.shields.io/badge/Pixi.js-WebGL-E72264?logo=pixiv&logoColor=white" alt="Pixi.js" /></a>
+    <a href="https://vitejs.dev/"><img src="https://img.shields.io/badge/Bundler-Vite%205-646CFF?logo=vite&logoColor=white" alt="Vite" /></a>
+    <a href="https://flatbuffers.dev/"><img src="https://img.shields.io/badge/Protocol-FlatBuffers%20%2B%20WebSockets-009688" alt="Protocol" /></a>
+    <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" /></a>
+</p>
 
-![Spaceone.io Remake Gameplay](.github/assets/gameplay.webp)
+<p align="center">
+    <a href="#overview">Overview</a> &bull;
+    <a href="#quickstart">Quickstart</a> &bull;
+    <a href="#controls--how-to-play">Controls</a> &bull;
+    <a href="#system-architecture">Architecture</a> &bull;
+    <a href="#core-subsystems">Subsystems</a> &bull;
+    <a href="#swarm-dynamics--fleet-steering">Swarm Dynamics</a> &bull;
+    <a href="#physics-calibration--empirical-kinematics">Physics</a> &bull;
+    <a href="#autonomous-bot-ai">Bots</a>
+</p>
 
-[Overview](#overview) &bull; [Quickstart](#quickstart) &bull; [Controls](#controls--how-to-play) &bull; [Architecture](#system-architecture) &bull; [Subsystems](#core-subsystems) &bull; [Swarm Dynamics](#swarm-dynamics--fleet-steering) &bull; [Physics](#physics-calibration--empirical-kinematics) &bull; [Bots](#autonomous-bot-ai)
+<p align="center">
+    <img src=".github/assets/gameplay.webp" alt="Spaceone.io Remake Gameplay" />
+</p>
 
 ---
 
