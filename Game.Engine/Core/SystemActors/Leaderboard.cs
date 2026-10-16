@@ -106,7 +106,7 @@ namespace Game.Engine.Core.SystemActors
         protected Leaderboard GenerateTeamLeaderboard()
         {
             var players = Player.GetWorldPlayers(World);
-            int cyanScore = 0;
+            int blueScore = 0;
             int redScore = 0;
 
             var playerEntries = new List<Leaderboard.Entry>(players.Count);
@@ -115,8 +115,8 @@ namespace Game.Engine.Core.SystemActors
                 var p = players[i];
                 if (p == null) continue;
 
-                if (p.Color == "cyan")
-                    cyanScore += p.Score;
+                if (p.Color == "blue" || p.Color == "cyan")
+                    blueScore += p.Score;
                 else if (p.Color == "red")
                     redScore += p.Score;
 
@@ -143,9 +143,9 @@ namespace Game.Engine.Core.SystemActors
             {
                 new Leaderboard.Entry
                 {
-                    Name = "cyan",
-                    Score = cyanScore,
-                    Color = "cyan"
+                    Name = "blue",
+                    Score = blueScore,
+                    Color = "blue"
                 },
                 new Leaderboard.Entry
                 {

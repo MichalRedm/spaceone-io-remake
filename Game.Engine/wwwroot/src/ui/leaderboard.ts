@@ -325,23 +325,36 @@ export class Leaderboard {
         leaderboardLeft.classList.add("is-hidden");
       }
     } else if (data.Type === "Team") {
-      const cyanScore = Math.max(0, data.Entries[0]?.Score ?? 0);
-      const redScore = Math.max(0, data.Entries[1]?.Score ?? 0);
-      const totalScore = cyanScore + redScore;
+      const blueEntry =
+        data.Entries.find(
+          (e) =>
+            e.Color === "blue" ||
+            e.Color === "cyan" ||
+            e.Name === "blue" ||
+            e.Name === "cyan",
+        ) ?? data.Entries[0];
+      const redEntry =
+        data.Entries.find((e) => e.Color === "red" || e.Name === "red") ??
+        data.Entries[1];
 
-      let cyanPercent = 50;
+      const blueScore = Math.max(0, blueEntry?.Score ?? 0);
+      const redScore = Math.max(0, redEntry?.Score ?? 0);
+      const totalScore = blueScore + redScore;
+
+      let bluePercent = 50;
       if (totalScore > 0) {
-        cyanPercent = Math.round((cyanScore / totalScore) * 100);
-        cyanPercent = Math.max(5, Math.min(95, cyanPercent));
+        bluePercent = Math.round((blueScore / totalScore) * 100);
+        bluePercent = Math.max(5, Math.min(95, bluePercent));
       }
 
       const selfEntry = fleetID
         ? data.Entries.find((e) => e.FleetID === fleetID)
         : undefined;
-      const isSelfCyan = selfEntry?.Color === "cyan";
+      const isSelfBlue =
+        selfEntry?.Color === "blue" || selfEntry?.Color === "cyan";
       const isSelfRed = selfEntry?.Color === "red";
 
-      const cyanSelfBadge = isSelfCyan
+      const blueSelfBadge = isSelfBlue
         ? `<span class="team-score-hud__badge">YOU</span>`
         : "";
       const redSelfBadge = isSelfRed
@@ -351,10 +364,10 @@ export class Leaderboard {
       const teamHudHtml =
         `<div class="team-score-hud">` +
         `<div class="team-score-hud__bar">` +
-        `<div class="team-score-hud__team team-score-hud__team--cyan${isSelfCyan ? " team-score-hud__team--self" : ""}">` +
-        `<span class="team-score-hud__name">CYAN</span>` +
-        cyanSelfBadge +
-        `<span class="team-score-hud__score">${cyanScore.toLocaleString()}</span>` +
+        `<div class="team-score-hud__team team-score-hud__team--blue${isSelfBlue ? " team-score-hud__team--self" : ""}">` +
+        `<span class="team-score-hud__name">BLUE</span>` +
+        blueSelfBadge +
+        `<span class="team-score-hud__score">${blueScore.toLocaleString()}</span>` +
         `</div>` +
         `<div class="team-score-hud__divider">VS</div>` +
         `<div class="team-score-hud__team team-score-hud__team--red${isSelfRed ? " team-score-hud__team--self" : ""}">` +
@@ -364,7 +377,7 @@ export class Leaderboard {
         `</div>` +
         `</div>` +
         `<div class="team-score-hud__meter">` +
-        `<div class="team-score-hud__meter-fill" style="width: ${cyanPercent}%;"></div>` +
+        `<div class="team-score-hud__meter-fill" style="width: ${bluePercent}%;"></div>` +
         `</div>` +
         `</div>`;
 
