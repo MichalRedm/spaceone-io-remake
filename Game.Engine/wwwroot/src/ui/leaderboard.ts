@@ -325,16 +325,68 @@ export class Leaderboard {
         leaderboardLeft.classList.add("is-hidden");
       }
     } else if (data.Type === "Team") {
-      let outC = "";
-      if (data.Entries[0])
-        outC += getOut(data.Entries[0], undefined, false, true);
-      if (data.Entries[1])
-        outC += getOut(data.Entries[1], undefined, false, true);
+      const blueEntry =
+        data.Entries.find(
+          (e) =>
+            e.Color === "blue" ||
+            e.Color === "cyan" ||
+            e.Name === "blue" ||
+            e.Name === "cyan",
+        ) ?? data.Entries[0];
+      const redEntry =
+        data.Entries.find((e) => e.Color === "red" || e.Name === "red") ??
+        data.Entries[1];
+
+      const blueScore = Math.max(0, blueEntry?.Score ?? 0);
+      const redScore = Math.max(0, redEntry?.Score ?? 0);
+      const totalScore = blueScore + redScore;
+
+      let bluePercent = 50;
+      if (totalScore > 0) {
+        bluePercent = Math.round((blueScore / totalScore) * 100);
+        bluePercent = Math.max(5, Math.min(95, bluePercent));
+      }
+
+      const selfEntry = fleetID
+        ? data.Entries.find((e) => e.FleetID === fleetID)
+        : undefined;
+      const isSelfBlue =
+        selfEntry?.Color === "blue" || selfEntry?.Color === "cyan";
+      const isSelfRed = selfEntry?.Color === "red";
+
+      const blueSelfBadge = isSelfBlue
+        ? `<span class="team-score-hud__badge">YOU</span>`
+        : "";
+      const redSelfBadge = isSelfRed
+        ? `<span class="team-score-hud__badge">YOU</span>`
+        : "";
+
+      const teamHudHtml =
+        `<div class="team-score-hud">` +
+        `<div class="team-score-hud__bar">` +
+        `<div class="team-score-hud__team team-score-hud__team--blue${isSelfBlue ? " team-score-hud__team--self" : ""}">` +
+        `<span class="team-score-hud__name">BLUE</span>` +
+        blueSelfBadge +
+        `<span class="team-score-hud__score">${blueScore.toLocaleString()}</span>` +
+        `</div>` +
+        `<div class="team-score-hud__divider">VS</div>` +
+        `<div class="team-score-hud__team team-score-hud__team--red${isSelfRed ? " team-score-hud__team--self" : ""}">` +
+        `<span class="team-score-hud__score">${redScore.toLocaleString()}</span>` +
+        redSelfBadge +
+        `<span class="team-score-hud__name">RED</span>` +
+        `</div>` +
+        `</div>` +
+        `<div class="team-score-hud__meter">` +
+        `<div class="team-score-hud__meter-fill" style="width: ${bluePercent}%;"></div>` +
+        `</div>` +
+        `</div>`;
 
       if (leaderboardCenter) {
         leaderboardCenter.hidden = false;
         leaderboardCenter.classList.remove("is-hidden");
-        leaderboardCenter.innerHTML = `<tbody>${outC}</tbody>`;
+        leaderboardCenter.style.width = "";
+        leaderboardCenter.style.height = "";
+        leaderboardCenter.innerHTML = teamHudHtml;
       }
 
       // Players start from index 2; sort by score descending
