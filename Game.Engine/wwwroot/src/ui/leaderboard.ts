@@ -325,16 +325,55 @@ export class Leaderboard {
         leaderboardLeft.classList.add("is-hidden");
       }
     } else if (data.Type === "Team") {
-      let outC = "";
-      if (data.Entries[0])
-        outC += getOut(data.Entries[0], undefined, false, true);
-      if (data.Entries[1])
-        outC += getOut(data.Entries[1], undefined, false, true);
+      const cyanScore = Math.max(0, data.Entries[0]?.Score ?? 0);
+      const redScore = Math.max(0, data.Entries[1]?.Score ?? 0);
+      const totalScore = cyanScore + redScore;
+
+      let cyanPercent = 50;
+      if (totalScore > 0) {
+        cyanPercent = Math.round((cyanScore / totalScore) * 100);
+        cyanPercent = Math.max(5, Math.min(95, cyanPercent));
+      }
+
+      const selfEntry = fleetID
+        ? data.Entries.find((e) => e.FleetID === fleetID)
+        : undefined;
+      const isSelfCyan = selfEntry?.Color === "cyan";
+      const isSelfRed = selfEntry?.Color === "red";
+
+      const cyanSelfBadge = isSelfCyan
+        ? `<span class="team-score-hud__badge">YOU</span>`
+        : "";
+      const redSelfBadge = isSelfRed
+        ? `<span class="team-score-hud__badge">YOU</span>`
+        : "";
+
+      const teamHudHtml =
+        `<div class="team-score-hud">` +
+        `<div class="team-score-hud__bar">` +
+        `<div class="team-score-hud__team team-score-hud__team--cyan${isSelfCyan ? " team-score-hud__team--self" : ""}">` +
+        `<span class="team-score-hud__name">CYAN</span>` +
+        cyanSelfBadge +
+        `<span class="team-score-hud__score">${cyanScore.toLocaleString()}</span>` +
+        `</div>` +
+        `<div class="team-score-hud__divider">VS</div>` +
+        `<div class="team-score-hud__team team-score-hud__team--red${isSelfRed ? " team-score-hud__team--self" : ""}">` +
+        `<span class="team-score-hud__score">${redScore.toLocaleString()}</span>` +
+        redSelfBadge +
+        `<span class="team-score-hud__name">RED</span>` +
+        `</div>` +
+        `</div>` +
+        `<div class="team-score-hud__meter">` +
+        `<div class="team-score-hud__meter-fill" style="width: ${cyanPercent}%;"></div>` +
+        `</div>` +
+        `</div>`;
 
       if (leaderboardCenter) {
         leaderboardCenter.hidden = false;
         leaderboardCenter.classList.remove("is-hidden");
-        leaderboardCenter.innerHTML = `<tbody>${outC}</tbody>`;
+        leaderboardCenter.style.width = "";
+        leaderboardCenter.style.height = "";
+        leaderboardCenter.innerHTML = teamHudHtml;
       }
 
       // Players start from index 2; sort by score descending
