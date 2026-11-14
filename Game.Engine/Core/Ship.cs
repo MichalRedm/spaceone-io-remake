@@ -231,15 +231,29 @@ namespace Game.Engine.Core
                     maxTurnRate = World.Hook.TurnRate;
                 }
 
-                // Smoothstep spawn speed ramp so newly added ships lag behind briefly ("shootback")
-                // without breaking fleet turn coherence or pushing settled ships.
+                // Brief shootback followed by a gentle catch-up surge so newly added ships lag visibly
+                // without accumulating multi-tick deficit that ejects them behind the fleet.
                 if (SpawnTicksRemaining > 0 && World.Hook.ShipSpawnRampTicks > 0)
                 {
+                    int rampTicks = World.Hook.ShipSpawnRampTicks;
                     SpawnTicksRemaining--;
-                    float progress = Math.Clamp(1.0f - (SpawnTicksRemaining / (float)World.Hook.ShipSpawnRampTicks), 0.0f, 1.0f);
-                    float eased = progress * progress * (3.0f - 2.0f * progress);
-                    float spawnMultiplier = World.Hook.ShipAddMomentumMultiplier
-                        + (1.0f - World.Hook.ShipAddMomentumMultiplier) * eased;
+                    float spawnMultiplier;
+                    if (SpawnTicksRemaining == 0)
+                    {
+                        spawnMultiplier = 1.0f;
+                    }
+                    else if (SpawnTicksRemaining == 1 && rampTicks >= 3 && World.Hook.ShipSpawnCatchupMultiplier > 0.0f)
+                    {
+                        spawnMultiplier = World.Hook.ShipSpawnCatchupMultiplier;
+                    }
+                    else
+                    {
+                        int slowSteps = rampTicks >= 3 ? rampTicks - 1 : rampTicks;
+                        float progress = Math.Clamp((rampTicks - SpawnTicksRemaining) / (float)slowSteps, 0.0f, 1.0f);
+                        float eased = progress * progress * (3.0f - 2.0f * progress);
+                        spawnMultiplier = World.Hook.ShipAddMomentumMultiplier
+                            + (1.0f - World.Hook.ShipAddMomentumMultiplier) * eased;
+                    }
                     effectiveSpeed *= spawnMultiplier;
                 }
 

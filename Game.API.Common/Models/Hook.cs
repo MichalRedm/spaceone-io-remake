@@ -26,6 +26,7 @@ namespace Game.API.Common.Models
 
                     ShipAddRadius = 3,
                     ShipAddMomentumMultiplier = 0.30f,
+                    ShipSpawnCatchupMultiplier = 1.20f,
                     ShipSpawnRampTicks = 3,
                     ShipSpawnSettledPushScale = 0.0f,
 
@@ -202,6 +203,7 @@ namespace Game.API.Common.Models
 
         public int ShipAddRadius { get; set; }
         public float ShipAddMomentumMultiplier { get; set; }
+        public float ShipSpawnCatchupMultiplier { get; set; }
         public int ShipSpawnRampTicks { get; set; }
         public float ShipSpawnSettledPushScale { get; set; }
 

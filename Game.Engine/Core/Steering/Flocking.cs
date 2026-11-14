@@ -173,12 +173,9 @@ namespace Game.Engine.Core.Steering
                 return rawPush * scale;
             }
 
-            // Prevent trailing settled ships from pushing a shooting-back ship forward through the fleet.
-            float fwdDot = Vector2.Dot(rawPush, fleetForward);
-            if (fwdDot > 0f)
-            {
-                rawPush -= fleetForward * fwdDot;
-            }
+            // Resolve spawn overlaps strictly laterally along fleetForward so settled ships
+            // spread newborns into side pockets rather than ejecting them behind the fleet.
+            rawPush -= fleetForward * Vector2.Dot(rawPush, fleetForward);
 
             weight = 1f;
             return rawPush;
