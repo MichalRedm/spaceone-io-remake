@@ -25,7 +25,10 @@ namespace Game.API.Common.Models
                     MutualDestructionCooldown = 100,
 
                     ShipAddRadius = 3,
-                    ShipAddMomentumMultiplier = 0.9f,
+                    ShipAddMomentumMultiplier = 0.15f,
+                    ShipSpawnCatchupMultiplier = 1.55f,
+                    ShipSpawnRampTicks = 6,
+                    ShipSpawnSettledPushScale = 0.0f,
 
                     // source: https://cdn.discordapp.com/attachments/357878752446906378/357892120427626498/uptodate_-_Sheet1.pdf
                     BaseThrust = new[] {
@@ -200,6 +203,9 @@ namespace Game.API.Common.Models
 
         public int ShipAddRadius { get; set; }
         public float ShipAddMomentumMultiplier { get; set; }
+        public float ShipSpawnCatchupMultiplier { get; set; }
+        public int ShipSpawnRampTicks { get; set; }
+        public float ShipSpawnSettledPushScale { get; set; }
 
         public float[] BaseThrust { get; set; }
         public float BaseThrustConverter { get; set; }
