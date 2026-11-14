@@ -49,12 +49,12 @@ Data extracted from 41 binary playback sessions (`reference/space1-original/serv
     $$\omega_{\text{conv}} = 0.08 \cdot \mathrm{clamp}\left(\frac{d_{\text{mouse}}}{100.0}, 0.0, 1.0\right)$$
   - Fading to zero prevents ships from crossing the cursor axis, eliminating tornado orbits and high-frequency heading chatter.
 
-### C. Spawn Shootback Ramp & Asymmetric PBD Isolation (`Hook.cs`, `Fleet.cs`, `Ship.cs`, `Flocking.cs`)
-- Verified across `57` isolated `fleetSizeOnServer` single-ship births in original playback recordings (`reference/space1-original/server-ansible/record/playback/*`), newborn ships spawn near the fleet centroid at `~0.23–0.33x` fleet speed, drift backward to `~9–10 px` behind the centroid, and rapidly equalize back to `1.0x` within `~80–120 ms`.
+### C. Spawn Shootback Ramp & Lateral PBD Isolation (`Hook.cs`, `Fleet.cs`, `Ship.cs`, `Flocking.cs`)
+- Verified across `68` `N>=2` births and `57` multi-frame traces in original playback recordings (`reference/space1-original/server-ansible/record/playback/*`), newborn ships always spawn near the previous tick's fleet centroid (`d_prev_lat ≈ 0.8–1.0 px`) at `~0.23–0.33x` fleet speed, briefly lag behind for one pulse, then rebound immediately (`~1.20x` speed on `k=1`) while expanding laterally so they integrate into internal/rear-middle pockets (`rank ≈ 0.29–0.52`, `0–12%` backmost for `N>=5`) rather than being ejected behind the fleet.
 - **Remake Implementation**:
   - `Fleet.AddShip()` sets `Ship.SpawnTicksRemaining = Hook.ShipSpawnRampTicks` (`3`) only when joining an existing fleet (`Ships.Count > 0`), with initial `Momentum` scaled by `Hook.ShipAddMomentumMultiplier` (`0.30f`).
-  - `Ship.Think()` applies a cubic smoothstep multiplier ramp from `0.30f` to `1.00f` over those `3` ticks after regular `SpeedDip` / boost speed computation so turning and boosting coherence remain intact.
-  - `Flocking.Relaxation` isolates spawning ships (`SpawnTicksRemaining > 0`) by skipping Pass 1/Pass 2 pulls on newborns, scaling pairwise PBD push/weight onto settled ships by `Hook.ShipSpawnSettledPushScale` (`0.0f` by default), and stripping positive forward push components along `FleetMomentum` on newborns.
+  - `Ship.Think()` steps newborns through a brief shootback followed by a catch-up surge (`0.30f -> 0.65f -> Hook.ShipSpawnCatchupMultiplier (1.20f) -> 1.00f` over `3` ticks) after regular `SpeedDip` / boost speed computation so turning and boosting coherence remain intact.
+  - `Flocking.Relaxation` isolates spawning ships (`SpawnTicksRemaining > 0`) by skipping Pass 1/Pass 2 pulls on newborns, scaling pairwise PBD push/weight onto settled ships by `Hook.ShipSpawnSettledPushScale` (`0.0f` by default), and stripping the full longitudinal projection along `FleetMomentum` on newborns so overlap resolution spreads ships strictly laterally without pushing them out the back of the fleet.
 
 ---
 
