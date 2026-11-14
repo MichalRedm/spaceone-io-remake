@@ -200,10 +200,12 @@ namespace Game.Engine.Core
                 ship.Position = position / count + offset;
                 ship.Momentum = momentum / count * World.Hook.ShipAddMomentumMultiplier;
                 ship.Angle = angle / count;
+                ship.SpawnTicksRemaining = World.Hook.ShipSpawnRampTicks;
             }
             else
             {
                 ship.Position = FleetCenter + offset;
+                ship.SpawnTicksRemaining = 0;
             }
 
             NewShips.Add(ship);

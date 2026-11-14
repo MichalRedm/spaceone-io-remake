@@ -27,6 +27,13 @@ namespace Game.Engine.Core.Steering
             float cohesionDistance = hook.FlockCohesionDistance;
             float cohesionWeight = hook.FlockCohesionWeight;
             int iterations = Math.Max(1, hook.FlockRelaxationIterations);
+            int spawnRampTicks = hook.ShipSpawnRampTicks;
+            float settledPushScale = hook.ShipSpawnSettledPushScale;
+
+            float momSq = fleet.FleetMomentum.LengthSquared();
+            Vector2 fleetForward = momSq > 1e-8f
+                ? fleet.FleetMomentum / MathF.Sqrt(momSq)
+                : new Vector2(MathF.Cos(fleet.FleetAngle), MathF.Sin(fleet.FleetAngle));
 
             int count = ships.Count;
 
@@ -47,6 +54,9 @@ namespace Game.Engine.Core.Steering
                 for (int i = 0; i < count; i++)
                 {
                     var ship = ships[i];
+                    if (ship.SpawnTicksRemaining > 0)
+                        continue;
+
                     Vector2 toMouse = mousePos - ship.Position;
                     float distSq = toMouse.LengthSquared();
                     if (distSq < 60.0f * 60.0f && distSq > 0.001f)
@@ -65,6 +75,9 @@ namespace Game.Engine.Core.Steering
                     for (int i = 0; i < count; i++)
                     {
                         var ship = ships[i];
+                        if (ship.SpawnTicksRemaining > 0)
+                            continue;
+
                         Vector2 toCenter = center - ship.Position;
                         float distSq = toCenter.LengthSquared();
                         if (distSq > cohesionDistance * cohesionDistance)
@@ -80,6 +93,7 @@ namespace Game.Engine.Core.Steering
                 for (int i = 0; i < count; i++)
                 {
                     var posA = ships[i].Position;
+                    int spawnA = ships[i].SpawnTicksRemaining;
 
                     for (int j = i + 1; j < count; j++)
                     {
@@ -94,30 +108,31 @@ namespace Game.Engine.Core.Steering
                         float localScale = 0.95f + 0.05f * Math.Clamp(distToMouse / 60.0f, 0.0f, 1.0f);
                         float pairSolidDiameter = solidDiameter * localScale;
 
+                        Vector2 rawPush;
                         if (distSq < pairSolidDiameter * pairSolidDiameter && distSq > 0.001f)
                         {
                             float dist = MathF.Sqrt(distSq);
                             float overlap = pairSolidDiameter - dist;
                             // Smooth quadratic factor: goes smoothly to 0 as dist approaches pairSolidDiameter
                             float smooth = 1.0f - (dist / pairSolidDiameter);
-                            Vector2 push = (rVec / dist) * (overlap * 0.5f * pushStiffness * (0.5f + 0.5f * smooth));
-
-                            displacements[i] -= push;
-                            displacements[j] += push;
-                            weights[i] += 1f;
-                            weights[j] += 1f;
+                            rawPush = (rVec / dist) * (overlap * 0.5f * pushStiffness * (0.5f + 0.5f * smooth));
                         }
                         else if (distSq <= 0.001f)
                         {
                             // Distinct radial dispersal for identical position spawn bursts
                             float angle = (float)(i * 2.39996323f + j);
-                            Vector2 push = new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * (pairSolidDiameter * 0.5f * pushStiffness);
-
-                            displacements[i] -= push;
-                            displacements[j] += push;
-                            weights[i] += 1f;
-                            weights[j] += 1f;
+                            rawPush = new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * (pairSolidDiameter * 0.5f * pushStiffness);
                         }
+                        else
+                        {
+                            continue;
+                        }
+
+                        int spawnB = ships[j].SpawnTicksRemaining;
+                        displacements[i] += AttenuateSpawnPush(-rawPush, spawnA, spawnB, spawnRampTicks, settledPushScale, fleetForward, out float weightA);
+                        displacements[j] += AttenuateSpawnPush(rawPush, spawnB, spawnA, spawnRampTicks, settledPushScale, fleetForward, out float weightB);
+                        weights[i] += weightA;
+                        weights[j] += weightB;
                     }
                 }
 
@@ -130,6 +145,43 @@ namespace Game.Engine.Core.Steering
                     }
                 }
             }
+        }
+
+        private static Vector2 AttenuateSpawnPush(
+            Vector2 rawPush,
+            int selfSpawnRem,
+            int otherSpawnRem,
+            int rampTicks,
+            float settledPushScale,
+            Vector2 fleetForward,
+            out float weight)
+        {
+            if (selfSpawnRem <= 0 && otherSpawnRem <= 0)
+            {
+                weight = 1f;
+                return rawPush;
+            }
+
+            // Isolate settled ships from spawn overlap pushes and scale weight equally so settled-settled PBD isn't diluted.
+            if (selfSpawnRem <= 0)
+            {
+                float rampProgress = rampTicks > 0
+                    ? Math.Clamp(1f - (otherSpawnRem / (float)rampTicks), 0f, 1f)
+                    : 1f;
+                float scale = rampProgress * settledPushScale;
+                weight = scale;
+                return rawPush * scale;
+            }
+
+            // Prevent trailing settled ships from pushing a shooting-back ship forward through the fleet.
+            float fwdDot = Vector2.Dot(rawPush, fleetForward);
+            if (fwdDot > 0f)
+            {
+                rawPush -= fleetForward * fwdDot;
+            }
+
+            weight = 1f;
+            return rawPush;
         }
     }
 }

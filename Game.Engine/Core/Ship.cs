@@ -19,6 +19,11 @@ namespace Game.Engine.Core
 
         public float AngleMovement { get; set; }
 
+        /// <summary>
+        /// Remaining Think ticks for a newly spawned ship to ramp back up to full fleet speed.
+        /// </summary>
+        public int SpawnTicksRemaining { get; set; }
+
         public bool Abandoned { get; set; }
         public Fleet AbandonedByFleet { get; set; }
         public long AbandonedTime { get; set; }
@@ -224,6 +229,18 @@ namespace Game.Engine.Core
                     float turnFraction = MathF.Abs(angleDiff) / MathF.PI;
                     effectiveSpeed = baseCruiseSpeed * (1.0f - World.Hook.SpeedDip * turnFraction);
                     maxTurnRate = World.Hook.TurnRate;
+                }
+
+                // Smoothstep spawn speed ramp so newly added ships lag behind briefly ("shootback")
+                // without breaking fleet turn coherence or pushing settled ships.
+                if (SpawnTicksRemaining > 0 && World.Hook.ShipSpawnRampTicks > 0)
+                {
+                    SpawnTicksRemaining--;
+                    float progress = Math.Clamp(1.0f - (SpawnTicksRemaining / (float)World.Hook.ShipSpawnRampTicks), 0.0f, 1.0f);
+                    float eased = progress * progress * (3.0f - 2.0f * progress);
+                    float spawnMultiplier = World.Hook.ShipAddMomentumMultiplier
+                        + (1.0f - World.Hook.ShipAddMomentumMultiplier) * eased;
+                    effectiveSpeed *= spawnMultiplier;
                 }
 
                 // Clamp turn rate
