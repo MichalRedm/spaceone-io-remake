@@ -25,9 +25,9 @@ namespace Game.API.Common.Models
                     MutualDestructionCooldown = 100,
 
                     ShipAddRadius = 3,
-                    ShipAddMomentumMultiplier = 0.30f,
-                    ShipSpawnCatchupMultiplier = 1.20f,
-                    ShipSpawnRampTicks = 3,
+                    ShipAddMomentumMultiplier = 0.15f,
+                    ShipSpawnCatchupMultiplier = 1.55f,
+                    ShipSpawnRampTicks = 6,
                     ShipSpawnSettledPushScale = 0.0f,
 
                     // source: https://cdn.discordapp.com/attachments/357878752446906378/357892120427626498/uptodate_-_Sheet1.pdf
