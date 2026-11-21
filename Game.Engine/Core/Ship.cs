@@ -252,7 +252,7 @@ namespace Game.Engine.Core
 
                         if (stepIndex < slowSteps)
                         {
-                            float progress = stepIndex / (float)slowSteps;
+                            float progress = (stepIndex + 1) / (float)(slowSteps + 1);
                             float eased = progress * progress * (3.0f - 2.0f * progress);
                             spawnMultiplier = baseMultiplier + (1.0f - baseMultiplier) * eased;
                         }
@@ -265,6 +265,10 @@ namespace Game.Engine.Core
                     }
 
                     effectiveSpeed *= spawnMultiplier;
+                }
+                else if (SpawnTicksRemaining > 0)
+                {
+                    SpawnTicksRemaining = 0;
                 }
 
                 // Clamp turn rate
