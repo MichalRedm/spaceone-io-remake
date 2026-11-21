@@ -168,12 +168,6 @@ namespace Game.Engine.Core
             if (!this.Owner.IsAlive || this.PendingDestruction)
                 return;
 
-            var offset = new Vector2
-            (
-                Random.Shared.Next(-World.Hook.ShipAddRadius, World.Hook.ShipAddRadius),
-                Random.Shared.Next(-World.Hook.ShipAddRadius, World.Hook.ShipAddRadius)
-            );
-
             var ship = new Ship()
             {
                 Fleet = this,
@@ -186,24 +180,35 @@ namespace Game.Engine.Core
             {
                 var position = Vector2.Zero;
                 var momentum = Vector2.Zero;
-                var angle = 0f;
                 var count = 0;
 
                 foreach (var existingShip in this.Ships)
                 {
                     position += existingShip.Position;
                     momentum += existingShip.Momentum;
-                    angle += existingShip.Angle;
                     count++;
                 }
 
-                ship.Position = position / count + offset;
-                ship.Momentum = momentum / count * World.Hook.ShipAddMomentumMultiplier;
-                ship.Angle = angle / count;
+                Vector2 avgPosition = position / count;
+                Vector2 avgMomentum = momentum / count;
+                float stepTimeMs = World.Hook.StepTime > 0 ? World.Hook.StepTime : 40f;
+                Vector2 leadOffset = avgMomentum * (stepTimeMs * World.Hook.ShipSpawnForwardLead);
+
+                ship.Position = avgPosition + leadOffset;
+                ship.Momentum = avgMomentum * World.Hook.ShipAddMomentumMultiplier;
+                ship.Angle = avgMomentum.LengthSquared() > 1e-6f
+                    ? MathF.Atan2(avgMomentum.Y, avgMomentum.X)
+                    : FleetAngle;
                 ship.SpawnTicksRemaining = World.Hook.ShipSpawnRampTicks;
             }
             else
             {
+                var offset = new Vector2
+                (
+                    Random.Shared.Next(-World.Hook.ShipAddRadius, World.Hook.ShipAddRadius),
+                    Random.Shared.Next(-World.Hook.ShipAddRadius, World.Hook.ShipAddRadius)
+                );
+
                 ship.Position = FleetCenter + offset;
                 ship.SpawnTicksRemaining = 0;
             }
