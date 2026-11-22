@@ -198,7 +198,11 @@ export class AudioManager {
     let spatialGain = 1.0;
     let pan = 0.0;
 
-    if (def.spatial && options.worldX !== undefined && options.worldY !== undefined) {
+    if (
+      def.spatial &&
+      options.worldX !== undefined &&
+      options.worldY !== undefined
+    ) {
       const dx = options.worldX - this.listenerX;
       const dy = options.worldY - this.listenerY;
       const maxDist =
@@ -255,11 +259,7 @@ export class AudioManager {
       0.001,
       1.2,
     );
-    const finalRate = clamp(
-      pitchRand * (options.pitchScale ?? 1),
-      0.5,
-      2.0,
-    );
+    const finalRate = clamp(pitchRand * (options.pitchScale ?? 1), 0.5, 2.0);
 
     const source = this.ctx.createBufferSource();
     source.buffer = buffer;
@@ -458,7 +458,9 @@ export class AudioManager {
     const lastIdx = this.lastVariantById.get(id) ?? -1;
     let idx = Math.floor(Math.random() * variants.length);
     if (idx === lastIdx) {
-      idx = (idx + 1 + Math.floor(Math.random() * (variants.length - 1))) % variants.length;
+      idx =
+        (idx + 1 + Math.floor(Math.random() * (variants.length - 1))) %
+        variants.length;
     }
     this.lastVariantById.set(id, idx);
     return variants[idx] ?? variants[0] ?? "";
@@ -485,7 +487,8 @@ export class AudioManager {
       if (
         !victim ||
         voice.priority < victim.priority ||
-        (voice.priority === victim.priority && voice.startedAt < victim.startedAt)
+        (voice.priority === victim.priority &&
+          voice.startedAt < victim.startedAt)
       ) {
         victim = voice;
       }

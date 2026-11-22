@@ -124,7 +124,8 @@ export const GameAudio = {
   ): void {
     if (!isGameplayAudible()) return;
     const countLog = Math.log2(Math.max(1, bulletCount));
-    const gainScale = (isOwn ? 1.05 : 0.72) * (1.0 + Math.min(0.28, countLog * 0.055));
+    const gainScale =
+      (isOwn ? 1.05 : 0.72) * (1.0 + Math.min(0.28, countLog * 0.055));
     const pitchScale = 1.0 - Math.min(0.14, countLog * 0.025);
     audioManager.play("laser_fire", {
       worldX,

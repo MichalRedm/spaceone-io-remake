@@ -96,7 +96,11 @@ export const SOUND_MANIFEST: Record<SoundId, SoundDefinition> = {
     spatial: true,
   },
   food_collect: {
-    variants: ["food_collect_1.mp3", "food_collect_2.mp3", "food_collect_3.mp3"],
+    variants: [
+      "food_collect_1.mp3",
+      "food_collect_2.mp3",
+      "food_collect_3.mp3",
+    ],
     bus: "gameplay",
     baseGain: 0.26,
     pitchJitter: 0.04,
@@ -190,7 +194,7 @@ export const SOUND_MANIFEST: Record<SoundId, SoundDefinition> = {
   ctf_event: {
     variants: ["ctf_event.mp3"],
     bus: "gameplay",
-    baseGain: 0.50,
+    baseGain: 0.5,
     pitchJitter: 0.0,
     gainJitter: 0.0,
     minIntervalMs: 300,

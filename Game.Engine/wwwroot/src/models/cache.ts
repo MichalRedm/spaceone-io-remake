@@ -427,10 +427,7 @@ export class Cache {
           GameAudio.onShipExplode(boomX, boomY, update.Size || 50);
         } else {
           const spriteStr = String(update.Sprite || "");
-          if (
-            spriteStr.startsWith("bullet") ||
-            spriteStr.startsWith("laser")
-          ) {
+          if (spriteStr.startsWith("bullet") || spriteStr.startsWith("laser")) {
             const volleyKey = update.Group || update.ID;
             const bx = update.OriginalPosition?.x ?? 0;
             const by = update.OriginalPosition?.y ?? 0;
@@ -500,7 +497,8 @@ export class Cache {
 
     // Emit one deduplicated laser sound per volley group
     if (newVolleys.size > 0) {
-      const ownBodies = myFleetID !== 0 ? this.bodiesByGroup.get(myFleetID) : undefined;
+      const ownBodies =
+        myFleetID !== 0 ? this.bodiesByGroup.get(myFleetID) : undefined;
       const OWN_PROXIMITY_SQ = 220 * 220;
       for (const volley of newVolleys.values()) {
         const vx = volley.sumX / volley.count;
