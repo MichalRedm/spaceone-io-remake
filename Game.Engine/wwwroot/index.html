@@ -49,15 +49,28 @@
 
   <body class="loading dead static_background">
     <div class="container aspectratio">
-      <div
-        id="settings"
-        class="graphics-bar box-panel box-panel--blue view-state--menu visibility"
-      >
-        <div id="settings-text" class="graphics-bar__label">
-          <span>Graphics:</span
-          ><span id="graphics-high" class="graphics-bar__option">HIGH</span
-          >/<span id="graphics-medium" class="graphics-bar__option">MEDIUM</span
-          >/<span id="graphics-low" class="graphics-bar__option">LOW</span>
+      <div class="top-settings-bar view-state--menu visibility">
+        <button
+          id="sound-toggle"
+          type="button"
+          class="sound-toggle box-panel box-panel--blue"
+          aria-label="Toggle sound effects"
+          aria-pressed="true"
+          title="Sound: ON (M in-game)"
+        >
+          <i
+            id="sound-toggle-icon"
+            class="sound-toggle__icon fas fa-volume-up"
+            aria-hidden="true"
+          ></i>
+        </button>
+        <div id="settings" class="graphics-bar box-panel box-panel--blue">
+          <div id="settings-text" class="graphics-bar__label">
+            <span>Graphics:</span
+            ><span id="graphics-high" class="graphics-bar__option">HIGH</span
+            >/<span id="graphics-medium" class="graphics-bar__option">MEDIUM</span
+            >/<span id="graphics-low" class="graphics-bar__option">LOW</span>
+          </div>
         </div>
       </div>
 
@@ -739,6 +752,15 @@
               <td>
                 <label class="form-switch switch">
                   <input type="checkbox" id="settings-allow-darkblue-ships" />
+                  <span class="form-switch__slider slider round"></span>
+                </label>
+              </td>
+            </tr>
+            <tr>
+              <td>Sound Effects</td>
+              <td>
+                <label class="form-switch switch">
+                  <input type="checkbox" id="settings-sound-enabled" />
                   <span class="form-switch__slider slider round"></span>
                 </label>
               </td>
