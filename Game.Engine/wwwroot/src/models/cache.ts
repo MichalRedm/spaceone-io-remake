@@ -232,7 +232,6 @@ export class Cache {
           FX.spawnFoodExplosion(color, x, y);
           if (GameAudio.isWithinArena(x, y)) {
             foodDeletePositions.push({ x, y });
-            GameAudio.onFoodCollect(x, y);
           }
         } else if (
           spriteStr.startsWith("bullet") ||
@@ -495,10 +494,43 @@ export class Cache {
       }
     }
 
+    const ownBodies =
+      myFleetID !== 0 ? this.bodiesByGroup.get(myFleetID) : undefined;
+
+    // Emit at most one food pickup chime per snapshot tick, gated to own-fleet proximity when alive
+    if (foodDeletePositions.length > 0) {
+      if (myFleetID === 0) {
+        const firstFood = foodDeletePositions[0];
+        if (firstFood) {
+          GameAudio.onFoodCollect(firstFood.x, firstFood.y);
+        }
+      } else if (ownBodies) {
+        const OWN_FOOD_PROXIMITY_SQ = 260 * 260;
+        let bestFood: { x: number; y: number } | null = null;
+        let bestDistSq = OWN_FOOD_PROXIMITY_SQ;
+        for (let f = 0; f < foodDeletePositions.length; f++) {
+          const fp = foodDeletePositions[f];
+          if (!fp) continue;
+          for (const ownBody of ownBodies) {
+            const ox = ownBody.Position?.x ?? ownBody.OriginalPosition.x;
+            const oy = ownBody.Position?.y ?? ownBody.OriginalPosition.y;
+            const dx = fp.x - ox;
+            const dy = fp.y - oy;
+            const distSq = dx * dx + dy * dy;
+            if (distSq <= bestDistSq) {
+              bestDistSq = distSq;
+              bestFood = fp;
+            }
+          }
+        }
+        if (bestFood) {
+          GameAudio.onFoodCollect(bestFood.x, bestFood.y);
+        }
+      }
+    }
+
     // Emit one deduplicated laser sound per volley group, prioritizing own fleet shots first
     if (newVolleys.size > 0) {
-      const ownBodies =
-        myFleetID !== 0 ? this.bodiesByGroup.get(myFleetID) : undefined;
       const OWN_PROXIMITY_SQ = 220 * 220;
       const resolvedVolleys: Array<{
         vx: number;

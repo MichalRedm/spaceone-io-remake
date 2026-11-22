@@ -348,12 +348,16 @@ def transparent_limiter(
     return np.clip(out, -0.99, 0.99)
 
 
-def finish_hifi(audio: np.ndarray, fade_out_ms: float = 180.0) -> np.ndarray:
+def finish_hifi(
+    audio: np.ndarray,
+    fade_out_ms: float = 180.0,
+    target_rms_dbfs: float = -15.5,
+) -> np.ndarray:
     """Apply zero-phase studio mastering EQ and transparent lookahead limiting."""
     return transparent_limiter(
         linear_phase_master_eq(audio),
         target_peak_dbfs=-0.8,
-        target_rms_dbfs=-15.5,
+        target_rms_dbfs=target_rms_dbfs,
         fade_out_ms=fade_out_ms,
     )
 
@@ -453,30 +457,30 @@ def make_bullet_hit(seed: int, thud_hi: float, thud_lo: float) -> np.ndarray:
 
 
 def make_food_collect(seed: int, f1: float, f2: float, body_hz: float) -> np.ndarray:
-    """Winner `food_4B_celesta_spark`: pentatonic celesta fifth plucks + warm body + FDN hall."""
+    """Light, crisp pentatonic celesta spark + warm body (trimmed decay for clean pickup trails)."""
     rng = np.random.default_rng(seed)
-    dur = 1.65
+    dur = 1.20
     n = int(SAMPLE_RATE * dur)
     t = np.linspace(0.0, dur, n, endpoint=False)
 
-    c1 = crystal_modal_sparkle(n, f1, (1.0, 2.0, 3.0, 4.0, 6.0, 8.0), 0.16, rng) * 0.65
+    c1 = crystal_modal_sparkle(n, f1, (1.0, 2.0, 3.0, 4.0, 6.0, 8.0), 0.10, rng) * 0.56
     c2 = shift_stereo(
-        crystal_modal_sparkle(n, f2, (1.0, 2.0, 3.0, 4.0, 6.0), 0.14, rng) * 0.45,
-        0.028,
+        crystal_modal_sparkle(n, f2, (1.0, 2.0, 3.0, 4.0, 6.0), 0.085, rng) * 0.34,
+        0.024,
     )
     body = pan_mono(
         np.sin(2.0 * math.pi * body_hz * t)
         * (1.0 - np.exp(-t / 0.003))
-        * np.exp(-t / 0.11)
-        * 0.32,
+        * np.exp(-t / 0.085)
+        * 0.36,
         0.0,
     )
 
-    dry = clean_stereo_chorus(c1 + c2 + body, depth_ms=2.5, rate_hz=1.4, mix=0.38)
+    dry = clean_stereo_chorus(c1 + c2 + body, depth_ms=2.2, rate_hz=1.4, mix=0.35)
     wet, _ = studio_fdn_reverb(
-        dry, rt60_s=1.45, wet=0.74, pre_delay_ms=20.0, hf_damp_hz=12000.0
+        dry, rt60_s=0.95, wet=0.60, pre_delay_ms=16.0, hp_hz=320.0, hf_damp_hz=10500.0
     )
-    return finish_hifi(wet, fade_out_ms=210.0)
+    return finish_hifi(wet, fade_out_ms=180.0)
 
 
 def make_ship_explode(
@@ -557,105 +561,115 @@ def make_ship_explode(
 
 
 def make_boost() -> np.ndarray:
-    """Winner `boost_4B_luminous_dash`: clean pop + sub + open-fifth chord surge + air crest."""
+    """Deep cosmic sub-bass warp surge with punchy low ignition and restrained dark fifth."""
     rng = np.random.default_rng(8102)
-    dur = 1.85
+    dur = 1.90
     n = int(SAMPLE_RATE * dur)
     t = np.linspace(0.0, dur, n, endpoint=False)
 
-    t_peak = 0.18
-    env = ((t / t_peak) * np.exp(1.0 - t / t_peak)) ** 0.92
-    f_arc = (t / 0.24) * np.exp(1.0 - t / 0.24)
+    t_peak = 0.16
+    env = ((t / t_peak) * np.exp(1.0 - t / t_peak)) ** 0.90
+    f_arc = (t / 0.22) * np.exp(1.0 - t / 0.22)
 
-    pop = pan_mono(clean_sub_punch(t, 900.0, 110.0, 0.008, 0.022) * 0.60, 0.0)
-    sub = pan_mono(clean_sub_punch(t, 120.0, 52.0, 0.045, 0.22) * 0.68, 0.0)
+    ignition = pan_mono(clean_sub_punch(t, 260.0, 42.0, 0.022, 0.085) * 1.25, 0.0)
 
-    glide_ratio = 0.85 + 0.42 * f_arc
-    chord = np.zeros((n, 2), dtype=np.float64)
-    for idx, f in enumerate([293.66, 440.00, 659.25, 739.99, 1318.51]):
-        ph = 2.0 * math.pi * np.cumsum(f * glide_ratio) / SAMPLE_RATE
-        pan = -0.65 + 0.32 * idx
-        chord += pan_mono(
-            (0.75 * np.sin(ph) + 0.25 * np.sin(2.0 * ph)) * (0.28 - 0.03 * idx), pan
+    sub_f = 36.0 + 42.0 * f_arc
+    sub_ph = 2.0 * math.pi * np.cumsum(sub_f) / SAMPLE_RATE
+    sub_wave = pan_mono(
+        (
+            0.82 * np.sin(sub_ph)
+            + 0.28 * np.sin(2.0 * sub_ph)
+            + 0.10 * np.sin(3.0 * sub_ph)
         )
-    chord = clean_stereo_chorus(chord * env[:, None], depth_ms=3.0, rate_hz=1.5, mix=0.42)
-    air_crest = (
-        crystal_modal_sparkle(n, 1760.0, (1.0, 1.5, 2.0, 3.0, 4.2, 5.6), 0.22, rng)
-        * 0.38
-    )
-
-    dry = pop + sub + chord + air_crest
-    wet, _ = studio_fdn_reverb(
-        dry, rt60_s=1.45, wet=0.72, pre_delay_ms=22.0, hf_damp_hz=11000.0
-    )
-    return finish_hifi(wet, fade_out_ms=220.0)
-
-
-def make_ship_gain() -> np.ndarray:
-    """Luminous 3-step ascending celesta fifths + warm G4 anchor (fleet promotion)."""
-    rng = np.random.default_rng(8601)
-    dur = 1.65
-    n = int(SAMPLE_RATE * dur)
-    t = np.linspace(0.0, dur, n, endpoint=False)
-
-    c1 = crystal_modal_sparkle(n, 783.99, (1.0, 2.0, 3.0, 4.0, 6.0), 0.16, rng) * 0.56
-    c2 = shift_stereo(
-        crystal_modal_sparkle(n, 1174.66, (1.0, 2.0, 3.0, 4.0, 5.5), 0.16, rng) * 0.52,
-        0.055,
-    )
-    c3 = shift_stereo(
-        crystal_modal_sparkle(n, 1567.98, (1.0, 1.5, 2.0, 3.0, 4.5), 0.18, rng) * 0.44,
-        0.110,
-    )
-
-    sub = shift_stereo(
-        pan_mono(clean_sub_punch(t, 160.0, 98.0, 0.035, 0.16) * 0.44, 0.0), 0.050
-    )
-    warm = pan_mono(
-        np.sin(2.0 * math.pi * 392.00 * t)
-        * (1.0 - np.exp(-t / 0.015))
-        * np.exp(-t / 0.19)
-        * 0.34,
+        * env
+        * 0.90,
         0.0,
     )
 
-    dry = clean_stereo_chorus(c1 + c2 + c3 + warm, depth_ms=2.6, rate_hz=1.4, mix=0.38) + sub
-    wet, _ = studio_fdn_reverb(
-        dry, rt60_s=1.40, wet=0.72, pre_delay_ms=18.0, hf_damp_hz=12000.0
+    glide_ratio = 0.90 + 0.18 * f_arc
+    low_pad = np.zeros((n, 2), dtype=np.float64)
+    for idx, f in enumerate([73.42, 110.00, 146.83]):
+        ph = 2.0 * math.pi * np.cumsum(f * glide_ratio) / SAMPLE_RATE
+        pan = -0.45 + 0.45 * idx
+        low_pad += pan_mono(
+            (0.80 * np.sin(ph) + 0.20 * np.sin(2.0 * ph)) * (0.20 - 0.03 * idx),
+            pan,
+        )
+    low_pad = clean_stereo_chorus(
+        low_pad * env[:, None], depth_ms=3.0, rate_hz=1.2, mix=0.38
     )
-    return finish_hifi(wet, fade_out_ms=210.0)
+
+    air_env = (1.0 - np.exp(-t / 0.004)) * np.exp(-t / 0.095) * 0.18 + env * 0.10
+    prop_air = (
+        butter_filter(rng.standard_normal((n, 2)), "band", (350.0, 2600.0), order=2)
+        * air_env[:, None]
+    )
+
+    dry = ignition + sub_wave + low_pad + prop_air
+    wet, _ = studio_fdn_reverb(
+        dry, rt60_s=1.35, wet=0.62, pre_delay_ms=20.0, hp_hz=260.0, hf_damp_hz=6800.0
+    )
+    return finish_hifi(wet, fade_out_ms=220.0, target_rms_dbfs=-12.8)
 
 
-def make_kill_confirm() -> np.ndarray:
-    """Heroic tactile lock-in sub + ascending open-fifth celesta/pad confirmation."""
-    rng = np.random.default_rng(8701)
-    dur = 1.95
+def make_ship_gain() -> np.ndarray:
+    """Understated warm magnetic fleet-docking bass pulse + subtle glass glint."""
+    rng = np.random.default_rng(8601)
+    dur = 1.15
     n = int(SAMPLE_RATE * dur)
     t = np.linspace(0.0, dur, n, endpoint=False)
 
-    sub = pan_mono(clean_sub_punch(t, 175.0, 62.0, 0.025, 0.11) * 0.62, 0.0)
-
-    c1 = crystal_modal_sparkle(n, 659.25, (1.0, 1.5, 2.0, 3.0, 4.5), 0.15, rng) * 0.54
-    c2 = shift_stereo(
-        crystal_modal_sparkle(n, 987.77, (1.0, 2.0, 3.0, 4.0, 6.0), 0.22, rng) * 0.56,
-        0.048,
-    )
-    c3 = shift_stereo(
-        crystal_modal_sparkle(n, 1318.51, (1.0, 1.5, 2.0, 3.0, 4.5), 0.24, rng) * 0.42,
-        0.096,
+    f_rise = 90.0 + 85.0 * (1.0 - np.exp(-t / 0.035))
+    ph = 2.0 * math.pi * np.cumsum(f_rise) / SAMPLE_RATE
+    dock = pan_mono(
+        (0.80 * np.sin(ph) + 0.22 * np.sin(2.0 * ph))
+        * (1.0 - np.exp(-t / 0.004))
+        * np.exp(-t / 0.095)
+        * 0.85,
+        0.0,
     )
 
-    pad_env = (1.0 - np.exp(-t / 0.020)) * np.exp(-t / 0.26)
-    pad = np.zeros((n, 2), dtype=np.float64)
-    for idx, f in enumerate([220.00, 329.63, 493.88, 659.25]):
-        pad += pan_mono(np.sin(2.0 * math.pi * f * t) * (0.24 - 0.03 * idx), -0.45 + 0.30 * idx)
-    pad = clean_stereo_chorus(pad * pad_env[:, None], depth_ms=2.8, rate_hz=1.3, mix=0.40)
+    lock = shift_stereo(
+        pan_mono(clean_sub_punch(t, 130.0, 68.0, 0.020, 0.085) * 0.52, 0.0),
+        0.045,
+    )
+    glint = shift_stereo(
+        crystal_modal_sparkle(n, 880.0, (1.0, 2.0), 0.055, rng, spread=0.45) * 0.22,
+        0.045,
+    )
 
-    dry = sub + c1 + c2 + c3 + pad
+    dry = dock + lock + glint
     wet, _ = studio_fdn_reverb(
-        dry, rt60_s=1.60, wet=0.74, pre_delay_ms=20.0, hf_damp_hz=11800.0
+        dry, rt60_s=0.85, wet=0.52, pre_delay_ms=16.0, hp_hz=320.0, hf_damp_hz=8800.0
     )
-    return finish_hifi(wet, fade_out_ms=230.0)
+    return finish_hifi(wet, fade_out_ms=170.0)
+
+
+def make_kill_confirm() -> np.ndarray:
+    """Deep bass confirmation drop + tight kinetic lock punch + single octave glint."""
+    rng = np.random.default_rng(8701)
+    dur = 1.45
+    n = int(SAMPLE_RATE * dur)
+    t = np.linspace(0.0, dur, n, endpoint=False)
+
+    sub = pan_mono(clean_sub_punch(t, 165.0, 42.0, 0.035, 0.16) * 1.02, 0.0)
+    snap = pan_mono(clean_sub_punch(t, 360.0, 92.0, 0.011, 0.032) * 0.72, 0.0)
+    glint = shift_stereo(
+        clean_stereo_chorus(
+            crystal_modal_sparkle(n, 659.25, (1.0, 2.0), 0.085, rng, spread=0.55)
+            * 0.26,
+            depth_ms=2.0,
+            rate_hz=1.5,
+            mix=0.32,
+        ),
+        0.040,
+    )
+
+    dry = sub + snap + glint
+    wet, _ = studio_fdn_reverb(
+        dry, rt60_s=1.05, wet=0.56, pre_delay_ms=18.0, hp_hz=320.0, hf_damp_hz=8500.0
+    )
+    return finish_hifi(wet, fade_out_ms=190.0)
 
 
 def make_player_spawn() -> np.ndarray:
