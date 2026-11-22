@@ -43,7 +43,7 @@ interface ActiveVoice {
 const AUDIO_CONSTANTS = {
   MASTER_GAIN: 0.85,
   MUTE_RAMP_SEC: 0.015,
-  VOICE_STEAL_FADE_SEC: 0.01,
+  VOICE_STEAL_FADE_SEC: 0.035,
   MAX_CONCURRENT_VOICES: 16,
   SPATIAL_CULL_VIEWPORT_MULT: 1.15,
   MAX_STEREO_PAN: 0.75,
@@ -56,7 +56,7 @@ const AUDIO_CONSTANTS = {
 } as const;
 
 const BUS_GAINS: Record<SoundBus, number> = {
-  weapons: 0.85,
+  weapons: 0.78,
   explosions: 0.95,
   gameplay: 0.95,
   ui: 0.8,

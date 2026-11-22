@@ -384,56 +384,72 @@ def shift_stereo(audio: np.ndarray, delay_s: float) -> np.ndarray:
 
 
 def make_laser(
-    seed: int, f_end: float, f_span: float, sheen_hz: float, sub_hi: float, sub_lo: float
+    seed: int, sweep_hi: float, sweep_lo: float, sub_hi: float, sub_lo: float
 ) -> np.ndarray:
-    """Winner `laser_4A_pristine_bolt`: instant FM bolt + sub + crystal sheen + FDN hall."""
-    rng = np.random.default_rng(seed)
-    dur = 1.05
-    n = int(SAMPLE_RATE * dur)
-    t = np.linspace(0.0, dur, n, endpoint=False)
-
-    f_sweep = f_end + f_span * np.exp(-t / 0.024)
-    ph = 2.0 * math.pi * np.cumsum(f_sweep) / SAMPLE_RATE
-    fm = 0.75 * np.exp(-t / 0.014) * np.sin(2.0 * ph)
-    env = (1.0 - np.exp(-t / 0.0015)) * np.exp(-t / 0.058)
-    core = pan_mono(
-        (0.72 * np.sin(ph + fm) + 0.24 * np.sin(2.0 * ph) + 0.12 * np.sin(3.0 * ph))
-        * env,
-        0.0,
-    )
-    core = clean_stereo_chorus(core, depth_ms=2.0, rate_hz=2.2, mix=0.35)
-
-    sub = pan_mono(clean_sub_punch(t, sub_hi, sub_lo, 0.024, 0.055) * 0.42, 0.0)
-    sheen = crystal_modal_sparkle(n, sheen_hz, (1.0, 1.5, 2.0, 2.8, 3.8, 5.0), 0.048, rng) * 0.36
-
-    dry = core + sub + sheen
-    wet, _ = studio_fdn_reverb(
-        dry, rt60_s=0.90, wet=0.62, pre_delay_ms=16.0, hf_damp_hz=11500.0
-    )
-    return finish_hifi(wet, fade_out_ms=150.0)
-
-
-def make_bullet_hit(seed: int, tap_hi: float, tap_lo: float, crystal_hz: float) -> np.ndarray:
-    """Clean, instantaneous crystalline deflector tap + tight sub-thump (zero harsh static)."""
-    rng = np.random.default_rng(seed)
+    """Instant futuristic plasma whip: sleek non-stationary FM glide + sub thump (zero noise fizz)."""
+    del seed  # Deterministic closed-form synthesis for cleanly matching firefights
     dur = 0.85
     n = int(SAMPLE_RATE * dur)
     t = np.linspace(0.0, dur, n, endpoint=False)
 
-    sub = pan_mono(clean_sub_punch(t, 230.0, 74.0, 0.015, 0.042) * 0.66, 0.0)
-
-    f_tap = tap_lo + (tap_hi - tap_lo) * np.exp(-t / 0.012)
-    ph = 2.0 * math.pi * np.cumsum(f_tap) / SAMPLE_RATE
-    env = (1.0 - np.exp(-t / 0.0012)) * np.exp(-t / 0.030)
-    tap = pan_mono((0.76 * np.sin(ph) + 0.28 * np.sin(1.5 * ph)) * env * 0.65, 0.0)
-    tap = clean_stereo_chorus(tap, depth_ms=1.6, rate_hz=2.4, mix=0.30)
-
-    spark = crystal_modal_sparkle(n, crystal_hz, (1.0, 1.5, 2.0, 2.75, 3.8), 0.045, rng) * 0.42
-    dry = sub + tap + spark
-    wet, _ = studio_fdn_reverb(
-        dry, rt60_s=0.72, wet=0.58, pre_delay_ms=14.0, hf_damp_hz=11500.0
+    f_sweep = sweep_lo + (sweep_hi - sweep_lo) * np.exp(-t / 0.020)
+    ph = 2.0 * math.pi * np.cumsum(f_sweep) / SAMPLE_RATE
+    fm = 0.82 * np.exp(-t / 0.012) * np.sin(2.0 * ph)
+    env = (1.0 - np.exp(-t / 0.0012)) * np.exp(-t / 0.038)
+    core = pan_mono(
+        (0.76 * np.sin(ph + fm) + 0.24 * np.sin(2.0 * ph)) * env * 0.78,
+        0.0,
     )
-    return finish_hifi(wet, fade_out_ms=140.0)
+    core = clean_stereo_chorus(core, depth_ms=1.8, rate_hz=2.0, mix=0.30)
+
+    # Ultrafast energy-whip sheen (swept sine instead of white-noise hiss)
+    f_zip = 320.0 + (sweep_hi * 2.1 - 320.0) * np.exp(-t / 0.008)
+    ph_zip = 2.0 * math.pi * np.cumsum(f_zip) / SAMPLE_RATE
+    zip_env = (1.0 - np.exp(-t / 0.0008)) * np.exp(-t / 0.016)
+    zip_air = clean_stereo_chorus(
+        pan_mono(np.sin(ph_zip) * zip_env * 0.26, 0.0),
+        depth_ms=2.2,
+        rate_hz=2.6,
+        mix=0.40,
+    )
+
+    sub = pan_mono(clean_sub_punch(t, sub_hi, sub_lo, 0.020, 0.048) * 0.68, 0.0)
+
+    dry = core + zip_air + sub
+    wet, _ = studio_fdn_reverb(
+        dry, rt60_s=0.62, wet=0.48, pre_delay_ms=14.0, hp_hz=380.0, hf_damp_hz=9000.0
+    )
+    return finish_hifi(wet, fade_out_ms=150.0)
+
+
+def make_bullet_hit(seed: int, thud_hi: float, thud_lo: float) -> np.ndarray:
+    """Cohesive damped plasma deflector thump + micro-zip transient (zero static speck)."""
+    del seed
+    dur = 0.65
+    n = int(SAMPLE_RATE * dur)
+    t = np.linspace(0.0, dur, n, endpoint=False)
+
+    thud = pan_mono(clean_sub_punch(t, thud_hi, thud_lo, 0.010, 0.026) * 1.05, 0.0)
+
+    f_def = 140.0 + (thud_hi * 3.6) * np.exp(-t / 0.006)
+    ph_def = 2.0 * math.pi * np.cumsum(f_def) / SAMPLE_RATE
+    def_env = (1.0 - np.exp(-t / 0.0007)) * np.exp(-t / 0.011)
+    deflect = clean_stereo_chorus(
+        pan_mono(np.sin(ph_def) * def_env * 0.58, 0.0),
+        depth_ms=1.4,
+        rate_hz=2.2,
+        mix=0.30,
+    )
+
+    wet, _ = studio_fdn_reverb(
+        thud + deflect,
+        rt60_s=0.45,
+        wet=0.38,
+        pre_delay_ms=10.0,
+        hp_hz=420.0,
+        hf_damp_hz=8500.0,
+    )
+    return finish_hifi(wet, fade_out_ms=120.0)
 
 
 def make_food_collect(seed: int, f1: float, f2: float, body_hz: float) -> np.ndarray:
@@ -465,63 +481,77 @@ def make_food_collect(seed: int, f1: float, f2: float, body_hz: float) -> np.nda
 
 def make_ship_explode(
     seed: int,
+    inhale_s: float,
     sub_hi: float,
     sub_lo: float,
-    burst_hz: float,
-    chord_freqs: Sequence[float],
+    punch_hi: float,
+    punch_lo: float,
 ) -> np.ndarray:
-    """Winner `explode_4B_ambient_implosion`: 36 ms inhale -> 14 ms gap -> sub + burst + fifth bloom."""
+    """Vacuum inhale + micro-gap -> deep seismic sub-bass implosion + warm FDN space bloom."""
     rng = np.random.default_rng(seed)
-    dur = 2.25
+    dur = 2.05
     n = int(SAMPLE_RATE * dur)
     t = np.linspace(0.0, dur, n, endpoint=False)
 
-    inhale = butter_filter(rng.standard_normal(n), "band", (1800.0, 11000.0), order=2)
-    inhale *= np.where(t < 0.036, (t / 0.036) ** 2 * 0.20, 0.0)[:, None]
+    inhale = butter_filter(
+        rng.standard_normal((n, 2)), "band", (2200.0, 10500.0), order=2
+    )
+    inhale *= np.where(t < inhale_s, (t / inhale_s) ** 2 * 0.16, 0.0)[:, None]
     inhale += pan_mono(
         np.where(
-            t < 0.036,
+            t < inhale_s,
             np.sin(
                 2.0
                 * math.pi
-                * np.cumsum(300.0 + 700.0 * (t / 0.036) ** 2)
+                * np.cumsum(140.0 + 240.0 * (t / inhale_s) ** 2)
                 / SAMPLE_RATE
             )
-            * (t / 0.036)
-            * 0.35,
+            * ((t / inhale_s) ** 1.5)
+            * 0.24,
             0.0,
         ),
         0.0,
     )
 
-    t0 = 0.050
+    t0 = inhale_s + 0.014
     dt = np.maximum(0.0, t - t0)
     active = t >= t0
+
+    # Deep seismic sub-bass drop + warm low-mid chest thump (unpitched, zero chords)
     sub = pan_mono(
-        np.where(active, clean_sub_punch(dt, sub_hi, sub_lo, 0.060, 0.26) * 0.90, 0.0),
+        np.where(active, clean_sub_punch(dt, sub_hi, sub_lo, 0.062, 0.30) * 1.10, 0.0),
+        0.0,
+    )
+    punch = pan_mono(
+        np.where(
+            active, clean_sub_punch(dt, punch_hi, punch_lo, 0.018, 0.062) * 0.62, 0.0
+        ),
         0.0,
     )
 
-    burst = shift_stereo(
-        crystal_modal_sparkle(
-            n, burst_hz, (1.0, 1.5, 2.02, 2.75, 3.60, 4.85, 6.40, 8.50, 11.2), 0.24, rng
-        )
-        * 0.62,
-        t0,
+    # Low-end seismic pressure rumble (45-180 Hz) for warm acoustic explosion fullness
+    rumble = (
+        butter_filter(rng.standard_normal((n, 2)), "band", (45.0, 185.0), order=2)
+        * np.where(
+            active, (1.0 - np.exp(-dt / 0.008)) * np.exp(-dt / 0.12) * 0.34, 0.0
+        )[:, None]
     )
 
-    bloom_env = np.where(active, (1.0 - np.exp(-dt / 0.015)) * np.exp(-dt / 0.28), 0.0)
-    bloom = np.zeros((n, 2), dtype=np.float64)
-    for idx, f in enumerate(chord_freqs):
-        bloom += pan_mono(
-            np.sin(2.0 * math.pi * f * dt) * (0.25 - 0.02 * idx),
-            -0.5 + 0.25 * idx,
-        )
-    bloom *= bloom_env[:, None]
+    # Swept plasma shock-excitation fed cleanly into the hall (zero dry snare-brush noise)
+    shock_whip = pan_mono(
+        np.where(active, clean_sub_punch(dt, 480.0, 95.0, 0.014, 0.032) * 0.50, 0.0),
+        0.0,
+    )
+    velvet_air = (
+        butter_filter(rng.standard_normal((n, 2)), "band", (350.0, 3400.0), order=2)
+        * np.where(
+            active, (1.0 - np.exp(-dt / 0.004)) * np.exp(-dt / 0.040) * 0.15, 0.0
+        )[:, None]
+    )
 
-    dry = inhale + sub + burst + bloom
+    dry = inhale + sub + punch + rumble + shock_whip + velvet_air
     wet, _ = studio_fdn_reverb(
-        dry, rt60_s=1.85, wet=0.76, pre_delay_ms=26.0, hf_damp_hz=10500.0
+        dry, rt60_s=1.45, wet=0.70, pre_delay_ms=22.0, hp_hz=280.0, hf_damp_hz=7200.0
     )
     return finish_hifi(wet, fade_out_ms=240.0)
 
@@ -842,22 +872,22 @@ def make_ui_click() -> np.ndarray:
 
 
 BUILDERS: Dict[str, Callable[[], np.ndarray]] = {
-    "laser_fire_1.mp3": lambda: make_laser(8301, 165.0, 755.0, 2400.0, 160.0, 62.0),
-    "laser_fire_2.mp3": lambda: make_laser(8303, 155.0, 705.0, 2240.0, 152.0, 58.0),
-    "laser_fire_3.mp3": lambda: make_laser(8304, 178.0, 802.0, 2580.0, 168.0, 66.0),
-    "bullet_hit_1.mp3": lambda: make_bullet_hit(8951, 880.0, 340.0, 1850.0),
-    "bullet_hit_2.mp3": lambda: make_bullet_hit(8952, 980.0, 370.0, 2080.0),
+    "laser_fire_1.mp3": lambda: make_laser(8311, 1280.0, 86.0, 152.0, 54.0),
+    "laser_fire_2.mp3": lambda: make_laser(8312, 1180.0, 78.0, 142.0, 50.0),
+    "laser_fire_3.mp3": lambda: make_laser(8313, 1380.0, 94.0, 162.0, 58.0),
+    "bullet_hit_1.mp3": lambda: make_bullet_hit(8961, 195.0, 56.0),
+    "bullet_hit_2.mp3": lambda: make_bullet_hit(8962, 220.0, 62.0),
     "food_collect_1.mp3": lambda: make_food_collect(8401, 587.33, 880.00, 293.66),
     "food_collect_2.mp3": lambda: make_food_collect(8402, 659.25, 987.77, 329.63),
     "food_collect_3.mp3": lambda: make_food_collect(8403, 783.99, 1174.66, 392.00),
     "ship_explode_1.mp3": lambda: make_ship_explode(
-        8202, 115.0, 35.0, 440.0, [110.0, 164.81, 246.94, 329.63, 659.25]
+        8211, 0.036, 118.0, 31.0, 275.0, 62.0
     ),
     "ship_explode_2.mp3": lambda: make_ship_explode(
-        8203, 105.0, 32.5, 392.0, [98.00, 146.83, 220.00, 293.66, 587.33]
+        8212, 0.040, 110.0, 28.0, 250.0, 58.0
     ),
     "ship_explode_3.mp3": lambda: make_ship_explode(
-        8204, 122.0, 37.0, 493.88, [123.47, 185.00, 277.18, 369.99, 739.99]
+        8213, 0.034, 126.0, 34.0, 300.0, 66.0
     ),
     "boost.mp3": make_boost,
     "ship_gain.mp3": make_ship_gain,
