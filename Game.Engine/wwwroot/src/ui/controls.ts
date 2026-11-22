@@ -475,12 +475,9 @@ export const Controls: ControlsType = {
           }
         }
       });
-      document
-        .getElementById("game-area")
-        ?.addEventListener("contextmenu", (e) => {
-          e.preventDefault();
-          return false;
-        });
+      window.addEventListener("contextmenu", (e) => {
+        e.preventDefault();
+      });
     }
     Controls.canvas = canvas;
   },
