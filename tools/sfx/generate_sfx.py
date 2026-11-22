@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 """
-Procedural Modern Ambient Sci-Fi SFX Generator & QC Verifier for Spaceone.io Remake (v2).
+Procedural Hi-Fi Ambient Sci-Fi SFX Generator & QC Verifier for Spaceone.io Remake (v4).
 
-Synthesizes 20 deterministic, warm, bass-rich, convolution-reverberated sound effects
-designed for modern abstract space combat without long-term ear fatigue.
+Synthesizes 20 deterministic, studio-clean, ambient cosmic sound effects using:
+  1) Pure algorithmic 8-channel Orthogonal Hadamard FDN hall reverb (zero noise-grain veil)
+  2) Un-truncated full timelines (dry transients + >1.2x RT60 natural decay tails)
+  3) Musical open-fifth / major-9th harmony paired with 36-52 ms anticipation inhales on heavy impacts
+  4) Zero-phase FFT mastering EQ (-3.5 dB @ 310 Hz de-mud, +3.0 dB >8.5 kHz air)
+  5) Transparent 5 ms lookahead peak limiter + LAME V0 (~245 kbps) encoding
 
 Usage:
     python tools/sfx/generate_sfx.py
@@ -20,13 +24,14 @@ import sys
 import tempfile
 import wave
 from pathlib import Path
-from typing import Callable, Dict, List
+from typing import Callable, Dict, List, Sequence, Tuple
 
 import numpy as np
-from scipy.signal import butter, fftconvolve, lfilter, sosfilt
+from scipy.linalg import hadamard
+from scipy.ndimage import maximum_filter1d
+from scipy.signal import butter, lfilter, sosfilt
 
 SAMPLE_RATE = 44100
-TARGET_PEAK_DBFS = -1.5
 EXPECTED_FILES = [
     "laser_fire_1.mp3",
     "laser_fire_2.mp3",
@@ -65,7 +70,7 @@ def find_ffmpeg() -> str:
 
 
 def ensure_stereo(audio: np.ndarray) -> np.ndarray:
-    """Promote mono (N,) audio to stereo (N, 2) or return (N, 2) as float64."""
+    """Promote mono (N,) audio to stereo (N, 2) or validate (N, 2) float64."""
     arr = np.asarray(audio, dtype=np.float64)
     if arr.ndim == 1:
         return np.column_stack([arr, arr])
@@ -74,798 +79,807 @@ def ensure_stereo(audio: np.ndarray) -> np.ndarray:
     raise ValueError(f"Expected 1D mono or (N, 2) stereo array, got shape {arr.shape}")
 
 
-def apply_filter_per_channel(
-    audio: np.ndarray, fn: Callable[[np.ndarray], np.ndarray]
+def butter_filter(
+    audio: np.ndarray, btype: str, cutoff: float | Sequence[float], order: int = 2
 ) -> np.ndarray:
-    """Apply a 1D DSP filter function independently to each channel."""
+    """Apply a Butterworth filter safely clamped below Nyquist per stereo channel."""
+    nyq = 0.5 * SAMPLE_RATE
+    if isinstance(cutoff, (list, tuple)):
+        wn = [
+            max(18.0, min(float(cutoff[0]), nyq * 0.90)) / nyq,
+            max(40.0, min(float(cutoff[1]), nyq * 0.95)) / nyq,
+        ]
+    else:
+        wn = max(18.0, min(float(cutoff), nyq * 0.92)) / nyq
+    sos = butter(order, wn, btype=btype, output="sos")
     st = ensure_stereo(audio)
-    out = np.empty_like(st)
-    out[:, 0] = fn(st[:, 0])
-    out[:, 1] = fn(st[:, 1])
-    return out
+    return np.column_stack([sosfilt(sos, st[:, 0]), sosfilt(sos, st[:, 1])])
 
 
-def butter_lowpass(audio: np.ndarray, cutoff_hz: float, order: int = 3) -> np.ndarray:
-    """Apply a Butterworth low-pass filter safely clamped below Nyquist."""
-    cutoff = max(20.0, min(cutoff_hz, SAMPLE_RATE * 0.45))
-    sos = butter(order, cutoff / (0.5 * SAMPLE_RATE), btype="low", output="sos")
-    return apply_filter_per_channel(audio, lambda ch: sosfilt(sos, ch))
-
-
-def butter_highpass(audio: np.ndarray, cutoff_hz: float, order: int = 2) -> np.ndarray:
-    """Apply a Butterworth high-pass filter safely clamped below Nyquist."""
-    cutoff = max(15.0, min(cutoff_hz, SAMPLE_RATE * 0.45))
-    sos = butter(order, cutoff / (0.5 * SAMPLE_RATE), btype="high", output="sos")
-    return apply_filter_per_channel(audio, lambda ch: sosfilt(sos, ch))
-
-
-def butter_bandpass(
-    audio: np.ndarray, low_hz: float, high_hz: float, order: int = 2
-) -> np.ndarray:
-    """Apply a Butterworth band-pass filter."""
-    lo = max(20.0, min(low_hz, SAMPLE_RATE * 0.40))
-    hi = max(lo + 40.0, min(high_hz, SAMPLE_RATE * 0.45))
-    sos = butter(
-        order,
-        [lo / (0.5 * SAMPLE_RATE), hi / (0.5 * SAMPLE_RATE)],
-        btype="band",
-        output="sos",
+def pan_mono(signal: np.ndarray, pan: float) -> np.ndarray:
+    """Constant-power stereo panning across [-1, 1]."""
+    p = max(-1.0, min(1.0, pan))
+    return np.column_stack(
+        [
+            signal * math.cos((p + 1.0) * math.pi * 0.25),
+            signal * math.sin((p + 1.0) * math.pi * 0.25),
+        ]
     )
-    return apply_filter_per_channel(audio, lambda ch: sosfilt(sos, ch))
 
 
-def dynamic_lowpass_sweep(
-    signal_1d: np.ndarray, cutoff_curve: np.ndarray, q: float = 0.707
+def allpass_diffuse(
+    signal_1d: np.ndarray, delays: Sequence[int], g: float = 0.62
 ) -> np.ndarray:
-    """Time-varying 2nd-order low-pass biquad filter with per-block coefficient updates."""
-    n = len(signal_1d)
-    block = 64
-    out = np.zeros(n, dtype=np.float64)
-    z1 = 0.0
-    z2 = 0.0
-    nyq = 0.5 * SAMPLE_RATE
-    for start in range(0, n, block):
-        end = min(n, start + block)
-        fc = float(np.clip(cutoff_curve[(start + end) // 2], 30.0, nyq * 0.85))
-        w0 = 2.0 * math.pi * fc / SAMPLE_RATE
-        cos_w0 = math.cos(w0)
-        alpha = math.sin(w0) / (2.0 * q)
-        b0 = (1.0 - cos_w0) * 0.5
-        b1 = 1.0 - cos_w0
-        b2 = b0
-        a0 = 1.0 + alpha
-        a1 = -2.0 * cos_w0
-        a2 = 1.0 - alpha
-
-        b0n, b1n, b2n = b0 / a0, b1 / a0, b2 / a0
-        a1n, a2n = a1 / a0, a2 / a0
-
-        for i in range(start, end):
-            x = signal_1d[i]
-            y = b0n * x + z1
-            z1 = b1n * x - a1n * y + z2
-            z2 = b2n * x - a2n * y
-            out[i] = y
-    return out
+    """4-stage prime-delay Schroeder allpass diffuser with flat magnitude response."""
+    x = signal_1d
+    for d in delays:
+        b = np.zeros(d + 1, dtype=np.float64)
+        a = np.zeros(d + 1, dtype=np.float64)
+        b[0] = g
+        b[d] = 1.0
+        a[0] = 1.0
+        a[d] = g
+        x = lfilter(b, a, x)
+    return x
 
 
-def dynamic_bandpass_sweep(
-    signal_1d: np.ndarray, center_curve: np.ndarray, q: float = 1.8
-) -> np.ndarray:
-    """Time-varying 2nd-order resonant band-pass biquad filter."""
-    n = len(signal_1d)
-    block = 64
-    out = np.zeros(n, dtype=np.float64)
-    z1 = 0.0
-    z2 = 0.0
-    nyq = 0.5 * SAMPLE_RATE
-    for start in range(0, n, block):
-        end = min(n, start + block)
-        fc = float(np.clip(center_curve[(start + end) // 2], 40.0, nyq * 0.85))
-        w0 = 2.0 * math.pi * fc / SAMPLE_RATE
-        cos_w0 = math.cos(w0)
-        sin_w0 = math.sin(w0)
-        alpha = sin_w0 / (2.0 * q)
-        b0 = alpha
-        b1 = 0.0
-        b2 = -alpha
-        a0 = 1.0 + alpha
-        a1 = -2.0 * cos_w0
-        a2 = 1.0 - alpha
-
-        b0n, b1n, b2n = b0 / a0, b1 / a0, b2 / a0
-        a1n, a2n = a1 / a0, a2 / a0
-
-        for i in range(start, end):
-            x = signal_1d[i]
-            y = b0n * x + z1
-            z1 = b1n * x - a1n * y + z2
-            z2 = b2n * x - a2n * y
-            out[i] = y
-    return out
-
-
-def soft_triangle(phase: np.ndarray) -> np.ndarray:
-    """Smooth band-softened triangle wave using fundamental + gentle odd harmonics."""
-    return 0.88 * np.sin(phase) - 0.10 * np.sin(3.0 * phase) + 0.02 * np.sin(5.0 * phase)
-
-
-def warm_saw(phase: np.ndarray, max_harmonics: int = 6) -> np.ndarray:
-    """Warm band-limited additive sawtooth with gentle high-harmonic rolloff."""
-    out = np.zeros_like(phase, dtype=np.float64)
-    for k in range(1, max_harmonics + 1):
-        weight = ((-1.0) ** (k + 1)) / (k ** 1.35)
-        out += weight * np.sin(k * phase)
-    return out * 0.65
-
-
-def pink_noise(n: int, rng: np.random.Generator) -> np.ndarray:
-    """Generate smooth 1/f-weighted noise using a 3-pole Paul Kellet approximation."""
-    white = rng.standard_normal(n)
-    b = [0.049922035, -0.095993537, 0.050612699, -0.004408786]
-    a = [1.0, -2.494956002, 2.017265875, -0.522189400]
-    pink = lfilter(b, a, white)
-    max_v = float(np.max(np.abs(pink)))
-    return pink / max_v if max_v > 0 else pink
-
-
-def smooth_drift(n: int, rng: np.random.Generator, rate_hz: float = 2.0) -> np.ndarray:
-    """Smooth organic random drift curve in [-1, 1] for analog oscillator life."""
-    raw = rng.standard_normal(n)
-    sos = butter(2, max(0.2, rate_hz) / (0.5 * SAMPLE_RATE), btype="low", output="sos")
-    drifted = sosfilt(sos, raw)
-    m = float(np.max(np.abs(drifted)))
-    return drifted / m if m > 1e-9 else drifted
-
-
-def unison_pad(
-    freq_curve: np.ndarray,
-    rng: np.random.Generator,
-    voices: int = 5,
-    detune_cents: float = 10.0,
-    drift_cents: float = 4.0,
-    wave_fn: Callable[[np.ndarray], np.ndarray] = soft_triangle,
-) -> np.ndarray:
-    """
-    Synthesize a lush multi-voice detuned stereo oscillator with independent analog pitch drift.
-    Eliminates flat, static single-oscillator 80s synth character.
-    """
-    n = len(freq_curve)
-    out = np.zeros((n, 2), dtype=np.float64)
-    offsets = np.linspace(-detune_cents, detune_cents, voices) if voices > 1 else np.array([0.0])
-
-    for idx, cents in enumerate(offsets):
-        drift = smooth_drift(n, rng, rate_hz=1.4 + 0.3 * idx) * drift_cents
-        ratio = 2.0 ** ((cents + drift) / 1200.0)
-        phase_0 = float(rng.uniform(0.0, 2.0 * math.pi))
-        phase = phase_0 + 2.0 * math.pi * np.cumsum(freq_curve * ratio) / SAMPLE_RATE
-        voice = wave_fn(phase)
-        pan = -0.7 + 1.4 * (idx / max(1, voices - 1)) if voices > 1 else 0.0
-        gain_l = math.cos((pan + 1.0) * math.pi * 0.25)
-        gain_r = math.sin((pan + 1.0) * math.pi * 0.25)
-        out[:, 0] += voice * gain_l
-        out[:, 1] += voice * gain_r
-
-    return out / max(1.0, math.sqrt(voices))
-
-
-def tape_saturate(audio: np.ndarray, drive: float = 1.35, warm_lp_hz: float = 3200.0) -> np.ndarray:
-    """Warm analog tape-style soft saturation with subtle harmonic smoothing."""
-    st = ensure_stereo(audio)
-    # Tiny asymmetric bias adds subtle even harmonics (analog tube/tape warmth)
-    shaped = np.tanh(st * drive + 0.04 * (st ** 2)) - 0.04 * np.tanh(0.0)
-    return butter_lowpass(shaped, warm_lp_hz, order=2)
-
-
-def convolution_space_reverb(
+def studio_fdn_reverb(
     audio: np.ndarray,
-    seed: int,
-    rt60_s: float = 0.55,
-    wet: float = 0.38,
-    pre_delay_ms: float = 8.0,
-    damping_hz: float = 1900.0,
-    tail_pad_s: float = 0.25,
-) -> np.ndarray:
+    rt60_s: float = 1.40,
+    wet: float = 0.70,
+    pre_delay_ms: float = 22.0,
+    hp_hz: float = 260.0,
+    hf_damp_hz: float = 10500.0,
+) -> Tuple[np.ndarray, float]:
     """
-    True stereo convolution space reverb using a dual-band damped decorrelated impulse response.
-    Creates a lush, dark, modern cosmic atmosphere without metallic ringing or dry abrupt cutoffs.
+    Unity-calibrated 8-channel Orthogonal Hadamard FDN Hall Reverb (zero noise grain).
+    Expects `audio` to span the full natural tail duration so decay never truncates.
     """
     st = ensure_stereo(audio)
-    pad_samples = int(tail_pad_s * SAMPLE_RATE)
-    if pad_samples > 0:
-        st = np.vstack([st, np.zeros((pad_samples, 2), dtype=np.float64)])
-
     n_sig = st.shape[0]
-    ir_len = min(int(rt60_s * 1.45 * SAMPLE_RATE), SAMPLE_RATE * 2)
-    ir_len = max(ir_len, int(0.12 * SAMPLE_RATE))
 
-    rng = np.random.default_rng(seed)
-    t_ir = np.arange(ir_len, dtype=np.float64) / SAMPLE_RATE
-
-    # Two-band decay: lows/mids linger warmly while highs fade faster (natural air absorption)
-    tau_low = max(0.04, rt60_s / 6.91)
-    tau_high = max(0.025, tau_low * 0.52)
-
+    send = butter_filter(st, "high", hp_hz, order=2)
     pre_n = int(pre_delay_ms * SAMPLE_RATE / 1000.0)
-    ir = np.zeros((ir_len, 2), dtype=np.float64)
+    if 0 < pre_n < n_sig:
+        delayed = np.zeros_like(send)
+        delayed[pre_n:] = send[: n_sig - pre_n]
+        send = delayed
 
-    for ch in range(2):
-        # Smooth velvet-like dense diffusion noise
-        raw = rng.standard_normal(ir_len)
-        low_band = butter_lowpass(raw, damping_hz, order=2)[:, 0] * np.exp(-t_ir / tau_low)
-        high_band = butter_bandpass(raw, damping_hz * 0.7, min(5500.0, damping_hz * 2.2), order=2)[:, 0] * np.exp(-t_ir / tau_high)
-        ch_ir = low_band * 0.82 + high_band * 0.28
+    diff_l = allpass_diffuse(send[:, 0], (142, 107, 379, 277), g=0.62)
+    diff_r = allpass_diffuse(send[:, 1], (157, 113, 401, 293), g=0.62)
 
-        # Soft fade-in on IR prevents slap-back harshness
-        fi = min(ir_len // 4, max(1, int(0.010 * SAMPLE_RATE)))
-        ch_ir[:fi] *= 0.5 * (1.0 - np.cos(math.pi * np.linspace(0.0, 1.0, fi)))
+    block = 1024
+    delays = np.array([1487, 1723, 1997, 2269, 2557, 2851, 3169, 3491], dtype=np.int64)
+    h8 = hadamard(8) / math.sqrt(8.0)
 
-        # Apply pre-delay
-        if 0 < pre_n < ir_len:
-            shifted = np.zeros(ir_len, dtype=np.float64)
-            shifted[pre_n:] = ch_ir[: ir_len - pre_n]
-            ch_ir = shifted
+    g_fb = 10.0 ** (-3.0 * delays / (SAMPLE_RATE * max(0.15, rt60_s)))
+    alpha_lp = math.exp(-2.0 * math.pi * hf_damp_hz / SAMPLE_RATE)
 
-        energy = float(np.sqrt(np.sum(ch_ir ** 2)))
-        if energy > 1e-9:
-            ch_ir /= energy
-        ir[:, ch] = ch_ir
+    buf_len = int(delays.max()) + block + 64
+    delay_buf = np.zeros((buf_len, 8), dtype=np.float64)
+    lp_state = np.zeros(8, dtype=np.float64)
+    write_ptr = int(delays.max())
 
-    wet_l = fftconvolve(st[:, 0], ir[:, 0], mode="full")[:n_sig]
-    wet_r = fftconvolve(st[:, 1], ir[:, 1], mode="full")[:n_sig]
-    # Add gentle cross-feed for natural stereo space cohesion
-    wet_st = np.column_stack([0.85 * wet_l + 0.15 * wet_r, 0.85 * wet_r + 0.15 * wet_l])
-    wet_st = butter_highpass(wet_st, 35.0, order=2)
+    in_ch = np.zeros((n_sig, 8), dtype=np.float64)
+    w_l = np.array([0.45, 0.35, 0.40, 0.28, 0.36, 0.30, 0.42, 0.28])
+    w_r = np.array([0.28, 0.42, 0.30, 0.36, 0.28, 0.40, 0.35, 0.45])
+    in_ch[:, :] = diff_l[:, None] * w_l[None, :] + diff_r[:, None] * w_r[None, :]
 
-    return (1.0 - wet * 0.28) * st + wet * wet_st
+    wet_out = np.zeros((n_sig, 2), dtype=np.float64)
+    out_l_mask = np.array([1.0, -0.75, 0.85, -0.65, 0.80, -0.82, 0.70, -0.72]) * 0.82
+    out_r_mask = np.array([0.72, 1.0, -0.65, 0.85, -0.82, 0.80, -0.75, 0.70]) * 0.82
+
+    b_damp = np.array([1.0 - alpha_lp], dtype=np.float64)
+    a_damp = np.array([1.0, -alpha_lp], dtype=np.float64)
+
+    for start in range(0, n_sig, block):
+        end = min(n_sig, start + block)
+        blen = end - start
+
+        tap = np.empty((blen, 8), dtype=np.float64)
+        for ch_idx in range(8):
+            d = int(delays[ch_idx])
+            r_start = (write_ptr - d) % buf_len
+            if r_start + blen <= buf_len:
+                tap[:, ch_idx] = delay_buf[r_start : r_start + blen, ch_idx]
+            else:
+                first = buf_len - r_start
+                tap[:first, ch_idx] = delay_buf[r_start:, ch_idx]
+                tap[first:, ch_idx] = delay_buf[: blen - first, ch_idx]
+
+        damped = np.empty_like(tap)
+        for ch_idx in range(8):
+            damped[:, ch_idx], lp_state[ch_idx : ch_idx + 1] = lfilter(
+                b_damp, a_damp, tap[:, ch_idx], zi=lp_state[ch_idx : ch_idx + 1]
+            )
+
+        wet_out[start:end, 0] = damped @ out_l_mask
+        wet_out[start:end, 1] = damped @ out_r_mask
+
+        fb = (damped @ h8.T) * g_fb[None, :] + in_ch[start:end, :]
+
+        w_end = write_ptr + blen
+        if w_end <= buf_len:
+            delay_buf[write_ptr:w_end, :] = fb
+        else:
+            first = buf_len - write_ptr
+            delay_buf[write_ptr:, :] = fb[:first, :]
+            delay_buf[: blen - first, :] = fb[first:, :]
+        write_ptr = (write_ptr + blen) % buf_len
+
+    wet_out[:, 0] = allpass_diffuse(wet_out[:, 0], (89, 179), g=0.45)
+    wet_out[:, 1] = allpass_diffuse(wet_out[:, 1], (97, 191), g=0.45)
+    wet_scaled = wet_out * wet
+
+    dry_e = max(1e-12, float(np.sum(st ** 2)))
+    wet_e = float(np.sum(wet_scaled ** 2))
+    wet_pct = 100.0 * wet_e / (dry_e + wet_e)
+    return st + wet_scaled, wet_pct
 
 
-def raised_cosine_fades(
-    audio: np.ndarray, fade_in_ms: float = 4.0, fade_out_ms: float = 35.0
+def clean_stereo_chorus(
+    audio: np.ndarray, depth_ms: float = 2.8, rate_hz: float = 1.2, mix: float = 0.36
 ) -> np.ndarray:
-    """Apply smooth raised-cosine fades at boundaries to eliminate clicks/pops."""
-    st = ensure_stereo(audio).copy()
+    """Apply quadrature-LFO stereo micro-chorus for wide, silky harmonic motion."""
+    st = ensure_stereo(audio)
     n = st.shape[0]
-    fi = min(n // 3, max(1, int(SAMPLE_RATE * fade_in_ms / 1000.0)))
-    fo = min(n // 2, max(1, int(SAMPLE_RATE * fade_out_ms / 1000.0)))
-    in_env = 0.5 * (1.0 - np.cos(math.pi * np.linspace(0.0, 1.0, fi)))
-    out_env = 0.5 * (1.0 + np.cos(math.pi * np.linspace(0.0, 1.0, fo)))
-    st[:fi, :] *= in_env[:, None]
-    st[-fo:, :] *= out_env[:, None]
-    return st
+    t = np.arange(n, dtype=np.float64) / SAMPLE_RATE
+    idx = np.arange(n, dtype=np.float64)
+    out = np.zeros_like(st)
+    base_d = (depth_ms * 1.6) * SAMPLE_RATE / 1000.0
+    amp_d = depth_ms * SAMPLE_RATE / 1000.0
+    for ch, phase in [(0, 0.0), (1, math.pi * 0.55)]:
+        delay = base_d + amp_d * np.sin(2.0 * math.pi * rate_hz * t + phase)
+        delayed = np.interp(np.clip(idx - delay, 0.0, n - 1.0), idx, st[:, ch])
+        out[:, ch] = (1.0 - mix) * st[:, ch] + mix * delayed
+    return out
 
 
-def stereo_widen(
-    mono_or_stereo: np.ndarray, delay_ms: float = 2.0, amount: float = 0.25
+def crystal_modal_sparkle(
+    n: int,
+    base_hz: float,
+    ratios: Sequence[float],
+    tau_base_s: float,
+    rng: np.random.Generator,
+    spread: float = 0.85,
 ) -> np.ndarray:
-    """Create gentle stereo ambience by cross-blending a micro-delayed side component."""
-    st = ensure_stereo(mono_or_stereo).copy()
-    d = max(1, int(SAMPLE_RATE * delay_ms / 1000.0))
-    if d < st.shape[0]:
-        side = np.zeros(st.shape[0], dtype=np.float64)
-        side[d:] = st[: st.shape[0] - d, 0] - st[: st.shape[0] - d, 1] * 0.5
-        st[:, 0] += amount * side
-        st[:, 1] -= amount * side
-    return st
+    """Full-spectrum modal resonator bank extending cleanly into 6-15 kHz."""
+    t = np.arange(n, dtype=np.float64) / SAMPLE_RATE
+    out = np.zeros((n, 2), dtype=np.float64)
+    num = len(ratios)
+    for idx, ratio in enumerate(ratios):
+        freq = base_hz * ratio * float(rng.uniform(0.997, 1.003))
+        if freq > 16500.0:
+            continue
+        tau = tau_base_s / (1.0 + 0.28 * max(0.0, ratio - 1.0))
+        env = (1.0 - np.exp(-t / 0.0015)) * np.exp(-t / max(0.030, tau))
+        ph0 = float(rng.uniform(0.0, 2.0 * math.pi))
+        mode = np.sin(ph0 + 2.0 * math.pi * freq * t) * env
+        weight = 1.0 / ((idx + 1) ** 0.40)
+        pan = spread * ((2.0 * idx / max(1, num - 1)) - 1.0)
+        out += pan_mono(mode * weight, pan)
+    return out / max(1.0, math.sqrt(num))
 
 
-def normalize_and_polish(
+def linear_phase_master_eq(audio: np.ndarray) -> np.ndarray:
+    """Zero-phase FFT Studio EQ: -3.5 dB de-mud @ 310 Hz, +1.5 dB @ 4.8 kHz, +3.0 dB air >8.5 kHz."""
+    st = ensure_stereo(audio)
+    n = st.shape[0]
+    n_fft = 1 << int(math.ceil(math.log2(max(2048, n * 2))))
+    freqs = np.fft.rfftfreq(n_fft, d=1.0 / SAMPLE_RATE)
+
+    f_safe = np.maximum(freqs, 1.0)
+    hpf_mag = (f_safe ** 2) / np.sqrt(
+        (f_safe ** 2 - 28.0 ** 2) ** 2 + (28.0 * f_safe / 0.707) ** 2
+    )
+    hpf_mag[0] = 0.0
+
+    mud_bell = -3.5 * np.exp(-0.5 * ((np.log2(f_safe / 310.0)) / 0.55) ** 2)
+    pres_bell = 1.5 * np.exp(-0.5 * ((np.log2(f_safe / 4800.0)) / 0.75) ** 2)
+    air_shelf = 3.0 / (1.0 + (8500.0 / f_safe) ** 2.5)
+    nyq_taper = 1.0 / (1.0 + (f_safe / 17500.0) ** 4)
+
+    mag_curve = (
+        hpf_mag * (10.0 ** ((mud_bell + pres_bell + air_shelf) / 20.0)) * nyq_taper
+    )
+    mag_curve[0] = 0.0
+
+    out = np.empty_like(st)
+    for ch in range(2):
+        spec = np.fft.rfft(st[:, ch], n=n_fft)
+        out[:, ch] = np.fft.irfft(spec * mag_curve, n=n_fft)[:n]
+    return out
+
+
+def transparent_limiter(
     audio: np.ndarray,
-    peak_dbfs: float = TARGET_PEAK_DBFS,
-    fade_in_ms: float = 4.0,
-    fade_out_ms: float = 35.0,
+    target_peak_dbfs: float = -0.8,
+    target_rms_dbfs: float = -15.5,
+    fade_out_ms: float = 180.0,
 ) -> np.ndarray:
-    """Remove DC offset, apply smooth boundary fades, and normalize peak amplitude."""
+    """
+    Transparent 5 ms lookahead limiter preserving lush natural reverb tails
+    and applying a long cosine boundary fade-out to eliminate end cutoffs.
+    """
     st = ensure_stereo(audio)
     st = st - np.mean(st, axis=0, keepdims=True)
-    st = raised_cosine_fades(st, fade_in_ms=fade_in_ms, fade_out_ms=fade_out_ms)
-    st = st - np.mean(st, axis=0, keepdims=True)
-    st = raised_cosine_fades(
-        st, fade_in_ms=min(2.0, fade_in_ms), fade_out_ms=min(12.0, fade_out_ms)
+    n = st.shape[0]
+
+    abs_sig = np.max(np.abs(st), axis=1)
+    peak_raw = float(np.max(abs_sig))
+    if peak_raw < 1e-9:
+        return st
+
+    active_samples = st[abs_sig > peak_raw * 0.04]
+    rms_active = (
+        float(np.sqrt(np.mean(active_samples ** 2)))
+        if len(active_samples) > 0
+        else float(np.sqrt(np.mean(st ** 2)))
     )
-    peak = float(np.max(np.abs(st)))
-    if peak > 1e-9:
-        target_lin = 10.0 ** (peak_dbfs / 20.0)
-        st = st * (target_lin / peak)
-    return np.clip(st, -0.99, 0.99)
+    desired_rms = 10.0 ** (target_rms_dbfs / 20.0)
+    makeup = min(2.8, max(0.4, desired_rms / max(1e-7, rms_active)))
+    st = st * makeup
+
+    ceil_lin = 10.0 ** (target_peak_dbfs / 20.0)
+    lookahead_n = int(0.005 * SAMPLE_RATE)
+
+    peak_env = np.max(np.abs(st), axis=1)
+    padded = np.pad(peak_env, (lookahead_n, 0), mode="constant")
+    ahead_max = maximum_filter1d(padded, size=lookahead_n * 2 + 1, mode="constant")[:n]
+
+    req_gain = np.minimum(1.0, ceil_lin / np.maximum(ahead_max, 1e-9))
+    a_rel = math.exp(-1.0 / (0.055 * SAMPLE_RATE))
+    smooth_gain = np.ones(n, dtype=np.float64)
+    cur_g = 1.0
+    for i in range(n):
+        rg = req_gain[i]
+        cur_g = rg if rg < cur_g else (a_rel * cur_g + (1.0 - a_rel) * rg)
+        smooth_gain[i] = cur_g
+
+    out = st * smooth_gain[:, None]
+    fi = min(n // 6, max(1, int(SAMPLE_RATE * 0.002)))
+    fo = min(n // 3, max(1, int(SAMPLE_RATE * fade_out_ms / 1000.0)))
+    out[:fi, :] *= (0.5 * (1.0 - np.cos(math.pi * np.linspace(0.0, 1.0, fi))))[:, None]
+    out[-fo:, :] *= (0.5 * (1.0 + np.cos(math.pi * np.linspace(0.0, 1.0, fo))))[:, None]
+    out = out - np.mean(out, axis=0, keepdims=True)
+    final_pk = float(np.max(np.abs(out)))
+    if final_pk > ceil_lin:
+        out *= ceil_lin / final_pk
+    return np.clip(out, -0.99, 0.99)
+
+
+def finish_hifi(audio: np.ndarray, fade_out_ms: float = 180.0) -> np.ndarray:
+    """Apply zero-phase studio mastering EQ and transparent lookahead limiting."""
+    return transparent_limiter(
+        linear_phase_master_eq(audio),
+        target_peak_dbfs=-0.8,
+        target_rms_dbfs=-15.5,
+        fade_out_ms=fade_out_ms,
+    )
+
+
+def clean_sub_punch(
+    t: np.ndarray, f_start: float, f_end: float, f_tau: float, amp_tau: float
+) -> np.ndarray:
+    """Pure phase-continuous sub pitch-drop with warm 2nd harmonic weight."""
+    freq = f_end + (f_start - f_end) * np.exp(-t / f_tau)
+    ph = 2.0 * math.pi * np.cumsum(freq) / SAMPLE_RATE
+    env = (1.0 - np.exp(-t / 0.002)) * np.exp(-t / amp_tau)
+    return (0.82 * np.sin(ph) + 0.24 * np.sin(2.0 * ph)) * env
+
+
+def shift_stereo(audio: np.ndarray, delay_s: float) -> np.ndarray:
+    """Zero-padded positive time shift for stereo arrays."""
+    shift = int(delay_s * SAMPLE_RATE)
+    if shift <= 0 or shift >= audio.shape[0]:
+        return audio
+    out = np.zeros_like(audio)
+    out[shift:] = audio[: audio.shape[0] - shift]
+    return out
 
 
 # -----------------------------------------------------------------------------
-# v2 Modern Ambient Abstract Space Shooter Sound Recipes
+# SELECTED WINNERS & HARMONIZED GAME SFX PALETTE (Hi-Fi Hadamard FDN v4)
 # -----------------------------------------------------------------------------
 
 
-def synth_laser_fire(variant: int) -> np.ndarray:
-    """
-    Deep, tactile modern plasma pulse: sub-bass punch + detuned low-mid unison sweep
-    + velvety air breath + dark cosmic convolution tail. Zero harsh 80s pew.
-    """
-    rng = np.random.default_rng(1100 + variant)
-    dur = [0.22, 0.23, 0.21][variant - 1]
-    n = int(SAMPLE_RATE * dur)
-    t = np.linspace(0.0, dur, n, endpoint=False)
-
-    # 1) Warm sub-bass body thump (145 -> 52 Hz)
-    sub_f0 = [148.0, 140.0, 155.0][variant - 1]
-    sub_freq = 50.0 + (sub_f0 - 50.0) * np.exp(-t / 0.032)
-    sub_phase = 2.0 * math.pi * np.cumsum(sub_freq) / SAMPLE_RATE
-    sub = np.sin(sub_phase) * (1.0 - np.exp(-t / 0.004)) * np.exp(-t / 0.068) * 0.72
-
-    # 2) Detuned warm low-mid plasma body (340 -> 115 Hz) with sweeping low-pass filter
-    mid_f0 = [345.0, 325.0, 365.0][variant - 1]
-    mid_freq = 112.0 + (mid_f0 - 112.0) * np.exp(-t / 0.036)
-    mid_pad = unison_pad(
-        mid_freq,
-        rng,
-        voices=4,
-        detune_cents=12.0,
-        drift_cents=5.0,
-        wave_fn=lambda ph: warm_saw(ph, max_harmonics=5),
-    )
-    mid_env = (1.0 - np.exp(-t / 0.0045)) * np.exp(-t / 0.055)
-    mid_pad *= mid_env[:, None] * 0.65
-    cutoff = 240.0 + 1150.0 * np.exp(-t / 0.042)
-    mid_pad[:, 0] = dynamic_lowpass_sweep(mid_pad[:, 0], cutoff, q=0.95)
-    mid_pad[:, 1] = dynamic_lowpass_sweep(mid_pad[:, 1], cutoff * 1.03, q=0.95)
-
-    # 3) Soft airy plasma exhale (band-limited 450-1650 Hz, zero sibilant fizz)
-    air = butter_bandpass(pink_noise(n, rng), 450.0, 1650.0, order=2)
-    air *= ((1.0 - np.exp(-t / 0.004)) * np.exp(-t / 0.025) * 0.28)[:, None]
-
-    dry = ensure_stereo(sub) + mid_pad + air
-    dry = tape_saturate(dry, drive=1.25, warm_lp_hz=2200.0)
-    wet = convolution_space_reverb(
-        dry,
-        seed=2100 + variant,
-        rt60_s=0.34,
-        wet=0.34,
-        pre_delay_ms=4.0,
-        damping_hz=1500.0,
-        tail_pad_s=0.14,
-    )
-    return normalize_and_polish(wet, peak_dbfs=-2.0, fade_in_ms=3.0, fade_out_ms=45.0)
-
-
-def synth_bullet_hit(variant: int) -> np.ndarray:
-    """Muted low-mid energy thud + soft filtered plasma spark + dark room tail."""
-    rng = np.random.default_rng(1200 + variant)
-    dur = [0.15, 0.16][variant - 1]
-    n = int(SAMPLE_RATE * dur)
-    t = np.linspace(0.0, dur, n, endpoint=False)
-
-    f0 = [185.0, 205.0][variant - 1]
-    freq = 64.0 + (f0 - 64.0) * np.exp(-t / 0.024)
-    phase = 2.0 * math.pi * np.cumsum(freq) / SAMPLE_RATE
-    thud = soft_triangle(phase) * (1.0 - np.exp(-t / 0.003)) * np.exp(-t / 0.042) * 0.8
-
-    puff = butter_bandpass(pink_noise(n, rng), 420.0, 1750.0, order=2)
-    puff *= ((1.0 - np.exp(-t / 0.003)) * np.exp(-t / 0.022) * 0.35)[:, None]
-
-    dry = tape_saturate(ensure_stereo(thud) + puff, drive=1.2, warm_lp_hz=2100.0)
-    wet = convolution_space_reverb(
-        dry,
-        seed=2200 + variant,
-        rt60_s=0.28,
-        wet=0.34,
-        pre_delay_ms=3.0,
-        damping_hz=1500.0,
-        tail_pad_s=0.12,
-    )
-    return normalize_and_polish(wet, peak_dbfs=-2.4, fade_in_ms=2.5, fade_out_ms=38.0)
-
-
-def synth_food_collect(variant: int) -> np.ndarray:
-    """
-    Warm marimba/Rhodes-style ambient orb pickup (C4, E4, G4 — an octave lower than v1)
-    with felt soft attack, warm sub-body, and dreamy stereo reverb tail.
-    """
-    rng = np.random.default_rng(1300 + variant)
-    dur = 0.24
-    n = int(SAMPLE_RATE * dur)
-    t = np.linspace(0.0, dur, n, endpoint=False)
-
-    # Warm lower octave pentatonic: C4, E4, G4 (261.63, 329.63, 392.00 Hz)
-    base_hz = [261.63, 329.63, 392.00][variant - 1]
-    freq_curve = base_hz * (0.97 + 0.03 * (1.0 - np.exp(-t / 0.025)))
-
-    body = unison_pad(
-        freq_curve,
-        rng,
-        voices=3,
-        detune_cents=7.0,
-        drift_cents=3.0,
-        wave_fn=np.sin,
-    )
-    # Soft 2nd-harmonic Rhodes warmth decaying early
-    overtone = np.sin(2.0 * math.pi * np.cumsum(freq_curve * 2.0) / SAMPLE_RATE)
-    overtone *= (np.exp(-t / 0.045) * 0.22)
-
-    # Tactile sub-warmth an octave down
-    sub = np.sin(2.0 * math.pi * np.cumsum(freq_curve * 0.5) / SAMPLE_RATE) * np.exp(-t / 0.075) * 0.35
-
-    env = (1.0 - np.exp(-t / 0.007)) * np.exp(-t / 0.072)
-    dry = (body + ensure_stereo(overtone + sub)) * env[:, None]
-    dry = tape_saturate(dry, drive=1.15, warm_lp_hz=1900.0)
-    wet = convolution_space_reverb(
-        dry,
-        seed=2300 + variant,
-        rt60_s=0.44,
-        wet=0.45,
-        pre_delay_ms=6.0,
-        damping_hz=1600.0,
-        tail_pad_s=0.20,
-    )
-    return normalize_and_polish(wet, peak_dbfs=-2.3, fade_in_ms=4.0, fade_out_ms=65.0)
-
-
-def synth_ship_explode(variant: int) -> np.ndarray:
-    """
-    Cinematic deep-space hull detonation: visceral sub-bass drop + warm low-passed
-    rumble + distant muffled crackle + wide dark cosmic hall reverb.
-    """
-    rng = np.random.default_rng(1400 + variant)
-    dur = [0.62, 0.66, 0.58][variant - 1]
-    n = int(SAMPLE_RATE * dur)
-    t = np.linspace(0.0, dur, n, endpoint=False)
-
-    # Deep physical sub drop (84 -> 26 Hz)
-    sub_f0 = [84.0, 78.0, 90.0][variant - 1]
-    sub_freq = 26.0 + (sub_f0 - 26.0) * np.exp(-t / 0.11)
-    sub_phase = 2.0 * math.pi * np.cumsum(sub_freq) / SAMPLE_RATE
-    sub = np.sin(sub_phase) * (1.0 - np.exp(-t / 0.005)) * np.exp(-t / 0.19) * 0.95
-
-    # Warm sweeping low-mid plasma roar (1400 -> 95 Hz)
-    n1 = pink_noise(n, rng)
-    n2 = pink_noise(n, rng)
-    cutoff = 95.0 + 1350.0 * np.exp(-t / 0.11)
-    bloom_l = dynamic_lowpass_sweep(n1, cutoff, q=0.85)
-    bloom_r = dynamic_lowpass_sweep(n2, cutoff * 1.05, q=0.85)
-    bloom = np.column_stack([bloom_l, bloom_r])
-    bloom *= ((1.0 - np.exp(-t / 0.008)) * np.exp(-t / 0.18) * 0.95)[:, None]
-
-    # Distant muted structural debris (bandpass 450-1500 Hz, gentle)
-    debris = butter_bandpass(
-        np.column_stack([rng.standard_normal(n), rng.standard_normal(n)]),
-        450.0,
-        1500.0,
-        order=2,
-    )
-    debris *= (np.exp(-t / 0.085) * 0.22)[:, None]
-
-    dry = tape_saturate(ensure_stereo(sub) + bloom + debris, drive=1.4, warm_lp_hz=2000.0)
-    wet = convolution_space_reverb(
-        dry,
-        seed=2400 + variant,
-        rt60_s=0.68,
-        wet=0.45,
-        pre_delay_ms=8.0,
-        damping_hz=1400.0,
-        tail_pad_s=0.32,
-    )
-    return normalize_and_polish(wet, peak_dbfs=-1.1, fade_in_ms=4.0, fade_out_ms=95.0)
-
-
-def synth_boost() -> np.ndarray:
-    """
-    Deep modern warp-drive surge (1.1s): sub-bass turbine rumble + lush fifth-interval
-    ambient pad + velvety low-mid wind sweep + wide cosmic hall reverb.
-    """
-    rng = np.random.default_rng(1501)
-    dur = 0.85
-    n = int(SAMPLE_RATE * dur)
-    t = np.linspace(0.0, dur, n, endpoint=False)
-
-    surge_env = (1.0 - np.exp(-t / 0.055)) * np.exp(-np.maximum(0.0, t - 0.16) / 0.28)
-
-    # Velvety low-mid wind sweep (180 -> 660 -> 160 Hz)
-    center = 160.0 + 500.0 * np.sin(math.pi * np.clip(t / 0.50, 0.0, 1.0)) ** 1.25
-    whoosh_l = dynamic_bandpass_sweep(pink_noise(n, rng), center, q=1.5)
-    whoosh_r = dynamic_bandpass_sweep(pink_noise(n, rng), center * 1.04, q=1.5)
-    whoosh = np.column_stack([whoosh_l, whoosh_r]) * surge_env[:, None] * 0.85
-
-    # Sub-bass turbine + lush detuned fifth pad
-    f_root = 58.0 + 36.0 * np.sin(math.pi * np.clip(t / 0.55, 0.0, 1.0))
-    sub = np.sin(2.0 * math.pi * np.cumsum(f_root) / SAMPLE_RATE) * surge_env * 0.65
-    pad_root = unison_pad(f_root * 2.0, rng, voices=4, detune_cents=10.0, drift_cents=4.0, wave_fn=soft_triangle)
-    pad_fifth = unison_pad(f_root * 3.0, rng, voices=3, detune_cents=12.0, drift_cents=4.0, wave_fn=np.sin)
-    pad = (pad_root * 0.45 + pad_fifth * 0.30) * surge_env[:, None]
-
-    dry = tape_saturate(whoosh + ensure_stereo(sub) + pad, drive=1.22, warm_lp_hz=1850.0)
-    wet = convolution_space_reverb(
-        dry,
-        seed=2501,
-        rt60_s=0.60,
-        wet=0.45,
-        pre_delay_ms=10.0,
-        damping_hz=1600.0,
-        tail_pad_s=0.28,
-    )
-    return normalize_and_polish(wet, peak_dbfs=-1.5, fade_in_ms=12.0, fade_out_ms=120.0)
-
-
-def synth_ship_gain() -> np.ndarray:
-    """Warm Rhodes/ambient-pad fifth interval (D4 -> A4) with soft sub-body & lush halo."""
-    rng = np.random.default_rng(1601)
-    dur = 0.30
-    n = int(SAMPLE_RATE * dur)
-    t = np.linspace(0.0, dur, n, endpoint=False)
-
-    notes = [(0.0, 293.66, 0.13), (0.075, 440.00, 0.18)]  # D4 -> A4
-    dry = np.zeros((n, 2), dtype=np.float64)
-    for start_s, freq, tau in notes:
-        dt = np.maximum(0.0, t - start_s)
-        mask = (t >= start_s)[:, None]
-        env = np.where(mask, ((1.0 - np.exp(-dt / 0.008)) * np.exp(-dt / tau))[:, None], 0.0)
-        pad = unison_pad(np.full(n, freq), rng, voices=3, detune_cents=7.0, drift_cents=3.0, wave_fn=np.sin)
-        sub = np.sin(2.0 * math.pi * (freq * 0.5) * dt) * 0.32
-        dry += (pad + ensure_stereo(sub)) * env * 0.55
-
-    dry = tape_saturate(dry, drive=1.15, warm_lp_hz=2000.0)
-    wet = convolution_space_reverb(
-        dry,
-        seed=2601,
-        rt60_s=0.52,
-        wet=0.46,
-        pre_delay_ms=8.0,
-        damping_hz=1750.0,
-        tail_pad_s=0.22,
-    )
-    return normalize_and_polish(wet, peak_dbfs=-2.0, fade_in_ms=5.0, fade_out_ms=70.0)
-
-
-def synth_kill_confirm() -> np.ndarray:
-    """
-    Deep satisfying sub-impact (95 -> 40 Hz) + warm lush major-9th ambient chord
-    swell (C4 - G4 - D5) bathed in cosmic reverb.
-    """
-    rng = np.random.default_rng(1701)
-    dur = 0.44
-    n = int(SAMPLE_RATE * dur)
-    t = np.linspace(0.0, dur, n, endpoint=False)
-
-    # Tactile deep confirmation thump
-    thump_f = 40.0 + 62.0 * np.exp(-t / 0.038)
-    thump = np.sin(2.0 * math.pi * np.cumsum(thump_f) / SAMPLE_RATE) * (1.0 - np.exp(-t / 0.004)) * np.exp(-t / 0.11) * 0.65
-
-    # Warm lower-register chord arpeggio (C4 -> G4 -> D5)
-    notes = [(0.0, 261.63), (0.06, 392.00), (0.125, 587.33)]
-    chord = np.zeros((n, 2), dtype=np.float64)
-    for idx, (start_s, freq) in enumerate(notes):
-        dt = np.maximum(0.0, t - start_s)
-        mask = (t >= start_s)[:, None]
-        env = np.where(mask, ((1.0 - np.exp(-dt / 0.010)) * np.exp(-dt / (0.15 + 0.04 * idx)))[:, None], 0.0)
-        pad = unison_pad(np.full(n, freq), rng, voices=4, detune_cents=8.0, drift_cents=3.5, wave_fn=soft_triangle)
-        chord += pad * env * 0.42
-
-    dry = tape_saturate(ensure_stereo(thump) + chord, drive=1.18, warm_lp_hz=2300.0)
-    wet = convolution_space_reverb(
-        dry,
-        seed=2701,
-        rt60_s=0.62,
-        wet=0.48,
-        pre_delay_ms=10.0,
-        damping_hz=1900.0,
-        tail_pad_s=0.26,
-    )
-    return normalize_and_polish(wet, peak_dbfs=-1.4, fade_in_ms=4.0, fade_out_ms=85.0)
-
-
-def synth_player_spawn() -> np.ndarray:
-    """Deep cinematic warp-in: rising sub-bass + lush 5-voice ambient chord + hall reverb."""
-    rng = np.random.default_rng(1801)
-    dur = 0.62
-    n = int(SAMPLE_RATE * dur)
-    t = np.linspace(0.0, dur, n, endpoint=False)
-
-    env = (1.0 - np.exp(-t / 0.09)) * np.exp(-np.maximum(0.0, t - 0.20) / 0.22)
-    glide = 0.88 + 0.12 * (1.0 - np.exp(-t / 0.18))
-
-    # Deep sub swell (65 Hz)
-    sub = np.sin(2.0 * math.pi * np.cumsum(65.41 * glide) / SAMPLE_RATE) * 0.55
-
-    # Warm ambient pad chord: C3, G3, D4, E4
-    chord = np.zeros((n, 2), dtype=np.float64)
-    for idx, f in enumerate([130.81, 196.00, 293.66, 329.63]):
-        pad = unison_pad(f * glide, rng, voices=4, detune_cents=11.0, drift_cents=4.5, wave_fn=soft_triangle)
-        chord += pad * (0.30 - 0.03 * idx)
-
-    air = dynamic_bandpass_sweep(pink_noise(n, rng), 240.0 + 1100.0 * (t / dur), q=1.4)
-    dry = (ensure_stereo(sub + air * 0.28) + chord) * env[:, None]
-    dry = tape_saturate(dry, drive=1.18, warm_lp_hz=2200.0)
-
-    wet = convolution_space_reverb(
-        dry,
-        seed=2801,
-        rt60_s=0.75,
-        wet=0.50,
-        pre_delay_ms=12.0,
-        damping_hz=1850.0,
-        tail_pad_s=0.34,
-    )
-    return normalize_and_polish(wet, peak_dbfs=-1.5, fade_in_ms=10.0, fade_out_ms=120.0)
-
-
-def synth_player_death() -> np.ndarray:
-    """Deep cinematic hull implosion + slow descending sub-bass & dark minor pad into the void."""
-    rng = np.random.default_rng(1901)
+def make_laser(
+    seed: int, f_end: float, f_span: float, sheen_hz: float, sub_hi: float, sub_lo: float
+) -> np.ndarray:
+    """Winner `laser_4A_pristine_bolt`: instant FM bolt + sub + crystal sheen + FDN hall."""
+    rng = np.random.default_rng(seed)
     dur = 1.05
     n = int(SAMPLE_RATE * dur)
     t = np.linspace(0.0, dur, n, endpoint=False)
 
-    # Heavy sub impact drop (115 -> 26 Hz)
-    sub_f = 26.0 + 90.0 * np.exp(-t / 0.15)
-    sub = np.sin(2.0 * math.pi * np.cumsum(sub_f) / SAMPLE_RATE) * (1.0 - np.exp(-t / 0.006)) * np.exp(-t / 0.30) * 0.85
+    f_sweep = f_end + f_span * np.exp(-t / 0.024)
+    ph = 2.0 * math.pi * np.cumsum(f_sweep) / SAMPLE_RATE
+    fm = 0.75 * np.exp(-t / 0.014) * np.sin(2.0 * ph)
+    env = (1.0 - np.exp(-t / 0.0015)) * np.exp(-t / 0.058)
+    core = pan_mono(
+        (0.72 * np.sin(ph + fm) + 0.24 * np.sin(2.0 * ph) + 0.12 * np.sin(3.0 * ph))
+        * env,
+        0.0,
+    )
+    core = clean_stereo_chorus(core, depth_ms=2.0, rate_hz=2.2, mix=0.35)
 
-    # Slow descending dark ambient minor pad: A2, C3, E3
-    decay_pitch = 1.0 - 0.38 * (1.0 - np.exp(-t / 0.45))
-    pad_env = (1.0 - np.exp(-t / 0.025)) * np.exp(-t / 0.42)
+    sub = pan_mono(clean_sub_punch(t, sub_hi, sub_lo, 0.024, 0.055) * 0.42, 0.0)
+    sheen = crystal_modal_sparkle(n, sheen_hz, (1.0, 1.5, 2.0, 2.8, 3.8, 5.0), 0.048, rng) * 0.36
+
+    dry = core + sub + sheen
+    wet, _ = studio_fdn_reverb(
+        dry, rt60_s=0.90, wet=0.62, pre_delay_ms=16.0, hf_damp_hz=11500.0
+    )
+    return finish_hifi(wet, fade_out_ms=150.0)
+
+
+def make_bullet_hit(seed: int, tap_hi: float, tap_lo: float, crystal_hz: float) -> np.ndarray:
+    """Clean, instantaneous crystalline deflector tap + tight sub-thump (zero harsh static)."""
+    rng = np.random.default_rng(seed)
+    dur = 0.85
+    n = int(SAMPLE_RATE * dur)
+    t = np.linspace(0.0, dur, n, endpoint=False)
+
+    sub = pan_mono(clean_sub_punch(t, 230.0, 74.0, 0.015, 0.042) * 0.66, 0.0)
+
+    f_tap = tap_lo + (tap_hi - tap_lo) * np.exp(-t / 0.012)
+    ph = 2.0 * math.pi * np.cumsum(f_tap) / SAMPLE_RATE
+    env = (1.0 - np.exp(-t / 0.0012)) * np.exp(-t / 0.030)
+    tap = pan_mono((0.76 * np.sin(ph) + 0.28 * np.sin(1.5 * ph)) * env * 0.65, 0.0)
+    tap = clean_stereo_chorus(tap, depth_ms=1.6, rate_hz=2.4, mix=0.30)
+
+    spark = crystal_modal_sparkle(n, crystal_hz, (1.0, 1.5, 2.0, 2.75, 3.8), 0.045, rng) * 0.42
+    dry = sub + tap + spark
+    wet, _ = studio_fdn_reverb(
+        dry, rt60_s=0.72, wet=0.58, pre_delay_ms=14.0, hf_damp_hz=11500.0
+    )
+    return finish_hifi(wet, fade_out_ms=140.0)
+
+
+def make_food_collect(seed: int, f1: float, f2: float, body_hz: float) -> np.ndarray:
+    """Winner `food_4B_celesta_spark`: pentatonic celesta fifth plucks + warm body + FDN hall."""
+    rng = np.random.default_rng(seed)
+    dur = 1.65
+    n = int(SAMPLE_RATE * dur)
+    t = np.linspace(0.0, dur, n, endpoint=False)
+
+    c1 = crystal_modal_sparkle(n, f1, (1.0, 2.0, 3.0, 4.0, 6.0, 8.0), 0.16, rng) * 0.65
+    c2 = shift_stereo(
+        crystal_modal_sparkle(n, f2, (1.0, 2.0, 3.0, 4.0, 6.0), 0.14, rng) * 0.45,
+        0.028,
+    )
+    body = pan_mono(
+        np.sin(2.0 * math.pi * body_hz * t)
+        * (1.0 - np.exp(-t / 0.003))
+        * np.exp(-t / 0.11)
+        * 0.32,
+        0.0,
+    )
+
+    dry = clean_stereo_chorus(c1 + c2 + body, depth_ms=2.5, rate_hz=1.4, mix=0.38)
+    wet, _ = studio_fdn_reverb(
+        dry, rt60_s=1.45, wet=0.74, pre_delay_ms=20.0, hf_damp_hz=12000.0
+    )
+    return finish_hifi(wet, fade_out_ms=210.0)
+
+
+def make_ship_explode(
+    seed: int,
+    sub_hi: float,
+    sub_lo: float,
+    burst_hz: float,
+    chord_freqs: Sequence[float],
+) -> np.ndarray:
+    """Winner `explode_4B_ambient_implosion`: 36 ms inhale -> 14 ms gap -> sub + burst + fifth bloom."""
+    rng = np.random.default_rng(seed)
+    dur = 2.25
+    n = int(SAMPLE_RATE * dur)
+    t = np.linspace(0.0, dur, n, endpoint=False)
+
+    inhale = butter_filter(rng.standard_normal(n), "band", (1800.0, 11000.0), order=2)
+    inhale *= np.where(t < 0.036, (t / 0.036) ** 2 * 0.20, 0.0)[:, None]
+    inhale += pan_mono(
+        np.where(
+            t < 0.036,
+            np.sin(
+                2.0
+                * math.pi
+                * np.cumsum(300.0 + 700.0 * (t / 0.036) ** 2)
+                / SAMPLE_RATE
+            )
+            * (t / 0.036)
+            * 0.35,
+            0.0,
+        ),
+        0.0,
+    )
+
+    t0 = 0.050
+    dt = np.maximum(0.0, t - t0)
+    active = t >= t0
+    sub = pan_mono(
+        np.where(active, clean_sub_punch(dt, sub_hi, sub_lo, 0.060, 0.26) * 0.90, 0.0),
+        0.0,
+    )
+
+    burst = shift_stereo(
+        crystal_modal_sparkle(
+            n, burst_hz, (1.0, 1.5, 2.02, 2.75, 3.60, 4.85, 6.40, 8.50, 11.2), 0.24, rng
+        )
+        * 0.62,
+        t0,
+    )
+
+    bloom_env = np.where(active, (1.0 - np.exp(-dt / 0.015)) * np.exp(-dt / 0.28), 0.0)
+    bloom = np.zeros((n, 2), dtype=np.float64)
+    for idx, f in enumerate(chord_freqs):
+        bloom += pan_mono(
+            np.sin(2.0 * math.pi * f * dt) * (0.25 - 0.02 * idx),
+            -0.5 + 0.25 * idx,
+        )
+    bloom *= bloom_env[:, None]
+
+    dry = inhale + sub + burst + bloom
+    wet, _ = studio_fdn_reverb(
+        dry, rt60_s=1.85, wet=0.76, pre_delay_ms=26.0, hf_damp_hz=10500.0
+    )
+    return finish_hifi(wet, fade_out_ms=240.0)
+
+
+def make_boost() -> np.ndarray:
+    """Winner `boost_4B_luminous_dash`: clean pop + sub + open-fifth chord surge + air crest."""
+    rng = np.random.default_rng(8102)
+    dur = 1.85
+    n = int(SAMPLE_RATE * dur)
+    t = np.linspace(0.0, dur, n, endpoint=False)
+
+    t_peak = 0.18
+    env = ((t / t_peak) * np.exp(1.0 - t / t_peak)) ** 0.92
+    f_arc = (t / 0.24) * np.exp(1.0 - t / 0.24)
+
+    pop = pan_mono(clean_sub_punch(t, 900.0, 110.0, 0.008, 0.022) * 0.60, 0.0)
+    sub = pan_mono(clean_sub_punch(t, 120.0, 52.0, 0.045, 0.22) * 0.68, 0.0)
+
+    glide_ratio = 0.85 + 0.42 * f_arc
     chord = np.zeros((n, 2), dtype=np.float64)
-    for f in [110.00, 130.81, 164.81]:
-        chord += unison_pad(f * decay_pitch, rng, voices=4, detune_cents=12.0, drift_cents=5.0, wave_fn=soft_triangle) * 0.32
-    chord *= pad_env[:, None]
-
-    wash = dynamic_lowpass_sweep(pink_noise(n, rng), 90.0 + 1600.0 * np.exp(-t / 0.22), q=0.8)
-    wash *= (1.0 - np.exp(-t / 0.01)) * np.exp(-t / 0.32) * 0.72
-
-    dry = tape_saturate(ensure_stereo(sub + wash) + chord, drive=1.32, warm_lp_hz=1750.0)
-    wet = convolution_space_reverb(
-        dry,
-        seed=2901,
-        rt60_s=0.95,
-        wet=0.52,
-        pre_delay_ms=14.0,
-        damping_hz=1450.0,
-        tail_pad_s=0.45,
+    for idx, f in enumerate([293.66, 440.00, 659.25, 739.99, 1318.51]):
+        ph = 2.0 * math.pi * np.cumsum(f * glide_ratio) / SAMPLE_RATE
+        pan = -0.65 + 0.32 * idx
+        chord += pan_mono(
+            (0.75 * np.sin(ph) + 0.25 * np.sin(2.0 * ph)) * (0.28 - 0.03 * idx), pan
+        )
+    chord = clean_stereo_chorus(chord * env[:, None], depth_ms=3.0, rate_hz=1.5, mix=0.42)
+    air_crest = (
+        crystal_modal_sparkle(n, 1760.0, (1.0, 1.5, 2.0, 3.0, 4.2, 5.6), 0.22, rng)
+        * 0.38
     )
-    return normalize_and_polish(wet, peak_dbfs=-1.1, fade_in_ms=5.0, fade_out_ms=160.0)
+
+    dry = pop + sub + chord + air_crest
+    wet, _ = studio_fdn_reverb(
+        dry, rt60_s=1.45, wet=0.72, pre_delay_ms=22.0, hf_damp_hz=11000.0
+    )
+    return finish_hifi(wet, fade_out_ms=220.0)
 
 
-def synth_danger_zone() -> np.ndarray:
-    """Calm, deep spaceship-hull sonar pulse (220 -> 175 Hz) with warm cosmic echo."""
-    rng = np.random.default_rng(2001)
-    dur = 0.32
+def make_ship_gain() -> np.ndarray:
+    """Luminous 3-step ascending celesta fifths + warm G4 anchor (fleet promotion)."""
+    rng = np.random.default_rng(8601)
+    dur = 1.65
     n = int(SAMPLE_RATE * dur)
     t = np.linspace(0.0, dur, n, endpoint=False)
 
-    pulses = [(0.0, 246.94), (0.115, 196.00)]  # B3 -> G3 deep warm sonar
-    dry = np.zeros((n, 2), dtype=np.float64)
-    for start_s, freq in pulses:
-        dt = np.maximum(0.0, t - start_s)
-        mask = (t >= start_s)[:, None]
-        env = np.where(mask, ((1.0 - np.exp(-dt / 0.012)) * np.exp(-dt / 0.075))[:, None], 0.0)
-        pad = unison_pad(np.full(n, freq), rng, voices=3, detune_cents=6.0, drift_cents=2.5, wave_fn=np.sin)
-        dry += pad * env * 0.65
-
-    dry = tape_saturate(dry, drive=1.12, warm_lp_hz=1400.0)
-    wet = convolution_space_reverb(
-        dry,
-        seed=3001,
-        rt60_s=0.55,
-        wet=0.45,
-        pre_delay_ms=8.0,
-        damping_hz=1350.0,
-        tail_pad_s=0.20,
+    c1 = crystal_modal_sparkle(n, 783.99, (1.0, 2.0, 3.0, 4.0, 6.0), 0.16, rng) * 0.56
+    c2 = shift_stereo(
+        crystal_modal_sparkle(n, 1174.66, (1.0, 2.0, 3.0, 4.0, 5.5), 0.16, rng) * 0.52,
+        0.055,
     )
-    return normalize_and_polish(wet, peak_dbfs=-2.4, fade_in_ms=5.0, fade_out_ms=65.0)
+    c3 = shift_stereo(
+        crystal_modal_sparkle(n, 1567.98, (1.0, 1.5, 2.0, 3.0, 4.5), 0.18, rng) * 0.44,
+        0.110,
+    )
+
+    sub = shift_stereo(
+        pan_mono(clean_sub_punch(t, 160.0, 98.0, 0.035, 0.16) * 0.44, 0.0), 0.050
+    )
+    warm = pan_mono(
+        np.sin(2.0 * math.pi * 392.00 * t)
+        * (1.0 - np.exp(-t / 0.015))
+        * np.exp(-t / 0.19)
+        * 0.34,
+        0.0,
+    )
+
+    dry = clean_stereo_chorus(c1 + c2 + c3 + warm, depth_ms=2.6, rate_hz=1.4, mix=0.38) + sub
+    wet, _ = studio_fdn_reverb(
+        dry, rt60_s=1.40, wet=0.72, pre_delay_ms=18.0, hf_damp_hz=12000.0
+    )
+    return finish_hifi(wet, fade_out_ms=210.0)
 
 
-def synth_ctf_event() -> np.ndarray:
-    """Deep resonant cinematic sci-fi horn/pad broadcast chime (D3 + A3 + D4)."""
-    rng = np.random.default_rng(2101)
-    dur = 0.50
+def make_kill_confirm() -> np.ndarray:
+    """Heroic tactile lock-in sub + ascending open-fifth celesta/pad confirmation."""
+    rng = np.random.default_rng(8701)
+    dur = 1.95
     n = int(SAMPLE_RATE * dur)
     t = np.linspace(0.0, dur, n, endpoint=False)
 
-    notes = [(0.0, 293.66, 0.16), (0.13, 440.00, 0.24)]  # D4 -> A4 with octave-down sub
-    dry = np.zeros((n, 2), dtype=np.float64)
-    for start_s, freq, tau in notes:
-        dt = np.maximum(0.0, t - start_s)
-        mask = (t >= start_s)[:, None]
-        env = np.where(mask, ((1.0 - np.exp(-dt / 0.010)) * np.exp(-dt / tau))[:, None], 0.0)
-        pad = unison_pad(np.full(n, freq), rng, voices=4, detune_cents=9.0, drift_cents=3.5, wave_fn=lambda ph: warm_saw(ph, 4))
-        sub = np.sin(2.0 * math.pi * (freq * 0.5) * dt) * 0.45
-        dry += (pad + ensure_stereo(sub)) * env * 0.52
+    sub = pan_mono(clean_sub_punch(t, 175.0, 62.0, 0.025, 0.11) * 0.62, 0.0)
 
-    dry = tape_saturate(dry, drive=1.2, warm_lp_hz=2100.0)
-    wet = convolution_space_reverb(
-        dry,
-        seed=3101,
-        rt60_s=0.68,
-        wet=0.48,
-        pre_delay_ms=10.0,
-        damping_hz=1750.0,
-        tail_pad_s=0.28,
+    c1 = crystal_modal_sparkle(n, 659.25, (1.0, 1.5, 2.0, 3.0, 4.5), 0.15, rng) * 0.54
+    c2 = shift_stereo(
+        crystal_modal_sparkle(n, 987.77, (1.0, 2.0, 3.0, 4.0, 6.0), 0.22, rng) * 0.56,
+        0.048,
     )
-    return normalize_and_polish(wet, peak_dbfs=-1.4, fade_in_ms=5.0, fade_out_ms=85.0)
+    c3 = shift_stereo(
+        crystal_modal_sparkle(n, 1318.51, (1.0, 1.5, 2.0, 3.0, 4.5), 0.24, rng) * 0.42,
+        0.096,
+    )
+
+    pad_env = (1.0 - np.exp(-t / 0.020)) * np.exp(-t / 0.26)
+    pad = np.zeros((n, 2), dtype=np.float64)
+    for idx, f in enumerate([220.00, 329.63, 493.88, 659.25]):
+        pad += pan_mono(np.sin(2.0 * math.pi * f * t) * (0.24 - 0.03 * idx), -0.45 + 0.30 * idx)
+    pad = clean_stereo_chorus(pad * pad_env[:, None], depth_ms=2.8, rate_hz=1.3, mix=0.40)
+
+    dry = sub + c1 + c2 + c3 + pad
+    wet, _ = studio_fdn_reverb(
+        dry, rt60_s=1.60, wet=0.74, pre_delay_ms=20.0, hf_damp_hz=11800.0
+    )
+    return finish_hifi(wet, fade_out_ms=230.0)
 
 
-def synth_ctf_victory() -> np.ndarray:
-    """Luminous modern ambient cinematic chord resolution (C3-G3-C4-D4-E4) with lush hall tail."""
-    rng = np.random.default_rng(2201)
-    dur = 1.15
+def make_player_spawn() -> np.ndarray:
+    """Luminous arena materialization swell: warm Dadd9 pad + lock-in pulse + shimmer."""
+    rng = np.random.default_rng(8801)
+    dur = 2.35
     n = int(SAMPLE_RATE * dur)
     t = np.linspace(0.0, dur, n, endpoint=False)
 
-    notes = [
-        (0.00, 130.81, 0.60),  # C3 sub foundation
-        (0.02, 196.00, 0.58),  # G3
-        (0.11, 261.63, 0.56),  # C4
-        (0.20, 293.66, 0.54),  # D4
-        (0.29, 329.63, 0.62),  # E4
-    ]
-    dry = np.zeros((n, 2), dtype=np.float64)
-    for idx, (start_s, freq, tau) in enumerate(notes):
-        dt = np.maximum(0.0, t - start_s)
-        mask = (t >= start_s)[:, None]
-        env = np.where(mask, ((1.0 - np.exp(-dt / 0.018)) * np.exp(-dt / tau))[:, None], 0.0)
-        pad = unison_pad(np.full(n, freq), rng, voices=4, detune_cents=10.0, drift_cents=4.0, wave_fn=soft_triangle)
-        dry += pad * env * (0.42 if idx < 2 else 0.34)
+    t0 = 0.085
+    dt = np.maximum(0.0, t - t0)
+    active = t >= t0
 
-    dry = tape_saturate(dry, drive=1.18, warm_lp_hz=2300.0)
-    wet = convolution_space_reverb(
-        dry,
-        seed=3201,
-        rt60_s=0.95,
-        wet=0.52,
-        pre_delay_ms=12.0,
-        damping_hz=1850.0,
-        tail_pad_s=0.45,
+    swell_env = np.where(t < t0, (t / t0) ** 2, np.exp(-dt / 0.36))
+    glide = np.where(t < t0, 0.84 + 0.16 * (t / t0) ** 1.5, 1.0)
+    chord = np.zeros((n, 2), dtype=np.float64)
+    for idx, f in enumerate([146.83, 220.00, 293.66, 440.00, 659.25, 880.00]):
+        ph = 2.0 * math.pi * np.cumsum(f * glide) / SAMPLE_RATE
+        chord += pan_mono(
+            (0.75 * np.sin(ph) + 0.25 * np.sin(2.0 * ph)) * (0.26 - 0.025 * idx),
+            -0.6 + 0.24 * idx,
+        )
+    chord = clean_stereo_chorus(
+        chord * swell_env[:, None], depth_ms=3.0, rate_hz=1.2, mix=0.44
     )
-    return normalize_and_polish(wet, peak_dbfs=-1.2, fade_in_ms=6.0, fade_out_ms=160.0)
+
+    sub = pan_mono(
+        np.where(active, clean_sub_punch(dt, 138.0, 56.0, 0.045, 0.20) * 0.60, 0.0),
+        0.0,
+    )
+    spark = shift_stereo(
+        crystal_modal_sparkle(n, 1760.0, (1.0, 1.5, 2.0, 3.0, 4.5, 6.0), 0.26, rng)
+        * 0.44,
+        t0,
+    )
+
+    dry = chord + sub + spark
+    wet, _ = studio_fdn_reverb(
+        dry, rt60_s=1.85, wet=0.78, pre_delay_ms=24.0, hf_damp_hz=11200.0
+    )
+    return finish_hifi(wet, fade_out_ms=260.0)
 
 
-def synth_ui_click() -> np.ndarray:
-    """Tactile, muted modern UI 'thock/bubble' (300 -> 440 Hz) with subtle room space."""
-    dur = 0.065
+def make_player_death() -> np.ndarray:
+    """Winner `death_4B_void_horizon`: 52 ms inhale -> sub drop + crystal + void chord."""
+    rng = np.random.default_rng(8502)
+    dur = 2.95
     n = int(SAMPLE_RATE * dur)
     t = np.linspace(0.0, dur, n, endpoint=False)
 
-    freq = 290.0 + 145.0 * (1.0 - np.exp(-t / 0.010))
-    phase = 2.0 * math.pi * np.cumsum(freq) / SAMPLE_RATE
-    env = (1.0 - np.exp(-t / 0.0025)) * np.exp(-t / 0.014)
-    mono = np.sin(phase) * env
-    dry = tape_saturate(stereo_widen(mono, delay_ms=1.1, amount=0.14), drive=1.15, warm_lp_hz=1600.0)
-    wet = convolution_space_reverb(
-        dry,
-        seed=3301,
-        rt60_s=0.14,
-        wet=0.24,
-        pre_delay_ms=2.0,
-        damping_hz=1400.0,
-        tail_pad_s=0.04,
+    inhale = butter_filter(rng.standard_normal(n), "band", (2200.0, 12500.0), order=2)
+    inhale *= np.where(t < 0.052, (t / 0.052) ** 2 * 0.22, 0.0)[:, None]
+    inhale += pan_mono(
+        np.where(
+            t < 0.052,
+            np.sin(
+                2.0
+                * math.pi
+                * np.cumsum(260.0 + 620.0 * (t / 0.052) ** 2)
+                / SAMPLE_RATE
+            )
+            * (t / 0.052)
+            * 0.35,
+            0.0,
+        ),
+        0.0,
     )
-    return normalize_and_polish(wet, peak_dbfs=-2.8, fade_in_ms=2.0, fade_out_ms=16.0)
+
+    t0 = 0.068
+    dt = np.maximum(0.0, t - t0)
+    active = t >= t0
+    sub = pan_mono(
+        np.where(active, clean_sub_punch(dt, 110.0, 32.0, 0.14, 0.34) * 0.62, 0.0),
+        0.0,
+    )
+
+    shimmer = shift_stereo(
+        crystal_modal_sparkle(
+            n, 880.0, (1.0, 1.5, 2.0, 2.5, 3.0, 4.0, 5.5, 7.5, 10.0), 0.36, rng
+        )
+        * 0.65,
+        t0,
+    )
+
+    drop = 1.0 - 0.28 * (1.0 - np.exp(-dt / 0.60))
+    pad_env = np.where(active, (1.0 - np.exp(-dt / 0.025)) * np.exp(-dt / 0.54), 0.0)
+    chord = np.zeros((n, 2), dtype=np.float64)
+    for idx, f in enumerate([196.00, 293.66, 392.00, 587.33, 880.00, 1174.66]):
+        ph = 2.0 * math.pi * np.cumsum(f * drop) / SAMPLE_RATE
+        chord += pan_mono(
+            (0.72 * np.sin(ph) + 0.28 * np.sin(2.0 * ph)) * (0.30 - 0.025 * idx),
+            -0.6 + 0.24 * idx,
+        )
+    chord = clean_stereo_chorus(
+        chord * pad_env[:, None], depth_ms=3.4, rate_hz=1.2, mix=0.45
+    )
+
+    dry = inhale + sub + shimmer + chord
+    wet, _ = studio_fdn_reverb(
+        dry, rt60_s=2.45, wet=0.82, pre_delay_ms=28.0, hf_damp_hz=11500.0
+    )
+    return finish_hifi(wet, fade_out_ms=300.0)
+
+
+def make_danger_zone() -> np.ndarray:
+    """Non-fatiguing deep-space sonar two-tone (E4 -> B3 fourth) + chest pulse."""
+    rng = np.random.default_rng(8901)
+    dur = 1.60
+    n = int(SAMPLE_RATE * dur)
+    t = np.linspace(0.0, dur, n, endpoint=False)
+
+    p1 = crystal_modal_sparkle(n, 329.63, (1.0, 2.0, 3.0, 4.0), 0.14, rng, spread=0.35) * 0.55
+    p2 = shift_stereo(
+        crystal_modal_sparkle(n, 246.94, (1.0, 2.0, 3.0, 4.0), 0.18, rng, spread=0.35)
+        * 0.52,
+        0.18,
+    )
+
+    sub1 = pan_mono(clean_sub_punch(t, 140.0, 82.41, 0.030, 0.14) * 0.42, -0.1)
+    sub2 = shift_stereo(
+        pan_mono(clean_sub_punch(t, 120.0, 61.74, 0.030, 0.16) * 0.42, 0.1), 0.18
+    )
+
+    dry = clean_stereo_chorus(p1 + p2, depth_ms=2.0, rate_hz=1.1, mix=0.30) + sub1 + sub2
+    wet, _ = studio_fdn_reverb(
+        dry, rt60_s=1.25, wet=0.70, pre_delay_ms=22.0, hf_damp_hz=9800.0
+    )
+    return finish_hifi(wet, fade_out_ms=200.0)
+
+
+def make_ctf_event() -> np.ndarray:
+    """Resonant open-fifth beacon broadcast (D5 -> A5) with warm harmonic foundation."""
+    rng = np.random.default_rng(9001)
+    dur = 2.05
+    n = int(SAMPLE_RATE * dur)
+    t = np.linspace(0.0, dur, n, endpoint=False)
+
+    b1 = crystal_modal_sparkle(n, 587.33, (1.0, 1.5, 2.0, 3.0, 4.5, 6.0), 0.22, rng) * 0.55
+    b2 = shift_stereo(
+        crystal_modal_sparkle(n, 880.00, (1.0, 1.5, 2.0, 3.0, 4.5, 6.0), 0.24, rng) * 0.58,
+        0.11,
+    )
+
+    pad_env = (1.0 - np.exp(-t / 0.025)) * np.exp(-t / 0.34)
+    pad = np.zeros((n, 2), dtype=np.float64)
+    for idx, f in enumerate([146.83, 220.00, 293.66, 440.00]):
+        pad += pan_mono(np.sin(2.0 * math.pi * f * t) * (0.24 - 0.02 * idx), -0.5 + 0.33 * idx)
+    pad = clean_stereo_chorus(pad * pad_env[:, None], depth_ms=2.8, rate_hz=1.2, mix=0.40)
+
+    sub = pan_mono(clean_sub_punch(t, 146.83, 73.42, 0.045, 0.18) * 0.52, 0.0)
+    dry = b1 + b2 + pad + sub
+    wet, _ = studio_fdn_reverb(
+        dry, rt60_s=1.65, wet=0.76, pre_delay_ms=22.0, hf_damp_hz=11500.0
+    )
+    return finish_hifi(wet, fade_out_ms=240.0)
+
+
+def make_ctf_victory() -> np.ndarray:
+    """Expansive ambient major-9th victory cadence with cascading celesta fifths."""
+    rng = np.random.default_rng(9101)
+    dur = 3.00
+    n = int(SAMPLE_RATE * dur)
+    t = np.linspace(0.0, dur, n, endpoint=False)
+
+    sub = pan_mono(clean_sub_punch(t, 130.81, 65.41, 0.08, 0.36) * 0.65, 0.0)
+
+    pad_env = (1.0 - np.exp(-t / 0.045)) * np.exp(-t / 0.62)
+    pad = np.zeros((n, 2), dtype=np.float64)
+    for idx, f in enumerate([130.81, 196.00, 261.63, 293.66, 392.00, 659.25]):
+        pad += pan_mono(
+            (0.76 * np.sin(2.0 * math.pi * f * t) + 0.24 * np.sin(4.0 * math.pi * f * t))
+            * (0.26 - 0.025 * idx),
+            -0.65 + 0.26 * idx,
+        )
+    pad = clean_stereo_chorus(pad * pad_env[:, None], depth_ms=3.2, rate_hz=1.1, mix=0.44)
+
+    chimes = np.zeros((n, 2), dtype=np.float64)
+    for delay_s, note_hz, amp in [
+        (0.00, 783.99, 0.48),
+        (0.11, 1174.66, 0.45),
+        (0.22, 1318.51, 0.44),
+        (0.33, 1567.98, 0.50),
+    ]:
+        chimes += shift_stereo(
+            crystal_modal_sparkle(n, note_hz, (1.0, 2.0, 3.0, 4.0, 6.0), 0.30, rng) * amp,
+            delay_s,
+        )
+
+    dry = sub + pad + chimes
+    wet, _ = studio_fdn_reverb(
+        dry, rt60_s=2.35, wet=0.80, pre_delay_ms=26.0, hf_damp_hz=11800.0
+    )
+    return finish_hifi(wet, fade_out_ms=300.0)
+
+
+def make_ui_click() -> np.ndarray:
+    """Ultra-clean glassy micro-pluck with tight studio room reflection."""
+    rng = np.random.default_rng(9201)
+    dur = 0.55
+    n = int(SAMPLE_RATE * dur)
+    t = np.linspace(0.0, dur, n, endpoint=False)
+
+    f_flick = 740.0 + 380.0 * (1.0 - np.exp(-t / 0.004))
+    ph = 2.0 * math.pi * np.cumsum(f_flick) / SAMPLE_RATE
+    env = (1.0 - np.exp(-t / 0.0008)) * np.exp(-t / 0.011)
+    pluck = pan_mono((0.82 * np.sin(ph) + 0.18 * np.sin(2.0 * ph)) * env * 0.72, 0.0)
+    air = crystal_modal_sparkle(n, 2960.0, (1.0, 1.5, 2.0), 0.022, rng, spread=0.35) * 0.24
+
+    dry = pluck + air
+    wet, _ = studio_fdn_reverb(
+        dry, rt60_s=0.35, wet=0.42, pre_delay_ms=8.0, hf_damp_hz=12000.0
+    )
+    return finish_hifi(wet, fade_out_ms=120.0)
 
 
 BUILDERS: Dict[str, Callable[[], np.ndarray]] = {
-    "laser_fire_1.mp3": lambda: synth_laser_fire(1),
-    "laser_fire_2.mp3": lambda: synth_laser_fire(2),
-    "laser_fire_3.mp3": lambda: synth_laser_fire(3),
-    "bullet_hit_1.mp3": lambda: synth_bullet_hit(1),
-    "bullet_hit_2.mp3": lambda: synth_bullet_hit(2),
-    "food_collect_1.mp3": lambda: synth_food_collect(1),
-    "food_collect_2.mp3": lambda: synth_food_collect(2),
-    "food_collect_3.mp3": lambda: synth_food_collect(3),
-    "ship_explode_1.mp3": lambda: synth_ship_explode(1),
-    "ship_explode_2.mp3": lambda: synth_ship_explode(2),
-    "ship_explode_3.mp3": lambda: synth_ship_explode(3),
-    "boost.mp3": synth_boost,
-    "ship_gain.mp3": synth_ship_gain,
-    "kill_confirm.mp3": synth_kill_confirm,
-    "player_spawn.mp3": synth_player_spawn,
-    "player_death.mp3": synth_player_death,
-    "danger_zone.mp3": synth_danger_zone,
-    "ctf_event.mp3": synth_ctf_event,
-    "ctf_victory.mp3": synth_ctf_victory,
-    "ui_click.mp3": synth_ui_click,
+    "laser_fire_1.mp3": lambda: make_laser(8301, 165.0, 755.0, 2400.0, 160.0, 62.0),
+    "laser_fire_2.mp3": lambda: make_laser(8303, 155.0, 705.0, 2240.0, 152.0, 58.0),
+    "laser_fire_3.mp3": lambda: make_laser(8304, 178.0, 802.0, 2580.0, 168.0, 66.0),
+    "bullet_hit_1.mp3": lambda: make_bullet_hit(8951, 880.0, 340.0, 1850.0),
+    "bullet_hit_2.mp3": lambda: make_bullet_hit(8952, 980.0, 370.0, 2080.0),
+    "food_collect_1.mp3": lambda: make_food_collect(8401, 587.33, 880.00, 293.66),
+    "food_collect_2.mp3": lambda: make_food_collect(8402, 659.25, 987.77, 329.63),
+    "food_collect_3.mp3": lambda: make_food_collect(8403, 783.99, 1174.66, 392.00),
+    "ship_explode_1.mp3": lambda: make_ship_explode(
+        8202, 115.0, 35.0, 440.0, [110.0, 164.81, 246.94, 329.63, 659.25]
+    ),
+    "ship_explode_2.mp3": lambda: make_ship_explode(
+        8203, 105.0, 32.5, 392.0, [98.00, 146.83, 220.00, 293.66, 587.33]
+    ),
+    "ship_explode_3.mp3": lambda: make_ship_explode(
+        8204, 122.0, 37.0, 493.88, [123.47, 185.00, 277.18, 369.99, 739.99]
+    ),
+    "boost.mp3": make_boost,
+    "ship_gain.mp3": make_ship_gain,
+    "kill_confirm.mp3": make_kill_confirm,
+    "player_spawn.mp3": make_player_spawn,
+    "player_death.mp3": make_player_death,
+    "danger_zone.mp3": make_danger_zone,
+    "ctf_event.mp3": make_ctf_event,
+    "ctf_victory.mp3": make_ctf_victory,
+    "ui_click.mp3": make_ui_click,
 }
 
 
+# -----------------------------------------------------------------------------
+# WAV WRITE, LAME V0 ENCODE & QC VERIFICATION
+# -----------------------------------------------------------------------------
+
+
 def write_wav_int16(path: Path, audio: np.ndarray) -> None:
-    """Write float64 stereo audio [-1, 1] to a 16-bit PCM WAV file."""
-    st = ensure_stereo(audio)
-    pcm = np.int16(np.clip(st, -1.0, 1.0) * 32767.0)
+    """Write stereo float64 audio clamped to [-1, 1] as 16-bit PCM WAV."""
     path.parent.mkdir(parents=True, exist_ok=True)
+    pcm = np.int16(np.clip(ensure_stereo(audio), -1.0, 1.0) * 32767.0)
     with wave.open(str(path), "wb") as wf:
         wf.setnchannels(2)
         wf.setsampwidth(2)
@@ -874,7 +888,7 @@ def write_wav_int16(path: Path, audio: np.ndarray) -> None:
 
 
 def encode_mp3(ffmpeg_bin: str, wav_path: Path, mp3_path: Path) -> None:
-    """Encode a WAV file to 160 kbps LAME MP3."""
+    """Encode WAV to transparent LAME V0 (~245 kbps VBR) MP3 preserving >10 kHz air."""
     mp3_path.parent.mkdir(parents=True, exist_ok=True)
     cmd = [
         ffmpeg_bin,
@@ -885,8 +899,8 @@ def encode_mp3(ffmpeg_bin: str, wav_path: Path, mp3_path: Path) -> None:
         str(wav_path),
         "-c:a",
         "libmp3lame",
-        "-b:a",
-        "160k",
+        "-q:a",
+        "0",
         "-ar",
         str(SAMPLE_RATE),
         str(mp3_path),
@@ -924,13 +938,15 @@ def decode_mp3_for_qc(ffmpeg_bin: str, mp3_path: Path) -> np.ndarray:
 
 
 def run_qc(ffmpeg_bin: str, out_dir: Path) -> int:
-    """Verify every expected MP3 file exists and passes DSP metrics."""
+    """Verify every expected MP3 file exists and passes peak, DC, clipping, and tail-decay QC."""
     failures: List[str] = []
     total_bytes = 0
     print(
-        f"{'File':<22} {'Dur(ms)':>8} {'Peak(dBFS)':>11} {'RMS(dBFS)':>10} {'DC Off':>10} {'Size(KB)':>9}"
+        f"{'File':<22} {'Dur(ms)':>8} {'Peak(dBFS)':>11} {'RMS(dBFS)':>10} {'TailEnd':>10} {'DC Off':>10} {'Size(KB)':>9}"
     )
-    print("-" * 76)
+    print("-" * 88)
+
+    tail_samples = int(0.08 * SAMPLE_RATE)
 
     for fname in EXPECTED_FILES:
         mp3_path = out_dir / fname
@@ -950,20 +966,25 @@ def run_qc(ffmpeg_bin: str, out_dir: Path) -> int:
         peak_db = 20.0 * math.log10(max(peak, 1e-9))
         rms = float(np.sqrt(np.mean(pcm ** 2)))
         rms_db = 20.0 * math.log10(max(rms, 1e-9))
+        tail_n = min(pcm.shape[0], tail_samples)
+        tail_rms = float(np.sqrt(np.mean(pcm[-tail_n:] ** 2)))
+        tail_db = 20.0 * math.log10(max(tail_rms, 1e-9))
         dc = float(np.max(np.abs(np.mean(pcm, axis=0))))
 
         print(
-            f"{fname:<22} {dur_ms:8.1f} {peak_db:11.2f} {rms_db:10.2f} {dc:10.6f} {size_bytes / 1024.0:9.1f}"
+            f"{fname:<22} {dur_ms:8.1f} {peak_db:11.2f} {rms_db:10.2f} {tail_db:10.2f} {dc:10.6f} {size_bytes / 1024.0:9.1f}"
         )
 
         if peak >= 0.999:
             failures.append(f"Clipping detected in {fname}: peak={peak:.4f}")
         if not (-4.5 <= peak_db <= -0.2):
             failures.append(f"Peak out of range in {fname}: {peak_db:.2f} dBFS")
+        if tail_db > -48.0:
+            failures.append(f"Abrupt tail cutoff risk in {fname}: TailEnd={tail_db:.2f} dBFS")
         if dc >= 1e-3:
             failures.append(f"Excess DC offset in {fname}: {dc:.6f}")
 
-    print("-" * 76)
+    print("-" * 88)
     print(
         f"Total files: {len(EXPECTED_FILES)} | Total footprint: {total_bytes / 1024.0:.1f} KB"
     )
@@ -974,7 +995,7 @@ def run_qc(ffmpeg_bin: str, out_dir: Path) -> int:
             print(f"  - {err}", file=sys.stderr)
         return 1
 
-    print("QC PASSED: All 20 MP3 files meet DSP and footprint invariants.")
+    print("QC PASSED: All 20 MP3 files meet DSP, tail-decay, and footprint invariants.")
     return 0
 
 
