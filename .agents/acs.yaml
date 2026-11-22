@@ -15,6 +15,12 @@ layers:
       description: "Pixi.js rendering, WebGL performance, sprite atlases, and client interpolation standards."
       trigger_paths:
         - "Game.Engine/wwwroot/**"
+    - path: "./rules/audio_standards.md"
+      description: "Procedural Hi-Fi ambient SFX synthesis laws, Harmonic Partitioning, Web Audio mixing, and multimodal listening verification."
+      trigger_paths:
+        - "Game.Engine/wwwroot/src/audio/**"
+        - "Game.Engine/wwwroot/audio/**"
+        - "tools/sfx/**"
     - path: "./rules/robot_ai_standards.md"
       description: "AI bot steering behaviors, flocking heuristics, and evolutionary chromosome controllers."
       trigger_paths:
