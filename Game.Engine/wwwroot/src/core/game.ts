@@ -628,9 +628,11 @@ LobbyCallbacks.onWorldJoin = function (worldKey: string, world?: WorldInfo) {
   cache.empty();
   view = null;
   lastAliveState = false;
-  isSpectating = false;
+  if (spawnOnView) {
+    isSpectating = false;
+  }
   ownFleetID = 0;
-  GameAudio.setState(false, false, 0, worldSize);
+  GameAudio.setState(false, isSpectating, 0, worldSize);
   WorldConfig.resetToDefaults();
   connection.connect(worldKey);
   serverTimeOffset = false;
