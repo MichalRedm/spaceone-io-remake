@@ -330,8 +330,12 @@ connection.onDisconnected = () => {
     setSpawnButtonState("connecting");
   }
 
+  view = null;
+  ownFleetID = 0;
+
   if (lastAliveState || isSpectating) {
     lastAliveState = false;
+    isSpectating = false;
     isSpawning = false;
     pendingSpawn = false;
     if (spawnTimeout) {
@@ -343,8 +347,8 @@ connection.onDisconnected = () => {
     document.body.classList.add("dead");
     fadeIn(".visibility", 1500);
     hide(".visibility3");
-    GameAudio.setState(false, false, ownFleetID, worldSize);
   }
+  GameAudio.setState(false, false, 0, worldSize);
 };
 
 connection.onView = (newView) => {
@@ -622,6 +626,11 @@ LobbyCallbacks.onWorldJoin = function (worldKey: string, world?: WorldInfo) {
 
   connection.disconnect();
   cache.empty();
+  view = null;
+  lastAliveState = false;
+  isSpectating = false;
+  ownFleetID = 0;
+  GameAudio.setState(false, false, 0, worldSize);
   WorldConfig.resetToDefaults();
   connection.connect(worldKey);
   serverTimeOffset = false;
@@ -876,7 +885,7 @@ app.ticker.add(() => {
   renderer.draw(cache, interpolator, gameTime, ownFleetID, isSpectating);
   GameAudio.setListener(position.x, position.y, camera.viewport.width);
   GameAudio.setState(
-    Boolean(view?.isAlive),
+    Boolean(lastAliveState),
     isSpectating,
     ownFleetID,
     worldSize,

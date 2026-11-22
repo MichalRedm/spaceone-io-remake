@@ -495,11 +495,17 @@ export class Cache {
       }
     }
 
-    // Emit one deduplicated laser sound per volley group
+    // Emit one deduplicated laser sound per volley group, prioritizing own fleet shots first
     if (newVolleys.size > 0) {
       const ownBodies =
         myFleetID !== 0 ? this.bodiesByGroup.get(myFleetID) : undefined;
       const OWN_PROXIMITY_SQ = 220 * 220;
+      const resolvedVolleys: Array<{
+        vx: number;
+        vy: number;
+        count: number;
+        isOwn: boolean;
+      }> = [];
       for (const volley of newVolleys.values()) {
         const vx = volley.sumX / volley.count;
         const vy = volley.sumY / volley.count;
@@ -516,7 +522,16 @@ export class Cache {
             }
           }
         }
-        GameAudio.onLaserVolley(vx, vy, volley.count, isOwn);
+        resolvedVolleys.push({ vx, vy, count: volley.count, isOwn });
+      }
+      resolvedVolleys.sort((a, b) => Number(b.isOwn) - Number(a.isOwn));
+      for (const volley of resolvedVolleys) {
+        GameAudio.onLaserVolley(
+          volley.vx,
+          volley.vy,
+          volley.count,
+          volley.isOwn,
+        );
       }
     }
 

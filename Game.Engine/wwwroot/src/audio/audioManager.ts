@@ -184,7 +184,6 @@ export class AudioManager {
   play(id: SoundId, options: PlaySoundOptions = {}): void {
     if (!this.enabled) return;
     if (document.hidden || window.Game?.isBackgrounded) return;
-    if (!this.ensureContext()) return;
     if (!this.ctx || this.ctx.state !== "running" || !this.buses) return;
 
     const def = SOUND_MANIFEST[id];
@@ -318,6 +317,7 @@ export class AudioManager {
       window.removeEventListener("pointerdown", unlock, true);
       window.removeEventListener("keydown", unlock, true);
       window.removeEventListener("touchstart", unlock, true);
+      window.removeEventListener("click", unlock, true);
     };
 
     const unlock = () => {
@@ -330,18 +330,22 @@ export class AudioManager {
     window.addEventListener("pointerdown", unlock, true);
     window.addEventListener("keydown", unlock, true);
     window.addEventListener("touchstart", unlock, true);
+    window.addEventListener("click", unlock, true);
   }
 
   private unlockAndDecodePending(onRunning?: () => void): void {
     if (!this.ensureContext() || !this.ctx) return;
 
     if (this.ctx.state === "suspended") {
-      void this.ctx.resume().then(() => {
-        if (this.ctx?.state === "running") {
-          onRunning?.();
-          this.decodeAllPrefetched();
-        }
-      });
+      void this.ctx
+        .resume()
+        .then(() => {
+          if (this.ctx?.state === "running") {
+            onRunning?.();
+            this.decodeAllPrefetched();
+          }
+        })
+        .catch(() => {});
     } else {
       onRunning?.();
       this.decodeAllPrefetched();
