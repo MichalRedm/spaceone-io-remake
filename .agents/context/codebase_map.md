@@ -111,6 +111,10 @@ Pixi.js WebGL client application.
 | `Game.Engine/wwwroot/src/ui/minimap.ts` | `Minimap` | Radar minimap rendering (friendly fleets, flags, bases, world bounds). |
 | `Game.Engine/wwwroot/src/ui/controls.ts` | `Controls` | Mouse and keyboard input aggregator (thrust, boost, aim angle, fire). |
 | `Game.Engine/wwwroot/src/ui/toast.ts` | `showConnectionErrorToast`, `dismissToast` | Toast notification manager matching original Spaceone.io error toast fidelity. |
+| `Game.Engine/wwwroot/src/audio/audioManager.ts` | `AudioManager`, `audioManager` | Native Web Audio API engine: submix buses, DynamicsCompressor, spatial culling/panning, cooldowns, and priority voice stealing. |
+| `Game.Engine/wwwroot/src/audio/soundManifest.ts` | `SOUND_MANIFEST`, `SoundId`, `SoundPriority` | Vite glob audio manifest and per-cue mixing, concurrency, and variant configuration. |
+| `Game.Engine/wwwroot/src/audio/gameAudio.ts` | `GameAudio` | High-level gameplay audio facade translating entity snapshots, fleet events, and UI triggers into spatialized SFX. |
+| `tools/sfx/generate_sfx.py` | Procedural SFX Generator | Deterministic NumPy/SciPy + ffmpeg synthesizer & DSP QC verifier for the 20 ambient `.mp3` assets in `Game.Engine/wwwroot/audio/`. |
 
 ---
 
