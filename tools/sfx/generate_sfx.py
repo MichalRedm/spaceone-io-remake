@@ -390,40 +390,38 @@ def shift_stereo(audio: np.ndarray, delay_s: float) -> np.ndarray:
 def make_laser(
     seed: int, sweep_hi: float, sweep_lo: float, sub_hi: float, sub_lo: float
 ) -> np.ndarray:
-    """Instant futuristic plasma whip: sleek non-stationary FM glide + sub thump (zero noise fizz)."""
-    del seed  # Deterministic closed-form synthesis for cleanly matching firefights
-    dur = 0.85
+    """Instant deep-bass plasma discharge: heavy sub punch + muscular whip + dark FDN space."""
+    rng = np.random.default_rng(seed)
+    dur = 0.95
     n = int(SAMPLE_RATE * dur)
     t = np.linspace(0.0, dur, n, endpoint=False)
 
-    f_sweep = sweep_lo + (sweep_hi - sweep_lo) * np.exp(-t / 0.020)
+    sub = pan_mono(clean_sub_punch(t, sub_hi, sub_lo, 0.024, 0.075) * 1.15, 0.0)
+
+    f_sweep = sweep_lo + (sweep_hi - sweep_lo) * np.exp(-t / 0.018)
     ph = 2.0 * math.pi * np.cumsum(f_sweep) / SAMPLE_RATE
-    fm = 0.82 * np.exp(-t / 0.012) * np.sin(2.0 * ph)
-    env = (1.0 - np.exp(-t / 0.0012)) * np.exp(-t / 0.038)
+    fm = 0.65 * np.exp(-t / 0.010) * np.sin(2.0 * ph)
+    env = (1.0 - np.exp(-t / 0.0012)) * np.exp(-t / 0.048)
     core = pan_mono(
-        (0.76 * np.sin(ph + fm) + 0.24 * np.sin(2.0 * ph)) * env * 0.78,
+        (0.78 * np.sin(ph + fm) + 0.22 * np.sin(2.0 * ph)) * env * 0.85,
         0.0,
     )
-    core = clean_stereo_chorus(core, depth_ms=1.8, rate_hz=2.0, mix=0.30)
+    core = clean_stereo_chorus(core, depth_ms=1.8, rate_hz=1.8, mix=0.30)
 
-    # Ultrafast energy-whip sheen (swept sine instead of white-noise hiss)
-    f_zip = 320.0 + (sweep_hi * 2.1 - 320.0) * np.exp(-t / 0.008)
-    ph_zip = 2.0 * math.pi * np.cumsum(f_zip) / SAMPLE_RATE
-    zip_env = (1.0 - np.exp(-t / 0.0008)) * np.exp(-t / 0.016)
-    zip_air = clean_stereo_chorus(
-        pan_mono(np.sin(ph_zip) * zip_env * 0.26, 0.0),
-        depth_ms=2.2,
-        rate_hz=2.6,
-        mix=0.40,
+    plasma_air = (
+        butter_filter(rng.standard_normal((n, 2)), "band", (420.0, 2800.0), order=2)
+        * ((1.0 - np.exp(-t / 0.0015)) * np.exp(-t / 0.032) * 0.20)[:, None]
+    )
+    edge_air = (
+        butter_filter(rng.standard_normal((n, 2)), "band", (2800.0, 7500.0), order=2)
+        * ((1.0 - np.exp(-t / 0.001)) * np.exp(-t / 0.014) * 0.08)[:, None]
     )
 
-    sub = pan_mono(clean_sub_punch(t, sub_hi, sub_lo, 0.020, 0.048) * 0.68, 0.0)
-
-    dry = core + zip_air + sub
+    dry = sub + core + plasma_air + edge_air
     wet, _ = studio_fdn_reverb(
-        dry, rt60_s=0.62, wet=0.48, pre_delay_ms=14.0, hp_hz=380.0, hf_damp_hz=9000.0
+        dry, rt60_s=0.72, wet=0.52, pre_delay_ms=14.0, hp_hz=320.0, hf_damp_hz=7400.0
     )
-    return finish_hifi(wet, fade_out_ms=150.0)
+    return finish_hifi(wet, fade_out_ms=160.0, target_rms_dbfs=-14.2)
 
 
 def make_bullet_hit(seed: int, thud_hi: float, thud_lo: float) -> np.ndarray:
@@ -886,9 +884,9 @@ def make_ui_click() -> np.ndarray:
 
 
 BUILDERS: Dict[str, Callable[[], np.ndarray]] = {
-    "laser_fire_1.mp3": lambda: make_laser(8311, 1280.0, 86.0, 152.0, 54.0),
-    "laser_fire_2.mp3": lambda: make_laser(8312, 1180.0, 78.0, 142.0, 50.0),
-    "laser_fire_3.mp3": lambda: make_laser(8313, 1380.0, 94.0, 162.0, 58.0),
+    "laser_fire_1.mp3": lambda: make_laser(8321, 580.0, 66.0, 190.0, 44.0),
+    "laser_fire_2.mp3": lambda: make_laser(8322, 540.0, 60.0, 175.0, 40.0),
+    "laser_fire_3.mp3": lambda: make_laser(8323, 620.0, 72.0, 205.0, 48.0),
     "bullet_hit_1.mp3": lambda: make_bullet_hit(8961, 195.0, 56.0),
     "bullet_hit_2.mp3": lambda: make_bullet_hit(8962, 220.0, 62.0),
     "food_collect_1.mp3": lambda: make_food_collect(8401, 587.33, 880.00, 293.66),
