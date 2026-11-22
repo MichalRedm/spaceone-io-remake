@@ -16,6 +16,7 @@ import { Tile } from "./tile";
 import { Flag } from "./flag";
 import { CustomContainer } from "../rendering/customContainer";
 import { FX } from "./fx";
+import { GameAudio } from "../audio/gameAudio";
 import type { Vector2 } from "../math/vector2";
 
 /**
@@ -154,6 +155,7 @@ export class Cache {
     this.sortedGroups = [];
     this.groupsDirty = true;
     Cache.count = 0;
+    GameAudio.onWorldReset();
   }
 
   /**
@@ -195,6 +197,13 @@ export class Cache {
     myFleetID: number,
   ): void {
     let i = 0;
+    const boomPositions: Array<{ x: number; y: number }> = [];
+    const foodDeletePositions: Array<{ x: number; y: number }> = [];
+    const earlyBulletDeletePositions: Array<{ x: number; y: number }> = [];
+    const newVolleys = new Map<
+      number,
+      { sumX: number; sumY: number; count: number }
+    >();
 
     // delete objects that should no longer exist
     for (i = 0; i < deletes.length; i++) {
@@ -221,6 +230,10 @@ export class Cache {
         if (spriteStr.startsWith("fish")) {
           const color = spriteStr.split("_")[1] || "cyan";
           FX.spawnFoodExplosion(color, x, y);
+          if (GameAudio.isWithinArena(x, y)) {
+            foodDeletePositions.push({ x, y });
+            GameAudio.onFoodCollect(x, y);
+          }
         } else if (
           spriteStr.startsWith("bullet") ||
           spriteStr.startsWith("laser")
@@ -234,6 +247,7 @@ export class Cache {
             const parts = spriteStr.split("_");
             const color = parts.length > 1 ? parts[1] : "cyan";
             FX.spawnBulletExplosion(color, x, y);
+            earlyBulletDeletePositions.push({ x, y });
           }
         }
 
@@ -406,15 +420,31 @@ export class Cache {
             "yellow",
           ];
           const color = colors[update.Mode] || "cyan";
-          FX.spawnShipExplosion(
-            color,
-            update.OriginalPosition?.x ?? 0,
-            update.OriginalPosition?.y ?? 0,
-            update.Size || 50,
-          );
+          const boomX = update.OriginalPosition?.x ?? 0;
+          const boomY = update.OriginalPosition?.y ?? 0;
+          FX.spawnShipExplosion(color, boomX, boomY, update.Size || 50);
+          boomPositions.push({ x: boomX, y: boomY });
+          GameAudio.onShipExplode(boomX, boomY, update.Size || 50);
         } else {
+          const spriteStr = String(update.Sprite || "");
+          if (
+            spriteStr.startsWith("bullet") ||
+            spriteStr.startsWith("laser")
+          ) {
+            const volleyKey = update.Group || update.ID;
+            const bx = update.OriginalPosition?.x ?? 0;
+            const by = update.OriginalPosition?.y ?? 0;
+            const entry = newVolleys.get(volleyKey);
+            if (entry) {
+              entry.sumX += bx;
+              entry.sumY += by;
+              entry.count += 1;
+            } else {
+              newVolleys.set(volleyKey, { sumX: bx, sumY: by, count: 1 });
+            }
+          }
+
           if (!update.renderer) {
-            const spriteStr = String(update.Sprite || "");
             const isFlag =
               spriteStr.startsWith("ctf_flag") || spriteStr.includes("flag");
             if (isFlag) {
@@ -434,6 +464,65 @@ export class Cache {
         Cache.count++;
       }
     }
+
+    // Coalesce same-tick bullet hits when a boom or food pickup occurred at the same spot
+    const COALESCE_RADIUS_SQ = 80 * 80;
+    for (let b = 0; b < earlyBulletDeletePositions.length; b++) {
+      const bp = earlyBulletDeletePositions[b];
+      if (!bp) continue;
+      let suppressed = false;
+      for (let k = 0; k < boomPositions.length; k++) {
+        const kp = boomPositions[k];
+        if (!kp) continue;
+        const dx = bp.x - kp.x;
+        const dy = bp.y - kp.y;
+        if (dx * dx + dy * dy <= COALESCE_RADIUS_SQ) {
+          suppressed = true;
+          break;
+        }
+      }
+      if (!suppressed) {
+        for (let f = 0; f < foodDeletePositions.length; f++) {
+          const fp = foodDeletePositions[f];
+          if (!fp) continue;
+          const dx = bp.x - fp.x;
+          const dy = bp.y - fp.y;
+          if (dx * dx + dy * dy <= COALESCE_RADIUS_SQ) {
+            suppressed = true;
+            break;
+          }
+        }
+      }
+      if (!suppressed) {
+        GameAudio.onBulletHit(bp.x, bp.y);
+      }
+    }
+
+    // Emit one deduplicated laser sound per volley group
+    if (newVolleys.size > 0) {
+      const ownBodies = myFleetID !== 0 ? this.bodiesByGroup.get(myFleetID) : undefined;
+      const OWN_PROXIMITY_SQ = 220 * 220;
+      for (const volley of newVolleys.values()) {
+        const vx = volley.sumX / volley.count;
+        const vy = volley.sumY / volley.count;
+        let isOwn = false;
+        if (ownBodies) {
+          for (const ownBody of ownBodies) {
+            const ox = ownBody.Position?.x ?? ownBody.OriginalPosition.x;
+            const oy = ownBody.Position?.y ?? ownBody.OriginalPosition.y;
+            const dx = vx - ox;
+            const dy = vy - oy;
+            if (dx * dx + dy * dy <= OWN_PROXIMITY_SQ) {
+              isOwn = true;
+              break;
+            }
+          }
+        }
+        GameAudio.onLaserVolley(vx, vy, volley.count, isOwn);
+      }
+    }
+
+    GameAudio.onSnapshotComplete();
   }
 
   /**

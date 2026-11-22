@@ -6,6 +6,7 @@
 import Cookies from "js-cookie";
 import { escapeHtml } from "./leaderboard";
 import { showCtfAnnouncement } from "./ctfNotification";
+import { GameAudio } from "../audio/gameAudio";
 
 const bigLog = document.getElementById("big-log");
 const scoreCon = document.getElementById("plus-score-container");
@@ -65,6 +66,7 @@ export class Log {
 
     let lastMsg = "";
     if (entry.type === "kill") {
+      GameAudio.onKillConfirm();
       let msgText = entry.text || "";
       if (msgText.startsWith("You Killed ")) {
         msgText = "You killed " + msgText.slice(11);
@@ -110,6 +112,7 @@ export class Log {
         variant = "red";
       }
       showCtfAnnouncement(text, variant, variant === "gold" ? 5000 : 3500);
+      GameAudio.onCtfAnnouncement(variant === "gold");
       return;
     } else {
       return;

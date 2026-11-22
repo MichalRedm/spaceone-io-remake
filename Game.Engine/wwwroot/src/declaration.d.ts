@@ -11,6 +11,12 @@ declare module "*.png" {
   export default value;
 }
 
+/** Ambient declaration for MP3 audio asset imports bundled via Vite. */
+declare module "*.mp3" {
+  const value: string;
+  export default value;
+}
+
 /** Ambient declaration for world thumbnail PNG image imports. */
 declare module "img/worlds/*.png" {
   const value: string;

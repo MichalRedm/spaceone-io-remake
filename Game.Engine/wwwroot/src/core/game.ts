@@ -58,9 +58,11 @@ import { show, hide, fadeIn, animateOpacity } from "../ui/domUtils";
 import { Vector2 } from "../math/vector2";
 import { CustomContainer } from "../rendering/customContainer";
 import { preloadAllAssets } from "../rendering/atlasLoader";
+import { GameAudio } from "../audio/gameAudio";
 
 bootstrapPopups();
 initFeaturedVideo();
+GameAudio.init();
 
 window.Game = window.Game || {};
 const pixiAny = (window as any).PIXI;
@@ -288,6 +290,7 @@ let fleetID = 0;
 let ownFleetID = 0;
 let lastAliveState: boolean | null = null;
 let aliveSince: number | null = null;
+let spawnGraceUntil = 0;
 let joiningWorld = false;
 
 const spawnButton = document.getElementById("spawn") as HTMLInputElement | null;
@@ -359,6 +362,8 @@ connection.onView = (newView) => {
     lastAliveState = true;
     isSpawning = false;
     pendingSpawn = false;
+    spawnGraceUntil = performance.now() + 500;
+    GameAudio.onPlayerSpawn();
     if (spawnTimeout) {
       clearTimeout(spawnTimeout);
       spawnTimeout = null;
@@ -398,6 +403,7 @@ connection.onView = (newView) => {
     }, 1000);
 
     Events.Death((gameTime - (aliveSince ?? gameTime)) / 1000);
+    GameAudio.onPlayerDeath();
   }
 
   lastOffset = view.time + connection.latency / 2 - performance.now();
@@ -815,9 +821,19 @@ app.ticker.add(() => {
   if (ownGroup?.renderer?.ships) {
     const shipCount = ownGroup.renderer.ships.length;
     if (fleetSizeDisplay && currentFleetSize !== shipCount) {
+      if (
+        view?.isAlive &&
+        currentFleetSize > 0 &&
+        shipCount > currentFleetSize &&
+        performance.now() > spawnGraceUntil
+      ) {
+        GameAudio.onShipGain();
+      }
       currentFleetSize = shipCount;
       fleetSizeDisplay.innerText = String(shipCount);
     }
+  } else if (!view?.isAlive) {
+    currentFleetSize = -1;
   }
 
   const position = currentCameraPosition;
@@ -840,6 +856,13 @@ app.ticker.add(() => {
   container.pivot.y = position.y - (zoom / 2) * (9 / 16);
 
   renderer.draw(cache, interpolator, gameTime, ownFleetID, isSpectating);
+  GameAudio.setListener(position.x, position.y, camera.viewport.width);
+  GameAudio.setState(
+    Boolean(view?.isAlive),
+    isSpectating,
+    ownFleetID,
+    worldSize,
+  );
   background.updateFocus(position);
   background.draw();
   minimap.checkDisplay();
@@ -856,6 +879,7 @@ app.ticker.add(() => {
     const isOutOfBounds =
       (Math.abs(position.x) > worldSize || Math.abs(position.y) > worldSize) &&
       document.body.classList.contains("alive");
+    GameAudio.updateDangerZone(isOutOfBounds, performance.now());
     if (isOutOfBounds !== lastDangerZoneState) {
       lastDangerZoneState = isOutOfBounds;
       dangerZoneWarning.classList.toggle(
