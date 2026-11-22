@@ -16,10 +16,26 @@ const GAME_AUDIO_CONSTANTS = {
   INITIAL_SNAPSHOT_SUPPRESS_COUNT: 2,
   /** Grace window (ms) after death during which world explosions/death pad finish cleanly. */
   POST_DEATH_AUDIBLE_GRACE_MS: 1600,
+  /** Grace window (ms) after spawn during which initial fleet ship additions don't chime. */
+  POST_SPAWN_SHIP_GAIN_GRACE_MS: 500,
   /** Interval (ms) between periodic radar sonar pings while remaining out of bounds. */
   DANGER_ZONE_REPEAT_MS: 1250,
   /** World margin outside arena border within which food deaths still count as pickups. */
   FOOD_PICKUP_OOB_MARGIN: 60,
+  /** Volley gain boost cap from log2 ship count. */
+  VOLLEY_GAIN_LOG_CAP: 0.28,
+  /** Volley gain slope per log2 ship count. */
+  VOLLEY_GAIN_LOG_SLOPE: 0.055,
+  /** Volley pitch drop cap from log2 ship count. */
+  VOLLEY_PITCH_DROP_CAP: 0.14,
+  /** Volley pitch drop slope per log2 ship count. */
+  VOLLEY_PITCH_DROP_SLOPE: 0.025,
+  /** Own vs enemy laser volume multipliers. */
+  OWN_LASER_GAIN_MULT: 1.05,
+  ENEMY_LASER_GAIN_MULT: 0.72,
+  /** Own vs enemy boost volume multipliers. */
+  OWN_BOOST_GAIN_MULT: 1.05,
+  ENEMY_BOOST_GAIN_MULT: 0.65,
 } as const;
 
 let isAlive = false;
@@ -81,6 +97,21 @@ export const GameAudio = {
   },
 
   /**
+   * Returns whether the client is actively in-game (alive or spectating),
+   * independent of menu body CSS classes.
+   */
+  isInGame(): boolean {
+    return isAlive || isSpectating;
+  },
+
+  /**
+   * Returns the configured post-spawn grace window (ms) for suppressing initial ship-gain chimes.
+   */
+  getPostSpawnGraceMs(): number {
+    return GAME_AUDIO_CONSTANTS.POST_SPAWN_SHIP_GAIN_GRACE_MS;
+  },
+
+  /**
    * Resets snapshot suppression counters on arena switch or cache clear.
    */
   onWorldReset(): void {
@@ -124,9 +155,22 @@ export const GameAudio = {
   ): void {
     if (!isGameplayAudible()) return;
     const countLog = Math.log2(Math.max(1, bulletCount));
+    const baseMult = isOwn
+      ? GAME_AUDIO_CONSTANTS.OWN_LASER_GAIN_MULT
+      : GAME_AUDIO_CONSTANTS.ENEMY_LASER_GAIN_MULT;
     const gainScale =
-      (isOwn ? 1.05 : 0.72) * (1.0 + Math.min(0.28, countLog * 0.055));
-    const pitchScale = 1.0 - Math.min(0.14, countLog * 0.025);
+      baseMult *
+      (1.0 +
+        Math.min(
+          GAME_AUDIO_CONSTANTS.VOLLEY_GAIN_LOG_CAP,
+          countLog * GAME_AUDIO_CONSTANTS.VOLLEY_GAIN_LOG_SLOPE,
+        ));
+    const pitchScale =
+      1.0 -
+      Math.min(
+        GAME_AUDIO_CONSTANTS.VOLLEY_PITCH_DROP_CAP,
+        countLog * GAME_AUDIO_CONSTANTS.VOLLEY_PITCH_DROP_SLOPE,
+      );
     audioManager.play("laser_fire", {
       worldX,
       worldY,
@@ -175,7 +219,9 @@ export const GameAudio = {
     audioManager.play("boost", {
       worldX,
       worldY,
-      gainScale: isOwn ? 1.05 : 0.65,
+      gainScale: isOwn
+        ? GAME_AUDIO_CONSTANTS.OWN_BOOST_GAIN_MULT
+        : GAME_AUDIO_CONSTANTS.ENEMY_BOOST_GAIN_MULT,
       priorityOverride: isOwn ? SoundPriority.High : SoundPriority.Medium,
     });
   },

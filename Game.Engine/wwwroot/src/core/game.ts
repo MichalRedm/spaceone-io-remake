@@ -343,6 +343,7 @@ connection.onDisconnected = () => {
     document.body.classList.add("dead");
     fadeIn(".visibility", 1500);
     hide(".visibility3");
+    GameAudio.setState(false, false, ownFleetID, worldSize);
   }
 };
 
@@ -362,7 +363,8 @@ connection.onView = (newView) => {
     lastAliveState = true;
     isSpawning = false;
     pendingSpawn = false;
-    spawnGraceUntil = performance.now() + 500;
+    spawnGraceUntil = performance.now() + GameAudio.getPostSpawnGraceMs();
+    GameAudio.setState(true, false, ownFleetID, worldSize);
     GameAudio.onPlayerSpawn();
     if (spawnTimeout) {
       clearTimeout(spawnTimeout);
@@ -403,6 +405,7 @@ connection.onView = (newView) => {
     }, 1000);
 
     Events.Death((gameTime - (aliveSince ?? gameTime)) / 1000);
+    GameAudio.setState(false, isSpectating, ownFleetID, worldSize);
     GameAudio.onPlayerDeath();
   }
 
@@ -478,6 +481,18 @@ connection.onView = (newView) => {
     if (gdel !== null) groupDeletes.push(gdel);
   }
 
+  if (newView.worldSize() !== border.worldSize) {
+    worldSize = newView.worldSize();
+    border.updateWorldSize(newView.worldSize());
+  }
+
+  GameAudio.setState(
+    Boolean(lastAliveState),
+    isSpectating,
+    ownFleetID,
+    worldSize,
+  );
+
   cache.update(updates, deletes, groups, groupDeletes, gameTime, fleetID);
   overlay.update(newView.customData());
 
@@ -485,11 +500,6 @@ connection.onView = (newView) => {
   hud.playerCount = livePlayerCount;
   updateCurrentWorldPlayerCount(livePlayerCount);
   hud.spectatorCount = newView.spectatorCount();
-
-  if (newView.worldSize() !== border.worldSize) {
-    worldSize = newView.worldSize();
-    border.updateWorldSize(newView.worldSize());
-  }
 
   if (view.isAlive) {
     cooldown.setCooldown(newView.cooldownShoot());
@@ -679,6 +689,7 @@ function startSpectate(hideButton = false) {
 
   isSpectating = true;
   ownFleetID = 0;
+  GameAudio.setState(false, true, 0, worldSize);
   Events.Spectate();
   const overlay = document.getElementById("overlay");
   if (overlay) overlay.style.opacity = "0";
@@ -704,6 +715,7 @@ document.getElementById("spectate")?.addEventListener("click", () => {
  */
 function stopSpectate() {
   isSpectating = false;
+  GameAudio.setState(Boolean(lastAliveState), false, ownFleetID, worldSize);
   isSpawning = false;
   pendingSpawn = false;
   if (spawnTimeout) {
@@ -792,7 +804,12 @@ function doPing() {
   updateCounter = 0;
 }
 
-doPing();
+window.Game.isBackgrounded = document.hidden;
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) {
+    window.Game.isBackgrounded = false;
+  }
+});
 setInterval(doPing, 1000);
 
 const graphics = new PIXI.Graphics();
@@ -812,6 +829,7 @@ let lastDangerZoneState: boolean | null = null;
 
 // Game Loop
 app.ticker.add(() => {
+  window.Game.isBackgrounded = false;
   const _latency = connection.minLatency || 0;
   gameTime =
     performance.now() + (serverTimeOffset !== false ? serverTimeOffset : 0);

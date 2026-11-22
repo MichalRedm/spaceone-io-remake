@@ -378,10 +378,7 @@ window.addEventListener("keydown", (e) => {
     }
   }
 
-  const inGame =
-    document.body.classList.contains("alive") ||
-    document.body.classList.contains("spectating");
-  if (!inGame) return;
+  if (!GameAudio.isInGame()) return;
 
   toggleSound();
 });

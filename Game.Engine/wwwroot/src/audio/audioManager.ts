@@ -128,7 +128,7 @@ export class AudioManager {
         now + AUDIO_CONSTANTS.MUTE_RAMP_SEC,
       );
     }
-    if (enabled) {
+    if (enabled && this.ctx) {
       this.unlockAndDecodePending();
     }
   }
@@ -314,12 +314,16 @@ export class AudioManager {
     if (this.gestureListenersBound) return;
     this.gestureListenersBound = true;
 
+    const removeUnlockListeners = () => {
+      window.removeEventListener("pointerdown", unlock, true);
+      window.removeEventListener("keydown", unlock, true);
+      window.removeEventListener("touchstart", unlock, true);
+    };
+
     const unlock = () => {
-      this.unlockAndDecodePending();
+      this.unlockAndDecodePending(removeUnlockListeners);
       if (this.ctx && this.ctx.state === "running") {
-        window.removeEventListener("pointerdown", unlock, true);
-        window.removeEventListener("keydown", unlock, true);
-        window.removeEventListener("touchstart", unlock, true);
+        removeUnlockListeners();
       }
     };
 
@@ -328,14 +332,18 @@ export class AudioManager {
     window.addEventListener("touchstart", unlock, true);
   }
 
-  private unlockAndDecodePending(): void {
+  private unlockAndDecodePending(onRunning?: () => void): void {
     if (!this.ensureContext() || !this.ctx) return;
 
     if (this.ctx.state === "suspended") {
       void this.ctx.resume().then(() => {
-        this.decodeAllPrefetched();
+        if (this.ctx?.state === "running") {
+          onRunning?.();
+          this.decodeAllPrefetched();
+        }
       });
     } else {
+      onRunning?.();
       this.decodeAllPrefetched();
     }
   }
@@ -526,6 +534,16 @@ export class AudioManager {
           0,
           now + AUDIO_CONSTANTS.VOICE_STEAL_FADE_SEC,
         );
+        voice.source.onended = () => {
+          voice.source.onended = null;
+          try {
+            voice.source.disconnect();
+            voice.gainNode.disconnect();
+            voice.pannerNode?.disconnect();
+          } catch {
+            // Node already disconnected
+          }
+        };
         voice.source.stop(now + AUDIO_CONSTANTS.VOICE_STEAL_FADE_SEC + 0.002);
         return;
       } catch {
