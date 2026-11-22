@@ -8,6 +8,8 @@ import { textureCache } from "../models/textureCache";
 import { getDefaultTextureMapRules } from "../models/textureMap";
 import { getDefaultSpriteModeMapRules } from "../models/spriteModeMap";
 import { Controls } from "./controls";
+import { audioManager } from "../audio/audioManager";
+import { GameAudio } from "../audio/gameAudio";
 
 /**
  * Game configuration options persisted across sessions in cookies.
@@ -57,6 +59,8 @@ export interface SettingsData {
   updatesVersion: number;
   /** Mouse button binding mode for one-button controls. */
   mouseOneButton: number;
+  /** Whether in-game sound effects are enabled. */
+  soundEnabled: boolean;
   [key: string]: string | number | boolean;
 }
 
@@ -86,6 +90,7 @@ export const Settings: SettingsData = {
   mipmapping: true,
   updatesVersion: 0,
   mouseOneButton: 0,
+  soundEnabled: true,
 };
 
 /** Active sprite mode rules matching current graphics level. */
@@ -150,6 +155,13 @@ const nameSize = document.getElementById(
 const background = document.getElementById(
   "settings-background",
 ) as HTMLInputElement | null;
+const soundEnabledInput = document.getElementById(
+  "settings-sound-enabled",
+) as HTMLInputElement | null;
+const soundToggleBtn = document.getElementById(
+  "sound-toggle",
+) as HTMLButtonElement | null;
+const soundToggleIcon = document.getElementById("sound-toggle-icon");
 
 const settingsText = document.getElementById("settings-text");
 if (settingsText) {
@@ -199,6 +211,9 @@ export function save(): void {
   if (allowDarkblueShips)
     Settings.allowDarkblueShips = allowDarkblueShips.checked;
   if (background) Settings.background = background.value;
+  if (soundEnabledInput) {
+    setSoundEnabled(soundEnabledInput.checked, false);
+  }
 
   Cookies.set("settings", JSON.stringify(Settings), cookieOptions);
 
@@ -223,7 +238,7 @@ export function load(): void {
   if (savedSettings) {
     for (const key in savedSettings) Settings[key] = savedSettings[key];
   }
-  
+
   // Cap bandwidth from cookies to prevent severe client-side lag
   if (Settings.bandwidth > 150) Settings.bandwidth = 150;
 
@@ -249,6 +264,8 @@ export function load(): void {
     allowDarkblueShips.checked = Settings.allowDarkblueShips;
   if (nameSize) nameSize.value = String(Settings.nameSize);
   if (background) background.value = Settings.background;
+
+  setSoundEnabled(Settings.soundEnabled, false);
 
   const graphicsElem = document.getElementById(`graphics-${Settings.graphics}`);
   graphicsElem?.classList.add(
@@ -297,4 +314,71 @@ document.getElementById("settings-save")?.addEventListener("click", () => {
 document.getElementById("settings-reset")?.addEventListener("click", () => {
   reset();
   window.location.reload();
+});
+
+/**
+ * Updates sound enabled state, syncs UI icon/modal controls, and updates Web Audio master gain.
+ *
+ * @param enabled - Whether sound effects should be audible.
+ * @param playConfirm - Whether to play a brief confirmation tick when enabling sound.
+ */
+export function setSoundEnabled(enabled: boolean, playConfirm = false): void {
+  Settings.soundEnabled = enabled;
+  audioManager.setEnabled(enabled);
+
+  if (soundToggleBtn) {
+    soundToggleBtn.classList.toggle("sound-toggle--muted", !enabled);
+    soundToggleBtn.setAttribute("aria-pressed", String(enabled));
+    soundToggleBtn.title = enabled
+      ? "Sound: ON (M in-game)"
+      : "Sound: OFF (M in-game)";
+  }
+
+  if (soundToggleIcon) {
+    soundToggleIcon.classList.toggle("fa-volume-up", enabled);
+    soundToggleIcon.classList.toggle("fa-volume-mute", !enabled);
+  }
+
+  if (soundEnabledInput) {
+    soundEnabledInput.checked = enabled;
+  }
+
+  if (enabled && playConfirm) {
+    GameAudio.onUiClick();
+  }
+}
+
+/**
+ * Toggles sound effects on or off and persists the setting in cookies without reloading.
+ */
+export function toggleSound(): void {
+  setSoundEnabled(!Settings.soundEnabled, true);
+  Cookies.set("settings", JSON.stringify(Settings), { expires: 300 });
+}
+
+soundToggleBtn?.addEventListener("click", (e) => {
+  e.stopPropagation();
+  toggleSound();
+});
+
+window.addEventListener("keydown", (e) => {
+  if (e.ctrlKey || e.altKey || e.metaKey || e.repeat) return;
+  if (e.key.toLowerCase() !== "m") return;
+
+  const target = e.target as HTMLElement | null;
+  if (target) {
+    const tag = target.tagName;
+    if (
+      tag === "INPUT" ||
+      tag === "TEXTAREA" ||
+      tag === "SELECT" ||
+      target.isContentEditable
+    ) {
+      return;
+    }
+  }
+
+  if (!GameAudio.isInGame()) return;
+
+  toggleSound();
 });

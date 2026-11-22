@@ -93,15 +93,49 @@
   }
 }
 
-// Top-Right Graphics Quality Setting Bar
-.graphics-bar,
-#settings {
+// Top-Right Settings Bar (Sound Toggle + Graphics Quality)
+.top-settings-bar {
   position: absolute;
   top: 10px;
   right: 10px;
+  z-index: $z-index-floating;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sound-toggle {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: $color-text-main;
+  font-size: 1.05em;
+  transition:
+    color $transition-fast,
+    box-shadow $transition-fast,
+    border-color $transition-fast,
+    opacity $transition-fast;
+
+  &:hover {
+    color: $color-blue-accent;
+    border-color: $color-blue-accent;
+  }
+
+  &--muted {
+    color: $color-text-muted;
+    opacity: 0.72;
+  }
+}
+
+.graphics-bar,
+#settings {
+  position: relative;
   height: 40px;
   min-width: 300px;
-  z-index: $z-index-base;
 
   &__label,
   #settings-text {

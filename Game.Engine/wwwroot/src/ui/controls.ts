@@ -8,6 +8,7 @@ import nipplejs from "nipplejs";
 import { Settings } from "./settings";
 import { Ship } from "../models/ship";
 import { fadeIn } from "./domUtils";
+import { GameAudio } from "../audio/gameAudio";
 
 const DEFAULT_EMOJIS = [
   "👋",
@@ -210,6 +211,7 @@ const leftArrow = document.getElementById("left-arrow");
 if (leftArrow) {
   leftArrow.addEventListener("click", function () {
     if (colors.length === 0) return;
+    GameAudio.onUiClick();
     const isOdd = colors.length % 2 !== 0;
     if (isOdd) {
       const centerIdx = Math.floor(colors.length / 2);
@@ -232,6 +234,7 @@ const rightArrow = document.getElementById("right-arrow");
 if (rightArrow) {
   rightArrow.addEventListener("click", function () {
     if (colors.length === 0) return;
+    GameAudio.onUiClick();
     const isOdd = colors.length % 2 !== 0;
     if (isOdd) {
       const centerIdx = Math.floor(colors.length / 2);
@@ -600,12 +603,14 @@ window.addEventListener(
           Controls.shoot = true;
           if (autofTgg) autofTgg.textContent = "ON";
           if (autofCon) autofCon.classList.add("autofire-indicator--active");
+          GameAudio.onUiClick();
           console.log("Autofire enabled!");
         } else {
           Controls.autofire = false;
           Controls.shoot = false;
           if (autofTgg) autofTgg.textContent = "OFF";
           if (autofCon) autofCon.classList.remove("autofire-indicator--active");
+          GameAudio.onUiClick();
           console.log("Autofire disabled!");
         }
         break;
