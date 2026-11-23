@@ -172,7 +172,7 @@ namespace Game.Robots.Strategies
             ThreatAssessment threats = AssessThreats(bot, myFleet.Center, myFleet.Momentum, myShips);
 
             // 2. BULLET SCANNING & PERSISTENT PERCEPTION STATE
-            ScanIncomingBullets(bot, myFleet.ID, myFleet.Center, myFleet.Momentum, threats.SafestBreakoutDir);
+            ScanIncomingBullets(bot, myFleet.ID, myFleet.Center, myFleet.Momentum, myShips, threats.SafestBreakoutDir);
             bool isDodging = bot.GameTime >= _activeDodgeStartTime
                 && bot.GameTime < _activeDodgeUntil
                 && _activeDodgeImpulse != Vector2.Zero;
@@ -302,12 +302,12 @@ namespace Game.Robots.Strategies
                 moveDir = new Vector2(moveDir.X * cos - moveDir.Y * sin, moveDir.X * sin + moveDir.Y * cos);
             }
 
-            // Apply active bullet dodge impulse with smooth sinusoidal bell-curve envelope
+            // Apply active bullet dodge impulse with front-loaded evasion curve for crisp initial reaction
             if (isDodging)
             {
                 float duration = Math.Max(1f, _activeDodgeUntil - _activeDodgeStartTime);
                 float progress = Math.Clamp((float)(bot.GameTime - _activeDodgeStartTime) / duration, 0f, 1f);
-                float envelope = MathF.Sin(progress * MathF.PI);
+                float envelope = MathF.Pow(1.0f - progress, 0.55f);
                 Vector2 dodged = moveDir + _activeDodgeImpulse * envelope;
                 if (dodged.LengthSquared() > 1e-5f)
                 {
@@ -332,7 +332,10 @@ namespace Game.Robots.Strategies
             }
 
             var moveTarget = bot.ClampToSafePlayableArea(myFleet.Center + moveDir * 600f);
-            bot.Cursor.SetTarget(moveTarget, speed: bot.Parameters.CruisingSpeed);
+            float steerSpeed = isDodging
+                ? MathF.Max(bot.Parameters.CruisingSpeed, bot.Parameters.FlickAimSpeed * (0.45f + 0.40f * bot.Parameters.BulletDodgeSkill))
+                : bot.Parameters.CruisingSpeed;
+            bot.Cursor.SetTarget(moveTarget, speed: steerSpeed);
         }
 
         private ThreatAssessment AssessThreats(HumanoidBot bot, Vector2 myCenter, Vector2 myMomentum, int myShips)
@@ -497,6 +500,7 @@ namespace Game.Robots.Strategies
             uint myFleetId,
             Vector2 myCenter,
             Vector2 myMomentum,
+            int myShips,
             Vector2 breakoutDir)
         {
             bool isCommittedToDodge = bot.GameTime < _activeDodgeUntil;
@@ -505,12 +509,19 @@ namespace Game.Robots.Strategies
                 return;
             }
 
-            _nextBulletScanTime = bot.GameTime + 120;
+            long scanIntervalMs = (long)(130f - 90f * bot.Parameters.SkillLevel);
+            _nextBulletScanTime = bot.GameTime + Math.Max(40L, scanIntervalMs);
 
             var bullets = bot.SensorBullets.VisibleBullets;
             Body mostThreateningBullet = null;
+            float soonestCpa = float.MaxValue;
             float threateningDist = float.MaxValue;
+            Vector2 threateningMissOffset = Vector2.Zero;
             int incomingCount = 0;
+
+            // Only dodge bullets whose projected trajectory intersects our fleet radius + safety margin
+            float hitRadius = 28f + MathF.Sqrt(Math.Max(1, myShips)) * 14f + 85f;
+            float hitRadiusSq = hitRadius * hitRadius;
 
             for (int i = 0; i < bullets.Count; i++)
             {
@@ -519,14 +530,25 @@ namespace Game.Robots.Strategies
 
                 Vector2 toBullet = b.Position - myCenter;
                 float dist = toBullet.Length();
-                if (dist < 800f && Vector2.Dot(b.Momentum, -toBullet) > 0f)
+                if (dist > 850f) continue;
+
+                float speedSq = b.Momentum.LengthSquared();
+                if (speedSq < 1e-6f) continue;
+
+                float tCpa = Vector2.Dot(myCenter - b.Position, b.Momentum) / speedSq;
+                if (tCpa <= 0f || tCpa > 1200f) continue;
+
+                Vector2 cpaPoint = b.Position + b.Momentum * tCpa;
+                Vector2 missOffset = cpaPoint - myCenter;
+                if (missOffset.LengthSquared() > hitRadiusSq) continue;
+
+                incomingCount++;
+                if (tCpa < soonestCpa)
                 {
-                    incomingCount++;
-                    if (dist < threateningDist)
-                    {
-                        threateningDist = dist;
-                        mostThreateningBullet = b;
-                    }
+                    soonestCpa = tCpa;
+                    threateningDist = dist;
+                    mostThreateningBullet = b;
+                    threateningMissOffset = missOffset;
                 }
             }
 
@@ -545,15 +567,15 @@ namespace Game.Robots.Strategies
 
             Vector2 toThreatBullet = mostThreateningBullet.Position - myCenter;
             Vector2 mom = mostThreateningBullet.Momentum;
-            if (mom.LengthSquared() < 1e-6f)
-            {
-                return;
-            }
-
             Vector2 perpB = Vector2.Normalize(new Vector2(-mom.Y, mom.X));
 
-            // Prefer the perpendicular side aligned with safest breakout corridor & current momentum
-            Vector2 preferenceDir = breakoutDir * 0.7f + (myMomentum.LengthSquared() > 0.05f ? Vector2.Normalize(myMomentum) * 0.5f : Vector2.Zero);
+            // Step away from the bullet's CPA miss-offset, blended with safe breakout corridor & momentum
+            Vector2 awayFromCpa = threateningMissOffset.LengthSquared() > 1f
+                ? -Vector2.Normalize(threateningMissOffset)
+                : Vector2.Zero;
+            Vector2 preferenceDir = awayFromCpa * 1.1f
+                + breakoutDir * 0.55f
+                + (myMomentum.LengthSquared() > 0.05f ? Vector2.Normalize(myMomentum) * 0.45f : Vector2.Zero);
             if (preferenceDir.LengthSquared() > 1e-4f)
             {
                 if (Vector2.Dot(perpB, preferenceDir) < 0f)
@@ -575,15 +597,16 @@ namespace Game.Robots.Strategies
             }
 
             float dodgeStrength = 5.5f + 4.0f * bot.Parameters.BulletDodgeSkill;
-            float weight = Math.Clamp(1.0f - (threateningDist / 800f), 0.25f, 1.0f);
-            _activeDodgeImpulse = perpB * (weight * weight * dodgeStrength);
+            float weight = Math.Clamp(1.0f - (threateningDist / 850f), 0.30f, 1.0f);
+            _activeDodgeImpulse = perpB * (weight * dodgeStrength);
             _activeDodgeThreatDist = threateningDist;
             _activeDodgeBulletCount = incomingCount;
 
-            long latency = (long)(bot.Parameters.ReactionLatencyMs * (0.60f - 0.25f * bot.Parameters.SkillLevel));
-            _activeDodgeStartTime = bot.GameTime + Math.Max(35, latency);
-            _activeDodgeUntil = _activeDodgeStartTime + 350;
-            _nextBulletScanTime = _activeDodgeUntil + 120;
+            long latency = Math.Max(15L, (long)(bot.Parameters.ReactionLatencyMs * (0.55f - 0.38f * bot.Parameters.SkillLevel)));
+            long refractoryMs = Math.Max(20L, (long)(140f - 120f * bot.Parameters.SkillLevel));
+            _activeDodgeStartTime = bot.GameTime + latency;
+            _activeDodgeUntil = _activeDodgeStartTime + 260;
+            _nextBulletScanTime = _activeDodgeUntil + refractoryMs;
         }
 
         private bool HandleDashes(
@@ -614,7 +637,8 @@ namespace Game.Robots.Strategies
             _activeDashTarget = Vector2.Zero;
             _activeDashUntil = 0;
 
-            if (bot.GameTime - _lastDashEvalTime < 220)
+            bool urgentFlashDodge = isDodging && _activeDodgeThreatDist < 520f;
+            if (!urgentFlashDodge && bot.GameTime - _lastDashEvalTime < 220)
             {
                 return false;
             }

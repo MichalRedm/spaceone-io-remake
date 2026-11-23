@@ -135,10 +135,10 @@ namespace Game.Robots.Framework
             FlickAimSpeed = Math.Clamp((0.18f + 0.78f * MathF.Pow(s, 1.15f)) * Jitter(1.0f, 0.05f), 0.12f, 0.98f);
             CruisingSpeed = Math.Clamp((0.08f + 0.22f * s) * Jitter(1.0f, 0.06f), 0.06f, 0.35f);
 
-            AimJitter = Math.Clamp((0.36f * (1.0f - s) + 0.015f) * Jitter(1.0f, 0.12f), 0.01f, 0.45f);
-            CursorTremorRadius = Math.Clamp((35f * (1.0f - s) + 2f) * Jitter(1.0f, 0.15f), 1f, 45f);
+            AimJitter = Math.Clamp((0.36f * MathF.Pow(1.0f - s, 1.35f) + 0.005f) * Jitter(1.0f, 0.10f), 0.004f, 0.45f);
+            CursorTremorRadius = Math.Clamp((35f * MathF.Pow(1.0f - s, 1.3f) + 0.5f) * Jitter(1.0f, 0.12f), 0.4f, 45f);
 
-            PredictiveAimFactor = Math.Clamp(MathF.Pow(s, 1.35f) * Jitter(1.0f, 0.08f), 0f, 1f);
+            PredictiveAimFactor = Math.Clamp(MathF.Pow(s, 1.05f) * Jitter(1.0f, 0.05f), 0f, 1f);
 
             // Flight direction coupling & maximum off-axis flick angle (smoothly unlocks full 180° kiting/reclaim)
             AimInFlightDirectionWeight = Math.Clamp((1.0f - MathF.Pow(s, 0.5f)) * 0.92f * Jitter(1.0f, 0.10f), 0f, 0.95f);
@@ -146,7 +146,7 @@ namespace Game.Robots.Framework
             PreAimCooldownThreshold = Math.Clamp(Lerp(0.96f, 0.88f, SmoothStep(0.05f, 0.85f, s)), 0.84f, 0.98f);
 
             KitingSkill = SmoothStep(0.05f, 0.85f, s);
-            FiringAngleTolerance = Math.Clamp(0.65f - 0.48f * MathF.Pow(s, 0.75f), 0.14f, 0.70f);
+            FiringAngleTolerance = Math.Clamp(0.62f - 0.56f * MathF.Pow(s, 0.80f), 0.055f, 0.68f);
             ReactionLatencyMs = (int)Math.Clamp(Jitter(540f - 415f * s, 0.08f), 115f, 600f);
             DangerZoneBuffer = Math.Clamp(80f + 320f * s, 60f, 450f);
 

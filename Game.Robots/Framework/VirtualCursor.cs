@@ -33,11 +33,15 @@ namespace Game.Robots.Framework
             // Human players aim at targets relative to their own ship on the screen.
             var relativeTarget = absoluteTarget - _bot.Position;
             
-            // Limit the mouse to the physical screen bounds (matching player's aspect ratio/monitor)
-            float halfWidth = _bot.Parameters.ViewportWidth / 2f;
-            float halfHeight = _bot.Parameters.ViewportHeight / 2f;
-            relativeTarget.X = Math.Clamp(relativeTarget.X, -halfWidth, halfWidth);
-            relativeTarget.Y = Math.Clamp(relativeTarget.Y, -halfHeight, halfHeight);
+            // Limit the mouse to the physical screen bounds proportionally so aim angle is never skewed
+            float halfWidth = Math.Max(1f, _bot.Parameters.ViewportWidth / 2f);
+            float halfHeight = Math.Max(1f, _bot.Parameters.ViewportHeight / 2f);
+            float scale = 1f;
+            if (MathF.Abs(relativeTarget.X) > halfWidth)
+                scale = MathF.Min(scale, halfWidth / MathF.Abs(relativeTarget.X));
+            if (MathF.Abs(relativeTarget.Y) > halfHeight)
+                scale = MathF.Min(scale, halfHeight / MathF.Abs(relativeTarget.Y));
+            relativeTarget *= scale;
 
             _perceivedTarget = relativeTarget;
             _isInitialized = true;
