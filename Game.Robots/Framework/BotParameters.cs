@@ -143,7 +143,7 @@ namespace Game.Robots.Framework
             // Flight direction coupling & maximum off-axis flick angle (smoothly unlocks full 180° kiting/reclaim)
             AimInFlightDirectionWeight = Math.Clamp((1.0f - MathF.Pow(s, 0.5f)) * 0.92f * Jitter(1.0f, 0.10f), 0f, 0.95f);
             MaxOffAxisShotAngle = Math.Clamp(Lerp(0.60f, MathF.PI, SmoothStep(0.05f, 0.62f, s)), 0.50f, MathF.PI);
-            PreAimCooldownThreshold = Math.Clamp(Lerp(0.96f, 0.88f, SmoothStep(0.05f, 0.85f, s)), 0.84f, 0.98f);
+            PreAimCooldownThreshold = Math.Clamp(Lerp(0.97f, 0.92f, SmoothStep(0.05f, 0.85f, s)), 0.90f, 0.98f);
 
             KitingSkill = SmoothStep(0.05f, 0.85f, s);
             FiringAngleTolerance = Math.Clamp(0.62f - 0.56f * MathF.Pow(s, 0.80f), 0.055f, 0.68f);

@@ -11,6 +11,8 @@ namespace Game.Robots.Framework
     {
         private long _flickStartTime;
         private long _abortUntilTime;
+        private long _shotConfirmUntil;
+        private Vector2 _lockedAimOffset;
         private float _flickJitterAngle;
         private bool _hasFlickJitter;
 
@@ -21,6 +23,8 @@ namespace Game.Robots.Framework
         {
             _flickStartTime = 0;
             _abortUntilTime = 0;
+            _shotConfirmUntil = 0;
+            _lockedAimOffset = Vector2.Zero;
             _flickJitterAngle = 0f;
             _hasFlickJitter = false;
         }
@@ -48,6 +52,23 @@ namespace Game.Robots.Framework
 
             if (!float.IsFinite(targetVel.X) || !float.IsFinite(targetVel.Y))
                 targetVel = Vector2.Zero;
+
+            // Brief shot-confirmation hold: keep aim and trigger active until the server confirms cooldown reset (< 0.99f)
+            // or the 80ms window expires so turn-backs never overwrite a pending shot before World.Step().
+            if (_shotConfirmUntil > 0)
+            {
+                if (bot.CooldownShoot < 0.99f || bot.GameTime >= _shotConfirmUntil)
+                {
+                    _shotConfirmUntil = 0;
+                }
+                else
+                {
+                    Vector2 heldTarget = bot.Position + _lockedAimOffset;
+                    bot.Cursor.SetTarget(heldTarget, speed: bot.Parameters.FlickAimSpeed);
+                    bot.ShootAt(heldTarget);
+                    return true;
+                }
+            }
 
             // Keep cursor free during brief post-abort refractory window (opportunistic shots only).
             if (allowAbort && bot.GameTime < _abortUntilTime)
@@ -137,9 +158,7 @@ namespace Game.Robots.Framework
 
             if (bot.Cursor.IsAimedAt(aimTarget, tolerance))
             {
-                bot.ShootAt(aimTarget);
-                _flickStartTime = 0;
-                _hasFlickJitter = false;
+                FireWithConfirmHold(bot, aimTarget);
                 return true;
             }
 
@@ -161,9 +180,7 @@ namespace Game.Robots.Framework
             {
                 if (!requireStrictAlignment && bot.Cursor.IsAimedAt(aimTarget, tolerance * 2.0f))
                 {
-                    bot.ShootAt(aimTarget);
-                    _flickStartTime = 0;
-                    _hasFlickJitter = false;
+                    FireWithConfirmHold(bot, aimTarget);
                     return true;
                 }
 
@@ -178,6 +195,15 @@ namespace Game.Robots.Framework
             }
 
             return true;
+        }
+
+        private void FireWithConfirmHold(HumanoidBot bot, Vector2 aimTarget)
+        {
+            bot.ShootAt(aimTarget);
+            _lockedAimOffset = aimTarget - bot.Position;
+            _shotConfirmUntil = bot.GameTime + 80;
+            _flickStartTime = 0;
+            _hasFlickJitter = false;
         }
 
         private static float WrapAngle(float angle)
