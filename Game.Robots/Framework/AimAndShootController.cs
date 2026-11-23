@@ -11,6 +11,8 @@ namespace Game.Robots.Framework
     {
         private long _flickStartTime;
         private long _abortUntilTime;
+        private float _flickJitterAngle;
+        private bool _hasFlickJitter;
 
         /// <summary>
         /// Clears all flick and cooldown tracking timers.
@@ -19,6 +21,8 @@ namespace Game.Robots.Framework
         {
             _flickStartTime = 0;
             _abortUntilTime = 0;
+            _flickJitterAngle = 0f;
+            _hasFlickJitter = false;
         }
 
         /// <summary>
@@ -33,7 +37,8 @@ namespace Game.Robots.Framework
             bool usePredictiveLead = true,
             float extraAngleTolerance = 0f,
             bool requireStrictAlignment = false,
-            bool enforceOffAxisGate = false)
+            bool enforceOffAxisGate = false,
+            bool allowAbort = false)
         {
             if (bot == null)
                 return false;
@@ -44,10 +49,11 @@ namespace Game.Robots.Framework
             if (!float.IsFinite(targetVel.X) || !float.IsFinite(targetVel.Y))
                 targetVel = Vector2.Zero;
 
-            // Keep cursor free during brief post-abort refractory window so steering recovers cleanly.
-            if (bot.GameTime < _abortUntilTime)
+            // Keep cursor free during brief post-abort refractory window (opportunistic shots only).
+            if (allowAbort && bot.GameTime < _abortUntilTime)
             {
                 _flickStartTime = 0;
+                _hasFlickJitter = false;
                 return false;
             }
 
@@ -59,6 +65,7 @@ namespace Game.Robots.Framework
             if (!readyOrPreAiming)
             {
                 _flickStartTime = 0;
+                _hasFlickJitter = false;
                 return false;
             }
 
@@ -66,6 +73,7 @@ namespace Game.Robots.Framework
             if (toTarget.LengthSquared() < 1f)
             {
                 _flickStartTime = 0;
+                _hasFlickJitter = false;
                 return false;
             }
 
@@ -81,11 +89,35 @@ namespace Game.Robots.Framework
                 if (MathF.Abs(diff) > maxOffAxis)
                 {
                     _flickStartTime = 0;
+                    _hasFlickJitter = false;
                     return false;
                 }
             }
 
-            Vector2 aimTarget = bot.ComputeHumanAimPoint(targetPos, usePredictiveLead ? targetVel : Vector2.Zero);
+            // Deterministic kinematic lead + stable per-flick human angular jitter (prevents 40ms jitter bouncing)
+            Vector2 vel = usePredictiveLead ? targetVel : Vector2.Zero;
+            Vector2 interceptPoint = InterceptionMath.CalculateInterceptPoint(bot.Position, bot.EffectiveBulletSpeed, targetPos, vel);
+            Vector2 aimTarget = Vector2.Lerp(targetPos, interceptPoint, bot.Parameters.PredictiveAimFactor);
+
+            if (!_hasFlickJitter)
+            {
+                _flickJitterAngle = bot.Parameters.AimJitter > 0.001f
+                    ? (float)(Random.Shared.NextDouble() * 2.0 - 1.0) * bot.Parameters.AimJitter
+                    : 0f;
+                _hasFlickJitter = true;
+            }
+
+            if (MathF.Abs(_flickJitterAngle) > 0.001f)
+            {
+                Vector2 toAim = aimTarget - bot.Position;
+                float dist = toAim.Length();
+                if (dist > 0.001f)
+                {
+                    float jitteredAngle = MathF.Atan2(toAim.Y, toAim.X) + _flickJitterAngle;
+                    aimTarget = bot.Position + new Vector2(MathF.Cos(jitteredAngle), MathF.Sin(jitteredAngle)) * dist;
+                }
+            }
+
             bot.Cursor.SetTarget(aimTarget, speed: bot.Parameters.FlickAimSpeed);
 
             // While weapon is still finishing its final cooldown tick(s), pre-aim cleanly without starting the abort timer.
@@ -107,6 +139,7 @@ namespace Game.Robots.Framework
             {
                 bot.ShootAt(aimTarget);
                 _flickStartTime = 0;
+                _hasFlickJitter = false;
                 return true;
             }
 
@@ -120,24 +153,28 @@ namespace Game.Robots.Framework
             float sweepFraction = MathF.Abs(WrapAngle(desiredAngle - currentAngle)) / MathF.PI;
             float speedCompensation = 1.0f / Math.Clamp(bot.Parameters.FlickAimSpeed, 0.25f, 1.0f);
             long maxFlickWait = Math.Clamp(
-                (long)((bot.Parameters.ReactionLatencyMs * (0.45f + 0.35f * sweepFraction) + 60f) * MathF.Min(1.6f, speedCompensation)),
-                120L,
-                320L);
+                (long)((bot.Parameters.ReactionLatencyMs * (0.45f + 0.35f * sweepFraction) + 80f) * MathF.Min(1.6f, speedCompensation)),
+                200L,
+                380L);
 
             if (flickDuration > maxFlickWait)
             {
-                if (!requireStrictAlignment && bot.Cursor.IsAimedAt(aimTarget, tolerance * 1.6f))
+                if (!requireStrictAlignment && bot.Cursor.IsAimedAt(aimTarget, tolerance * 2.0f))
                 {
                     bot.ShootAt(aimTarget);
-                }
-                else
-                {
-                    // Abort cleanly so navigation steering takes over instead of spinning endlessly.
-                    _abortUntilTime = bot.GameTime + 240;
+                    _flickStartTime = 0;
+                    _hasFlickJitter = false;
+                    return true;
                 }
 
-                _flickStartTime = 0;
-                return false;
+                if (allowAbort)
+                {
+                    // Abort opportunistic non-combat shot so navigation resumes cleanly.
+                    _abortUntilTime = bot.GameTime + 240;
+                    _flickStartTime = 0;
+                    _hasFlickJitter = false;
+                    return false;
+                }
             }
 
             return true;
