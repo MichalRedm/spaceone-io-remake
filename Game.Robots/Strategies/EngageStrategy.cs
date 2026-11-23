@@ -231,25 +231,19 @@ namespace Game.Robots.Strategies
                     Vector2 toEnemyDir = Vector2.Normalize(toEnemy);
                     Vector2 perpDir = new Vector2(-toEnemyDir.Y * _orbitSign, toEnemyDir.X * _orbitSign);
 
-                    // Distance-keeping orbital controller:
-                    // Equal-size fleets naturally orbit at SafeDistance; stronger fleets close to PursuitDistance;
-                    // weaker fleets hold wider spacing while still fighting and dodging.
-                    float aggressiveRadial = 0.78f;
+                    // Gentle combat spacing: equal/smaller foes fight tightly; against larger foes,
+                    // hold moderate orbital spacing to prevent flying head-first into their guns.
+                    float aggressiveRadial = 0.80f;
                     float aggressiveTangent = 0.35f;
 
-                    float desiredDist = bot.Parameters.SafeDistance;
-                    if (ratio > 1.15f)
-                    {
-                        desiredDist = Lerp(bot.Parameters.SafeDistance, bot.Parameters.PursuitDistance, SmoothStep(1.15f, 2.2f, ratio));
-                    }
-                    else if (ratio < 0.85f)
-                    {
-                        desiredDist = Lerp(bot.Parameters.SafeDistance, bot.Parameters.SafeDistance * 1.35f, SmoothStep(0.85f, 0.35f, ratio));
-                    }
+                    float largerEnemyFactor = SmoothStep(0.95f, 0.35f, ratio);
+                    float baseCloseDist = Math.Clamp(bot.Parameters.PursuitDistance * 0.75f, 220f, 340f);
+                    float desiredDist = Lerp(baseCloseDist, Math.Clamp(bot.Parameters.SafeDistance * 0.90f, 360f, 520f), largerEnemyFactor);
 
-                    float distError = (distance - desiredDist) / Math.Max(140f, desiredDist * 0.50f);
-                    float tacticalRadial = Math.Clamp(distError, -0.80f, 0.85f);
-                    float tacticalTangent = MathF.Sqrt(Math.Max(0.15f, 1.0f - tacticalRadial * tacticalRadial));
+                    float minRadial = Lerp(-0.20f, -0.45f, largerEnemyFactor);
+                    float distError = (distance - desiredDist) / Math.Max(180f, desiredDist * 0.75f);
+                    float tacticalRadial = Math.Clamp(distError, minRadial, 0.85f);
+                    float tacticalTangent = MathF.Sqrt(Math.Max(0.20f, 1.0f - tacticalRadial * tacticalRadial));
 
                     float kitingSkill = bot.Parameters.KitingSkill;
                     float radialWeight = aggressiveRadial + (tacticalRadial - aggressiveRadial) * kitingSkill;
