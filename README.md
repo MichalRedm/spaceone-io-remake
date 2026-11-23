@@ -235,7 +235,7 @@ When activating dash/boost ($T_{\text{boost}} = 25\text{ ticks} = 1000\text{ ms}
 The `Game.Robots` assembly contains an autonomous agent framework for stress-testing server capacity and populating practice arenas:
 
 - **Context-Steering Radials (`ContextRobot.cs`)**: Evaluates environmental stimuli onto a radial `ContextRing` composed of discrete angular buckets. Behaviors (`Advance`, `Dodge`, `Separation`, `StayInBounds`) write independent interest and danger vectors to the ring, which are resolved via vector blending into an optimal steering heading.
-- **Utility-Based Strategy Switching (`HumanoidBot.cs`)**: Emulates human decision-making by scoring potential strategies (`EngageStrategy`, `CruisingStrategy`, `FleeStrategy`) based on relative fleet size, distance to arena borders, and shield health.
+- **Utility-Based Strategy Switching (`HumanoidBot.cs`)**: Emulates human decision-making using smooth skill curves, a shared `AimAndShootController`, and unified strategies (`EngageStrategy` for combat, kiting, surround breakout dashing, and smooth disengagement; `CruisingStrategy` for roaming, leader-seeking, and travel-boost abandoned-ship reclaiming).
 - **Genetic Algorithm Optimization (`Game.Robots/Breeding/`)**: Automates bot tuning via tournament-based genetic algorithms (`RobotEvolutionController.cs`). Behavior weights are treated as chromosomes; bots compete in isolated matches, scoring fitness on survival time, kill ratio, and damage output to iteratively breed superior steering profiles.
 
 ---
