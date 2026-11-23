@@ -1,61 +1,44 @@
 namespace Game.Robots.Framework
 {
-    using Game.API.Common;
     using Game.Robots.Senses;
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Numerics;
     using System.Threading.Tasks;
 
     public class HumanoidBot : Robot
     {
         public BotParameters Parameters { get; private set; } = new BotParameters();
-
+        
         public VirtualCursor Cursor { get; private set; }
         public OffScreenTracker OffScreenTracker { get; private set; }
-        public AimAndShootController AimController { get; private set; }
-
-        public long LastBoostTime { get; private set; }
-        public Vector2 LastBoostDirection { get; private set; }
-
-        public int AbandonBufferMs => HookComputer?.Hook?.AbandonBuffer ?? Connection?.Hook?.AbandonBuffer ?? 120;
-
-        public bool IsBoostActive
-        {
-            get
-            {
-                if (LastBoostTime <= 0) return false;
-                int boostDuration = HookComputer?.Hook?.BoostDuration ?? Connection?.Hook?.BoostDuration ?? 1000;
-                return (GameTime - LastBoostTime) < boostDuration;
-            }
-        }
-
+        
         // Sensors
         public SensorFleets SensorFleets { get; private set; }
         public SensorBullets SensorBullets { get; private set; }
         public SensorFish SensorFish { get; private set; }
         public SensorAbandoned SensorAbandoned { get; private set; }
-        private readonly List<ISense> _sensors = new List<ISense>();
+        private List<ISense> _sensors = new List<ISense>();
 
         // Strategies
-        private readonly List<IStrategy> _strategies = new List<IStrategy>();
+        private List<IStrategy> _strategies = new List<IStrategy>();
         public IStrategy ActiveStrategy { get; private set; }
         private long _lastStrategyChange = 0;
 
         public HumanoidBot() : base()
         {
             Name = "Robot";
-
+            
             Cursor = new VirtualCursor(this);
             OffScreenTracker = new OffScreenTracker(this);
-            AimController = new AimAndShootController();
-
+            
             _sensors.Add(SensorFleets = new SensorFleets(this));
             _sensors.Add(SensorBullets = new SensorBullets(this));
             _sensors.Add(SensorFish = new SensorFish(this));
             _sensors.Add(SensorAbandoned = new SensorAbandoned(this));
 
-            // Load unified strategies (escape emerges continuously inside EngageStrategy)
+            // Load Strategies
             _strategies.Add(new Strategies.CruisingStrategy());
             _strategies.Add(new Strategies.EngageStrategy());
         }
@@ -68,10 +51,7 @@ namespace Game.Robots.Framework
                 Parameters.ApplySkillLevel(Parameters.SkillLevel, Parameters.Playstyle, Name?.GetHashCode());
             }
             OffScreenTracker.Clear();
-            AimController.Reset();
             Cursor.Reset();
-            LastBoostTime = 0;
-            LastBoostDirection = Vector2.Zero;
 
             Log($"HumanoidBot '{Name}' spawned (Level: {Parameters.SkillLevel:F2}, Style: {Parameters.Playstyle}, Custom: {Parameters.IsCustom})!");
             return base.OnSpawnAsync();
@@ -165,44 +145,6 @@ namespace Game.Robots.Framework
                     shotThrust = 41.00f * MathF.Pow(shipCount, -0.2633f);
 
                 return shotThrust * thrustConverter * 10f;
-            }
-        }
-
-        public bool IsLeader
-        {
-            get
-            {
-                var entries = Leaderboard?.Entries;
-                return entries != null && entries.Count > 0 && entries[0] != null && entries[0].FleetID == FleetID;
-            }
-        }
-
-        /// <summary>
-        /// Triggers a boost and records its timestamp and direction for downstream reclaim/cadence logic.
-        /// </summary>
-        public void TriggerBoost(Vector2 direction)
-        {
-            Boost();
-            LastBoostTime = GameTime;
-            LastBoostDirection = direction.LengthSquared() > 1e-6f ? Vector2.Normalize(direction) : Vector2.Zero;
-        }
-
-        /// <summary>
-        /// Maps a fleet's active ship sprite to the corresponding abandoned ship sprite.
-        /// </summary>
-        public static Sprites GetAbandonedSpriteForShip(Sprites shipSprite)
-        {
-            switch (shipSprite)
-            {
-                case Sprites.ship_cyan: return Sprites.ship_ab_cyan;
-                case Sprites.ship_blue: return Sprites.ship_ab_blue;
-                case Sprites.ship_green: return Sprites.ship_ab_green;
-                case Sprites.ship_orange: return Sprites.ship_ab_orange;
-                case Sprites.ship_pink: return Sprites.ship_ab_pink;
-                case Sprites.ship_red: return Sprites.ship_ab_red;
-                case Sprites.ship_yellow: return Sprites.ship_ab_yellow;
-                case Sprites.ship_zed: return Sprites.ship_ab_red;
-                default: return Sprites.ship_gray;
             }
         }
 

@@ -3,6 +3,7 @@ namespace Game.Robots.Framework
     using Game.API.Common;
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Numerics;
 
     public class TrackedEnemy
@@ -26,7 +27,7 @@ namespace Game.Robots.Framework
         private readonly List<uint> _toRemove = new List<uint>();
         private long _lastUpdateTime = 0;
 
-        public Dictionary<uint, TrackedEnemy>.ValueCollection TrackedEnemies => _tracked.Values;
+        public IEnumerable<TrackedEnemy> TrackedEnemies => _tracked.Values;
 
         public OffScreenTracker(HumanoidBot bot)
         {
@@ -45,10 +46,8 @@ namespace Game.Robots.Framework
             _lastUpdateTime = gameTime;
 
             // 1. Direct sensory updates for enemies currently on radar/screen
-            var visibleEnemies = _bot.SensorFleets.Others;
-            for (int i = 0; i < visibleEnemies.Count; i++)
+            foreach (var enemy in _bot.SensorFleets.Others)
             {
-                var enemy = visibleEnemies[i];
                 bool inViewport = _bot.IsPointInViewport(enemy.Center, margin: 120f);
 
                 if (inViewport)
@@ -92,12 +91,11 @@ namespace Game.Robots.Framework
             }
 
             // 2. Incoming bullet backtracking for off-screen attackers
-            if (_bot.Parameters.TracksOffscreenBullets && _bot.Parameters.OffscreenBulletTrackChance > 0.01f)
+            if (_bot.Parameters.TracksOffscreenBullets)
             {
                 var bullets = _bot.SensorBullets.VisibleBullets;
-                for (int i = 0; i < bullets.Count; i++)
+                foreach (var b in bullets)
                 {
-                    var b = bullets[i];
                     if (b.Group == null || b.Group.Owner == _bot.FleetID || b.Group.Owner == 0)
                         continue;
 
@@ -106,12 +104,6 @@ namespace Game.Robots.Framework
                     // If shooter is already directly visible on screen, we don't need to guess
                     if (_tracked.TryGetValue(ownerId, out var existing) && existing.IsDirectlyVisible)
                         continue;
-
-                    if (_bot.Parameters.OffscreenBulletTrackChance < 0.99f
-                        && Random.Shared.NextDouble() > _bot.Parameters.OffscreenBulletTrackChance)
-                    {
-                        continue;
-                    }
 
                     if (b.Momentum.LengthSquared() > 0.001f)
                     {
