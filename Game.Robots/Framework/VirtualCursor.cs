@@ -22,7 +22,13 @@ namespace Game.Robots.Framework
 
         public void SetTarget(Vector2 absoluteTarget, float speed = 0.15f)
         {
-            _currentSpeed = speed;
+            if (float.IsNaN(absoluteTarget.X) || float.IsNaN(absoluteTarget.Y)
+                || float.IsInfinity(absoluteTarget.X) || float.IsInfinity(absoluteTarget.Y))
+            {
+                return;
+            }
+
+            _currentSpeed = Math.Clamp(speed, 0.01f, 1.0f);
 
             // Human players aim at targets relative to their own ship on the screen.
             var relativeTarget = absoluteTarget - _bot.Position;
@@ -40,12 +46,20 @@ namespace Game.Robots.Framework
         private long _lastGameTime = 0;
         private float _tremorPhase = 0f;
 
+        public void Reset()
+        {
+            _lastGameTime = 0;
+            _tremorPhase = 0f;
+            _isInitialized = false;
+            CurrentRelativePosition = new Vector2(1000, 0);
+        }
+
         public void Update(long gameTime)
         {
             if (!_isInitialized) return;
             if (_lastGameTime == 0) { _lastGameTime = gameTime; return; }
             
-            float dt = (gameTime - _lastGameTime);
+            float dt = Math.Min(250f, (float)(gameTime - _lastGameTime));
             if (dt <= 0) return; // Prevent multiple updates if GameTime hasn't progressed
 
             // Calculate organic hand tremor based on player skill and CursorTremorRadius

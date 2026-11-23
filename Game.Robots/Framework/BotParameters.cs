@@ -66,6 +66,9 @@ namespace Game.Robots.Framework
         // Combat & Aiming parameters
         public float PredictiveAimFactor { get; set; } = 1.0f; // 1.0 = full lead calculation, 0.0 = direct/no lead
         public float AimInFlightDirectionWeight { get; set; } = 0.0f; // 1.0 = shoot where flying (complete noob), 0.0 = decoupled aim
+        public float MaxOffAxisShotAngle { get; set; } = MathF.PI; // Max angular deviation from flight direction to take a shot
+        public float PreAimCooldownThreshold { get; set; } = 0.85f; // CooldownShoot (0->1) threshold to begin pre-aiming
+        public float KitingSkill { get; set; } = 0.65f; // Continuous tactical spacing/kiting skill [0..1]
         public float AimJitter { get; set; } = 0.03f; // Angular jitter in radians (imperfect human aim)
         public float FiringAngleTolerance { get; set; } = 0.25f; // Maximum angular error to pull the trigger
         public float BulletDodgeSkill { get; set; } = 1.0f; // 1.0 = matrix dodger, 0.0 = noob walks into bullets
@@ -81,9 +84,13 @@ namespace Game.Robots.Framework
         // Strategy selection non-determinism (Distraction / Hesitation)
         public float PerceptualNoise { get; set; } = 0.10f; // Noise added to strategy utility evaluations
 
-        // Dash behavior parameters
+        // Dash & Escape behavior parameters
         public bool OffensiveDashEnabled { get; set; } = true;
         public bool DefensiveDashEnabled { get; set; } = true;
+        public float DefensiveDashSkill { get; set; } = 0.65f;
+        public float OffensiveDashSkill { get; set; } = 0.65f;
+        public float SurroundEscapeSkill { get; set; } = 0.65f;
+        public float TravelBoostTendency { get; set; } = 0.55f;
         public float BoostHesitancy { get; set; } = 0.0f; // Chance (0-1) to hesitate / delay boosting
         public int MinimumShipsToOffensiveDash { get; set; } = 15;
         public int MinimumShipsToDefensiveDash { get; set; } = 8;
@@ -91,13 +98,22 @@ namespace Game.Robots.Framework
         // Sensory & Off-screen perception parameters
         public long OffscreenMemoryDurationMs { get; set; } = 4000; // How long to remember enemies after leaving screen
         public bool TracksOffscreenBullets { get; set; } = true; // Whether incoming bullets reveal off-screen shooters
+        public float OffscreenBulletTrackChance { get; set; } = 0.85f; // Smooth probability to backtrack incoming off-screen bullets
 
         // Leader hunt / King hunt parameters
-        public float LeaderHuntTendency { get; set; } = 0.50f; // Tendency to roam towards leader arrow in FFA
+        public float LeaderHuntTendency { get; set; } = 0.68f; // Tendency to roam towards leader arrow in FFA
+
+        private static float SmoothStep(float edge0, float edge1, float x)
+        {
+            float t = Math.Clamp((x - edge0) / Math.Max(1e-5f, edge1 - edge0), 0f, 1f);
+            return t * t * (3f - 2f * t);
+        }
+
+        private static float Lerp(float a, float b, float t) => a + (b - a) * Math.Clamp(t, 0f, 1f);
 
         /// <summary>
         /// Maps a high-level skill level [0.0 - 1.0] and playstyle to low-level behavioral parameters,
-        /// introducing realistic human progression curves and pseudo-random individuality.
+        /// using C1-smooth progression curves and seeded individuality with no hard tier jumps.
         /// </summary>
         public void ApplySkillLevel(float skill, string playstyle = "Balanced", int? seed = null)
         {
@@ -113,159 +129,120 @@ namespace Game.Robots.Framework
                 return baseVal * (1.0f + delta);
             }
 
-            // 1. Aiming & Mouse Mechanics:
-            // Flick speed has the single highest correlation (+0.548) with success:
-            FlickAimSpeed = Math.Clamp((0.18f + 0.78f * MathF.Pow(_skillLevel, 1.15f)) * Jitter(1.0f, 0.05f), 0.12f, 0.98f);
-            CruisingSpeed = Math.Clamp((0.08f + 0.22f * _skillLevel) * Jitter(1.0f, 0.06f), 0.06f, 0.35f);
+            float s = _skillLevel;
 
-            // Aim jitter (-0.262 correlation): ~0.36 rad (~21 deg) down to 0.015 rad (< 1 deg)
-            AimJitter = Math.Clamp((0.36f * (1.0f - _skillLevel) + 0.015f) * Jitter(1.0f, 0.12f), 0.01f, 0.45f);
-            CursorTremorRadius = Math.Clamp((35f * (1.0f - _skillLevel) + 2f) * Jitter(1.0f, 0.15f), 1f, 45f);
+            // 1. Aiming & Mouse Mechanics (Smooth Curves):
+            FlickAimSpeed = Math.Clamp((0.18f + 0.78f * MathF.Pow(s, 1.15f)) * Jitter(1.0f, 0.05f), 0.12f, 0.98f);
+            CruisingSpeed = Math.Clamp((0.08f + 0.22f * s) * Jitter(1.0f, 0.06f), 0.06f, 0.35f);
 
-            // Predictive Aim (+0.203 correlation):
-            PredictiveAimFactor = Math.Clamp(MathF.Pow(_skillLevel, 1.35f) * Jitter(1.0f, 0.08f), 0f, 1f);
+            AimJitter = Math.Clamp((0.36f * (1.0f - s) + 0.015f) * Jitter(1.0f, 0.12f), 0.01f, 0.45f);
+            CursorTremorRadius = Math.Clamp((35f * (1.0f - s) + 2f) * Jitter(1.0f, 0.15f), 1f, 45f);
 
-            // Flight direction coupling: complete beginners shoot where flying, rapidly decouples by skill 0.3-0.4
-            AimInFlightDirectionWeight = Math.Clamp((1.0f - MathF.Pow(_skillLevel, 0.5f)) * 0.92f * Jitter(1.0f, 0.10f), 0f, 0.95f);
+            PredictiveAimFactor = Math.Clamp(MathF.Pow(s, 1.35f) * Jitter(1.0f, 0.08f), 0f, 1f);
 
-            // Firing angle tolerance (-0.128 correlation):
-            FiringAngleTolerance = Math.Clamp(0.65f - 0.48f * MathF.Pow(_skillLevel, 0.75f), 0.14f, 0.70f);
+            // Flight direction coupling & maximum off-axis flick angle (smoothly unlocks full 180° kiting/reclaim)
+            AimInFlightDirectionWeight = Math.Clamp((1.0f - MathF.Pow(s, 0.5f)) * 0.92f * Jitter(1.0f, 0.10f), 0f, 0.95f);
+            MaxOffAxisShotAngle = Math.Clamp(Lerp(0.60f, MathF.PI, SmoothStep(0.05f, 0.72f, s)), 0.50f, MathF.PI);
+            PreAimCooldownThreshold = Math.Clamp(Lerp(0.94f, 0.82f, SmoothStep(0.05f, 0.85f, s)), 0.78f, 0.96f);
 
-            // Reaction time: 540ms (noob) down to 125ms (pro)
-            ReactionLatencyMs = (int)Math.Clamp(Jitter(540f - 415f * _skillLevel, 0.08f), 115f, 600f);
-
-            // Danger zone awareness:
-            DangerZoneBuffer = Math.Clamp(80f + 320f * _skillLevel, 60f, 450f);
+            KitingSkill = SmoothStep(0.05f, 0.85f, s);
+            FiringAngleTolerance = Math.Clamp(0.65f - 0.48f * MathF.Pow(s, 0.75f), 0.14f, 0.70f);
+            ReactionLatencyMs = (int)Math.Clamp(Jitter(540f - 415f * s, 0.08f), 115f, 600f);
+            DangerZoneBuffer = Math.Clamp(80f + 320f * s, 60f, 450f);
 
             // 2. Probabilistic Bullet Dodging:
-            // In humans, dodging is not a weak force, but a probabilistic perception check!
-            // Noobs dodge occasionally (~25-35%), intermediates dodge reliably (~65-75%), pros dodge almost every time (90-99%).
-            BulletDodgeProbability = Math.Clamp((0.22f + 0.76f * MathF.Pow(_skillLevel, 0.70f)) * Jitter(1.0f, 0.05f), 0.15f, 0.99f);
-            // Angular error: noobs panic-dodge with high angular error (~0.65 rad / ~37 deg); pros dodge cleanly at 90 deg (< 0.03 rad)
-            BulletDodgeAngularError = Math.Clamp((0.65f * MathF.Pow(1.0f - _skillLevel, 1.35f) + 0.015f) * Jitter(1.0f, 0.08f), 0.01f, 0.75f);
-            BulletDodgeSkill = Math.Clamp(0.15f + 0.85f * MathF.Pow(_skillLevel, 0.85f), 0.10f, 1.0f);
+            BulletDodgeProbability = Math.Clamp((0.22f + 0.76f * MathF.Pow(s, 0.70f)) * Jitter(1.0f, 0.05f), 0.15f, 0.99f);
+            BulletDodgeAngularError = Math.Clamp((0.65f * MathF.Pow(1.0f - s, 1.35f) + 0.015f) * Jitter(1.0f, 0.08f), 0.01f, 0.75f);
+            BulletDodgeSkill = Math.Clamp(0.15f + 0.85f * MathF.Pow(s, 0.85f), 0.10f, 1.0f);
 
-            // 3. Movement & Symmetry Breaking:
-            // Low-skill bots have erratic steering noise (breaks circling symmetry); pros have disciplined trajectories
-            SteeringNoiseAmplitude = Math.Clamp((0.45f * (1.0f - _skillLevel) + 0.05f) * Jitter(1.0f, 0.10f), 0.03f, 0.55f);
+            // 3. Movement, Symmetry Breaking & Strategy Noise:
+            SteeringNoiseAmplitude = Math.Clamp((0.45f * (1.0f - s) + 0.05f) * Jitter(1.0f, 0.10f), 0.03f, 0.55f);
+            PerceptualNoise = Math.Clamp(0.35f * (1.0f - MathF.Pow(s, 0.8f)), 0.02f, 0.40f);
 
-            // 4. Decision & Strategy Non-Determinism:
-            // Beginners get distracted or hesitate (high perceptual noise in utility); pros evaluate utilities deterministically
-            PerceptualNoise = Math.Clamp(0.35f * (1.0f - MathF.Pow(_skillLevel, 0.8f)), 0.02f, 0.40f);
+            // 4. Smooth Dash, Surround Breakout & Travel-Boost Curves:
+            DefensiveDashSkill = SmoothStep(0.18f, 0.85f, s);
+            OffensiveDashSkill = SmoothStep(0.32f, 0.88f, s);
+            SurroundEscapeSkill = SmoothStep(0.25f, 0.85f, s);
+            TravelBoostTendency = Math.Clamp(SmoothStep(0.38f, 0.92f, s) * Jitter(1.0f, 0.08f), 0f, 1f);
 
-            // 5. Dash & Boost Mechanics (Judicious Boost Usage):
-            // Empirical finding: High boost hesitancy (+0.288) correlates with success because spamming boost drains fleet mass!
-            if (_skillLevel < 0.22f)
-            {
-                OffensiveDashEnabled = false;
-                DefensiveDashEnabled = false; // True noobs don't even know how to boost defensively
-                BoostHesitancy = 0.90f;
-                MinimumShipsToOffensiveDash = 999;
-                MinimumShipsToDefensiveDash = 999;
-            }
-            else if (_skillLevel < 0.45f)
-            {
-                OffensiveDashEnabled = false;
-                DefensiveDashEnabled = rand.NextDouble() < 0.45;
-                BoostHesitancy = Math.Clamp(Jitter(0.50f * (1.0f - _skillLevel), 0.15f), 0.30f, 0.65f);
-                MinimumShipsToOffensiveDash = 999;
-                MinimumShipsToDefensiveDash = (int)Jitter(6, 0.15f);
-            }
-            else if (_skillLevel < 0.70f)
-            {
-                OffensiveDashEnabled = rand.NextDouble() < 0.7;
-                DefensiveDashEnabled = true;
-                BoostHesitancy = Math.Clamp(Jitter(0.20f * (1.0f - _skillLevel), 0.15f), 0.08f, 0.25f);
-                MinimumShipsToOffensiveDash = (int)Jitter(16 - (int)(_skillLevel * 8), 0.15f);
-                MinimumShipsToDefensiveDash = (int)Jitter(5, 0.15f);
-            }
-            else
-            {
-                OffensiveDashEnabled = true;
-                DefensiveDashEnabled = true;
-                BoostHesitancy = 0.03f; // Even pros don't boost recklessly
-                MinimumShipsToOffensiveDash = (int)Jitter(12, 0.15f);
-                MinimumShipsToDefensiveDash = 4;
-            }
+            BoostHesitancy = Math.Clamp(Jitter(0.85f * MathF.Pow(1.0f - s, 1.35f) + 0.03f, 0.12f), 0.02f, 0.92f);
+            MinimumShipsToOffensiveDash = (int)Math.Clamp(MathF.Round(Jitter(Lerp(22f, 10f, SmoothStep(0.25f, 0.90f, s)), 0.12f)), 8f, 26f);
+            MinimumShipsToDefensiveDash = (int)Math.Clamp(MathF.Round(Jitter(Lerp(10f, 4f, SmoothStep(0.15f, 0.85f, s)), 0.12f)), 3f, 12f);
 
-            // 6. Perception & Off-screen Tracking:
-            if (_skillLevel < 0.25f)
-            {
-                OffscreenMemoryDurationMs = (long)Jitter(200 + (long)(_skillLevel * 800), 0.2f);
-                TracksOffscreenBullets = false;
-            }
-            else if (_skillLevel < 0.65f)
-            {
-                OffscreenMemoryDurationMs = (long)Jitter(1200 + (long)(_skillLevel * 2500), 0.15f);
-                TracksOffscreenBullets = rand.NextDouble() < 0.65;
-            }
-            else
-            {
-                OffscreenMemoryDurationMs = (long)Jitter(3500 + (long)(_skillLevel * 2500), 0.10f);
-                TracksOffscreenBullets = true;
-            }
+            DefensiveDashEnabled = DefensiveDashSkill > 0.02f;
+            OffensiveDashEnabled = OffensiveDashSkill > 0.02f;
 
-            // 7. Fleet Size Preference:
-            if (_skillLevel < 0.30f)
-            {
-                TargetFleetSize = (int)Math.Clamp(Jitter(50 + (int)((0.30f - _skillLevel) * 40), 0.15f), 35, 75);
-            }
-            else if (_skillLevel < 0.70f)
-            {
-                TargetFleetSize = (int)Math.Clamp(Jitter(28 + (int)((0.70f - _skillLevel) * 20), 0.15f), 18, 45);
-            }
-            else
-            {
-                TargetFleetSize = (int)Math.Clamp(Jitter(18, 0.20f), 12, 30);
-            }
+            // 5. Smooth Perception & Off-screen Tracking:
+            OffscreenMemoryDurationMs = (long)Math.Clamp(Jitter(250f + 5250f * MathF.Pow(s, 1.15f), 0.12f), 150f, 6500f);
+            OffscreenBulletTrackChance = SmoothStep(0.15f, 0.78f, s);
+            TracksOffscreenBullets = OffscreenBulletTrackChance > 0.02f;
 
-            // 8. Playstyle Modifications (Empirical Archetypes):
+            // 6. Smooth Fleet Size Preference:
+            TargetFleetSize = (int)Math.Clamp(MathF.Round(Jitter(Lerp(56f, 18f, SmoothStep(0.0f, 0.90f, s)), 0.15f)), 12f, 75f);
+
+            // 7. Smooth Skill-Based Retreat Threshold (low levels flee early; high levels kite until ~1 ship or overwhelmed):
+            float baseRetreatThreshold = Lerp(0.48f, 0.14f, SmoothStep(0.05f, 0.85f, s));
+
+            // 8. Playstyle Modifications:
+            bool isKingHunter = false;
             switch (_playstyle.ToLowerInvariant())
             {
                 case "aggressive":
                 case "hunter":
                     EngageAdvantageRatio = Jitter(1.1f, 0.1f);
-                    RetreatThreshold = 0.30f;
+                    RetreatThreshold = Math.Clamp(baseRetreatThreshold * 0.78f, 0.08f, 0.55f);
                     SafeDistance = Jitter(420f, 0.1f);
                     PursuitDistance = Jitter(330f, 0.1f);
-                    LeaderHuntTendency = Math.Clamp(Jitter(0.75f, 0.15f), 0.5f, 0.95f);
+                    LeaderHuntTendency = Math.Clamp(Jitter(0.78f, 0.10f), 0.64f, 0.92f);
                     TargetFleetSize = Math.Max(10, TargetFleetSize - 6);
                     FlickAimSpeed = Math.Clamp(FlickAimSpeed * 1.10f, 0.15f, 0.98f);
+                    OffensiveDashSkill = Math.Clamp(OffensiveDashSkill + 0.08f, 0f, 1f);
                     break;
 
                 case "cautious":
                 case "farmer":
-                    EngageAdvantageRatio = Jitter(2.2f, 0.1f); // Only fight with heavy advantage
-                    RetreatThreshold = 0.65f;
-                    DefensiveDashEnabled = true; // Cautious players always enable defensive dash
+                    EngageAdvantageRatio = Jitter(2.2f, 0.1f);
+                    RetreatThreshold = Math.Clamp(baseRetreatThreshold * 1.28f, 0.16f, 0.68f);
+                    DefensiveDashSkill = Math.Clamp(DefensiveDashSkill + 0.10f, 0f, 1f);
+                    DefensiveDashEnabled = DefensiveDashSkill > 0.02f;
                     SafeDistance = Jitter(680f, 0.1f);
                     PursuitDistance = Jitter(500f, 0.1f);
-                    LeaderHuntTendency = Math.Clamp(Jitter(0.20f, 0.15f), 0.05f, 0.35f);
-                    TargetFleetSize = TargetFleetSize + 12;
+                    LeaderHuntTendency = Math.Clamp(Jitter(0.48f, 0.14f), 0.32f, 0.66f);
+                    TargetFleetSize += 12;
                     break;
 
                 case "kinghunter":
+                    isKingHunter = true;
                     EngageAdvantageRatio = Jitter(1.3f, 0.1f);
-                    RetreatThreshold = 0.35f;
-                    LeaderHuntTendency = Math.Clamp(Jitter(0.92f, 0.06f), 0.80f, 1.0f);
+                    RetreatThreshold = Math.Clamp(baseRetreatThreshold * 0.85f, 0.09f, 0.58f);
+                    LeaderHuntTendency = Math.Clamp(Jitter(0.88f, 0.08f), 0.76f, 0.98f);
                     SafeDistance = Jitter(500f, 0.1f);
+                    PursuitDistance = Jitter(380f, 0.1f);
+                    OffensiveDashSkill = Math.Clamp(OffensiveDashSkill + 0.08f, 0f, 1f);
                     break;
 
                 case "swarm":
-                    RetreatThreshold = 0.38f;
+                    RetreatThreshold = Math.Clamp(baseRetreatThreshold * 0.90f, 0.10f, 0.60f);
                     TargetFleetSize = Math.Max(45, (int)Jitter(60, 0.15f));
-                    LeaderHuntTendency = 0.35f;
+                    LeaderHuntTendency = Math.Clamp(Jitter(0.58f, 0.12f), 0.42f, 0.74f);
                     SafeDistance = Jitter(620f, 0.1f);
+                    PursuitDistance = Jitter(450f, 0.1f);
                     break;
 
                 case "balanced":
                 default:
                     EngageAdvantageRatio = Jitter(1.5f, 0.1f);
-                    RetreatThreshold = 0.45f;
+                    RetreatThreshold = Math.Clamp(baseRetreatThreshold, 0.11f, 0.62f);
                     SafeDistance = Jitter(550f, 0.1f);
                     PursuitDistance = Jitter(400f, 0.1f);
-                    LeaderHuntTendency = Math.Clamp(Jitter(0.50f, 0.15f), 0.25f, 0.75f);
+                    LeaderHuntTendency = Math.Clamp(Jitter(0.68f, 0.12f), 0.52f, 0.84f);
                     break;
+            }
+
+            // Rare individual lone-wolf exception (~6% of non-KingHunter bots mostly ignore the leader)
+            if (!isKingHunter && rand.NextDouble() < 0.06)
+            {
+                LeaderHuntTendency = 0.08f + (float)rand.NextDouble() * 0.14f;
             }
         }
     }
