@@ -262,9 +262,8 @@ namespace Game.Robots.Strategies
                 moveDir = new Vector2(1f, 0f);
             }
 
-            // Smoothly blend combat kiting with safest multi-threat breakout corridor as retreat/surround pressure rises
-            float combinedEscape = MathF.Max(threats.RetreatPressure, threats.SurroundPressure);
-            float escapeBlend = SmoothStep(0.30f, 0.90f, combinedEscape);
+            // Smoothly blend combat kiting with safest breakout corridor ONLY when down to 1-2 ships (extreme survival)
+            float escapeBlend = SmoothStep(0.30f, 0.90f, threats.RetreatPressure);
             if (escapeBlend > 0.01f && threats.SafestBreakoutDir != Vector2.Zero)
             {
                 Vector2 blended = Vector2.Lerp(moveDir, threats.SafestBreakoutDir, escapeBlend);
@@ -340,7 +339,6 @@ namespace Game.Robots.Strategies
         {
             var result = new ThreatAssessment();
 
-            float worstRatio = float.MaxValue;
             int maxThreatShips = 0;
             int nearbyCount = 0;
             int totalThreatShips = 0;
@@ -357,10 +355,6 @@ namespace Game.Robots.Strategies
                 if (dist > 950f || dist < 1f) continue;
 
                 float ratio = (float)myShips / Math.Max(1, enemy.ShipCount);
-                if (ratio < worstRatio)
-                {
-                    worstRatio = ratio;
-                }
                 if (enemy.ShipCount > maxThreatShips)
                 {
                     maxThreatShips = enemy.ShipCount;
@@ -388,28 +382,19 @@ namespace Game.Robots.Strategies
 
             result.NearbyThreatCount = nearbyCount;
 
-            // 1. Outnumbered pressure: smoothly scales from 0 at safe ratio to 1 when deeply outgunned
-            if (worstRatio < float.MaxValue)
-            {
-                float upperRatio = bot.Parameters.RetreatThreshold * 1.15f;
-                float lowerRatio = Math.Max(0.03f, bot.Parameters.RetreatThreshold * 0.40f);
-                result.OutnumberedPressure = Math.Clamp(
-                    (upperRatio - worstRatio) / Math.Max(0.05f, upperRatio - lowerRatio),
-                    0f,
-                    1f);
-            }
-
-            // 2. Single-ship survival pressure: even pro bots escape when down to 1 ship against real danger
+            // 1. Outnumbered / extreme survival pressure: restricted to extreme cases (1-2 ships)
             if (myShips == 1 && (maxThreatShips >= 3 || nearbyCount >= 2))
             {
-                result.SingleShipPressure = Math.Clamp(0.82f + 0.18f * MathF.Min(1f, maxThreatShips / 12f), 0f, 1f);
+                result.SingleShipPressure = Math.Clamp(0.85f + 0.15f * MathF.Min(1f, maxThreatShips / 10f), 0f, 1f);
             }
-            else if (myShips == 2 && maxThreatShips >= 6)
+            else if (myShips == 2 && (maxThreatShips >= 8 || nearbyCount >= 2))
             {
-                result.SingleShipPressure = (1.0f - bot.Parameters.SkillLevel * 0.5f) * 0.65f;
+                result.SingleShipPressure = Math.Clamp(0.55f + 0.30f * (1.0f - bot.Parameters.SkillLevel * 0.5f), 0.45f, 0.85f);
             }
 
-            // 3. Surround / multi-player dogpile pressure (gated by collective hostile mass relative to ours)
+            result.OutnumberedPressure = result.SingleShipPressure;
+
+            // 2. Surround / multi-player dogpile pressure (drives defensive breakout dashing, not passive fleeing)
             if (nearbyCount >= 2 && weightSum > 1e-4f)
             {
                 float collectiveRatio = (float)totalThreatShips / Math.Max(1, myShips);
@@ -430,10 +415,8 @@ namespace Game.Robots.Strategies
                 }
             }
 
-            result.RetreatPressure = Math.Clamp(
-                MathF.Max(result.OutnumberedPressure, MathF.Max(result.SingleShipPressure, result.SurroundPressure * 0.90f)),
-                0f,
-                1f);
+            // Restrict continuous retreat steering to extreme 1-2 ship survival situations
+            result.RetreatPressure = result.SingleShipPressure;
 
             result.SafestBreakoutDir = ComputeSafestBreakoutDirection(bot, myCenter, myMomentum);
             return result;
@@ -781,7 +764,8 @@ namespace Game.Robots.Strategies
                 bestItem.Momentum,
                 flightDir,
                 usePredictiveLead: true,
-                extraAngleTolerance: 0.08f);
+                extraAngleTolerance: 0.08f,
+                enforceOffAxisGate: true);
         }
 
         private static bool IsDashDestinationSafe(HumanoidBot bot, Vector2 projectedPos)

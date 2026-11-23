@@ -32,7 +32,8 @@ namespace Game.Robots.Framework
             Vector2 flightDirection,
             bool usePredictiveLead = true,
             float extraAngleTolerance = 0f,
-            bool requireStrictAlignment = false)
+            bool requireStrictAlignment = false,
+            bool enforceOffAxisGate = false)
         {
             if (bot == null)
                 return false;
@@ -68,10 +69,10 @@ namespace Game.Robots.Framework
                 return false;
             }
 
-            // Smoothly gate off-axis shots by SkillLevel / MaxOffAxisShotAngle:
-            // Low-skill bots only fire near their flight direction; advanced bots can flick up to 180 deg.
+            // Smoothly gate opportunistic off-axis shots (e.g. trailing abandoned ships / escape food)
+            // when requested, while never blocking combat enemies from turning and shooting.
             float maxOffAxis = bot.Parameters.MaxOffAxisShotAngle;
-            if (maxOffAxis < MathF.PI - 0.02f && flightDirection.LengthSquared() > 1e-4f
+            if (enforceOffAxisGate && maxOffAxis < MathF.PI - 0.02f && flightDirection.LengthSquared() > 1e-4f
                 && float.IsFinite(flightDirection.X) && float.IsFinite(flightDirection.Y))
             {
                 float flightAngle = MathF.Atan2(flightDirection.Y, flightDirection.X);
@@ -117,10 +118,11 @@ namespace Game.Robots.Framework
                 ? MathF.Atan2(aimRelY, aimRelX)
                 : currentAngle;
             float sweepFraction = MathF.Abs(WrapAngle(desiredAngle - currentAngle)) / MathF.PI;
+            float speedCompensation = 1.0f / Math.Clamp(bot.Parameters.FlickAimSpeed, 0.25f, 1.0f);
             long maxFlickWait = Math.Clamp(
-                (long)(bot.Parameters.ReactionLatencyMs * (0.45f + 0.35f * sweepFraction) + 60f),
-                90L,
-                220L);
+                (long)((bot.Parameters.ReactionLatencyMs * (0.45f + 0.35f * sweepFraction) + 60f) * MathF.Min(1.6f, speedCompensation)),
+                120L,
+                320L);
 
             if (flickDuration > maxFlickWait)
             {

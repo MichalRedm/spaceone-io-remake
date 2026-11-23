@@ -425,7 +425,8 @@ namespace Game.Robots.Strategies
                 clusterPos,
                 clusterVel,
                 flightDir,
-                usePredictiveLead: true);
+                usePredictiveLead: true,
+                enforceOffAxisGate: true);
         }
     }
 }
