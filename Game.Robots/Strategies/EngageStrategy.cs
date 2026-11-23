@@ -1,24 +1,69 @@
 namespace Game.Robots.Strategies
 {
+    using Game.API.Client;
     using Game.Robots.Framework;
     using System;
-    using System.Linq;
     using System.Numerics;
 
+    /// <summary>
+    /// Unified combat, kiting, bullet-dodging, multi-threat surround breakout,
+    /// and smooth disengagement strategy.
+    /// </summary>
     public class EngageStrategy : IStrategy
     {
+        private const int RayCount = 16;
+        private static readonly Vector2[] BreakoutRays = CreateRays(RayCount);
+
         private uint _targetFleetId = 0;
+
+        private float _orbitSign = 0f;
+        private long _lastOrbitDecisionTime = 0;
+        private long _nextBulletScanTime = 0;
+
+        private Vector2 _activeDodgeImpulse = Vector2.Zero;
+        private float _activeDodgeThreatDist = float.MaxValue;
+        private int _activeDodgeBulletCount = 0;
+        private long _activeDodgeStartTime = 0;
+        private long _activeDodgeUntil = 0;
+
+        private long _lastDefensiveDashTime = 0;
+        private long _lastOffensiveDashTime = 0;
+        private long _activeDashUntil = 0;
+        private Vector2 _activeDashTarget = Vector2.Zero;
+
+        private struct ThreatAssessment
+        {
+            public float OutnumberedPressure;
+            public float SingleShipPressure;
+            public float SurroundPressure;
+            public float RetreatPressure;
+            public int NearbyThreatCount;
+            public Vector2 SafestBreakoutDir;
+        }
+
+        private static Vector2[] CreateRays(int count)
+        {
+            var rays = new Vector2[count];
+            float step = (MathF.PI * 2f) / count;
+            for (int i = 0; i < count; i++)
+            {
+                float angle = i * step;
+                rays[i] = new Vector2(MathF.Cos(angle), MathF.Sin(angle));
+            }
+            return rays;
+        }
 
         public float EvaluateUtility(HumanoidBot bot)
         {
             var myFleet = bot.SensorFleets.MyFleet;
             if (myFleet == null || myFleet.Ships.Count == 0) return -1f;
 
+            int myShips = myFleet.Ships.Count;
             TrackedEnemy bestEnemy = null;
             float maxUtility = -1f;
             float hysteresis = 0.2f * bot.Parameters.EngageUtilityMultiplier;
+            int nearbyThreatCount = 0;
 
-            // Evaluate both directly visible and tracked off-screen enemies
             foreach (var enemy in bot.OffScreenTracker.TrackedEnemies)
             {
                 if (enemy.Certainty <= 0.05f) continue;
@@ -26,30 +71,31 @@ namespace Game.Robots.Strategies
                 float distance = Vector2.Distance(myFleet.Center, enemy.EstimatedPosition);
                 if (distance > 1500f) continue;
 
-                // Unified combat utility scaled by certainty (1.0 = visible, decaying = off-screen)
-                float distanceUtility = 1.0f - (distance / 1500f);
-                
-                float ratio = (float)myFleet.Ships.Count / Math.Max(1, enemy.ShipCount);
-                float urgencyBonus = 0f;
-                if (ratio < 0.6f) urgencyBonus = 0.2f; // Threat!
-                else if (ratio > 1.5f) urgencyBonus = 0.2f; // Prey!
+                float ratio = (float)myShips / Math.Max(1, enemy.ShipCount);
+                if (distance < 950f && ratio < 1.15f)
+                {
+                    nearbyThreatCount++;
+                }
 
-                // King Hunt Bonus: Focus on the leader if hunting
+                float distanceUtility = 1.0f - (distance / 1500f);
+
+                float urgencyBonus = 0f;
+                if (ratio < 0.7f) urgencyBonus = 0.25f;
+                else if (ratio > 1.5f) urgencyBonus = 0.2f;
+
+                if (myShips == 1 && distance < 950f && enemy.ShipCount >= 2)
+                {
+                    urgencyBonus += 0.45f;
+                }
+
                 float leaderBonus = 0f;
                 if (bot.LeaderFleetID.HasValue && enemy.FleetID == bot.LeaderFleetID.Value)
                 {
                     leaderBonus = 0.35f * bot.Parameters.LeaderHuntTendency;
                 }
-                
+
                 float utility = (distanceUtility + urgencyBonus + leaderBonus) * bot.Parameters.EngageUtilityMultiplier * enemy.Certainty;
 
-                // If outmatched beyond retreat threshold, defer combat to EscapeStrategy
-                if (ratio < bot.Parameters.RetreatThreshold)
-                {
-                    utility *= 0.3f;
-                }
-
-                // Apply target lock hysteresis to prevent rapid switching between equal targets
                 if (_targetFleetId != 0 && enemy.FleetID == _targetFleetId)
                 {
                     utility += hysteresis;
@@ -62,24 +108,43 @@ namespace Game.Robots.Strategies
                 }
             }
 
-            // Also activate EngageStrategy purely for bullet dodging even if no enemies are close
-            // (Only for bots that actually notice and dodge bullets!)
-            if (bot.Parameters.BulletDodgeSkill > 0.15f)
+            if (nearbyThreatCount >= 2 && maxUtility > 0f)
+            {
+                maxUtility += 0.25f * bot.Parameters.EngageUtilityMultiplier;
+            }
+
+            // Activate combat/dodging when enemy bullets are inbound even if shooter is not close
+            if (bot.Parameters.BulletDodgeSkill > 0.12f)
             {
                 var bullets = bot.SensorBullets.VisibleBullets;
-                bool hasIncomingBullets = bullets.Any(b => 
-                    b.Group?.Owner != myFleet.ID && 
-                    Vector2.Distance(b.Position, myFleet.Center) < 800f &&
-                    Vector2.Dot(b.Momentum, myFleet.Center - b.Position) > 0);
-                
+                bool hasIncomingBullets = false;
+                for (int i = 0; i < bullets.Count; i++)
+                {
+                    var b = bullets[i];
+                    if (b.Group?.Owner != myFleet.ID
+                        && Vector2.Distance(b.Position, myFleet.Center) < 800f
+                        && Vector2.Dot(b.Momentum, myFleet.Center - b.Position) > 0f)
+                    {
+                        hasIncomingBullets = true;
+                        break;
+                    }
+                }
+
                 if (hasIncomingBullets && maxUtility < bot.Parameters.EngageUtilityMultiplier)
                 {
-                    maxUtility = bot.Parameters.EngageUtilityMultiplier * 1.5f; // Prioritize combat/dodging movement
+                    maxUtility = bot.Parameters.EngageUtilityMultiplier * 1.5f;
                     if (bestEnemy == null)
                     {
-                        bestEnemy = bot.OffScreenTracker.TrackedEnemies
-                            .OrderBy(e => Vector2.Distance(e.EstimatedPosition, myFleet.Center))
-                            .FirstOrDefault();
+                        float closestDistSq = float.MaxValue;
+                        foreach (var enemy in bot.OffScreenTracker.TrackedEnemies)
+                        {
+                            float dSq = Vector2.DistanceSquared(enemy.EstimatedPosition, myFleet.Center);
+                            if (dSq < closestDistSq)
+                            {
+                                closestDistSq = dSq;
+                                bestEnemy = enemy;
+                            }
+                        }
                     }
                 }
             }
@@ -87,19 +152,6 @@ namespace Game.Robots.Strategies
             _targetFleetId = bestEnemy?.FleetID ?? 0;
             return maxUtility;
         }
-
-        private long _flickStartTime = 0;
-        private long _lastShotTime = 0;
-
-        private float _orbitSign = 0f;
-        private long _lastOrbitDecisionTime = 0;
-        private long _nextBulletScanTime = 0;
-        private Vector2 _activeDodgeImpulse = Vector2.Zero;
-        private long _activeDodgeStartTime = 0;
-        private long _activeDodgeUntil = 0;
-        private long _lastDefensiveDashTime = 0;
-        private long _flashDashUntil = 0;
-        private Vector2 _flashDashTarget = Vector2.Zero;
 
         public void Execute(HumanoidBot bot)
         {
@@ -111,285 +163,609 @@ namespace Game.Robots.Strategies
                 _orbitSign = (bot.FleetID % 2 == 0) ? 1.0f : -1.0f;
             }
 
+            int myShips = myFleet.Ships.Count;
             TrackedEnemy target = _targetFleetId != 0 ? bot.OffScreenTracker.Get(_targetFleetId) : null;
             float distance = target != null ? Vector2.Distance(myFleet.Center, target.EstimatedPosition) : float.MaxValue;
 
-            Vector2 predictedPosition = Vector2.Zero;
+            // 1. MULTI-THREAT & SURROUND ASSESSMENT + 16-RAY BREAKOUT CORRIDOR
+            ThreatAssessment threats = AssessThreats(bot, myFleet.Center, myFleet.Momentum, myShips);
+
+            // 2. BULLET SCANNING & PERSISTENT PERCEPTION STATE
+            ScanIncomingBullets(bot, myFleet.ID, myFleet.Center, myFleet.Momentum, threats.SafestBreakoutDir);
+            bool isDodging = bot.GameTime >= _activeDodgeStartTime
+                && bot.GameTime < _activeDodgeUntil
+                && _activeDodgeImpulse != Vector2.Zero;
+
+            // 3. UNIFIED MUTUALLY-EXCLUSIVE DASH STATE MACHINE
+            bool isDashing = HandleDashes(bot, myFleet.Center, myShips, target, distance, threats, isDodging);
+
+            // 4. UNIFIED AIMING & SHOOTING (DELEGATED TO AimAndShootController)
+            bool isAiming = false;
+            Vector2 flightDir = myFleet.Momentum.LengthSquared() > 1e-4f
+                ? Vector2.Normalize(myFleet.Momentum)
+                : bot.Cursor.CurrentRelativePosition;
+
+            if (!isDashing && target != null)
+            {
+                isAiming = bot.AimController.TryAimAndShoot(
+                    bot,
+                    target.EstimatedPosition,
+                    target.EstimatedVelocity,
+                    flightDir,
+                    usePredictiveLead: true);
+            }
+
+            // While heavily retreating, opportunistically shoot abandoned ships or food in forward escape cone
+            if (!isDashing && !isAiming && threats.RetreatPressure > 0.65f && bot.CanShoot)
+            {
+                isAiming = TryShootEscapeCorridorFood(bot, myFleet.Center, threats.SafestBreakoutDir, flightDir);
+            }
+
+            if (isDashing || isAiming)
+            {
+                return;
+            }
+
+            // 5. CONTINUOUS MANEUVER, KITING & SMOOTH DISENGAGEMENT STEERING
+            Vector2 moveDir = Vector2.Zero;
+
             if (target != null)
             {
-                // Compute human-like aim point (kinematic interception for pros, direct at enemy + jitter for noobs)
-                predictedPosition = bot.ComputeHumanAimPoint(target.EstimatedPosition, target.EstimatedVelocity);
-            }
+                float ratio = (float)myShips / Math.Max(1, target.ShipCount);
+                Vector2 toEnemy = target.EstimatedPosition - myFleet.Center;
 
-            // 1. BULLET SCANNING & PERCEPTION CHECK:
-            // Humans periodically scan for incoming fire (perception check).
-            // Stronger players notice incoming fire with high reliability and react with fast latency and tight angles.
-            // Dodge Commitment: do not re-scan or interrupt if already committed to an active dodge maneuver.
-            float threateningBulletDist = float.MaxValue;
-            bool isCommittedToDodge = bot.GameTime < _activeDodgeUntil;
-
-            if (!isCommittedToDodge && bot.GameTime >= _nextBulletScanTime)
-            {
-                _nextBulletScanTime = bot.GameTime + 120; // Visual scan interval ~120ms
-
-                var bullets = bot.SensorBullets.VisibleBullets;
-                Game.API.Client.Body mostThreateningBullet = null;
-
-                foreach (var b in bullets)
+                if (toEnemy.LengthSquared() > 1e-4f)
                 {
-                    if (b.Group?.Owner == myFleet.ID) continue;
-                    var toBullet = b.Position - myFleet.Center;
-                    float dist = toBullet.Length();
-
-                    if (dist < 800f && Vector2.Dot(b.Momentum, -toBullet) > 0) // Bullet incoming towards fleet
+                    if (distance < 700f && (bot.GameTime - _lastOrbitDecisionTime > 1800))
                     {
-                        if (dist < threateningBulletDist)
+                        _lastOrbitDecisionTime = bot.GameTime;
+                        float flipChance = Math.Clamp(0.25f + 0.35f * (1.0f - bot.Parameters.SkillLevel), 0.15f, 0.60f);
+                        if (Random.Shared.NextDouble() < flipChance)
                         {
-                            threateningBulletDist = dist;
-                            mostThreateningBullet = b;
+                            _orbitSign = -_orbitSign;
                         }
                     }
-                }
 
-                if (mostThreateningBullet != null)
-                {
-                    // Probabilistic perception check
-                    bool noticed = Random.Shared.NextDouble() < bot.Parameters.BulletDodgeProbability;
-                    if (noticed)
+                    Vector2 toEnemyDir = Vector2.Normalize(toEnemy);
+                    Vector2 perpDir = new Vector2(-toEnemyDir.Y * _orbitSign, toEnemyDir.X * _orbitSign);
+
+                    // Continuous smooth radial/tangential curve driven by KitingSkill (zero discrete jumps)
+                    float aggressiveRadial = 0.85f;
+                    float aggressiveTangent = 0.25f;
+
+                    float effectiveRetreatRatio = Math.Clamp(
+                        bot.Parameters.RetreatThreshold + 0.18f * bot.Parameters.KitingSkill,
+                        0.15f,
+                        0.75f);
+                    float tacticalRadial = Math.Clamp((ratio - effectiveRetreatRatio) * 2.0f, -1.0f, 1.0f);
+                    if (distance > bot.Parameters.PursuitDistance && tacticalRadial > -0.45f && threats.RetreatPressure < 0.35f)
                     {
-                        var toBullet = mostThreateningBullet.Position - myFleet.Center;
-                        var perpB = Vector2.Normalize(new Vector2(-mostThreateningBullet.Momentum.Y, mostThreateningBullet.Momentum.X));
-
-                        // Hysteresis & Momentum Alignment:
-                        // If the fleet already has momentum, dodge along existing movement to avoid jarring 180-degree reversals.
-                        if (myFleet.Momentum.LengthSquared() > 0.05f)
-                        {
-                            if (Vector2.Dot(perpB, myFleet.Momentum) < 0)
-                            {
-                                perpB = -perpB;
-                            }
-                        }
-                        else
-                        {
-                            // If stationary, break symmetry consistently using cross-track offset
-                            if (Vector2.Dot(perpB, -toBullet) < 0)
-                            {
-                                perpB = -perpB;
-                            }
-                        }
-
-                        // Apply human angular error in dodge direction
-                        if (bot.Parameters.BulletDodgeAngularError > 0.01f)
-                        {
-                            float errAngle = (float)(Random.Shared.NextDouble() * 2.0 - 1.0) * bot.Parameters.BulletDodgeAngularError;
-                            float cos = MathF.Cos(errAngle);
-                            float sin = MathF.Sin(errAngle);
-                            perpB = new Vector2(perpB.X * cos - perpB.Y * sin, perpB.X * sin + perpB.Y * cos);
-                        }
-
-                        // Dodge strength scales up with skill level: 5.5 (noobs) to 9.5 (pros)
-                        float dodgeStrength = 5.5f + 4.0f * bot.Parameters.BulletDodgeSkill;
-                        float weight = Math.Clamp(1.0f - (threateningBulletDist / 800f), 0.25f, 1.0f);
-                        _activeDodgeImpulse = perpB * (weight * weight * dodgeStrength);
-                        
-                        // Stronger players react much faster:
-                        long latency = (long)(bot.Parameters.ReactionLatencyMs * (0.60f - 0.25f * bot.Parameters.SkillLevel));
-                        _activeDodgeStartTime = bot.GameTime + Math.Max(35, latency);
-                        _activeDodgeUntil = _activeDodgeStartTime + 350; // Committed evasion burst duration (~350ms)
-                        _nextBulletScanTime = _activeDodgeUntil + 120; // Refractory period before scanning for next dodge
+                        tacticalRadial = Math.Max(tacticalRadial, 0.58f);
                     }
+                    float tacticalTangent = (1.0f - MathF.Abs(tacticalRadial)) * 0.90f;
+
+                    float kitingSkill = bot.Parameters.KitingSkill;
+                    float radialWeight = aggressiveRadial + (tacticalRadial - aggressiveRadial) * kitingSkill;
+                    float tangentialWeight = aggressiveTangent + (tacticalTangent - aggressiveTangent) * kitingSkill;
+
+                    Vector2 combatDir = toEnemyDir * radialWeight + perpDir * tangentialWeight;
+                    moveDir = combatDir.LengthSquared() > 1e-5f ? Vector2.Normalize(combatDir) : perpDir;
                 }
             }
-
-            bool isDodging = bot.GameTime >= _activeDodgeStartTime && bot.GameTime < _activeDodgeUntil && _activeDodgeImpulse != Vector2.Zero;
-
-            // 2. DEFENSIVE DASH AGAINST INCOMING FIRE (FLASH DODGE):
-            // Stronger players (SkillLevel >= 0.35) execute a quick boost sideways to flash-dodge lethal volleys
-            bool canDefensiveDash = bot.CanBoost 
-                && bot.Parameters.DefensiveDashEnabled
-                && bot.Parameters.SkillLevel >= 0.35f
-                && (bot.GameTime - _lastDefensiveDashTime > 1200)
-                && myFleet.Ships.Count >= bot.Parameters.MinimumShipsToDefensiveDash;
-
-            if (isDodging && canDefensiveDash && threateningBulletDist < 450f && bot.GameTime >= _flashDashUntil)
+            else if (threats.SafestBreakoutDir != Vector2.Zero)
             {
-                bool hesitates = bot.Parameters.BoostHesitancy > 0.001f && (Random.Shared.NextDouble() < bot.Parameters.BoostHesitancy);
-                if (!hesitates)
-                {
-                    var dodgeVector = Vector2.Normalize(_activeDodgeImpulse);
-                    var projectedPos = myFleet.Center + dodgeVector * 650f;
-                    bool isDashSafe = MathF.Abs(projectedPos.X) < bot.EffectiveWorldSize - 350f 
-                                   && MathF.Abs(projectedPos.Y) < bot.EffectiveWorldSize - 350f;
-
-                    if (isDashSafe)
-                    {
-                        _flashDashTarget = projectedPos;
-                        _flashDashUntil = bot.GameTime + 220; // Committed window to flick and boost
-                    }
-                }
-            }
-
-            bool isFlashDashing = bot.GameTime < _flashDashUntil && _flashDashTarget != Vector2.Zero;
-            if (isFlashDashing)
-            {
-                bot.Cursor.SetTarget(_flashDashTarget, speed: bot.Parameters.FlickAimSpeed);
-                if (bot.CanBoost && (bot.Cursor.IsAimedAt(_flashDashTarget, 0.45f) || (bot.GameTime - (_flashDashUntil - 220) > 120)))
-                {
-                    bot.Boost();
-                    _lastDefensiveDashTime = bot.GameTime;
-                    _flashDashUntil = 0;
-                    _flashDashTarget = Vector2.Zero;
-                    isFlashDashing = false;
-                }
-            }
-
-            // 3. OFFENSIVE DASH (KILLER INSTINCT):
-            // Only players with offensive dash enabled (intermediate/pro) execute aggressive forward dashes
-            bool canOffensiveDash = bot.CanBoost 
-                && bot.Parameters.OffensiveDashEnabled
-                && myFleet.Ships.Count >= bot.Parameters.MinimumShipsToOffensiveDash;
-
-            if (target != null && canOffensiveDash && target.Certainty > 0.7f && distance > 180f && distance < 950f)
-            {
-                // Check boost hesitancy
-                bool hesitates = bot.Parameters.BoostHesitancy > 0.001f && (Random.Shared.NextDouble() < bot.Parameters.BoostHesitancy);
-                if (!hesitates)
-                {
-                    bool isSmallEnemy = target.ShipCount <= 5;
-                    bool hasDecisiveAdvantage = myFleet.Ships.Count >= target.ShipCount * 1.2f;
-                    bool isEnemyFleeing = Vector2.Dot(target.EstimatedVelocity, target.EstimatedPosition - myFleet.Center) > 0;
-
-                    // Ensure the dash won't propel us out of the arena into the danger zone
-                    var toEnemy = Vector2.Normalize(target.EstimatedPosition - myFleet.Center);
-                    var projectedPos = myFleet.Center + toEnemy * 700f;
-                    bool isDashSafe = MathF.Abs(projectedPos.X) < bot.EffectiveWorldSize - 350f 
-                                   && MathF.Abs(projectedPos.Y) < bot.EffectiveWorldSize - 350f;
-
-                    if (isDashSafe && (isSmallEnemy || hasDecisiveAdvantage || (isEnemyFleeing && myFleet.Ships.Count >= 4)))
-                    {
-                        bot.Cursor.SetTarget(predictedPosition, speed: bot.Parameters.FlickAimSpeed);
-                        if (bot.Cursor.IsAimedAt(predictedPosition, bot.Parameters.FiringAngleTolerance))
-                        {
-                            bot.Boost();
-                        }
-                    }
-                }
-            }
-
-            // 4. AIMING & SHOOTING PHASE:
-            // When shot is almost ready (CooldownShoot <= 0.15f) or ready (CanShoot), move mouse onto opponent
-            bool isAimingToShoot = target != null 
-                && !isFlashDashing 
-                && (bot.CanShoot || bot.CooldownShoot <= 0.15f || (bot.GameTime - _lastShotTime < 40));
-
-            if (isAimingToShoot)
-            {
-                if (_flickStartTime == 0)
-                {
-                    _flickStartTime = bot.GameTime;
-                }
-
-                Vector2 aimTarget = predictedPosition;
-
-                // Cursor tracking speed (snappy wrist flick for pros, slower tracking for noobs)
-                bot.Cursor.SetTarget(aimTarget, speed: bot.Parameters.FlickAimSpeed);
-
-                long flickDuration = bot.GameTime - _flickStartTime;
-                long maxFlickWait = Math.Max(60, (long)(bot.Parameters.ReactionLatencyMs * 0.6f));
-
-                // Fire when crosshair aligns on target (using skill-scaled angle tolerance) or max wait elapsed
-                if (bot.CanShoot && (bot.Cursor.IsAimedAt(predictedPosition, bot.Parameters.FiringAngleTolerance) || flickDuration > maxFlickWait))
-                {
-                    bot.ShootAt(predictedPosition);
-                    _lastShotTime = bot.GameTime;
-                }
+                moveDir = threats.SafestBreakoutDir;
             }
             else
             {
-                // 5. MANEUVER & PURSUIT PHASE:
-                _flickStartTime = 0;
+                moveDir = new Vector2(1f, 0f);
+            }
 
-                Vector2 moveDir = new Vector2(1, 0);
-                
-                if (target != null)
+            // Smoothly blend combat kiting with safest multi-threat breakout corridor as retreat/surround pressure rises
+            float combinedEscape = MathF.Max(threats.RetreatPressure, threats.SurroundPressure);
+            float escapeBlend = SmoothStep(0.15f, 0.85f, combinedEscape);
+            if (escapeBlend > 0.01f && threats.SafestBreakoutDir != Vector2.Zero)
+            {
+                Vector2 blended = Vector2.Lerp(moveDir, threats.SafestBreakoutDir, escapeBlend);
+                if (blended.LengthSquared() > 1e-5f)
                 {
-                    float ratio = (float)myFleet.Ships.Count / Math.Max(1, target.ShipCount);
-                    var toEnemy = target.EstimatedPosition - myFleet.Center;
-                    if (toEnemy != Vector2.Zero)
+                    moveDir = Vector2.Normalize(blended);
+                }
+            }
+
+            // Apply organic steering noise to break lockstep symmetry
+            if (bot.Parameters.SteeringNoiseAmplitude > 0.01f && moveDir.LengthSquared() > 1e-5f)
+            {
+                float noiseTime = bot.GameTime * 0.003f + (bot.FleetID * 19.17f);
+                float wanderAngle = (MathF.Sin(noiseTime) + MathF.Sin(noiseTime * 2.3f) * 0.5f) * bot.Parameters.SteeringNoiseAmplitude;
+                float cos = MathF.Cos(wanderAngle);
+                float sin = MathF.Sin(wanderAngle);
+                moveDir = new Vector2(moveDir.X * cos - moveDir.Y * sin, moveDir.X * sin + moveDir.Y * cos);
+            }
+
+            // Apply active bullet dodge impulse with smooth sinusoidal bell-curve envelope
+            if (isDodging)
+            {
+                float duration = Math.Max(1f, _activeDodgeUntil - _activeDodgeStartTime);
+                float progress = Math.Clamp((float)(bot.GameTime - _activeDodgeStartTime) / duration, 0f, 1f);
+                float envelope = MathF.Sin(progress * MathF.PI);
+                Vector2 dodged = moveDir + _activeDodgeImpulse * envelope;
+                if (dodged.LengthSquared() > 1e-5f)
+                {
+                    moveDir = Vector2.Normalize(dodged);
+                }
+            }
+
+            // Blend with arena danger zone repulsion
+            Vector2 repulsion = bot.GetDangerZoneRepulsion();
+            if (repulsion != Vector2.Zero)
+            {
+                Vector2 repulsed = moveDir * 0.5f + Vector2.Normalize(repulsion) * 1.0f;
+                if (repulsed.LengthSquared() > 1e-5f)
+                {
+                    moveDir = Vector2.Normalize(repulsed);
+                }
+            }
+
+            if (moveDir.LengthSquared() < 1e-5f || float.IsNaN(moveDir.X) || float.IsNaN(moveDir.Y))
+            {
+                moveDir = new Vector2(1f, 0f);
+            }
+
+            var moveTarget = bot.ClampToSafePlayableArea(myFleet.Center + moveDir * 600f);
+            bot.Cursor.SetTarget(moveTarget, speed: bot.Parameters.CruisingSpeed);
+        }
+
+        private ThreatAssessment AssessThreats(HumanoidBot bot, Vector2 myCenter, Vector2 myMomentum, int myShips)
+        {
+            var result = new ThreatAssessment();
+
+            float worstRatio = float.MaxValue;
+            int maxThreatShips = 0;
+            int nearbyCount = 0;
+            int totalThreatShips = 0;
+            Vector2 weightedThreatVecSum = Vector2.Zero;
+            float weightSum = 0f;
+            float closingWeightSum = 0f;
+
+            foreach (var enemy in bot.OffScreenTracker.TrackedEnemies)
+            {
+                if (enemy.Certainty <= 0.10f) continue;
+
+                Vector2 toEnemy = enemy.EstimatedPosition - myCenter;
+                float dist = toEnemy.Length();
+                if (dist > 950f || dist < 1f) continue;
+
+                float ratio = (float)myShips / Math.Max(1, enemy.ShipCount);
+                if (ratio < worstRatio)
+                {
+                    worstRatio = ratio;
+                }
+                if (enemy.ShipCount > maxThreatShips)
+                {
+                    maxThreatShips = enemy.ShipCount;
+                }
+
+                // Count meaningful threats within engagement/pinch radius
+                if (ratio < 1.35f || enemy.ShipCount >= 3)
+                {
+                    nearbyCount++;
+                    totalThreatShips += enemy.ShipCount;
+
+                    float prox = 1.0f - (dist / 950f);
+                    float w = (0.35f + 0.65f * prox) * enemy.Certainty;
+                    Vector2 dir = toEnemy / dist;
+                    weightedThreatVecSum += dir * w;
+                    weightSum += w;
+
+                    // Extra urgency when threat is actively closing in on us
+                    if (Vector2.Dot(enemy.EstimatedVelocity, -dir) > 0.05f)
                     {
-                        // Symmetry breaking: dynamically select and periodically reverse orbit direction in close combat
-                        if (distance < 700f && (bot.GameTime - _lastOrbitDecisionTime > 1800))
+                        closingWeightSum += w;
+                    }
+                }
+            }
+
+            result.NearbyThreatCount = nearbyCount;
+
+            // 1. Outnumbered pressure: smoothly scales from 0 at safe ratio to 1 when deeply outgunned
+            if (worstRatio < float.MaxValue)
+            {
+                float upperRatio = bot.Parameters.RetreatThreshold * 1.35f;
+                float lowerRatio = Math.Max(0.04f, bot.Parameters.RetreatThreshold * 0.45f);
+                result.OutnumberedPressure = Math.Clamp(
+                    (upperRatio - worstRatio) / Math.Max(0.05f, upperRatio - lowerRatio),
+                    0f,
+                    1f);
+            }
+
+            // 2. Single-ship survival pressure: even pro bots escape when down to 1 ship against real danger
+            if (myShips == 1 && (maxThreatShips >= 3 || nearbyCount >= 2))
+            {
+                result.SingleShipPressure = Math.Clamp(0.82f + 0.18f * MathF.Min(1f, maxThreatShips / 12f), 0f, 1f);
+            }
+            else if (myShips == 2 && maxThreatShips >= 6)
+            {
+                result.SingleShipPressure = (1.0f - bot.Parameters.SkillLevel * 0.5f) * 0.65f;
+            }
+
+            // 3. Surround / multi-player dogpile pressure
+            if (nearbyCount >= 2 && weightSum > 1e-4f)
+            {
+                float angularSpread = 1.0f - Math.Clamp(weightedThreatVecSum.Length() / weightSum, 0f, 1f);
+                float massRatio = Math.Clamp((float)totalThreatShips / Math.Max(1, myShips), 0f, 4f) / 4f;
+                float closingFactor = Math.Clamp(closingWeightSum / weightSum, 0f, 1f);
+                float countFactor = Math.Clamp((nearbyCount - 1) / 3f, 0.25f, 1f);
+
+                float rawSurround = countFactor * (0.45f + 0.35f * angularSpread + 0.20f * closingFactor)
+                    + 0.25f * massRatio;
+
+                if (bot.IsLeader)
+                {
+                    rawSurround *= 1.30f;
+                }
+
+                result.SurroundPressure = Math.Clamp(rawSurround, 0f, 1f);
+            }
+
+            result.RetreatPressure = Math.Clamp(
+                MathF.Max(result.OutnumberedPressure, MathF.Max(result.SingleShipPressure, result.SurroundPressure * 0.90f)),
+                0f,
+                1f);
+
+            result.SafestBreakoutDir = ComputeSafestBreakoutDirection(bot, myCenter, myMomentum);
+            return result;
+        }
+
+        private Vector2 ComputeSafestBreakoutDirection(HumanoidBot bot, Vector2 myCenter, Vector2 myMomentum)
+        {
+            float bestScore = float.MinValue;
+            Vector2 bestRay = new Vector2(1f, 0f);
+            float safeLimit = Math.Max(150f, bot.EffectiveWorldSize - bot.Parameters.DangerZoneBuffer);
+            Vector2 momDir = myMomentum.LengthSquared() > 1e-4f ? Vector2.Normalize(myMomentum) : Vector2.Zero;
+
+            var bullets = bot.SensorBullets.VisibleBullets;
+
+            for (int r = 0; r < RayCount; r++)
+            {
+                Vector2 ray = BreakoutRays[r];
+                float score = 0f;
+
+                // Penalize directions pointing toward nearby enemies
+                foreach (var enemy in bot.OffScreenTracker.TrackedEnemies)
+                {
+                    if (enemy.Certainty <= 0.10f) continue;
+
+                    Vector2 toEnemy = enemy.EstimatedPosition - myCenter;
+                    float dist = toEnemy.Length();
+                    if (dist > 1050f || dist < 1f) continue;
+
+                    float prox = 1.0f - (dist / 1050f);
+                    float alignment = Vector2.Dot(ray, toEnemy / dist);
+                    float shipFactor = 0.6f + 0.4f * MathF.Min(1f, enemy.ShipCount / 15f);
+                    score -= MathF.Max(-0.35f, alignment) * prox * shipFactor * 2.4f;
+                }
+
+                // Penalize directions heading into incoming bullet paths
+                int bulletSamples = 0;
+                for (int bIdx = 0; bIdx < bullets.Count && bulletSamples < 24; bIdx++)
+                {
+                    var b = bullets[bIdx];
+                    Vector2 toBullet = b.Position - myCenter;
+                    float bDist = toBullet.Length();
+                    if (bDist > 750f || bDist < 1f) continue;
+                    if (Vector2.Dot(b.Momentum, -toBullet) <= 0f) continue;
+
+                    bulletSamples++;
+                    float prox = 1.0f - (bDist / 750f);
+                    float align = MathF.Max(0f, Vector2.Dot(ray, toBullet / bDist));
+                    score -= align * prox * 0.45f;
+                }
+
+                // Penalize projected out-of-bounds landings
+                Vector2 projected = myCenter + ray * 650f;
+                float overX = MathF.Max(0f, MathF.Abs(projected.X) - safeLimit);
+                float overY = MathF.Max(0f, MathF.Abs(projected.Y) - safeLimit);
+                if (overX > 0f || overY > 0f)
+                {
+                    score -= 1.8f + (overX + overY) / 400f;
+                }
+
+                // Gentle momentum continuity so turns feel human rather than erratic
+                if (momDir != Vector2.Zero)
+                {
+                    score += Vector2.Dot(ray, momDir) * 0.25f;
+                }
+
+                if (score > bestScore)
+                {
+                    bestScore = score;
+                    bestRay = ray;
+                }
+            }
+
+            return bestRay;
+        }
+
+        private void ScanIncomingBullets(
+            HumanoidBot bot,
+            uint myFleetId,
+            Vector2 myCenter,
+            Vector2 myMomentum,
+            Vector2 breakoutDir)
+        {
+            bool isCommittedToDodge = bot.GameTime < _activeDodgeUntil;
+            if (isCommittedToDodge || bot.GameTime < _nextBulletScanTime)
+            {
+                return;
+            }
+
+            _nextBulletScanTime = bot.GameTime + 120;
+
+            var bullets = bot.SensorBullets.VisibleBullets;
+            Body mostThreateningBullet = null;
+            float threateningDist = float.MaxValue;
+            int incomingCount = 0;
+
+            for (int i = 0; i < bullets.Count; i++)
+            {
+                var b = bullets[i];
+                if (b.Group?.Owner == myFleetId) continue;
+
+                Vector2 toBullet = b.Position - myCenter;
+                float dist = toBullet.Length();
+                if (dist < 800f && Vector2.Dot(b.Momentum, -toBullet) > 0f)
+                {
+                    incomingCount++;
+                    if (dist < threateningDist)
+                    {
+                        threateningDist = dist;
+                        mostThreateningBullet = b;
+                    }
+                }
+            }
+
+            if (mostThreateningBullet == null)
+            {
+                _activeDodgeThreatDist = float.MaxValue;
+                _activeDodgeBulletCount = 0;
+                return;
+            }
+
+            bool noticed = Random.Shared.NextDouble() < bot.Parameters.BulletDodgeProbability;
+            if (!noticed)
+            {
+                return;
+            }
+
+            Vector2 toThreatBullet = mostThreateningBullet.Position - myCenter;
+            Vector2 mom = mostThreateningBullet.Momentum;
+            if (mom.LengthSquared() < 1e-6f)
+            {
+                return;
+            }
+
+            Vector2 perpB = Vector2.Normalize(new Vector2(-mom.Y, mom.X));
+
+            // Prefer the perpendicular side aligned with safest breakout corridor & current momentum
+            Vector2 preferenceDir = breakoutDir * 0.7f + (myMomentum.LengthSquared() > 0.05f ? Vector2.Normalize(myMomentum) * 0.5f : Vector2.Zero);
+            if (preferenceDir.LengthSquared() > 1e-4f)
+            {
+                if (Vector2.Dot(perpB, preferenceDir) < 0f)
+                {
+                    perpB = -perpB;
+                }
+            }
+            else if (Vector2.Dot(perpB, -toThreatBullet) < 0f)
+            {
+                perpB = -perpB;
+            }
+
+            if (bot.Parameters.BulletDodgeAngularError > 0.01f)
+            {
+                float errAngle = (float)(Random.Shared.NextDouble() * 2.0 - 1.0) * bot.Parameters.BulletDodgeAngularError;
+                float cos = MathF.Cos(errAngle);
+                float sin = MathF.Sin(errAngle);
+                perpB = new Vector2(perpB.X * cos - perpB.Y * sin, perpB.X * sin + perpB.Y * cos);
+            }
+
+            float dodgeStrength = 5.5f + 4.0f * bot.Parameters.BulletDodgeSkill;
+            float weight = Math.Clamp(1.0f - (threateningDist / 800f), 0.25f, 1.0f);
+            _activeDodgeImpulse = perpB * (weight * weight * dodgeStrength);
+            _activeDodgeThreatDist = threateningDist;
+            _activeDodgeBulletCount = incomingCount;
+
+            long latency = (long)(bot.Parameters.ReactionLatencyMs * (0.60f - 0.25f * bot.Parameters.SkillLevel));
+            _activeDodgeStartTime = bot.GameTime + Math.Max(35, latency);
+            _activeDodgeUntil = _activeDodgeStartTime + 350;
+            _nextBulletScanTime = _activeDodgeUntil + 120;
+        }
+
+        private bool HandleDashes(
+            HumanoidBot bot,
+            Vector2 myCenter,
+            int myShips,
+            TrackedEnemy target,
+            float targetDistance,
+            ThreatAssessment threats,
+            bool isDodging)
+        {
+            // If already committed to a dash, keep cursor aligned until Boost() triggers or window expires
+            if (bot.GameTime < _activeDashUntil && _activeDashTarget != Vector2.Zero)
+            {
+                bot.Cursor.SetTarget(_activeDashTarget, speed: bot.Parameters.FlickAimSpeed);
+                long elapsed = bot.GameTime - (_activeDashUntil - 220);
+                if (bot.CanBoost && (bot.Cursor.IsAimedAt(_activeDashTarget, 0.42f) || elapsed > 110))
+                {
+                    Vector2 dashDir = _activeDashTarget - myCenter;
+                    bot.TriggerBoost(dashDir);
+                    _activeDashUntil = 0;
+                    _activeDashTarget = Vector2.Zero;
+                    return true;
+                }
+                return true;
+            }
+
+            _activeDashTarget = Vector2.Zero;
+            _activeDashUntil = 0;
+
+            bool canDefensiveDash = bot.CanBoost
+                && bot.Parameters.DefensiveDashEnabled
+                && myShips >= bot.Parameters.MinimumShipsToDefensiveDash
+                && (bot.GameTime - _lastDefensiveDashTime > 1200);
+
+            if (canDefensiveDash)
+            {
+                // Priority 1: Multi-threat surround / leader dogpile breakout dash
+                float surroundTrigger = 0.95f + (0.42f - 0.95f) * bot.Parameters.SurroundEscapeSkill;
+                if (threats.SurroundPressure >= surroundTrigger && threats.SafestBreakoutDir != Vector2.Zero)
+                {
+                    float commitProb = bot.Parameters.DefensiveDashSkill * (1.0f - bot.Parameters.BoostHesitancy * 0.6f);
+                    if (Random.Shared.NextDouble() < commitProb)
+                    {
+                        Vector2 projected = myCenter + threats.SafestBreakoutDir * 700f;
+                        if (IsDashDestinationSafe(bot, projected))
                         {
-                            _lastOrbitDecisionTime = bot.GameTime;
-                            float flipChance = Math.Clamp(0.25f + 0.35f * (1.0f - bot.Parameters.SkillLevel), 0.15f, 0.60f);
-                            if (Random.Shared.NextDouble() < flipChance)
-                            {
-                                _orbitSign = -_orbitSign;
-                            }
-                        }
-
-                        var perp = new Vector2(-toEnemy.Y * _orbitSign, toEnemy.X * _orbitSign); // Dynamic tangent
-
-                        float radialWeight;
-                        float tangentialWeight;
-
-                        if (bot.Parameters.SkillLevel < 0.35f)
-                        {
-                            // Beginners charge aggressively but with small tangential bias to avoid perfect linear head-ons
-                            radialWeight = 0.85f;
-                            tangentialWeight = 0.25f;
-                        }
-                        else
-                        {
-                            // Intermediate and pro players: tactical spacing and kiting based on fleet ratio
-                            float retreatThreshold = Math.Clamp(0.3f + 0.5f * bot.Parameters.SkillLevel, 0.4f, 0.85f);
-                            radialWeight = Math.Clamp((ratio - retreatThreshold) * 2.0f, -1.0f, 1.0f);
-                            tangentialWeight = 1.0f - Math.Abs(radialWeight);
-
-                            // If the enemy is too far away, add a forward bias to get into engagement range
-                            if (distance > bot.Parameters.PursuitDistance && radialWeight > -0.5f)
-                            {
-                                radialWeight = Math.Max(radialWeight, 0.6f);
-                                tangentialWeight = 1.0f - Math.Abs(radialWeight);
-                            }
-                        }
-
-                        var radialVec = Vector2.Normalize(toEnemy) * radialWeight;
-                        var tangVec = Vector2.Normalize(perp) * tangentialWeight;
-
-                        moveDir = Vector2.Normalize(radialVec + tangVec);
-
-                        // Organic steering noise: break smooth consistency and lockstep orbits
-                        if (bot.Parameters.SteeringNoiseAmplitude > 0.01f)
-                        {
-                            float noiseTime = bot.GameTime * 0.003f + (bot.FleetID * 19.17f);
-                            float wanderAngle = (MathF.Sin(noiseTime) + MathF.Sin(noiseTime * 2.3f) * 0.5f) * bot.Parameters.SteeringNoiseAmplitude;
-                            float cos = MathF.Cos(wanderAngle);
-                            float sin = MathF.Sin(wanderAngle);
-                            moveDir = new Vector2(moveDir.X * cos - moveDir.Y * sin, moveDir.X * sin + moveDir.Y * cos);
+                            _activeDashTarget = bot.ClampToSafePlayableArea(projected);
+                            _activeDashUntil = bot.GameTime + 220;
+                            _lastDefensiveDashTime = bot.GameTime;
+                            bot.Cursor.SetTarget(_activeDashTarget, speed: bot.Parameters.FlickAimSpeed);
+                            return true;
                         }
                     }
                 }
 
-                // Apply active dodge impulse with smooth sinusoidal bell-curve envelope
-                if (isDodging)
+                // Priority 2: Bullet-volley flash-dodge dash (persisted bullet threat state)
+                if (isDodging && _activeDodgeThreatDist < 480f && (_activeDodgeBulletCount >= 2 || _activeDodgeThreatDist < 340f))
                 {
-                    float duration = Math.Max(1, _activeDodgeUntil - _activeDodgeStartTime);
-                    float progress = Math.Clamp((float)(bot.GameTime - _activeDodgeStartTime) / duration, 0f, 1f);
-                    float envelope = MathF.Sin(progress * MathF.PI); // Smooth bell curve (0 -> 1 -> 0)
-                    moveDir = Vector2.Normalize(moveDir + _activeDodgeImpulse * envelope);
+                    float commitProb = bot.Parameters.DefensiveDashSkill * (1.0f - bot.Parameters.BoostHesitancy * 0.7f);
+                    if (_activeDodgeImpulse.LengthSquared() > 1e-4f && Random.Shared.NextDouble() < commitProb)
+                    {
+                        Vector2 dodgeDir = Vector2.Normalize(_activeDodgeImpulse);
+                        Vector2 projected = myCenter + dodgeDir * 650f;
+                        if (IsDashDestinationSafe(bot, projected))
+                        {
+                            _activeDashTarget = bot.ClampToSafePlayableArea(projected);
+                            _activeDashUntil = bot.GameTime + 220;
+                            _lastDefensiveDashTime = bot.GameTime;
+                            bot.Cursor.SetTarget(_activeDashTarget, speed: bot.Parameters.FlickAimSpeed);
+                            return true;
+                        }
+                    }
                 }
-
-                // Blend with danger zone repulsion so we never maneuver out of bounds
-                Vector2 repulsion = bot.GetDangerZoneRepulsion();
-                if (repulsion != Vector2.Zero)
-                {
-                    moveDir = Vector2.Normalize(moveDir * 0.5f + Vector2.Normalize(repulsion) * 1.0f);
-                }
-
-                var moveTarget = bot.ClampToSafePlayableArea(myFleet.Center + moveDir * 600f);
-                bot.Cursor.SetTarget(moveTarget, speed: bot.Parameters.CruisingSpeed);
             }
+
+            // Priority 3: Offensive dash (only when NOT pressured to retreat or surrounded)
+            bool canOffensiveDash = bot.CanBoost
+                && bot.Parameters.OffensiveDashEnabled
+                && myShips >= bot.Parameters.MinimumShipsToOffensiveDash
+                && threats.RetreatPressure < 0.25f
+                && threats.SurroundPressure < 0.30f
+                && (bot.GameTime - _lastOffensiveDashTime > 1200);
+
+            if (canOffensiveDash && target != null && target.Certainty > 0.7f && targetDistance > 180f && targetDistance < 950f)
+            {
+                float commitProb = bot.Parameters.OffensiveDashSkill * (1.0f - bot.Parameters.BoostHesitancy);
+                if (Random.Shared.NextDouble() < commitProb)
+                {
+                    bool isSmallEnemy = target.ShipCount <= 5;
+                    bool hasDecisiveAdvantage = myShips >= target.ShipCount * 1.2f;
+                    bool isEnemyFleeing = Vector2.Dot(target.EstimatedVelocity, target.EstimatedPosition - myCenter) > 0f;
+
+                    if (isSmallEnemy || hasDecisiveAdvantage || (isEnemyFleeing && myShips >= 4))
+                    {
+                        Vector2 toEnemy = Vector2.Normalize(target.EstimatedPosition - myCenter);
+                        Vector2 projected = myCenter + toEnemy * 700f;
+                        if (IsDashDestinationSafe(bot, projected))
+                        {
+                            Vector2 aimPoint = bot.ComputeHumanAimPoint(target.EstimatedPosition, target.EstimatedVelocity);
+                            _activeDashTarget = aimPoint;
+                            _activeDashUntil = bot.GameTime + 220;
+                            _lastOffensiveDashTime = bot.GameTime;
+                            bot.Cursor.SetTarget(_activeDashTarget, speed: bot.Parameters.FlickAimSpeed);
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private static bool TryShootEscapeCorridorFood(
+            HumanoidBot bot,
+            Vector2 myCenter,
+            Vector2 escapeHeading,
+            Vector2 flightDir)
+        {
+            if (escapeHeading.LengthSquared() < 1e-4f)
+                return false;
+
+            Game.Robots.Models.Ship bestItem = null;
+            float bestScore = float.MinValue;
+
+            var abandoned = bot.SensorAbandoned.AllVisibleAbandoned;
+            for (int i = 0; i < abandoned.Count; i++)
+            {
+                var item = abandoned[i];
+                Vector2 toItem = item.Position - myCenter;
+                float dist = toItem.Length();
+                if (dist < 20f || dist > 550f) continue;
+
+                float dot = Vector2.Dot(toItem / dist, escapeHeading);
+                if (dot > 0.55f)
+                {
+                    float score = dot * 2.0f + (1.0f - dist / 550f) + 3.0f;
+                    if (score > bestScore)
+                    {
+                        bestScore = score;
+                        bestItem = item;
+                    }
+                }
+            }
+
+            var fish = bot.SensorFish.AllVisibleFish;
+            for (int i = 0; i < fish.Count; i++)
+            {
+                var item = fish[i];
+                Vector2 toItem = item.Position - myCenter;
+                float dist = toItem.Length();
+                if (dist < 20f || dist > 550f) continue;
+
+                float dot = Vector2.Dot(toItem / dist, escapeHeading);
+                if (dot > 0.65f)
+                {
+                    float score = dot * 2.0f + (1.0f - dist / 550f);
+                    if (score > bestScore)
+                    {
+                        bestScore = score;
+                        bestItem = item;
+                    }
+                }
+            }
+
+            if (bestItem == null)
+                return false;
+
+            return bot.AimController.TryAimAndShoot(
+                bot,
+                bestItem.Position,
+                bestItem.Momentum,
+                flightDir,
+                usePredictiveLead: true,
+                extraAngleTolerance: 0.08f);
+        }
+
+        private static bool IsDashDestinationSafe(HumanoidBot bot, Vector2 projectedPos)
+        {
+            float limit = Math.Max(150f, bot.EffectiveWorldSize - Math.Max(300f, bot.Parameters.DangerZoneBuffer));
+            return MathF.Abs(projectedPos.X) < limit && MathF.Abs(projectedPos.Y) < limit;
+        }
+
+        private static float SmoothStep(float edge0, float edge1, float x)
+        {
+            float t = Math.Clamp((x - edge0) / Math.Max(1e-5f, edge1 - edge0), 0f, 1f);
+            return t * t * (3f - 2f * t);
         }
     }
 }
