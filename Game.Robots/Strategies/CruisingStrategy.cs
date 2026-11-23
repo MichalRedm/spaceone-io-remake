@@ -108,7 +108,7 @@ namespace Game.Robots.Strategies
                     || bot.Parameters.Playstyle.Equals("Farmer", StringComparison.OrdinalIgnoreCase))
                 {
                     // Smooth readiness ramp instead of hard size gate
-                    float readiness = 0.45f + 0.55f * Math.Clamp(currentFleetSize / 14f, 0f, 1f);
+                    float readiness = 0.60f + 0.40f * Math.Clamp(currentFleetSize / 12f, 0f, 1f);
                     effectiveTendency *= readiness;
                 }
 
@@ -240,7 +240,7 @@ namespace Game.Robots.Strategies
 
                 if (bot.LeaderPosition.HasValue)
                 {
-                    float bias = Math.Clamp(0.28f * bot.Parameters.LeaderHuntTendency, 0f, 0.35f);
+                    float bias = Math.Clamp(0.38f * bot.Parameters.LeaderHuntTendency, 0f, 0.45f);
                     rawWander = Vector2.Lerp(rawWander, bot.ClampToSafePlayableArea(bot.LeaderPosition.Value), bias);
                 }
 

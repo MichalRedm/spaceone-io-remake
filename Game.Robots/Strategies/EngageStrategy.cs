@@ -235,9 +235,9 @@ namespace Game.Robots.Strategies
                     float aggressiveTangent = 0.25f;
 
                     float effectiveRetreatRatio = Math.Clamp(
-                        bot.Parameters.RetreatThreshold + 0.18f * bot.Parameters.KitingSkill,
-                        0.15f,
-                        0.75f);
+                        bot.Parameters.RetreatThreshold + 0.12f * bot.Parameters.KitingSkill,
+                        0.12f,
+                        0.55f);
                     float tacticalRadial = Math.Clamp((ratio - effectiveRetreatRatio) * 2.0f, -1.0f, 1.0f);
                     if (distance > bot.Parameters.PursuitDistance && tacticalRadial > -0.45f && threats.RetreatPressure < 0.35f)
                     {
@@ -264,13 +264,32 @@ namespace Game.Robots.Strategies
 
             // Smoothly blend combat kiting with safest multi-threat breakout corridor as retreat/surround pressure rises
             float combinedEscape = MathF.Max(threats.RetreatPressure, threats.SurroundPressure);
-            float escapeBlend = SmoothStep(0.15f, 0.85f, combinedEscape);
+            float escapeBlend = SmoothStep(0.30f, 0.90f, combinedEscape);
             if (escapeBlend > 0.01f && threats.SafestBreakoutDir != Vector2.Zero)
             {
                 Vector2 blended = Vector2.Lerp(moveDir, threats.SafestBreakoutDir, escapeBlend);
                 if (blended.LengthSquared() > 1e-5f)
                 {
                     moveDir = Vector2.Normalize(blended);
+                }
+            }
+
+            // While fighting a nearby opponent without high retreat pressure, maintain gentle drift toward leader
+            if (target != null
+                && bot.LeaderPosition.HasValue
+                && (!bot.LeaderFleetID.HasValue || target.FleetID != bot.LeaderFleetID.Value)
+                && threats.RetreatPressure < 0.35f)
+            {
+                Vector2 toLeader = bot.LeaderPosition.Value - myFleet.Center;
+                float leaderDistSq = toLeader.LengthSquared();
+                if (leaderDistSq > 450f * 450f)
+                {
+                    float leaderDriftWeight = 0.25f * bot.Parameters.LeaderHuntTendency * (1.0f - threats.RetreatPressure);
+                    Vector2 drifted = Vector2.Lerp(moveDir, toLeader / MathF.Sqrt(leaderDistSq), leaderDriftWeight);
+                    if (drifted.LengthSquared() > 1e-5f)
+                    {
+                        moveDir = Vector2.Normalize(drifted);
+                    }
                 }
             }
 
@@ -372,8 +391,8 @@ namespace Game.Robots.Strategies
             // 1. Outnumbered pressure: smoothly scales from 0 at safe ratio to 1 when deeply outgunned
             if (worstRatio < float.MaxValue)
             {
-                float upperRatio = bot.Parameters.RetreatThreshold * 1.35f;
-                float lowerRatio = Math.Max(0.04f, bot.Parameters.RetreatThreshold * 0.45f);
+                float upperRatio = bot.Parameters.RetreatThreshold * 1.15f;
+                float lowerRatio = Math.Max(0.03f, bot.Parameters.RetreatThreshold * 0.40f);
                 result.OutnumberedPressure = Math.Clamp(
                     (upperRatio - worstRatio) / Math.Max(0.05f, upperRatio - lowerRatio),
                     0f,

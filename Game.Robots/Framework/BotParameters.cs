@@ -180,8 +180,8 @@ namespace Game.Robots.Framework
             // 6. Smooth Fleet Size Preference:
             TargetFleetSize = (int)Math.Clamp(MathF.Round(Jitter(Lerp(56f, 18f, SmoothStep(0.0f, 0.90f, s)), 0.15f)), 12f, 75f);
 
-            // 7. Smooth Skill-Based Retreat Threshold (low levels flee early; high levels kite until ~1 ship or overwhelmed):
-            float baseRetreatThreshold = Lerp(0.48f, 0.14f, SmoothStep(0.05f, 0.85f, s));
+            // 7. Smooth Skill-Based Retreat Threshold (low levels flee earlier; high levels kite until ~1 ship or overwhelmed):
+            float baseRetreatThreshold = Lerp(0.32f, 0.09f, SmoothStep(0.05f, 0.85f, s));
 
             // 8. Playstyle Modifications:
             bool isKingHunter = false;
@@ -190,10 +190,10 @@ namespace Game.Robots.Framework
                 case "aggressive":
                 case "hunter":
                     EngageAdvantageRatio = Jitter(1.1f, 0.1f);
-                    RetreatThreshold = Math.Clamp(baseRetreatThreshold * 0.78f, 0.08f, 0.55f);
+                    RetreatThreshold = Math.Clamp(baseRetreatThreshold * 0.72f, 0.06f, 0.30f);
                     SafeDistance = Jitter(420f, 0.1f);
                     PursuitDistance = Jitter(330f, 0.1f);
-                    LeaderHuntTendency = Math.Clamp(Jitter(0.78f, 0.10f), 0.64f, 0.92f);
+                    LeaderHuntTendency = Math.Clamp(Jitter(0.84f, 0.08f), 0.72f, 0.96f);
                     TargetFleetSize = Math.Max(10, TargetFleetSize - 6);
                     FlickAimSpeed = Math.Clamp(FlickAimSpeed * 1.10f, 0.15f, 0.98f);
                     OffensiveDashSkill = Math.Clamp(OffensiveDashSkill + 0.08f, 0f, 1f);
@@ -202,29 +202,29 @@ namespace Game.Robots.Framework
                 case "cautious":
                 case "farmer":
                     EngageAdvantageRatio = Jitter(2.2f, 0.1f);
-                    RetreatThreshold = Math.Clamp(baseRetreatThreshold * 1.28f, 0.16f, 0.68f);
+                    RetreatThreshold = Math.Clamp(baseRetreatThreshold * 1.18f, 0.11f, 0.45f);
                     DefensiveDashSkill = Math.Clamp(DefensiveDashSkill + 0.10f, 0f, 1f);
                     DefensiveDashEnabled = DefensiveDashSkill > 0.02f;
                     SafeDistance = Jitter(680f, 0.1f);
                     PursuitDistance = Jitter(500f, 0.1f);
-                    LeaderHuntTendency = Math.Clamp(Jitter(0.48f, 0.14f), 0.32f, 0.66f);
+                    LeaderHuntTendency = Math.Clamp(Jitter(0.58f, 0.12f), 0.42f, 0.74f);
                     TargetFleetSize += 12;
                     break;
 
                 case "kinghunter":
                     isKingHunter = true;
                     EngageAdvantageRatio = Jitter(1.3f, 0.1f);
-                    RetreatThreshold = Math.Clamp(baseRetreatThreshold * 0.85f, 0.09f, 0.58f);
-                    LeaderHuntTendency = Math.Clamp(Jitter(0.88f, 0.08f), 0.76f, 0.98f);
+                    RetreatThreshold = Math.Clamp(baseRetreatThreshold * 0.82f, 0.07f, 0.34f);
+                    LeaderHuntTendency = Math.Clamp(Jitter(0.92f, 0.06f), 0.82f, 0.99f);
                     SafeDistance = Jitter(500f, 0.1f);
                     PursuitDistance = Jitter(380f, 0.1f);
                     OffensiveDashSkill = Math.Clamp(OffensiveDashSkill + 0.08f, 0f, 1f);
                     break;
 
                 case "swarm":
-                    RetreatThreshold = Math.Clamp(baseRetreatThreshold * 0.90f, 0.10f, 0.60f);
+                    RetreatThreshold = Math.Clamp(baseRetreatThreshold * 0.88f, 0.07f, 0.36f);
                     TargetFleetSize = Math.Max(45, (int)Jitter(60, 0.15f));
-                    LeaderHuntTendency = Math.Clamp(Jitter(0.58f, 0.12f), 0.42f, 0.74f);
+                    LeaderHuntTendency = Math.Clamp(Jitter(0.68f, 0.10f), 0.54f, 0.82f);
                     SafeDistance = Jitter(620f, 0.1f);
                     PursuitDistance = Jitter(450f, 0.1f);
                     break;
@@ -232,15 +232,15 @@ namespace Game.Robots.Framework
                 case "balanced":
                 default:
                     EngageAdvantageRatio = Jitter(1.5f, 0.1f);
-                    RetreatThreshold = Math.Clamp(baseRetreatThreshold, 0.11f, 0.62f);
+                    RetreatThreshold = Math.Clamp(baseRetreatThreshold, 0.08f, 0.40f);
                     SafeDistance = Jitter(550f, 0.1f);
                     PursuitDistance = Jitter(400f, 0.1f);
-                    LeaderHuntTendency = Math.Clamp(Jitter(0.68f, 0.12f), 0.52f, 0.84f);
+                    LeaderHuntTendency = Math.Clamp(Jitter(0.76f, 0.10f), 0.62f, 0.90f);
                     break;
             }
 
-            // Rare individual lone-wolf exception (~6% of non-KingHunter bots mostly ignore the leader)
-            if (!isKingHunter && rand.NextDouble() < 0.06)
+            // Rare individual lone-wolf exception (~5% of non-KingHunter bots mostly ignore the leader)
+            if (!isKingHunter && rand.NextDouble() < 0.05)
             {
                 LeaderHuntTendency = 0.08f + (float)rand.NextDouble() * 0.14f;
             }
