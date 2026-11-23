@@ -104,7 +104,8 @@ namespace Game.Robots.Strategies
                 _lastLeaderHuntDecision = bot.GameTime;
 
                 float effectiveTendency = bot.Parameters.LeaderHuntTendency;
-                if (bot.Parameters.Playstyle.Equals("Cautious", StringComparison.OrdinalIgnoreCase))
+                if (bot.Parameters.Playstyle.Equals("Cautious", StringComparison.OrdinalIgnoreCase)
+                    || bot.Parameters.Playstyle.Equals("Farmer", StringComparison.OrdinalIgnoreCase))
                 {
                     // Smooth readiness ramp instead of hard size gate
                     float readiness = 0.45f + 0.55f * Math.Clamp(currentFleetSize / 14f, 0f, 1f);
@@ -252,8 +253,12 @@ namespace Game.Robots.Strategies
 
         private void TryTravelBoost(HumanoidBot bot, Vector2 myCenter, Vector2 navTarget, int currentFleetSize)
         {
-            if (!bot.CanBoost || bot.Parameters.TravelBoostTendency <= 0.02f)
+            if (!bot.CanBoost
+                || bot.Parameters.TravelBoostTendency <= 0.02f
+                || bot.Parameters.MaxOffAxisShotAngle < 2.6f)
+            {
                 return;
+            }
 
             if (currentFleetSize < 6 || currentFleetSize > 44)
                 return;

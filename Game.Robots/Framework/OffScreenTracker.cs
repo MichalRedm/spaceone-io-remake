@@ -3,7 +3,6 @@ namespace Game.Robots.Framework
     using Game.API.Common;
     using System;
     using System.Collections.Generic;
-    using System.Linq;
     using System.Numerics;
 
     public class TrackedEnemy
@@ -27,7 +26,7 @@ namespace Game.Robots.Framework
         private readonly List<uint> _toRemove = new List<uint>();
         private long _lastUpdateTime = 0;
 
-        public IEnumerable<TrackedEnemy> TrackedEnemies => _tracked.Values;
+        public Dictionary<uint, TrackedEnemy>.ValueCollection TrackedEnemies => _tracked.Values;
 
         public OffScreenTracker(HumanoidBot bot)
         {

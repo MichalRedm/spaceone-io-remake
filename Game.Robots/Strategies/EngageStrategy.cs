@@ -28,6 +28,7 @@ namespace Game.Robots.Strategies
 
         private long _lastDefensiveDashTime = 0;
         private long _lastOffensiveDashTime = 0;
+        private long _lastDashEvalTime = 0;
         private long _activeDashUntil = 0;
         private Vector2 _activeDashTarget = Vector2.Zero;
 
@@ -298,7 +299,7 @@ namespace Game.Robots.Strategies
 
             // Blend with arena danger zone repulsion
             Vector2 repulsion = bot.GetDangerZoneRepulsion();
-            if (repulsion != Vector2.Zero)
+            if (repulsion.LengthSquared() > 1e-6f)
             {
                 Vector2 repulsed = moveDir * 0.5f + Vector2.Normalize(repulsion) * 1.0f;
                 if (repulsed.LengthSquared() > 1e-5f)
@@ -307,7 +308,7 @@ namespace Game.Robots.Strategies
                 }
             }
 
-            if (moveDir.LengthSquared() < 1e-5f || float.IsNaN(moveDir.X) || float.IsNaN(moveDir.Y))
+            if (moveDir.LengthSquared() < 1e-5f || !float.IsFinite(moveDir.X) || !float.IsFinite(moveDir.Y))
             {
                 moveDir = new Vector2(1f, 0f);
             }
@@ -346,8 +347,8 @@ namespace Game.Robots.Strategies
                     maxThreatShips = enemy.ShipCount;
                 }
 
-                // Count meaningful threats within engagement/pinch radius
-                if (ratio < 1.35f || enemy.ShipCount >= 3)
+                // Count meaningful threats within engagement/pinch radius (ignore negligible fresh spawns when we dominate)
+                if (ratio < 1.35f || (enemy.ShipCount >= 3 && enemy.ShipCount >= myShips * 0.25f))
                 {
                     nearbyCount++;
                     totalThreatShips += enemy.ShipCount;
@@ -389,23 +390,25 @@ namespace Game.Robots.Strategies
                 result.SingleShipPressure = (1.0f - bot.Parameters.SkillLevel * 0.5f) * 0.65f;
             }
 
-            // 3. Surround / multi-player dogpile pressure
+            // 3. Surround / multi-player dogpile pressure (gated by collective hostile mass relative to ours)
             if (nearbyCount >= 2 && weightSum > 1e-4f)
             {
-                float angularSpread = 1.0f - Math.Clamp(weightedThreatVecSum.Length() / weightSum, 0f, 1f);
-                float massRatio = Math.Clamp((float)totalThreatShips / Math.Max(1, myShips), 0f, 4f) / 4f;
-                float closingFactor = Math.Clamp(closingWeightSum / weightSum, 0f, 1f);
-                float countFactor = Math.Clamp((nearbyCount - 1) / 3f, 0.25f, 1f);
-
-                float rawSurround = countFactor * (0.45f + 0.35f * angularSpread + 0.20f * closingFactor)
-                    + 0.25f * massRatio;
-
-                if (bot.IsLeader)
+                float collectiveRatio = (float)totalThreatShips / Math.Max(1, myShips);
+                float collectiveDanger = SmoothStep(0.45f, 1.25f, collectiveRatio);
+                if (collectiveDanger > 0.001f)
                 {
-                    rawSurround *= 1.30f;
-                }
+                    float angularSpread = 1.0f - Math.Clamp(weightedThreatVecSum.Length() / weightSum, 0f, 1f);
+                    float closingFactor = Math.Clamp(closingWeightSum / weightSum, 0f, 1f);
+                    float countFactor = Math.Clamp((nearbyCount - 1) / 3f, 0.25f, 1f);
 
-                result.SurroundPressure = Math.Clamp(rawSurround, 0f, 1f);
+                    float rawSurround = collectiveDanger * countFactor * (0.40f + 0.40f * angularSpread + 0.20f * closingFactor);
+                    if (bot.IsLeader)
+                    {
+                        rawSurround *= 1.30f;
+                    }
+
+                    result.SurroundPressure = Math.Clamp(rawSurround, 0f, 1f);
+                }
             }
 
             result.RetreatPressure = Math.Clamp(
@@ -608,6 +611,12 @@ namespace Game.Robots.Strategies
 
             _activeDashTarget = Vector2.Zero;
             _activeDashUntil = 0;
+
+            if (bot.GameTime - _lastDashEvalTime < 220)
+            {
+                return false;
+            }
+            _lastDashEvalTime = bot.GameTime;
 
             bool canDefensiveDash = bot.CanBoost
                 && bot.Parameters.DefensiveDashEnabled

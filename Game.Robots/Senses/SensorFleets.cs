@@ -1,10 +1,8 @@
 namespace Game.Robots.Senses
 {
-    using Game.API.Client;
     using Game.API.Common;
     using Game.Robots.Models;
     using System.Collections.Generic;
-    using System.Linq;
 
     public class SensorFleets : ISense
     {

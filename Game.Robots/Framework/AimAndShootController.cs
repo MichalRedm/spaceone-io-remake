@@ -37,8 +37,11 @@ namespace Game.Robots.Framework
             if (bot == null)
                 return false;
 
-            if (float.IsNaN(targetPos.X) || float.IsNaN(targetPos.Y) || float.IsInfinity(targetPos.X) || float.IsInfinity(targetPos.Y))
+            if (!float.IsFinite(targetPos.X) || !float.IsFinite(targetPos.Y))
                 return false;
+
+            if (!float.IsFinite(targetVel.X) || !float.IsFinite(targetVel.Y))
+                targetVel = Vector2.Zero;
 
             // Keep cursor free during brief post-abort refractory window so steering recovers cleanly.
             if (bot.GameTime < _abortUntilTime)
@@ -68,7 +71,8 @@ namespace Game.Robots.Framework
             // Smoothly gate off-axis shots by SkillLevel / MaxOffAxisShotAngle:
             // Low-skill bots only fire near their flight direction; advanced bots can flick up to 180 deg.
             float maxOffAxis = bot.Parameters.MaxOffAxisShotAngle;
-            if (maxOffAxis < MathF.PI - 0.02f && flightDirection.LengthSquared() > 1e-4f)
+            if (maxOffAxis < MathF.PI - 0.02f && flightDirection.LengthSquared() > 1e-4f
+                && float.IsFinite(flightDirection.X) && float.IsFinite(flightDirection.Y))
             {
                 float flightAngle = MathF.Atan2(flightDirection.Y, flightDirection.X);
                 float targetAngle = MathF.Atan2(toTarget.Y, toTarget.X);
@@ -80,16 +84,30 @@ namespace Game.Robots.Framework
                 }
             }
 
+            Vector2 aimTarget = bot.ComputeHumanAimPoint(targetPos, usePredictiveLead ? targetVel : Vector2.Zero);
+            bot.Cursor.SetTarget(aimTarget, speed: bot.Parameters.FlickAimSpeed);
+
+            // While weapon is still finishing its final cooldown tick(s), pre-aim cleanly without starting the abort timer.
+            if (!bot.CanShoot)
+            {
+                _flickStartTime = 0;
+                return true;
+            }
+
             if (_flickStartTime == 0)
             {
                 _flickStartTime = bot.GameTime;
             }
 
-            Vector2 aimTarget = bot.ComputeHumanAimPoint(targetPos, usePredictiveLead ? targetVel : Vector2.Zero);
-            bot.Cursor.SetTarget(aimTarget, speed: bot.Parameters.FlickAimSpeed);
-
             float tolerance = Math.Max(0.05f, bot.Parameters.FiringAngleTolerance + extraAngleTolerance);
             long flickDuration = bot.GameTime - _flickStartTime;
+
+            if (bot.Cursor.IsAimedAt(aimTarget, tolerance))
+            {
+                bot.ShootAt(aimTarget);
+                _flickStartTime = 0;
+                return true;
+            }
 
             // Scale bounded flick window smoothly with reaction latency and angular sweep.
             float currentAngle = MathF.Atan2(bot.Cursor.CurrentRelativePosition.Y, bot.Cursor.CurrentRelativePosition.X);
@@ -104,16 +122,9 @@ namespace Game.Robots.Framework
                 90L,
                 220L);
 
-            if (bot.CanShoot && bot.Cursor.IsAimedAt(aimTarget, tolerance))
-            {
-                bot.ShootAt(aimTarget);
-                _flickStartTime = 0;
-                return true;
-            }
-
             if (flickDuration > maxFlickWait)
             {
-                if (!requireStrictAlignment && bot.CanShoot && bot.Cursor.IsAimedAt(aimTarget, tolerance * 1.6f))
+                if (!requireStrictAlignment && bot.Cursor.IsAimedAt(aimTarget, tolerance * 1.6f))
                 {
                     bot.ShootAt(aimTarget);
                 }
@@ -132,6 +143,9 @@ namespace Game.Robots.Framework
 
         private static float WrapAngle(float angle)
         {
+            if (!float.IsFinite(angle))
+                return 0f;
+
             while (angle > MathF.PI) angle -= MathF.PI * 2f;
             while (angle < -MathF.PI) angle += MathF.PI * 2f;
             return angle;
