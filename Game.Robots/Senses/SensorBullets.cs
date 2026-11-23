@@ -10,7 +10,7 @@ namespace Game.Robots.Senses
     {
         private readonly Robot Robot;
 
-        public IEnumerable<Body> VisibleBullets => _visibleBullets;
+        public IReadOnlyList<Body> VisibleBullets => _visibleBullets;
         private readonly List<Body> _visibleBullets = new List<Body>();
 
         public SensorBullets(Robot robot)

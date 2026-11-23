@@ -100,6 +100,6 @@ namespace Game.Robots.Senses
             }
         }
 
-        public IEnumerable<Fleet> Others => _others;
+        public IReadOnlyList<Fleet> Others => _others;
     }
 }
