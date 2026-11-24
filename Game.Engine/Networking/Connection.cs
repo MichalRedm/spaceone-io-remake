@@ -60,6 +60,7 @@ namespace Game.Engine.Networking
         private ObserverTarget _observerTarget = null;
         private Player _observedPlayer = null;
         private bool _observedMirrorPov = false;
+        private uint _observedFleetId = 0;
         private Fleet _leaderFleet = null;
         private uint _leaderSwitchedAt = 0;
         private Vector2 _lastObservedPosition = Vector2.Zero;
@@ -101,7 +102,7 @@ namespace Game.Engine.Networking
                 _mirroredMessages.Enqueue(msg);
         }
 
-        private void UpdateObservedPlayer(Player target, bool wantMirror)
+        private void UpdateObservedPlayer(Player target, bool wantMirror, uint observedFleetId = 0)
         {
             lock (_observerStateLock)
             {
@@ -109,10 +110,15 @@ namespace Game.Engine.Networking
                 {
                     target = null;
                     wantMirror = false;
+                    observedFleetId = 0;
                 }
 
-                if (ReferenceEquals(_observedPlayer, target) && _observedMirrorPov == wantMirror)
+                if (ReferenceEquals(_observedPlayer, target)
+                    && _observedMirrorPov == wantMirror
+                    && _observedFleetId == observedFleetId)
+                {
                     return;
+                }
 
                 if (_observedPlayer != null)
                     _observedPlayer.RemoveMessageObserver(OnObservedPlayerMessage);
@@ -121,6 +127,7 @@ namespace Game.Engine.Networking
 
                 _observedPlayer = target;
                 _observedMirrorPov = target != null && wantMirror;
+                _observedFleetId = target != null ? observedFleetId : 0;
 
                 if (_observedPlayer != null && _observedMirrorPov)
                     _observedPlayer.AddMessageObserver(OnObservedPlayerMessage);
@@ -144,6 +151,7 @@ namespace Game.Engine.Networking
                     _observedPlayer = null;
                 }
                 _observedMirrorPov = false;
+                _observedFleetId = 0;
                 while (_mirroredMessages.TryDequeue(out _)) { }
             }
         }
@@ -251,14 +259,18 @@ namespace Game.Engine.Networking
                             break;
                         }
                     }
-                    // Stay locked on previously matched player at their death spot rather than jumping away
+                    // Stay locked on previously matched player at their death spot unless they respawned under a new fleet
                     Player previousObserved;
+                    uint previousFleetId;
                     lock (_observerStateLock)
                     {
                         previousObserved = _observedPlayer;
+                        previousFleetId = _observedFleetId;
                     }
                     if (followPlayer == null
                         && previousObserved != null
+                        && previousFleetId == fleetId
+                        && !previousObserved.IsAlive
                         && !previousObserved.IsDestroyed
                         && !previousObserved.PendingDestruction)
                     {
@@ -324,7 +336,10 @@ namespace Game.Engine.Networking
                 }
             }
 
-            UpdateObservedPlayer(followPlayer, observerTarget.MirrorPov);
+            uint resolvedFleetId = observerTarget.Mode == ObserverMode.FleetId
+                ? observerTarget.TargetFleetId
+                : (followFleet?.ID ?? 0);
+            UpdateObservedPlayer(followPlayer, observerTarget.MirrorPov, resolvedFleetId);
 
             if (followFleet != null)
             {

@@ -9,8 +9,13 @@ using System.Numerics;
 /// </summary>
 public sealed class ObserverTarget
 {
+    /// <summary>Default spatial query half-extent around the tracked camera in world units.</summary>
     public const int DefaultViewportRadius = 2000;
+
+    /// <summary>Minimum allowed observer spatial query half-extent in world units.</summary>
     public const int MinViewportRadius = 1000;
+
+    /// <summary>Maximum allowed observer spatial query half-extent in world units.</summary>
     public const int MaxViewportRadius = 6000;
 
     /// <summary>Active observer tracking mode.</summary>
