@@ -23,9 +23,21 @@ import {
 const record = document.getElementById("record");
 const recordScore = document.getElementById("record-score");
 const recordFleet = document.getElementById("record-fleet");
+const leaderboardContainer = document.getElementById("leaderboard-container");
 const leaderboard = document.getElementById("leaderboard");
 const leaderboardLeft = document.getElementById("leaderboard-left");
 const leaderboardCenter = document.getElementById("leaderboard-center");
+
+function syncLeaderboardVisibility(): void {
+  const isHidden = !Settings.leaderboardEnabled;
+  record?.classList.toggle("is-hidden", isHidden);
+  leaderboardContainer?.classList.toggle("is-hidden", isHidden);
+  leaderboardLeft?.classList.toggle("is-hidden", isHidden);
+  leaderboardCenter?.classList.toggle("is-hidden", isHidden);
+}
+
+syncLeaderboardVisibility();
+window.addEventListener("spaceone:settings-changed", syncLeaderboardVisibility);
 
 const TRACKING_ARROW_CONFIG: TrackingArrowOptions = {
   width: 160,
@@ -233,24 +245,9 @@ export class Leaderboard {
   ): void {
     this.currentGameMode = data.Type;
     this.ownFleetID = fleetID ?? null;
-    const isEnabled = Settings.leaderboardEnabled;
-    if (record) record.classList.toggle("is-hidden", !isEnabled);
-    if (leaderboard) leaderboard.classList.toggle("is-hidden", !isEnabled);
-    if (leaderboardLeft)
-      leaderboardLeft.classList.toggle("is-hidden", !isEnabled);
-    if (leaderboardCenter)
-      leaderboardCenter.classList.toggle("is-hidden", !isEnabled);
-
-    if (!isEnabled) {
-      this.hasLeader = false;
-      leaderArrowTracker.hide();
-      ctfBlueArrowTracker.hide();
-      ctfRedArrowTracker.hide();
-      return;
-    }
+    syncLeaderboardVisibility();
 
     if (data.Record && record && recordScore && recordFleet) {
-      record.style.fontFamily = Settings.font;
       recordScore.innerHTML = `${data.Record.Score}`;
       recordFleet.innerHTML = `${escapeHtml(data.Record.Name) || "Unknown Fleet"}`;
     }
@@ -542,6 +539,9 @@ export class Leaderboard {
         leaderboardLeft.classList.add("is-hidden");
       }
     }
+
+    // Re-apply visibility after mode branches so #leaderboard-center stays hidden when disabled
+    syncLeaderboardVisibility();
   }
 
   /**

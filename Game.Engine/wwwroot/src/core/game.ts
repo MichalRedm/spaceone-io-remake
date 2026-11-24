@@ -58,9 +58,11 @@ import { show, hide, fadeIn, animateOpacity } from "../ui/domUtils";
 import { Vector2 } from "../math/vector2";
 import { CustomContainer } from "../rendering/customContainer";
 import { preloadAllAssets } from "../rendering/atlasLoader";
+import { GameAudio } from "../audio/gameAudio";
 
 bootstrapPopups();
 initFeaturedVideo();
+GameAudio.init();
 
 window.Game = window.Game || {};
 const pixiAny = (window as any).PIXI;
@@ -82,7 +84,7 @@ const container = new CustomContainer();
 app.stage.addChild(container);
 
 // Preload all assets and warm up GPU before gameplay
-preloadAllAssets(app, Settings.mipmapping);
+preloadAllAssets(app, true);
 
 const backgroundGroup = new pixiAny.display.Group(0, true);
 const tileGroup = new pixiAny.display.Group(1, true);
@@ -153,6 +155,16 @@ let currentWorld: WorldInfo | false = false;
 Controls.registerCanvas(canvas);
 
 const connection = new Connection();
+
+function syncLiveClientSettings(): void {
+  connection.bandwidthThrottle = Settings.bandwidth;
+  hud.update();
+  const selfNickContainer = document.getElementById("self-nick-container");
+  selfNickContainer?.classList.toggle("is-hidden", !Settings.showOwnName);
+}
+
+syncLiveClientSettings();
+window.addEventListener("spaceone:settings-changed", syncLiveClientSettings);
 
 window.Game.primaryConnection = connection;
 window.Game.isBackgrounded = false;
@@ -288,6 +300,7 @@ let fleetID = 0;
 let ownFleetID = 0;
 let lastAliveState: boolean | null = null;
 let aliveSince: number | null = null;
+let spawnGraceUntil = 0;
 let joiningWorld = false;
 
 const spawnButton = document.getElementById("spawn") as HTMLInputElement | null;
@@ -327,8 +340,12 @@ connection.onDisconnected = () => {
     setSpawnButtonState("connecting");
   }
 
+  view = null;
+  ownFleetID = 0;
+
   if (lastAliveState || isSpectating) {
     lastAliveState = false;
+    isSpectating = false;
     isSpawning = false;
     pendingSpawn = false;
     if (spawnTimeout) {
@@ -341,6 +358,7 @@ connection.onDisconnected = () => {
     fadeIn(".visibility", 1500);
     hide(".visibility3");
   }
+  GameAudio.setState(false, false, 0, worldSize);
 };
 
 connection.onView = (newView) => {
@@ -359,6 +377,9 @@ connection.onView = (newView) => {
     lastAliveState = true;
     isSpawning = false;
     pendingSpawn = false;
+    spawnGraceUntil = performance.now() + GameAudio.getPostSpawnGraceMs();
+    GameAudio.setState(true, false, ownFleetID, worldSize);
+    GameAudio.onPlayerSpawn();
     if (spawnTimeout) {
       clearTimeout(spawnTimeout);
       spawnTimeout = null;
@@ -398,6 +419,8 @@ connection.onView = (newView) => {
     }, 1000);
 
     Events.Death((gameTime - (aliveSince ?? gameTime)) / 1000);
+    GameAudio.setState(false, isSpectating, ownFleetID, worldSize);
+    GameAudio.onPlayerDeath();
   }
 
   lastOffset = view.time + connection.latency / 2 - performance.now();
@@ -472,6 +495,18 @@ connection.onView = (newView) => {
     if (gdel !== null) groupDeletes.push(gdel);
   }
 
+  if (newView.worldSize() !== border.worldSize) {
+    worldSize = newView.worldSize();
+    border.updateWorldSize(newView.worldSize());
+  }
+
+  GameAudio.setState(
+    Boolean(lastAliveState),
+    isSpectating,
+    ownFleetID,
+    worldSize,
+  );
+
   cache.update(updates, deletes, groups, groupDeletes, gameTime, fleetID);
   overlay.update(newView.customData());
 
@@ -479,11 +514,6 @@ connection.onView = (newView) => {
   hud.playerCount = livePlayerCount;
   updateCurrentWorldPlayerCount(livePlayerCount);
   hud.spectatorCount = newView.spectatorCount();
-
-  if (newView.worldSize() !== border.worldSize) {
-    worldSize = newView.worldSize();
-    border.updateWorldSize(newView.worldSize());
-  }
 
   if (view.isAlive) {
     cooldown.setCooldown(newView.cooldownShoot());
@@ -606,6 +636,13 @@ LobbyCallbacks.onWorldJoin = function (worldKey: string, world?: WorldInfo) {
 
   connection.disconnect();
   cache.empty();
+  view = null;
+  lastAliveState = false;
+  if (spawnOnView) {
+    isSpectating = false;
+  }
+  ownFleetID = 0;
+  GameAudio.setState(false, isSpectating, 0, worldSize);
   WorldConfig.resetToDefaults();
   connection.connect(worldKey);
   serverTimeOffset = false;
@@ -673,6 +710,7 @@ function startSpectate(hideButton = false) {
 
   isSpectating = true;
   ownFleetID = 0;
+  GameAudio.setState(false, true, 0, worldSize);
   Events.Spectate();
   const overlay = document.getElementById("overlay");
   if (overlay) overlay.style.opacity = "0";
@@ -687,6 +725,7 @@ function startSpectate(hideButton = false) {
   if (hideButton) {
     document.body.classList.add("spectate_only");
   }
+  hud.update();
 }
 
 document.getElementById("spectate")?.addEventListener("click", () => {
@@ -698,6 +737,7 @@ document.getElementById("spectate")?.addEventListener("click", () => {
  */
 function stopSpectate() {
   isSpectating = false;
+  GameAudio.setState(Boolean(lastAliveState), false, ownFleetID, worldSize);
   isSpawning = false;
   pendingSpawn = false;
   if (spawnTimeout) {
@@ -710,6 +750,7 @@ function stopSpectate() {
   document.body.classList.add("dead");
   fadeIn(".visibility", 500);
   animateOpacity("#overlay", 0.8, 500);
+  hud.update();
 }
 
 document.getElementById("stop-spectating")?.addEventListener("click", () => {
@@ -721,8 +762,9 @@ document.getElementById("stop-spectating")?.addEventListener("click", () => {
   }
 });
 
-document.addEventListener("keydown", ({ keyCode, which }) => {
-  if (keyCode == 27 || which == 27) {
+document.addEventListener("keydown", (e) => {
+  if (e.defaultPrevented || window.popupShowing) return;
+  if (e.key === "Escape" || e.keyCode === 27 || e.which === 27) {
     if (lastAliveState) {
       connection.sendExit();
     } else if (isSpectating) {
@@ -786,7 +828,12 @@ function doPing() {
   updateCounter = 0;
 }
 
-doPing();
+window.Game.isBackgrounded = document.hidden;
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) {
+    window.Game.isBackgrounded = false;
+  }
+});
 setInterval(doPing, 1000);
 
 const graphics = new PIXI.Graphics();
@@ -806,6 +853,7 @@ let lastDangerZoneState: boolean | null = null;
 
 // Game Loop
 app.ticker.add(() => {
+  window.Game.isBackgrounded = false;
   const _latency = connection.minLatency || 0;
   gameTime =
     performance.now() + (serverTimeOffset !== false ? serverTimeOffset : 0);
@@ -815,9 +863,19 @@ app.ticker.add(() => {
   if (ownGroup?.renderer?.ships) {
     const shipCount = ownGroup.renderer.ships.length;
     if (fleetSizeDisplay && currentFleetSize !== shipCount) {
+      if (
+        view?.isAlive &&
+        currentFleetSize > 0 &&
+        shipCount > currentFleetSize &&
+        performance.now() > spawnGraceUntil
+      ) {
+        GameAudio.onShipGain();
+      }
       currentFleetSize = shipCount;
       fleetSizeDisplay.innerText = String(shipCount);
     }
+  } else if (!view?.isAlive) {
+    currentFleetSize = -1;
   }
 
   const position = currentCameraPosition;
@@ -840,6 +898,13 @@ app.ticker.add(() => {
   container.pivot.y = position.y - (zoom / 2) * (9 / 16);
 
   renderer.draw(cache, interpolator, gameTime, ownFleetID, isSpectating);
+  GameAudio.setListener(position.x, position.y, camera.viewport.width);
+  GameAudio.setState(
+    Boolean(lastAliveState),
+    isSpectating,
+    ownFleetID,
+    worldSize,
+  );
   background.updateFocus(position);
   background.draw();
   minimap.checkDisplay();
@@ -856,6 +921,7 @@ app.ticker.add(() => {
     const isOutOfBounds =
       (Math.abs(position.x) > worldSize || Math.abs(position.y) > worldSize) &&
       document.body.classList.contains("alive");
+    GameAudio.updateDangerZone(isOutOfBounds, performance.now());
     if (isOutOfBounds !== lastDangerZoneState) {
       lastDangerZoneState = isOutOfBounds;
       dangerZoneWarning.classList.toggle(
@@ -920,8 +986,8 @@ app.ticker.add(() => {
       mouseScreenPos.y = Controls.mouseY;
       camera.screenToWorld(mouseScreenPos, mouseWorldPos);
       angle = Controls.angle;
-      aimTarget.x = Settings.mouseScale * (mouseWorldPos.x - position.x);
-      aimTarget.y = Settings.mouseScale * (mouseWorldPos.y - position.y);
+      aimTarget.x = mouseWorldPos.x - position.x;
+      aimTarget.y = mouseWorldPos.y - position.y;
     }
   }
 

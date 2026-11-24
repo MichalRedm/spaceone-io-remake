@@ -8,6 +8,7 @@ import nipplejs from "nipplejs";
 import { Settings } from "./settings";
 import { Ship } from "../models/ship";
 import { fadeIn } from "./domUtils";
+import { GameAudio } from "../audio/gameAudio";
 
 const DEFAULT_EMOJIS = [
   "👋",
@@ -210,6 +211,7 @@ const leftArrow = document.getElementById("left-arrow");
 if (leftArrow) {
   leftArrow.addEventListener("click", function () {
     if (colors.length === 0) return;
+    GameAudio.onUiClick();
     const isOdd = colors.length % 2 !== 0;
     if (isOdd) {
       const centerIdx = Math.floor(colors.length / 2);
@@ -232,6 +234,7 @@ const rightArrow = document.getElementById("right-arrow");
 if (rightArrow) {
   rightArrow.addEventListener("click", function () {
     if (colors.length === 0) return;
+    GameAudio.onUiClick();
     const isOdd = colors.length % 2 !== 0;
     if (isOdd) {
       const centerIdx = Math.floor(colors.length / 2);
@@ -327,8 +330,6 @@ export interface ControlsType {
   shoot: boolean;
   /** Whether autofire toggle is enabled. */
   autofire: boolean;
-  /** Timestamp when shoot button was pressed down in milliseconds. */
-  downSince: number | false;
   /** Custom JSON data payload transmitted with control frame. */
   customData: any;
   /** Current mouse cursor screen X position. */
@@ -372,7 +373,6 @@ export const Controls: ControlsType = {
   boost: false,
   shoot: false,
   autofire: false,
-  downSince: false,
   customData: false,
   mouseX: 0,
   mouseY: 0,
@@ -429,55 +429,27 @@ export const Controls: ControlsType = {
         Controls.angle = Math.atan2(dy, dx);
       });
       window.addEventListener("mousedown", ({ button }) => {
-        if (button === 2)
-          // right click
-          Controls.boost = true;
-        else {
-          if (Settings.mouseOneButton > 0) {
-            Controls.downSince = new Date().getTime();
-          } else {
-            Controls.shoot = true;
+        if (button === 2) {
+          // right click triggers Split & Dash when enabled
+          if (Settings.rightClickBoost) {
+            Controls.boost = true;
           }
+        } else {
+          Controls.shoot = true;
         }
       });
 
       window.addEventListener("mouseup", ({ button }) => {
-        if (button === 2)
-          // right click
+        if (button === 2) {
+          // Always clear boost on release so disabling mid-hold cannot stick
           Controls.boost = false;
-        else {
-          if (Settings.mouseOneButton > 0) {
-            const timeDelta =
-              Controls.downSince !== false
-                ? new Date().getTime() - Controls.downSince
-                : 0;
-            Controls.downSince = false;
-            if (timeDelta < Settings.mouseOneButton) {
-              Controls.shoot = true;
-              setTimeout(function () {
-                if (!Controls.autofire) {
-                  Controls.shoot = false;
-                }
-              }, 100);
-            } else {
-              Controls.boost = true;
-              setTimeout(function () {
-                Controls.boost = false;
-              }, 100);
-            }
-          } else {
-            if (!Controls.autofire) {
-              Controls.shoot = false;
-            }
-          }
+        } else if (!Controls.autofire) {
+          Controls.shoot = false;
         }
       });
-      document
-        .getElementById("game-area")
-        ?.addEventListener("contextmenu", (e) => {
-          e.preventDefault();
-          return false;
-        });
+      window.addEventListener("contextmenu", (e) => {
+        e.preventDefault();
+      });
     }
     Controls.canvas = canvas;
   },
@@ -600,12 +572,14 @@ window.addEventListener(
           Controls.shoot = true;
           if (autofTgg) autofTgg.textContent = "ON";
           if (autofCon) autofCon.classList.add("autofire-indicator--active");
+          GameAudio.onUiClick();
           console.log("Autofire enabled!");
         } else {
           Controls.autofire = false;
           Controls.shoot = false;
           if (autofTgg) autofTgg.textContent = "OFF";
           if (autofCon) autofCon.classList.remove("autofire-indicator--active");
+          GameAudio.onUiClick();
           console.log("Autofire disabled!");
         }
         break;

@@ -12,6 +12,9 @@ import type { Cache, GroupState } from "./cache";
 import type { Interpolator } from "../rendering/interpolator";
 import type { Camera } from "../rendering/camera";
 
+const FLEET_FONT_FAMILY = "Exo 2";
+const FLEET_NAME_FONT_SIZE = 14;
+
 /**
  * Controller managing a collection of ships belonging to a single player fleet.
  *
@@ -51,8 +54,8 @@ export class Fleet {
     this.ships = [];
     this.ID = 0;
     this.text = new PIXI.Text("", {
-      fontFamily: [Settings.font, "NotoColorEmoji"],
-      fontSize: Settings.nameSize * 4,
+      fontFamily: [FLEET_FONT_FAMILY, "NotoColorEmoji"],
+      fontSize: FLEET_NAME_FONT_SIZE * 4,
       fill: 0xffffff,
     });
     this.text.scale.x = 0.25;
@@ -64,7 +67,7 @@ export class Fleet {
 
     this.textChat = new PIXI.Text("", {
       fontFamily: "FontAwesome",
-      fontSize: Settings.nameSize,
+      fontSize: FLEET_NAME_FONT_SIZE,
       fill: 0xffffff,
     });
     this.textChat.parentGroup = this.container.bodyGroup;
@@ -169,48 +172,46 @@ export class Fleet {
       if (this.text.visible !== Settings.namesEnabled)
         this.text.visible = Settings.namesEnabled;
 
-      if (Settings.nameSize) {
-        if (this.caption) this.text.text = this.caption;
-        else this.text.text = "";
+      if (this.caption) this.text.text = this.caption;
+      else this.text.text = "";
 
-        if (this.chat) this.textChat.text = this.chat;
-        else this.textChat.text = "";
+      if (this.chat) this.textChat.text = this.chat;
+      else this.textChat.text = "";
 
-        let accX = 0,
-          accY = 0,
-          count = 0;
+      let accX = 0,
+        accY = 0,
+        count = 0;
 
-        for (let i = 0; i < this.ships.length; i++) {
-          const ship = this.ships[i];
-          if (ship && ship.body) {
-            const posX =
-              ship.lastPosition.x !== 0 || ship.lastPosition.y !== 0
-                ? ship.lastPosition.x
-                : (ship.body.Position?.x ?? ship.body.OriginalPosition.x);
-            const posY =
-              ship.lastPosition.x !== 0 || ship.lastPosition.y !== 0
-                ? ship.lastPosition.y
-                : (ship.body.Position?.y ?? ship.body.OriginalPosition.y);
-            accX += posX;
-            accY += posY;
-            count++;
-          }
+      for (let i = 0; i < this.ships.length; i++) {
+        const ship = this.ships[i];
+        if (ship && ship.body) {
+          const posX =
+            ship.lastPosition.x !== 0 || ship.lastPosition.y !== 0
+              ? ship.lastPosition.x
+              : (ship.body.Position?.x ?? ship.body.OriginalPosition.x);
+          const posY =
+            ship.lastPosition.x !== 0 || ship.lastPosition.y !== 0
+              ? ship.lastPosition.y
+              : (ship.body.Position?.y ?? ship.body.OriginalPosition.y);
+          accX += posX;
+          accY += posY;
+          count++;
         }
+      }
 
-        if (count > 0) {
-          const offsetY = 0;
-          const posX = accX / count;
-          const posY = accY / count + offsetY;
-          this.text.position.x = posX;
-          this.text.position.y = posY;
-          this.textChat.position.x = posX;
-          this.textChat.position.y = posY - 200;
+      if (count > 0) {
+        const offsetY = 0;
+        const posX = accX / count;
+        const posY = accY / count + offsetY;
+        this.text.position.x = posX;
+        this.text.position.y = posY;
+        this.textChat.position.x = posX;
+        this.textChat.position.y = posY - 200;
 
-          const inView = !camera || camera.isWorldPointInView(posX, posY, 350);
-          if (this.text.renderable !== inView) this.text.renderable = inView;
-          if (this.textChat.renderable !== inView)
-            this.textChat.renderable = inView;
-        }
+        const inView = !camera || camera.isWorldPointInView(posX, posY, 350);
+        if (this.text.renderable !== inView) this.text.renderable = inView;
+        if (this.textChat.renderable !== inView)
+          this.textChat.renderable = inView;
       }
     } else {
       this.text.visible = false;

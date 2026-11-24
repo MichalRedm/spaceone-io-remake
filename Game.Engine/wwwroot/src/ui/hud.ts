@@ -1,14 +1,14 @@
 /**
- * @file In-game HUD overlay displaying latency, FPS, and player counts.
+ * @file In-game HUD overlay displaying FPS, latency, and tab player count.
  * @module ui/hud
  */
 
 import { Settings } from "./settings";
 
-const hudh = document.getElementById("hud");
+const hudEl = document.getElementById("hud");
 
 /**
- * Controller managing on-screen HUD diagnostics and window title updates.
+ * Controller managing on-screen FPS/Ping diagnostics and browser tab player counts.
  */
 export class HUD {
   /** Internal latency tracker in milliseconds. */
@@ -29,22 +29,27 @@ export class HUD {
   }
 
   /**
-   * Refreshes HUD visibility and synchronizes browser tab title with active player count.
+   * Refreshes HUD diagnostics visibility/readout and synchronizes browser tab title.
    */
   update(): void {
-    if (!hudh) return;
+    if (this.playerCount > 0) {
+      window.document.title = `SPACEONE.io (${this.playerCount})`;
+    } else {
+      window.document.title = "SPACEONE.io";
+    }
+
+    if (!hudEl) return;
+
     const isGameplayActive =
       document.body.classList.contains("alive") ||
       document.body.classList.contains("spectating");
     const shouldShow = Settings.hudEnabled && isGameplayActive;
 
-    hudh.hidden = !shouldShow;
-    hudh.classList.toggle("is-hidden", !shouldShow);
+    hudEl.hidden = !shouldShow;
+    hudEl.classList.toggle("is-hidden", !shouldShow);
 
-    hudh.style.fontFamily = Settings.font;
-
-    if (this.playerCount > 0)
-      window.document.title = `SPACEONE.io (${this.playerCount})`;
-    else window.document.title = `SPACEONE.io`;
+    if (shouldShow) {
+      hudEl.textContent = `${this.framesPerSecond} FPS · ${Math.round(this._latency)} ms`;
+    }
   }
 }

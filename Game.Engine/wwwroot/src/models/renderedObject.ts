@@ -31,6 +31,7 @@ import { TextureLoader } from "./textureLoader";
 import { getDefaultTextureMapRules } from "./textureMap";
 import { getDefaultSpriteModeMapRules } from "./spriteModeMap";
 import { Settings } from "../ui/settings";
+import { GameAudio } from "../audio/gameAudio";
 import {
   calculateScaleWithHeight,
   preloadAllGameTextures,
@@ -47,7 +48,7 @@ const _spriteModeMapRules = getDefaultSpriteModeMapRules(Settings.graphics);
 
 // Initialise the atlas textures once at module load time.
 textureCache.initAtlases = () => {
-  preloadAllGameTextures(_textureMapRules, Settings.mipmapping);
+  preloadAllGameTextures(_textureMapRules, true);
 };
 textureCache.initAtlases();
 
@@ -498,8 +499,15 @@ export class RenderedObject {
         this.isBoosting = true;
         this.boostStartTime =
           groupID && groupBoostTimes[groupID] ? groupBoostTimes[groupID] : now;
-        if (groupID && !groupBoostTimes[groupID]) {
-          groupBoostTimes[groupID] = now;
+        if (!groupID || !groupBoostTimes[groupID]) {
+          if (groupID) {
+            groupBoostTimes[groupID] = now;
+          }
+          const bx =
+            updateData.Position?.x ?? updateData.OriginalPosition?.x ?? 0;
+          const by =
+            updateData.Position?.y ?? updateData.OriginalPosition?.y ?? 0;
+          GameAudio.onFleetBoost(groupID, bx, by);
         }
       }
     } else if (this.isBoosting) {

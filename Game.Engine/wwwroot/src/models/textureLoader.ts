@@ -28,7 +28,6 @@ import type { ThemeRule } from "../parser/parseTheme";
 import { GroupParticle } from "./groupParticle";
 import type { RenderedObject } from "./renderedObject";
 import { resolveLayerAnimType } from "./spriteAnimator";
-import { Settings } from "../ui/settings";
 
 // ---------------------------------------------------------------------------
 // TextureLoader
@@ -161,7 +160,7 @@ export class TextureLoader {
       textures = createTextureFromDefinition(
         textureDefinition,
         textureName,
-        Settings.mipmapping,
+        true,
       );
     }
 

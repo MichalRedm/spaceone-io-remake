@@ -62,6 +62,9 @@ function getTargetDisplay(el: HTMLElement, defaultDisplay = "block"): string {
   if (el.classList.contains("world-selector")) {
     return "inline-flex";
   }
+  if (el.classList.contains("top-settings-bar")) {
+    return "flex";
+  }
   return defaultDisplay;
 }
 

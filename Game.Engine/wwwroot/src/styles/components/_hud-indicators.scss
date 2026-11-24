@@ -143,9 +143,27 @@ body.loading .tracking-arrow {
   }
 }
 
-.debug-hud,
+.stats-hud,
 #hud {
-  display: none !important;
+  position: fixed;
+  top: 62px;
+  left: 16px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(6, 11, 25, 0.72);
+  border: 1px solid rgba(61, 120, 255, 0.3);
+  color: $color-text-ice;
+  font-size: 10.5pt;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+  user-select: none;
+  z-index: $z-index-base;
+
+  body.spectating & {
+    top: 32px;
+  }
 }
 
 .game-log,
