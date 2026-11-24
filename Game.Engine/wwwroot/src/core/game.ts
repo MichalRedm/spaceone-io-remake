@@ -319,6 +319,14 @@ const spawnButton = document.getElementById("spawn") as HTMLInputElement | null;
 let isSpawning = false;
 let pendingSpawn = false;
 let spawnTimeout: ReturnType<typeof setTimeout> | null = null;
+let deathUiTimeout: ReturnType<typeof setTimeout> | null = null;
+
+function clearDeathUiTimeout(): void {
+  if (deathUiTimeout) {
+    clearTimeout(deathUiTimeout);
+    deathUiTimeout = null;
+  }
+}
 
 function setSpawnButtonState(state: "ready" | "connecting" | "spawning"): void {
   if (!spawnButton) return;
@@ -364,6 +372,7 @@ connection.onDisconnected = () => {
       clearTimeout(spawnTimeout);
       spawnTimeout = null;
     }
+    clearDeathUiTimeout();
     document.body.classList.remove("alive");
     document.body.classList.remove("spectating");
     document.body.classList.add("dead");
@@ -392,6 +401,7 @@ connection.onView = (newView) => {
     spawnGraceUntil = performance.now() + GameAudio.getPostSpawnGraceMs();
     GameAudio.setState(true, false, ownFleetID, worldSize);
     GameAudio.onPlayerSpawn();
+    clearDeathUiTimeout();
     if (spawnTimeout) {
       clearTimeout(spawnTimeout);
       spawnTimeout = null;
@@ -406,6 +416,7 @@ connection.onView = (newView) => {
     hide(".visibility4");
     show(".visibility2");
     show(".visibility3");
+    hud.update();
     const overlay = document.getElementById("overlay");
     if (overlay) {
       overlay.style.transition = "none";
@@ -421,7 +432,9 @@ connection.onView = (newView) => {
     }
     setSpawnButtonState("ready");
 
-    setTimeout(function () {
+    clearDeathUiTimeout();
+    deathUiTimeout = setTimeout(function () {
+      deathUiTimeout = null;
       document.body.classList.remove("alive");
       if (!replayMode || !replayPovMode) {
         document.body.classList.add("spectating");
@@ -1190,6 +1203,7 @@ if (replayMode) {
       connection.injectRawPacket(payload);
     },
     resetSession: () => {
+      clearDeathUiTimeout();
       cache.empty();
       clearLeaderboards();
       view = null;

@@ -30,6 +30,7 @@ let installed = false;
 let currentVirtualMs = 0;
 let nextVirtualTimerId = 1_000_000;
 const virtualTimers = new Map<number, VirtualTimerEntry>();
+let animationBirthMs = new WeakMap<Animation, number>();
 let realTimeoutScopeDepth = 0;
 
 /**
@@ -129,6 +130,7 @@ export function setVirtualTime(virtualMs: number): void {
 export function resetVirtualClock(): void {
   currentVirtualMs = 0;
   virtualTimers.clear();
+  animationBirthMs = new WeakMap<Animation, number>();
 }
 
 function syncWebAnimations(virtualMs: number): void {
@@ -142,8 +144,13 @@ function syncWebAnimations(virtualMs: number): void {
     const animations = document.getAnimations();
     for (const anim of animations) {
       if (anim.playState === "running" || anim.playState === "paused") {
+        let birthMs = animationBirthMs.get(anim);
+        if (birthMs === undefined) {
+          birthMs = virtualMs;
+          animationBirthMs.set(anim, birthMs);
+        }
         anim.pause();
-        anim.currentTime = virtualMs;
+        anim.currentTime = Math.max(0, virtualMs - birthMs);
       }
     }
   } catch {

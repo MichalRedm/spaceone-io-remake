@@ -234,17 +234,17 @@ export class ReplayController {
       }
     }
 
+    const headerPov = this.replay.header.tracking?.pov;
+    if (typeof headerPov === "boolean") {
+      this.povMode = headerPov;
+      this.host.setPovMode(headerPov);
+    }
+
     this.host.resetSession();
     WorldConfig.resetToDefaults();
 
     if (this.replay.header.hook) {
       WorldConfig.updateFromHook(this.replay.header.hook);
-    }
-
-    const headerPov = this.replay.header.tracking?.pov;
-    if (typeof headerPov === "boolean") {
-      this.povMode = headerPov;
-      this.host.setPovMode(headerPov);
     }
 
     if (this.soundEnabled) {
