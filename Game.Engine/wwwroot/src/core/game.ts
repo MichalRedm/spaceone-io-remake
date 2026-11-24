@@ -84,7 +84,7 @@ const container = new CustomContainer();
 app.stage.addChild(container);
 
 // Preload all assets and warm up GPU before gameplay
-preloadAllAssets(app, Settings.mipmapping);
+preloadAllAssets(app, true);
 
 const backgroundGroup = new pixiAny.display.Group(0, true);
 const tileGroup = new pixiAny.display.Group(1, true);
@@ -155,6 +155,16 @@ let currentWorld: WorldInfo | false = false;
 Controls.registerCanvas(canvas);
 
 const connection = new Connection();
+
+function syncLiveClientSettings(): void {
+  connection.bandwidthThrottle = Settings.bandwidth;
+  hud.update();
+  const selfNickContainer = document.getElementById("self-nick-container");
+  selfNickContainer?.classList.toggle("is-hidden", !Settings.showOwnName);
+}
+
+syncLiveClientSettings();
+window.addEventListener("spaceone:settings-changed", syncLiveClientSettings);
 
 window.Game.primaryConnection = connection;
 window.Game.isBackgrounded = false;
@@ -715,6 +725,7 @@ function startSpectate(hideButton = false) {
   if (hideButton) {
     document.body.classList.add("spectate_only");
   }
+  hud.update();
 }
 
 document.getElementById("spectate")?.addEventListener("click", () => {
@@ -739,6 +750,7 @@ function stopSpectate() {
   document.body.classList.add("dead");
   fadeIn(".visibility", 500);
   animateOpacity("#overlay", 0.8, 500);
+  hud.update();
 }
 
 document.getElementById("stop-spectating")?.addEventListener("click", () => {
@@ -750,8 +762,9 @@ document.getElementById("stop-spectating")?.addEventListener("click", () => {
   }
 });
 
-document.addEventListener("keydown", ({ keyCode, which }) => {
-  if (keyCode == 27 || which == 27) {
+document.addEventListener("keydown", (e) => {
+  if (e.defaultPrevented || window.popupShowing) return;
+  if (e.key === "Escape" || e.keyCode === 27 || e.which === 27) {
     if (lastAliveState) {
       connection.sendExit();
     } else if (isSpectating) {
@@ -973,8 +986,8 @@ app.ticker.add(() => {
       mouseScreenPos.y = Controls.mouseY;
       camera.screenToWorld(mouseScreenPos, mouseWorldPos);
       angle = Controls.angle;
-      aimTarget.x = Settings.mouseScale * (mouseWorldPos.x - position.x);
-      aimTarget.y = Settings.mouseScale * (mouseWorldPos.y - position.y);
+      aimTarget.x = mouseWorldPos.x - position.x;
+      aimTarget.y = mouseWorldPos.y - position.y;
     }
   }
 

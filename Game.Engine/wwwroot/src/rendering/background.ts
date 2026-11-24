@@ -3,7 +3,6 @@
  * @module rendering/background
  */
 
-import { Settings } from "../ui/settings";
 import { RenderedObject, loadTexture } from "../models/renderedObject";
 import { calculateScaleWithHeight } from "./atlasLoader";
 import * as PIXI from "pixi.js";
@@ -55,10 +54,9 @@ export class Background extends RenderedObject {
           const baseOffY = offset ? offset.y : 0;
           backgroundSprite.position.x = baseOffX - this.focus.x * (speed - 1);
           backgroundSprite.position.y = baseOffY - this.focus.y * (speed - 1);
-          if (Settings.background === "none" && backgroundSprite.visible)
-            backgroundSprite.visible = false;
-          if (Settings.background === "on" && !backgroundSprite.visible)
+          if (!backgroundSprite.visible) {
             backgroundSprite.visible = true;
+          }
         } else {
           backgroundSprite.visible = false;
         }

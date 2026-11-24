@@ -95,6 +95,7 @@ export class AudioManager {
   private lastVariantById = new Map<SoundId, number>();
 
   private enabled = true;
+  private volume = 1.0;
   private gestureListenersBound = false;
   private preloadStarted = false;
 
@@ -118,19 +119,39 @@ export class AudioManager {
    */
   setEnabled(enabled: boolean): void {
     this.enabled = enabled;
-    if (this.ctx && this.masterGain) {
-      const now = this.ctx.currentTime;
-      const target = enabled ? AUDIO_CONSTANTS.MASTER_GAIN : 0;
-      this.masterGain.gain.cancelScheduledValues(now);
-      this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, now);
-      this.masterGain.gain.linearRampToValueAtTime(
-        target,
-        now + AUDIO_CONSTANTS.MUTE_RAMP_SEC,
-      );
-    }
+    this.applyMasterGain();
     if (enabled && this.ctx) {
       this.unlockAndDecodePending();
     }
+  }
+
+  /**
+   * Sets normalized master SFX volume ($[0, 1]$) with a smooth 15 ms anti-click ramp.
+   *
+   * @param volume - Normalized volume multiplier clamped to $[0, 1]$.
+   */
+  setVolume(volume: number): void {
+    this.volume = Number.isFinite(volume) ? clamp(volume, 0, 1) : 1.0;
+    this.applyMasterGain();
+  }
+
+  /**
+   * Returns current normalized master SFX volume in $[0, 1]$.
+   */
+  getVolume(): number {
+    return this.volume;
+  }
+
+  private applyMasterGain(): void {
+    if (!this.ctx || !this.masterGain) return;
+    const now = this.ctx.currentTime;
+    const target = this.enabled ? AUDIO_CONSTANTS.MASTER_GAIN * this.volume : 0;
+    this.masterGain.gain.cancelScheduledValues(now);
+    this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, now);
+    this.masterGain.gain.linearRampToValueAtTime(
+      target,
+      now + AUDIO_CONSTANTS.MUTE_RAMP_SEC,
+    );
   }
 
   /**
@@ -367,7 +388,9 @@ export class AudioManager {
       compressor.release.value = AUDIO_CONSTANTS.COMPRESSOR_RELEASE_SEC;
 
       const masterGain = ctx.createGain();
-      masterGain.gain.value = this.enabled ? AUDIO_CONSTANTS.MASTER_GAIN : 0;
+      masterGain.gain.value = this.enabled
+        ? AUDIO_CONSTANTS.MASTER_GAIN * this.volume
+        : 0;
 
       compressor.connect(masterGain);
       masterGain.connect(ctx.destination);

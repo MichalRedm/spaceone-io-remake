@@ -43,7 +43,7 @@ This document formalizes the **Source of Truth** for procedural sound effect syn
   - Deduplicate laser volleys per group per tick (prioritizing own-fleet proximity) and coalesce `bullet_hit` when a ship explosion or pellet pickup occurs at the same coordinates.
   - Gate `food_collect` emissions to **own-fleet proximity (`260` world units)** when alive (capped at `<= 1` chime per snapshot tick) so enemy/bot pellet consumption never spams combat audio.
 - **Smooth Voice Stealing**: Enforce global polyphony cap (`16`) and per-cue `maxConcurrent` limits with priority ordering and **`VOICE_STEAL_FADE_SEC >= 0.035`** (`35 ms` anti-click crossfade) so clipped long tails never pop.
-- **UI Minimalism**: Keep menu controls strictly icon-only beside `Graphics` in `view-state--menu` (`#sound-toggle`, synced with `#settings-sound-enabled`, enabled by default in `settings` cookie), with `M` toggle bound **only while in-game** (`GameAudio.isInGame()`).
+- **UI Minimalism**: Keep menu controls compact beside `Graphics` in `view-state--menu` (`#settings-toggle` + `#sound-toggle`, synced with `#settings-sound-enabled` and `#settings-sound-volume` in `localStorage` key `spaceone_settings`, enabled at `100%` by default), with `M` toggle bound **only while in-game** (`GameAudio.isInGame()`).
 
 ---
 
