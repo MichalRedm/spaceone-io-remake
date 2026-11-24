@@ -71,8 +71,11 @@ dotnet run --project Game.Util -- --server http://localhost:5000 server connecti
   - `--ui-preset player|spectator|clean|none` + `--ui-show` / `--ui-hide` over all 15 keys: `leaderboard, arenaRecord, names, ownName, fleetSize, cooldown, autofire, trackingArrows, killBanner, scorePopups, dangerZone, ctfHud, fpsHud, vignette, deathMenu`.
   - `--overlay-info`: Burn a compact developer telemetry bar (timestamp, server tick, fleet ID, ship count, camera coords).
 
-### Stop Background Capture (`stop`)
+### Manage & Stop Background Captures (`sessions` / `stop`)
 ```powershell
+# List active & stale background sessions (--prune cleans dead session metadata)
+uv run --project tools/recorder python -m tools.recorder sessions --prune
+
 uv run --project tools/recorder python -m tools.recorder stop --session my_match
 uv run --project tools/recorder python -m tools.recorder stop --all
 ```

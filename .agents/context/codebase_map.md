@@ -123,7 +123,7 @@ Pixi.js WebGL client application.
 | `Game.Engine/wwwroot/src/replay/offlineAudioCapture.ts` | `OfflineAudioCapture` | `OfflineAudioContext` sink capturing spatial SFX events and synthesizing sample-accurate stereo WAV. |
 | `Game.Engine/wwwroot/src/replay/replayBridge.ts` | `ReplayController` | Typed replay bridge (`window.__spaceoneReplay`) driving stepped PixiJS rendering and audio synthesis. |
 | `tools/sfx/generate_sfx.py` | Procedural SFX Generator | Deterministic NumPy/SciPy + ffmpeg synthesizer & DSP QC verifier for the 20 ambient `.mp3` assets in `Game.Engine/wwwroot/audio/`. |
-| `tools/recorder/cli.py` | Gameplay Recording CLI (`python -m tools.recorder`) | CLI subcommands (`worlds`, `players`, `record`, `stop`, `render`, `inspect`, `export`, `frames`) running under `uv`. |
+| `tools/recorder/cli.py` | Gameplay Recording CLI (`python -m tools.recorder`) | CLI subcommands (`worlds`, `players`, `record`, `sessions`, `stop`, `render`, `inspect`, `export`, `frames`) running under `uv`. |
 | `tools/recorder/capture.py` | `capture_single`, `capture_many` | Lightweight async WebSocket observer capturing `.s1rec` / `.s1rec.gz` replays with death/duration/sentinel triggers. |
 | `tools/recorder/renderer.py` | `render_replay_to_mp4`, `extract_frames` | Headless Playwright Chromium + `OfflineAudioContext` + FFmpeg converter producing MP4s and keyframe PNGs. |
 | `tools/recorder/format.py` | `ReplayWriter`, `read_replay`, `inspect_replay` | `.s1rec` / `.s1rec.gz` v1 reader, crash-safe writer, and metadata inspector. |
