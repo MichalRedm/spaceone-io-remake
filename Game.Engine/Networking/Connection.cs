@@ -57,6 +57,7 @@ namespace Game.Engine.Networking
 
         private ObserverTarget _observerTarget = null;
         private Player _observedPlayer = null;
+        private bool _observedMirrorPov = false;
         private Fleet _leaderFleet = null;
         private uint _leaderSwitchedAt = 0;
         private Vector2 _lastObservedPosition = Vector2.Zero;
@@ -100,7 +101,8 @@ namespace Game.Engine.Networking
 
         private void UpdateObservedPlayer(Player target)
         {
-            if (ReferenceEquals(_observedPlayer, target))
+            bool wantMirror = _observerTarget?.MirrorPov ?? false;
+            if (ReferenceEquals(_observedPlayer, target) && _observedMirrorPov == wantMirror)
                 return;
 
             if (_observedPlayer != null)
@@ -109,8 +111,9 @@ namespace Game.Engine.Networking
             while (_mirroredMessages.TryDequeue(out _)) { }
 
             _observedPlayer = target;
+            _observedMirrorPov = wantMirror;
 
-            if (_observedPlayer != null && (_observerTarget?.MirrorPov ?? false))
+            if (_observedPlayer != null && wantMirror)
                 _observedPlayer.AddMessageObserver(OnObservedPlayerMessage);
         }
 
@@ -888,8 +891,11 @@ namespace Game.Engine.Networking
                         break;
                     }
 
-                    _observerTarget = null;
-                    DetachObservedPlayer();
+                    if (!string.IsNullOrEmpty(input.SpectateControl))
+                    {
+                        _observerTarget = null;
+                        DetachObservedPlayer();
+                    }
 
                     if (input.SpectateControl == "action:next")
                     {
