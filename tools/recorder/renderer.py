@@ -301,11 +301,19 @@ def render_replay_to_mp4(
     pov_default = bool(tracking.get("pov", True))
 
     start_ms = max(0, int(round(opts.start_sec * 1000)))
+    if archive.duration_ms > 0 and start_ms >= archive.duration_ms:
+        raise ValueError(
+            f"--start ({opts.start_sec:.2f}s) must be less than replay duration ({archive.duration_ms / 1000.0:.2f}s)."
+        )
     raw_end_ms = (
         archive.duration_ms
         if opts.end_sec is None
         else min(archive.duration_ms, int(round(opts.end_sec * 1000)))
     )
+    if opts.end_sec is not None and raw_end_ms <= start_ms:
+        raise ValueError(
+            f"--end ({opts.end_sec:.2f}s) must be greater than --start ({opts.start_sec:.2f}s)."
+        )
     end_ms = max(start_ms + 1, raw_end_ms)
     replay_span_ms = max(1, end_ms - start_ms)
     speed = opts.speed if opts.speed > 0 else 1.0
@@ -322,11 +330,15 @@ def render_replay_to_mp4(
         tmp_dir = Path(tmp_dir_str)
         video_only_path = tmp_dir / "video_only.mp4"
         wav_path = tmp_dir / "audio.wav"
+        ffmpeg_log_path = tmp_dir / "ffmpeg_video.log"
         target_video_path = video_only_path if effective_audio else out_path
 
         ffmpeg_cmd = [
             ffmpeg_bin,
             "-y",
+            "-nostats",
+            "-loglevel",
+            "warning",
             "-f",
             "image2pipe",
             "-vcodec",
@@ -358,52 +370,56 @@ def render_replay_to_mp4(
             page = context.new_page()
             cdp = context.new_cdp_session(page)
 
-            ff_proc = subprocess.Popen(
-                ffmpeg_cmd,
-                stdin=subprocess.PIPE,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.PIPE,
-            )
+            with open(ffmpeg_log_path, "w", encoding="utf-8") as ff_log_fp:
+                ff_proc = subprocess.Popen(
+                    ffmpeg_cmd,
+                    stdin=subprocess.PIPE,
+                    stdout=subprocess.DEVNULL,
+                    stderr=ff_log_fp,
+                )
 
-            audio_b64 = ""
-            try:
-                _setup_replay_page(page, src_path, page_opts, start_ms, pov_default)
+                audio_b64 = ""
+                try:
+                    _setup_replay_page(page, src_path, page_opts, start_ms, pov_default)
 
-                shot_params: dict[str, Any] = {"format": frame_fmt}
-                if frame_fmt == "jpeg":
-                    shot_params["quality"] = 94
+                    shot_params: dict[str, Any] = {"format": frame_fmt}
+                    if frame_fmt == "jpeg":
+                        shot_params["quality"] = 94
 
-                assert ff_proc.stdin is not None
-                for i in range(num_frames):
-                    output_ms = (i * 1000.0) / opts.fps
-                    page.evaluate(
-                        "t => window.__spaceoneReplay.stepTo(t)", output_ms
-                    )
-                    shot = cdp.send("Page.captureScreenshot", shot_params)
-                    ff_proc.stdin.write(base64.b64decode(shot["data"]))
+                    assert ff_proc.stdin is not None
+                    for i in range(num_frames):
+                        output_ms = (i * 1000.0) / opts.fps
+                        page.evaluate(
+                            "t => window.__spaceoneReplay.stepTo(t)", output_ms
+                        )
+                        shot = cdp.send("Page.captureScreenshot", shot_params)
+                        ff_proc.stdin.write(base64.b64decode(shot["data"]))
 
-                ff_proc.stdin.close()
-                ff_stderr = ff_proc.stderr.read().decode("utf-8", errors="replace") if ff_proc.stderr else ""
-                rc = ff_proc.wait()
-                if rc != 0:
-                    raise RuntimeError(f"FFmpeg video encode failed ({rc}):\n{ff_stderr}")
+                    ff_proc.stdin.close()
+                    rc = ff_proc.wait()
+                    ff_log_fp.flush()
+                    if rc != 0:
+                        ff_stderr = ffmpeg_log_path.read_text(encoding="utf-8", errors="replace")
+                        raise RuntimeError(f"FFmpeg video encode failed ({rc}):\n{ff_stderr}")
 
-                if effective_audio:
-                    audio_b64 = page.evaluate(
-                        "d => window.__spaceoneReplay.renderAudioWavBase64(d)",
-                        output_duration_sec,
-                    )
-            finally:
-                if ff_proc.poll() is None:
+                    if effective_audio:
+                        audio_b64 = page.evaluate(
+                            "d => window.__spaceoneReplay.renderAudioWavBase64(d)",
+                            output_duration_sec,
+                        )
+                finally:
+                    if ff_proc.poll() is None:
+                        try:
+                            if ff_proc.stdin and not ff_proc.stdin.closed:
+                                ff_proc.stdin.close()
+                        except Exception:
+                            pass
+                        ff_proc.kill()
+                        ff_proc.wait()
                     try:
-                        if ff_proc.stdin and not ff_proc.stdin.closed:
-                            ff_proc.stdin.close()
-                    except Exception:
-                        pass
-                    ff_proc.kill()
-                    ff_proc.wait()
-                context.close()
-                browser.close()
+                        context.close()
+                    finally:
+                        browser.close()
 
         if effective_audio:
             wav_bytes = base64.b64decode(audio_b64) if audio_b64 else b""
@@ -513,8 +529,10 @@ def extract_frames(
                 frame_path.write_bytes(base64.b64decode(shot["data"]))
                 saved_files.append(frame_path)
         finally:
-            context.close()
-            browser.close()
+            try:
+                context.close()
+            finally:
+                browser.close()
 
     contact_sheet_path: Path | None = None
     if contact_sheet and saved_files:

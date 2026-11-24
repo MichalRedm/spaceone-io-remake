@@ -269,19 +269,46 @@ def _resolve_recording_targets(args: argparse.Namespace) -> list[TargetSpec]:
         targets.append(build_target_spec("point", args.point, pov=False, viewport_radius=radius))
 
     if args.auto or not targets:
-        if not targets:
-            targets.append(build_target_spec("auto", pov=pov, viewport_radius=radius))
-        else:
-            targets.append(build_target_spec("auto", pov=pov, viewport_radius=radius))
+        targets.append(build_target_spec("auto", pov=pov, viewport_radius=radius))
 
     return targets
+
+
+def _cleanup_session_files(session_name: str) -> None:
+    meta_path, stop_path = _session_paths(session_name)
+    for path in (stop_path, meta_path):
+        if path.exists():
+            try:
+                path.unlink()
+            except OSError:
+                pass
+
+
+def _default_render_output_path(src: Path) -> Path:
+    """Computes default `.mp4` output path for both `.s1rec` and `.s1rec.gz` inputs."""
+    lower = src.name.lower()
+    if lower.endswith(".s1rec.gz"):
+        return src.with_name(src.name[: -len(".s1rec.gz")] + ".mp4")
+    return src.with_suffix(".mp4")
 
 
 def _spawn_background_record(args: argparse.Namespace) -> int:
     session_name = args.session or f"rec_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}"
     SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
     meta_path, stop_path = _session_paths(session_name)
-    if stop_path.exists():
+    if meta_path.exists():
+        try:
+            existing = json.loads(meta_path.read_text(encoding="utf-8"))
+            existing_pid = int(existing.get("pid", 0))
+        except Exception:
+            existing_pid = 0
+        if _is_pid_running(existing_pid):
+            raise RuntimeError(
+                f"Background recording session '{session_name}' is already running (PID {existing_pid}). "
+                "Stop it first or specify a different --session name."
+            )
+        _cleanup_session_files(session_name)
+    elif stop_path.exists():
         stop_path.unlink()
 
     child_argv: list[str] = [sys.executable, "-m", "tools.recorder", "record"]
@@ -342,97 +369,94 @@ def _cmd_record(args: argparse.Namespace) -> int:
     if args.background:
         return _spawn_background_record(args)
 
-    targets = _resolve_recording_targets(args)
-    stamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    multi = len(targets) > 1
-    out_dir = Path(args.output_dir) if args.output_dir else DEFAULT_RECORDINGS_DIR
-
-    single_output = Path(args.output) if args.output else None
-    sentinel_path = Path(args.sentinel_file) if args.sentinel_file else None
-
-    if args.duration == 0 and not args.stop_on_death and not args.stop_on_disconnect and sentinel_path is None:
-        print("Recording indefinitely until Ctrl+C / SIGINT...")
-
-    configs: list[CaptureConfig] = []
-    final_outputs: list[tuple[TargetSpec, Path, Path, bool]] = []  # (target, s1rec_path, final_path, wants_mp4)
-
-    for idx, tgt in enumerate(targets):
-        safe_label = _sanitize_filename(tgt.label)
-        if not multi and single_output is not None:
-            dest = single_output
-        else:
-            ext = (".s1rec.gz" if args.compress else ".s1rec") if args.s1rec_only else ".mp4"
-            dest = out_dir / f"{stamp}_{idx + 1}_{safe_label}{ext}"
-
-        wants_mp4 = dest.suffix.lower() == ".mp4"
-        if wants_mp4:
-            if not multi and args.keep_replay:
-                s1rec_path = Path(args.keep_replay)
-            else:
-                suffix = ".s1rec.gz" if args.compress else ".s1rec"
-                s1rec_path = dest.with_suffix(suffix)
-        else:
-            s1rec_path = dest
-
-        configs.append(
-            CaptureConfig(
-                server_url=args.server,
-                world=args.world,
-                target=tgt,
-                output_path=s1rec_path,
-                compress=args.compress or s1rec_path.suffix.lower() == ".gz",
-                duration_sec=args.duration,
-                max_duration_sec=args.max_duration,
-                max_size_mb=args.max_size_mb,
-                wait_for_spawn=args.wait_for_spawn,
-                stop_on_death=args.stop_on_death,
-                post_death_delay_sec=args.post_death_delay,
-                stop_on_disconnect=args.stop_on_disconnect,
-                stop_sentinel_path=sentinel_path,
-            )
-        )
-        final_outputs.append((tgt, s1rec_path, dest, wants_mp4))
-
-    results: list[CaptureResult] = asyncio.run(capture_many(configs))
-
-    render_opts: RenderOptions | None = None
-    if any(w for _, _, _, w in final_outputs):
-        render_opts = build_render_options(args)
-
     summary_items: list[dict[str, Any]] = []
-    for res, (tgt, s1rec_path, final_path, wants_mp4) in zip(results, final_outputs):
-        print(
-            f"[captured] target={res.target_label} frames={res.frames_written} "
-            f"duration={res.duration_ms / 1000.0:.2f}s reason={res.stop_reason} file={s1rec_path}"
-        )
-        item: dict[str, Any] = {
-            "target": res.target_label,
-            "s1rec": str(s1rec_path),
-            "frames": res.frames_written,
-            "duration_sec": round(res.duration_ms / 1000.0, 3),
-            "stop_reason": res.stop_reason,
-        }
-        if wants_mp4 and res.frames_written > 0:
-            assert render_opts is not None
-            info = render_replay_to_mp4(s1rec_path, final_path, render_opts)
-            item["mp4"] = info["output"]
-            item["mp4_size_bytes"] = info["size_bytes"]
-            print(
-                f"[rendered] {info['output']} ({info['viewport']} @ {info['fps']}fps, "
-                f"audio={info['audio']}, {info['size_bytes'] / (1024 * 1024):.2f} MB)"
+    try:
+        targets = _resolve_recording_targets(args)
+        stamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        multi = len(targets) > 1
+        out_dir = Path(args.output_dir) if args.output_dir else DEFAULT_RECORDINGS_DIR
+
+        single_output = Path(args.output) if args.output else None
+        sentinel_path = Path(args.sentinel_file) if args.sentinel_file else None
+
+        if args.duration == 0 and not args.stop_on_death and not args.stop_on_disconnect and sentinel_path is None:
+            print("Recording indefinitely until Ctrl+C / SIGINT...")
+
+        configs: list[CaptureConfig] = []
+        final_outputs: list[tuple[TargetSpec, Path, Path, bool]] = []  # (target, s1rec_path, final_path, wants_mp4)
+
+        for idx, tgt in enumerate(targets):
+            safe_label = _sanitize_filename(tgt.label)
+            if not multi and single_output is not None:
+                dest = single_output
+            else:
+                ext = (".s1rec.gz" if args.compress else ".s1rec") if args.s1rec_only else ".mp4"
+                dest = out_dir / f"{stamp}_{idx + 1}_{safe_label}{ext}"
+
+            wants_mp4 = dest.suffix.lower() == ".mp4"
+            if wants_mp4:
+                if not multi and args.keep_replay:
+                    s1rec_path = Path(args.keep_replay)
+                else:
+                    suffix = ".s1rec.gz" if args.compress else ".s1rec"
+                    s1rec_path = dest.with_suffix(suffix)
+            else:
+                s1rec_path = dest
+
+            configs.append(
+                CaptureConfig(
+                    server_url=args.server,
+                    world=args.world,
+                    target=tgt,
+                    output_path=s1rec_path,
+                    compress=args.compress or s1rec_path.suffix.lower() == ".gz",
+                    duration_sec=args.duration,
+                    max_duration_sec=args.max_duration,
+                    max_size_mb=args.max_size_mb,
+                    wait_for_spawn=args.wait_for_spawn,
+                    stop_on_death=args.stop_on_death,
+                    post_death_delay_sec=args.post_death_delay,
+                    stop_on_disconnect=args.stop_on_disconnect,
+                    stop_sentinel_path=sentinel_path,
+                )
             )
-            if args.no_keep_replay and s1rec_path.exists():
-                s1rec_path.unlink()
-                item.pop("s1rec", None)
+            final_outputs.append((tgt, s1rec_path, dest, wants_mp4))
 
-        summary_items.append(item)
+        results: list[CaptureResult] = asyncio.run(capture_many(configs))
 
-    if args.session:
-        meta_path, stop_path = _session_paths(args.session)
-        if stop_path.exists():
-            stop_path.unlink()
-        if meta_path.exists():
-            meta_path.unlink()
+        render_opts: RenderOptions | None = None
+        if any(w for _, _, _, w in final_outputs):
+            render_opts = build_render_options(args)
+
+        for res, (tgt, s1rec_path, final_path, wants_mp4) in zip(results, final_outputs):
+            print(
+                f"[captured] target={res.target_label} frames={res.frames_written} "
+                f"duration={res.duration_ms / 1000.0:.2f}s reason={res.stop_reason} file={s1rec_path}"
+            )
+            item: dict[str, Any] = {
+                "target": res.target_label,
+                "s1rec": str(s1rec_path),
+                "frames": res.frames_written,
+                "duration_sec": round(res.duration_ms / 1000.0, 3),
+                "stop_reason": res.stop_reason,
+            }
+            if wants_mp4 and res.frames_written > 0:
+                assert render_opts is not None
+                info = render_replay_to_mp4(s1rec_path, final_path, render_opts)
+                item["mp4"] = info["output"]
+                item["mp4_size_bytes"] = info["size_bytes"]
+                print(
+                    f"[rendered] {info['output']} ({info['viewport']} @ {info['fps']}fps, "
+                    f"audio={info['audio']}, {info['size_bytes'] / (1024 * 1024):.2f} MB)"
+                )
+                if args.no_keep_replay and s1rec_path.exists():
+                    s1rec_path.unlink()
+                    item.pop("s1rec", None)
+
+            summary_items.append(item)
+    finally:
+        if args.session:
+            _cleanup_session_files(args.session)
 
     if args.json:
         print(json.dumps(summary_items, indent=2))
@@ -442,11 +466,92 @@ def _cmd_record(args: argparse.Namespace) -> int:
 def _is_pid_running(pid: int) -> bool:
     if pid <= 0:
         return False
+    if os.name == "nt":
+        import ctypes
+        from ctypes import wintypes
+
+        process_query_limited_info = 0x1000
+        still_active = 259
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        handle = kernel32.OpenProcess(process_query_limited_info, False, int(pid))
+        if not handle:
+            # ERROR_ACCESS_DENIED (5) indicates the PID exists under stricter permissions.
+            return ctypes.get_last_error() == 5
+        try:
+            exit_code = wintypes.DWORD()
+            if not kernel32.GetExitCodeProcess(handle, ctypes.byref(exit_code)):
+                return False
+            return exit_code.value == still_active
+        finally:
+            kernel32.CloseHandle(handle)
+
     try:
         os.kill(pid, 0)
         return True
+    except PermissionError:
+        return True
     except OSError:
         return False
+
+
+def _load_sessions(prune: bool = False) -> list[dict[str, Any]]:
+    if not SESSIONS_DIR.exists():
+        return []
+    entries: list[dict[str, Any]] = []
+    for meta_path in sorted(SESSIONS_DIR.glob("*.json")):
+        try:
+            meta = json.loads(meta_path.read_text(encoding="utf-8"))
+        except Exception:
+            meta = {"session": meta_path.stem, "pid": 0, "corrupt": True}
+
+        pid = int(meta.get("pid", 0))
+        running = _is_pid_running(pid)
+        session_name = str(meta.get("session") or meta_path.stem)
+        if prune and not running:
+            stop_path = Path(meta.get("stop_sentinel", "")) if meta.get("stop_sentinel") else None
+            if stop_path and stop_path.exists():
+                try:
+                    stop_path.unlink()
+                except OSError:
+                    pass
+            try:
+                meta_path.unlink()
+            except OSError:
+                pass
+            continue
+
+        entries.append(
+            {
+                "session": session_name,
+                "pid": pid,
+                "status": "running" if running else "stale",
+                "world": meta.get("world"),
+                "server": meta.get("server"),
+                "started_at": meta.get("started_at"),
+                "log": meta.get("log"),
+                "meta_file": str(meta_path),
+            }
+        )
+    return entries
+
+
+def _cmd_sessions(args: argparse.Namespace) -> int:
+    rows = _load_sessions(prune=args.prune)
+    if args.json:
+        print(json.dumps(rows, indent=2))
+        return 0
+    if not rows:
+        print("No background recording sessions found.")
+        return 0
+
+    print(f"{'SESSION':<24} {'PID':<8} {'STATUS':<9} {'WORLD':<12} {'STARTED_AT'}")
+    print("-" * 82)
+    for r in rows:
+        print(
+            f"{str(r['session']):<24} {str(r['pid']):<8} {str(r['status']):<9} "
+            f"{str(r.get('world') or ''):<12} {str(r.get('started_at') or '')}"
+        )
+    return 0
 
 
 def _cmd_stop(args: argparse.Namespace) -> int:
@@ -472,19 +577,26 @@ def _cmd_stop(args: argparse.Namespace) -> int:
         meta = json.loads(meta_path.read_text(encoding="utf-8"))
         stop_path = Path(meta["stop_sentinel"])
         pid = int(meta.get("pid", 0))
+        session_name = str(meta.get("session") or meta_path.stem)
+
+        if not _is_pid_running(pid):
+            print(f"Session '{session_name}' (PID {pid}) is no longer running; cleaned stale metadata.")
+            _cleanup_session_files(session_name)
+            continue
+
         stop_path.write_text("stop\n", encoding="utf-8")
-        print(f"Sent stop signal to session '{meta['session']}' (PID {pid})...")
+        print(f"Sent stop signal to session '{session_name}' (PID {pid})...")
 
         deadline = time.monotonic() + max(1.0, args.timeout)
         while time.monotonic() < deadline:
-            if not meta_path.exists() and not _is_pid_running(pid):
+            if not meta_path.exists() or not _is_pid_running(pid):
                 break
             time.sleep(0.25)
 
         if _is_pid_running(pid):
-            print(f"Warning: session '{meta['session']}' (PID {pid}) is still finishing/rendering. Check {meta.get('log')}.")
+            print(f"Warning: session '{session_name}' (PID {pid}) is still finishing/rendering. Check {meta.get('log')}.")
         else:
-            print(f"Session '{meta['session']}' stopped cleanly.")
+            print(f"Session '{session_name}' stopped cleanly.")
             if stop_path.exists():
                 stop_path.unlink()
             if meta_path.exists():
@@ -495,7 +607,7 @@ def _cmd_stop(args: argparse.Namespace) -> int:
 
 def _cmd_render(args: argparse.Namespace) -> int:
     src = Path(args.input)
-    out = Path(args.output) if args.output else src.with_suffix(".mp4")
+    out = Path(args.output) if args.output else _default_render_output_path(src)
     opts = build_render_options(args)
     result = render_replay_to_mp4(src, out, opts)
     if args.json:
@@ -630,6 +742,12 @@ def build_parser() -> argparse.ArgumentParser:
     p_rec.add_argument("--json", action="store_true")
     _add_render_flags(p_rec, include_profile=True)
     p_rec.set_defaults(func=_cmd_record)
+
+    # sessions
+    p_sess = sub.add_parser("sessions", help="List background recording sessions and clean stale metadata")
+    p_sess.add_argument("--prune", action="store_true", help="Remove stale metadata files whose PID has exited")
+    p_sess.add_argument("--json", action="store_true")
+    p_sess.set_defaults(func=_cmd_sessions)
 
     # stop
     p_stop = sub.add_parser("stop", help="Gracefully stop a background recording session")

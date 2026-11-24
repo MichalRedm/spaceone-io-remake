@@ -8,11 +8,19 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from tools.recorder.cli import build_parser, build_render_options
+from tools.recorder.cli import (
+    _cmd_sessions,
+    _cmd_stop,
+    _default_render_output_path,
+    _is_pid_running,
+    build_parser,
+    build_render_options,
+)
 from tools.recorder.discovery import build_target_spec, find_matching_player
 from tools.recorder.exporter import export_trajectories
 from tools.recorder.flatbuffers_wire import (
     _NET_BODY_STRUCT,
+    SPRITE_NAMES,
     AllMessages,
     MiniFlatBufferBuilder,
     _TableReader,
@@ -22,7 +30,12 @@ from tools.recorder.flatbuffers_wire import (
     peek_quantum,
 )
 from tools.recorder.format import ReplayWriter, inspect_replay, read_replay
-from tools.recorder.renderer import parse_ui_overrides, parse_viewport
+from tools.recorder.renderer import (
+    RenderOptions,
+    parse_ui_overrides,
+    parse_viewport,
+    render_replay_to_mp4,
+)
 
 
 def _build_synthetic_world_view(
@@ -174,8 +187,9 @@ class RecorderTests(unittest.TestCase):
             10.0,
             20.0,
             [
-                (101, 1000, 10.0, 20.0, 0.5, 0.0, 0.0, 0.0, 2, 1, 0, 5),
-                (202, 1000, 50.0, 60.0, 0.0, 0.0, 0.0, 0.0, 1, 26, 0, 0),
+                (101, 1000, 10.0, 20.0, 0.5, 0.0, 0.0, 0.0, 2, 18, 0, 5),  # ship_secret
+                (202, 1000, 50.0, 60.0, 0.0, 0.0, 0.0, 0.0, 1, 27, 0, 0),  # fish
+                (303, 1000, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0, 0, 0),     # none
             ],
             group_caption="BotA",
         )
@@ -239,6 +253,81 @@ class RecorderTests(unittest.TestCase):
         self.assertEqual(opts.fps, 30)
         self.assertFalse(opts.enable_audio)
         self.assertEqual(opts.speed, 0.5)
+
+    def test_canonical_sprite_names_parity(self) -> None:
+        expected = {
+            0: "none",
+            1: "ship0",
+            9: "ship_yellow",
+            18: "ship_secret",
+            19: "ship_zed",
+            20: "bullet_green",
+            27: "fish",
+            35: "bullet",
+            38: "obstacle",
+            42: "ctf_base",
+            71: "boom",
+            72: "ctf_base_red",
+        }
+        for idx, name in expected.items():
+            self.assertEqual(SPRITE_NAMES.get(idx), name)
+        self.assertEqual(len(SPRITE_NAMES), 73)
+
+    def test_sessions_stop_and_render_validation(self) -> None:
+        import json
+        from unittest.mock import patch
+
+        self.assertEqual(
+            _default_render_output_path(Path("recordings/clip.s1rec")),
+            Path("recordings/clip.mp4"),
+        )
+        self.assertEqual(
+            _default_render_output_path(Path("recordings/clip.s1rec.gz")),
+            Path("recordings/clip.mp4"),
+        )
+        self.assertFalse(_is_pid_running(999_999_99))
+
+        parser = build_parser()
+        with tempfile.TemporaryDirectory() as tmp:
+            sess_dir = Path(tmp) / ".recorder_sessions"
+            sess_dir.mkdir()
+            meta_file = sess_dir / "dead_test.json"
+            stop_file = sess_dir / "dead_test.stop"
+            meta_file.write_text(
+                json.dumps(
+                    {
+                        "session": "dead_test",
+                        "pid": 999_999_99,
+                        "world": "default",
+                        "server": "http://localhost:5000",
+                        "started_at": "2026-01-01T00:00:00+00:00",
+                        "stop_sentinel": str(stop_file),
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            with patch("tools.recorder.cli.SESSIONS_DIR", sess_dir):
+                stop_args = parser.parse_args(["stop", "--session", "dead_test", "--timeout", "1.0"])
+                rc = _cmd_stop(stop_args)
+                self.assertEqual(rc, 0)
+                self.assertFalse(meta_file.exists())
+
+                meta_file.write_text(
+                    json.dumps({"session": "stale_2", "pid": 999_999_99, "stop_sentinel": str(stop_file)}),
+                    encoding="utf-8",
+                )
+                sess_args = parser.parse_args(["sessions", "--prune", "--json"])
+                self.assertEqual(_cmd_sessions(sess_args), 0)
+                self.assertFalse(meta_file.exists())
+
+            rec_path = Path(tmp) / "short.s1rec"
+            pkt = _build_synthetic_world_view(1000, 1, True, 0.0, 0.0, [])
+            with ReplayWriter(rec_path, {"worldKey": "default"}) as w:
+                w.write_frame(0, pkt)
+                w.write_frame(2000, pkt)
+            with self.assertRaises(ValueError):
+                render_replay_to_mp4(rec_path, Path(tmp) / "out.mp4", RenderOptions(start_sec=3.0))
 
 
 if __name__ == "__main__":

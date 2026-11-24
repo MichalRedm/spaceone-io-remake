@@ -121,6 +121,7 @@ async def capture_single(
                 nonlocal stop_reason
                 last_ping = 0.0
                 last_player_check = 0.0
+                seen_target_in_world = False
                 while not stop_event.is_set():
                     now = time.monotonic()
                     if now - last_ping >= config.ping_interval_sec:
@@ -141,8 +142,7 @@ async def capture_single(
 
                     if (
                         config.stop_on_disconnect
-                        and config.target.mode in ("player", "name")
-                        and config.target.target_value
+                        and config.target.mode in ("player", "name", "fleet")
                         and now - last_player_check >= 1.5
                     ):
                         last_player_check = now
@@ -150,12 +150,24 @@ async def capture_single(
                             players = await asyncio.to_thread(
                                 fetch_players, server_url, config.world
                             )
-                            matched = find_matching_player(
-                                players,
-                                config.target.mode,
-                                config.target.target_value,
+                            monitor_mode = (
+                                "player"
+                                if config.target.mode == "fleet" and config.target.player_id
+                                else config.target.mode
                             )
-                            if matched is None:
+                            monitor_value = (
+                                config.target.player_id
+                                if monitor_mode == "player" and config.target.player_id
+                                else config.target.target_value
+                            )
+                            matched = (
+                                find_matching_player(players, monitor_mode, monitor_value)
+                                if monitor_value
+                                else None
+                            )
+                            if matched is not None:
+                                seen_target_in_world = True
+                            elif seen_target_in_world:
                                 stop_reason = "target_disconnected"
                                 stop_event.set()
                                 break
