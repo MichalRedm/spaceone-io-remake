@@ -330,8 +330,6 @@ export interface ControlsType {
   shoot: boolean;
   /** Whether autofire toggle is enabled. */
   autofire: boolean;
-  /** Timestamp when shoot button was pressed down in milliseconds. */
-  downSince: number | false;
   /** Custom JSON data payload transmitted with control frame. */
   customData: any;
   /** Current mouse cursor screen X position. */
@@ -375,7 +373,6 @@ export const Controls: ControlsType = {
   boost: false,
   shoot: false,
   autofire: false,
-  downSince: false,
   customData: false,
   mouseX: 0,
   mouseY: 0,
@@ -432,47 +429,22 @@ export const Controls: ControlsType = {
         Controls.angle = Math.atan2(dy, dx);
       });
       window.addEventListener("mousedown", ({ button }) => {
-        if (button === 2)
-          // right click
-          Controls.boost = true;
-        else {
-          if (Settings.mouseOneButton > 0) {
-            Controls.downSince = new Date().getTime();
-          } else {
-            Controls.shoot = true;
+        if (button === 2) {
+          // right click triggers Split & Dash when enabled
+          if (Settings.rightClickBoost) {
+            Controls.boost = true;
           }
+        } else {
+          Controls.shoot = true;
         }
       });
 
       window.addEventListener("mouseup", ({ button }) => {
-        if (button === 2)
-          // right click
+        if (button === 2) {
+          // Always clear boost on release so disabling mid-hold cannot stick
           Controls.boost = false;
-        else {
-          if (Settings.mouseOneButton > 0) {
-            const timeDelta =
-              Controls.downSince !== false
-                ? new Date().getTime() - Controls.downSince
-                : 0;
-            Controls.downSince = false;
-            if (timeDelta < Settings.mouseOneButton) {
-              Controls.shoot = true;
-              setTimeout(function () {
-                if (!Controls.autofire) {
-                  Controls.shoot = false;
-                }
-              }, 100);
-            } else {
-              Controls.boost = true;
-              setTimeout(function () {
-                Controls.boost = false;
-              }, 100);
-            }
-          } else {
-            if (!Controls.autofire) {
-              Controls.shoot = false;
-            }
-          }
+        } else if (!Controls.autofire) {
+          Controls.shoot = false;
         }
       });
       window.addEventListener("contextmenu", (e) => {

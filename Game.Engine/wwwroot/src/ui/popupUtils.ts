@@ -1,13 +1,19 @@
 /**
- * @file Modal dialog popup controller (changelog, instructions, invalid arena alert).
+ * @file Modal dialog popup controller (changelog, instructions, invalid arena alert, worlds, settings).
  * @module ui/popupUtils
  */
 
 import { fadeIn, fadeOut } from "./domUtils";
+import { GameAudio } from "../audio/gameAudio";
 
 /** Supported popup modal names. */
 export type PopupName =
-  "changelog" | "instructions" | "invalidArena" | "worlds";
+  "changelog" | "instructions" | "invalidArena" | "worlds" | "settings";
+
+function isPopupOpen(popupEl: HTMLElement | null): boolean {
+  if (!popupEl) return false;
+  return !popupEl.hidden && popupEl.style.display !== "none";
+}
 
 /**
  * Attaches DOM click listeners to all modal popup trigger buttons and close actions.
@@ -38,6 +44,15 @@ export function bootstrapPopups(): void {
         e.preventDefault();
         pressPopup("worlds");
       }
+    });
+  }
+
+  const settingsToggleBtn = document.getElementById("settings-toggle");
+  if (settingsToggleBtn) {
+    settingsToggleBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      GameAudio.onUiClick();
+      pressPopup("settings");
     });
   }
 
@@ -72,6 +87,37 @@ export function bootstrapPopups(): void {
       closePopup("worlds");
     });
   });
+
+  document
+    .querySelectorAll("#settings-close, #settings-back, #settings-done")
+    .forEach((btn) => {
+      btn.addEventListener("click", () => {
+        GameAudio.onUiClick();
+        closePopup("settings");
+      });
+    });
+
+  const settingsCloseBtn = document.getElementById("settings-close");
+  settingsCloseBtn?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      GameAudio.onUiClick();
+      closePopup("settings");
+    }
+  });
+
+  document.addEventListener(
+    "keydown",
+    (e) => {
+      if (e.key !== "Escape") return;
+      if (isPopupOpen(getPopupElement("settings"))) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        closePopup("settings");
+      }
+    },
+    true,
+  );
 }
 
 /**
@@ -80,7 +126,7 @@ export function bootstrapPopups(): void {
  * @param popupPressed - Target popup name.
  */
 export function pressPopup(popupPressed: PopupName): void {
-  (window as any).popupShowing = true;
+  window.popupShowing = true;
   const popupEl = getPopupElement(popupPressed);
   if (popupEl) {
     fadeIn(popupEl, 500);
@@ -98,7 +144,7 @@ export function pressPopup(popupPressed: PopupName): void {
  * @param popupPressed - Target popup name.
  */
 export function closePopup(popupPressed: PopupName): void {
-  (window as any).popupShowing = false;
+  window.popupShowing = false;
   const popupEl = getPopupElement(popupPressed);
   if (popupEl) {
     fadeOut(popupEl, 500);
@@ -126,6 +172,8 @@ export function getPopupElement(popupPressed: PopupName): HTMLElement | null {
       return document.getElementById("popup-invalid-arena");
     case "worlds":
       return document.getElementById("popup-worlds");
+    case "settings":
+      return document.getElementById("popup-settings");
     default:
       return null;
   }

@@ -1,320 +1,211 @@
 /**
- * @file Client game settings, cookie persistence, and theme rule synchronization.
+ * @file Client game settings, localStorage persistence, and live UI/audio synchronization.
  * @module ui/settings
  */
 
-import Cookies from "js-cookie";
-import { textureCache } from "../models/textureCache";
-import { getDefaultTextureMapRules } from "../models/textureMap";
-import { getDefaultSpriteModeMapRules } from "../models/spriteModeMap";
-import { Controls } from "./controls";
 import { audioManager } from "../audio/audioManager";
 import { GameAudio } from "../audio/gameAudio";
 
+/** Supported graphics quality presets matching the top-bar selector. */
+export type GraphicsQuality = "high" | "medium" | "low";
+
+/** Supported server snapshot bandwidth tiers (max updates per tick). */
+export type BandwidthTier = 25 | 50 | 100 | 150;
+
 /**
- * Game configuration options persisted across sessions in cookies.
+ * Strongly typed client configuration persisted in browser `localStorage`.
  */
 export interface SettingsData {
-  /** Graphics quality level (`"low"`, `"medium"`, or `"high"`). */
-  graphics: string;
-  /** Built-in visual theme name. */
-  theme: string;
-  /** Custom remote theme stylesheet URL. */
-  themeCustom: string;
-  /** Steering mouse sensitivity scale factor. */
-  mouseScale: number;
-  /** UI and nametag font family. */
-  font: string;
-  /** Whether the leaderboard panel is visible. */
-  leaderboardEnabled: boolean;
-  /** Whether latency and FPS counter HUD is visible. */
-  hudEnabled: boolean;
-  /** Whether fleet nametags are rendered. */
-  namesEnabled: boolean;
-  /** Target network update rate / bandwidth throttle. */
-  bandwidth: number;
-  /** Whether dash cooldown charge meter is shown. */
-  showCooldown: boolean;
-  /** Maximum number of lines displayed in combat event log. */
-  logLength: number;
-  /** Whether radar minimap is displayed. */
-  displayMinimap: boolean;
-  /** Whether big kill notification banners appear. */
-  bigKillMessage: boolean;
-  /** Whether keyboard hints are displayed in controls modal. */
-  showKeyboardHints: boolean;
-  /** Whether player's own nametag is displayed over their ship. */
-  showOwnName: boolean;
-  /** Whether dark blue ship skins are permitted. */
-  allowDarkblueShips: boolean;
-  /** Whether controls hint ticker is shown. */
-  showHints: boolean;
-  /** Font size for player nametag captions. */
-  nameSize: number;
-  /** Background starfield visibility (`"on"` or `"none"`). */
-  background: string;
-  /** Whether WebGL mipmapping is enabled for textures. */
-  mipmapping: boolean;
-  /** Settings schema version tracker. */
-  updatesVersion: number;
-  /** Mouse button binding mode for one-button controls. */
-  mouseOneButton: number;
+  /** Graphics quality preset (`"high"`, `"medium"`, or `"low"`). */
+  graphics: GraphicsQuality;
   /** Whether in-game sound effects are enabled. */
   soundEnabled: boolean;
-  [key: string]: string | number | boolean;
+  /** Master SFX volume percentage (`0` to `100`). */
+  soundVolume: number;
+  /** Whether the leaderboard, arena record, and CTF score HUD are visible. */
+  leaderboardEnabled: boolean;
+  /** Whether opponent fleet nametags are rendered on the canvas. */
+  namesEnabled: boolean;
+  /** Whether the player's own name label above the cooldown bar is visible. */
+  showOwnName: boolean;
+  /** Whether center-screen kill notification banners are displayed. */
+  bigKillMessage: boolean;
+  /** Whether the compact top-left FPS and Ping readout is visible in-game. */
+  hudEnabled: boolean;
+  /** Whether right-clicking triggers Split & Dash. */
+  rightClickBoost: boolean;
+  /** Target network update throttle (max body updates per server snapshot). */
+  bandwidth: BandwidthTier;
+}
+
+const SETTINGS_STORAGE_KEY = "spaceone_settings";
+const VALID_GRAPHICS: readonly GraphicsQuality[] = ["high", "medium", "low"];
+const VALID_BANDWIDTHS: readonly BandwidthTier[] = [25, 50, 100, 150];
+
+/** Immutable default settings values. */
+export const DEFAULT_SETTINGS: Readonly<SettingsData> = {
+  graphics: "high",
+  soundEnabled: true,
+  soundVolume: 100,
+  leaderboardEnabled: true,
+  namesEnabled: true,
+  showOwnName: true,
+  bigKillMessage: true,
+  hudEnabled: false,
+  rightClickBoost: true,
+  bandwidth: 150,
+};
+
+/** Active game settings repository. */
+export const Settings: SettingsData = { ...DEFAULT_SETTINGS };
+
+function parseGraphicsQuality(value: unknown): GraphicsQuality | null {
+  if (
+    typeof value === "string" &&
+    (VALID_GRAPHICS as readonly string[]).includes(value)
+  ) {
+    return value as GraphicsQuality;
+  }
+  return null;
+}
+
+function parseBandwidthTier(value: unknown): BandwidthTier {
+  const numeric = typeof value === "number" ? value : Number(value);
+  if (Number.isFinite(numeric)) {
+    if ((VALID_BANDWIDTHS as readonly number[]).includes(numeric)) {
+      return numeric as BandwidthTier;
+    }
+    if (numeric > 150) {
+      return 150;
+    }
+  }
+  return DEFAULT_SETTINGS.bandwidth;
+}
+
+function clampVolume(value: unknown): number {
+  if (
+    typeof value !== "number" &&
+    (typeof value !== "string" || value.trim() === "")
+  ) {
+    return DEFAULT_SETTINGS.soundVolume;
+  }
+  const numeric = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(numeric)) {
+    return DEFAULT_SETTINGS.soundVolume;
+  }
+  return Math.max(0, Math.min(100, Math.round(numeric)));
 }
 
 /**
- * Active game settings repository.
+ * Validates and normalizes an untrusted settings object against `DEFAULT_SETTINGS`.
+ *
+ * @param raw - Untrusted parsed JSON payload or partial object.
+ * @returns Fully populated, schema-valid `SettingsData` object.
  */
-export const Settings: SettingsData = {
-  graphics: "high",
-  theme: "",
-  themeCustom: "",
-  mouseScale: 1.0,
-  font: "Exo 2",
-  leaderboardEnabled: true,
-  hudEnabled: false,
-  namesEnabled: true,
-  bandwidth: 400,
-  showCooldown: true,
-  logLength: 4,
-  displayMinimap: false,
-  bigKillMessage: true,
-  showKeyboardHints: true,
-  showOwnName: true,
-  allowDarkblueShips: true,
-  showHints: true,
-  nameSize: 14,
-  background: "on",
-  mipmapping: true,
-  updatesVersion: 0,
-  mouseOneButton: 0,
-  soundEnabled: true,
-};
+export function sanitizeSettings(raw: unknown): SettingsData {
+  if (typeof raw !== "object" || raw === null) {
+    return { ...DEFAULT_SETTINGS };
+  }
 
-/** Active sprite mode rules matching current graphics level. */
-export const spriteModeMapRules = [
-  getDefaultSpriteModeMapRules(Settings.graphics),
-];
+  const record = raw as Record<string, unknown>;
+  const graphics =
+    parseGraphicsQuality(record["graphics"]) ?? DEFAULT_SETTINGS.graphics;
 
-/** Active texture map rules matching current graphics level. */
-export const textureMapRules = [getDefaultTextureMapRules(Settings.graphics)];
-
-const themeSelector = document.getElementById(
-  "settings-theme-selector",
-) as HTMLInputElement | null;
-const themeSelectorCustom = document.getElementById(
-  "settings-theme-selector-custom",
-) as HTMLInputElement | null;
-const mouseScale = document.getElementById(
-  "settings-mouse-scale",
-) as HTMLInputElement | null;
-const leaderboardEnabled = document.getElementById(
-  "settings-leaderboard-enabled",
-) as HTMLInputElement | null;
-const showHints = document.getElementById(
-  "settings-show-hints",
-) as HTMLInputElement | null;
-const namesEnabled = document.getElementById(
-  "settings-names-enabled",
-) as HTMLInputElement | null;
-const bandwidth = document.getElementById(
-  "settings-bandwidth",
-) as HTMLInputElement | null;
-const hudEnabled = document.getElementById(
-  "settings-hud-enabled",
-) as HTMLInputElement | null;
-const showCooldown = document.getElementById(
-  "settings-show-cooldown",
-) as HTMLInputElement | null;
-const logLength = document.getElementById(
-  "settings-log",
-) as HTMLInputElement | null;
-const displayMinimap = document.getElementById(
-  "settings-display-minimap",
-) as HTMLInputElement | null;
-const mipmapping = document.getElementById(
-  "settings-mip-mapping",
-) as HTMLInputElement | null;
-const bigKillMessage = document.getElementById(
-  "settings-big-kill-message",
-) as HTMLInputElement | null;
-const showKeyboardHints = document.getElementById(
-  "settings-show-keyboard-hints",
-) as HTMLInputElement | null;
-const showOwnName = document.getElementById(
-  "settings-show-own-name",
-) as HTMLInputElement | null;
-const allowDarkblueShips = document.getElementById(
-  "settings-allow-darkblue-ships",
-) as HTMLInputElement | null;
-const nameSize = document.getElementById(
-  "settings-name-size",
-) as HTMLInputElement | null;
-const background = document.getElementById(
-  "settings-background",
-) as HTMLInputElement | null;
-const soundEnabledInput = document.getElementById(
-  "settings-sound-enabled",
-) as HTMLInputElement | null;
-const soundToggleBtn = document.getElementById(
-  "sound-toggle",
-) as HTMLButtonElement | null;
-const soundToggleIcon = document.getElementById("sound-toggle-icon");
-
-const settingsText = document.getElementById("settings-text");
-if (settingsText) {
-  Array.from(settingsText.children).forEach((elem) => {
-    elem.addEventListener("click", () => {
-      Settings.graphics = elem.id.split("-")[1] ?? "high";
-      Cookies.set("settings", JSON.stringify(Settings), { expires: 300 });
-      window.location.reload();
-    });
-  });
+  return {
+    graphics,
+    soundEnabled:
+      typeof record["soundEnabled"] === "boolean"
+        ? record["soundEnabled"]
+        : DEFAULT_SETTINGS.soundEnabled,
+    soundVolume:
+      record["soundVolume"] !== undefined
+        ? clampVolume(record["soundVolume"])
+        : DEFAULT_SETTINGS.soundVolume,
+    leaderboardEnabled:
+      typeof record["leaderboardEnabled"] === "boolean"
+        ? record["leaderboardEnabled"]
+        : DEFAULT_SETTINGS.leaderboardEnabled,
+    namesEnabled:
+      typeof record["namesEnabled"] === "boolean"
+        ? record["namesEnabled"]
+        : DEFAULT_SETTINGS.namesEnabled,
+    showOwnName:
+      typeof record["showOwnName"] === "boolean"
+        ? record["showOwnName"]
+        : DEFAULT_SETTINGS.showOwnName,
+    bigKillMessage:
+      typeof record["bigKillMessage"] === "boolean"
+        ? record["bigKillMessage"]
+        : DEFAULT_SETTINGS.bigKillMessage,
+    hudEnabled:
+      typeof record["hudEnabled"] === "boolean"
+        ? record["hudEnabled"]
+        : DEFAULT_SETTINGS.hudEnabled,
+    rightClickBoost:
+      typeof record["rightClickBoost"] === "boolean"
+        ? record["rightClickBoost"]
+        : DEFAULT_SETTINGS.rightClickBoost,
+    bandwidth:
+      record["bandwidth"] !== undefined
+        ? parseBandwidthTier(record["bandwidth"])
+        : DEFAULT_SETTINGS.bandwidth,
+  };
 }
 
-export function save(): void {
-  const cookieOptions = { expires: 300 };
-  let reload = false;
-
-  if (themeSelector && Settings.theme !== themeSelector.value) {
-    Settings.theme = themeSelector.value;
+/**
+ * Writes current `Settings` to `localStorage` safely.
+ */
+export function persistSettings(): void {
+  try {
+    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(Settings));
+  } catch {
+    // Ignore storage write errors in restricted/private browsing contexts
   }
-  if (
-    themeSelectorCustom &&
-    Settings.themeCustom !== themeSelectorCustom.value
-  ) {
-    Settings.themeCustom = themeSelectorCustom.value;
-  }
-
-  if (mipmapping && Settings.mipmapping !== mipmapping.checked) {
-    Settings.mipmapping = mipmapping.checked;
-    reload = true;
-  }
-
-  Settings.font = "Exo 2";
-  if (mouseScale) Settings.mouseScale = Number(mouseScale.value);
-  if (leaderboardEnabled)
-    Settings.leaderboardEnabled = leaderboardEnabled.checked;
-  if (showHints) Settings.showHints = showHints.checked;
-  if (namesEnabled) Settings.namesEnabled = namesEnabled.checked;
-  if (bandwidth) Settings.bandwidth = Number(bandwidth.value);
-  if (hudEnabled) Settings.hudEnabled = hudEnabled.checked;
-  if (showCooldown) Settings.showCooldown = showCooldown.checked;
-  if (logLength) Settings.logLength = Number(logLength.value);
-  if (displayMinimap) Settings.displayMinimap = displayMinimap.checked;
-  if (mipmapping) Settings.mipmapping = mipmapping.checked;
-  if (bigKillMessage) Settings.bigKillMessage = bigKillMessage.checked;
-  if (showKeyboardHints) Settings.showKeyboardHints = showKeyboardHints.checked;
-  if (showOwnName) Settings.showOwnName = showOwnName.checked;
-  if (allowDarkblueShips)
-    Settings.allowDarkblueShips = allowDarkblueShips.checked;
-  if (background) Settings.background = background.value;
-  if (soundEnabledInput) {
-    setSoundEnabled(soundEnabledInput.checked, false);
-  }
-
-  Cookies.set("settings", JSON.stringify(Settings), cookieOptions);
-
-  if (reload) window.location.reload();
 }
 
-export function reset(): void {
-  Cookies.remove("settings");
-}
-
-export function load(): void {
-  let savedSettings: Record<string, any> | null = null;
-  const cookie = Cookies.get("settings");
-  if (cookie) {
-    try {
-      savedSettings = JSON.parse(cookie);
-    } catch (e) {
-      console.error("Failed to parse settings cookie:", e);
-    }
-  }
-
-  if (savedSettings) {
-    for (const key in savedSettings) Settings[key] = savedSettings[key];
-  }
-
-  // Cap bandwidth from cookies to prevent severe client-side lag
-  if (Settings.bandwidth > 150) Settings.bandwidth = 150;
-
-  if (themeSelector) themeSelector.value = Settings.theme;
-  if (themeSelectorCustom)
-    themeSelectorCustom.value = Settings.themeCustom ?? "";
-
-  if (mouseScale) mouseScale.value = String(Settings.mouseScale);
-  if (leaderboardEnabled)
-    leaderboardEnabled.checked = Settings.leaderboardEnabled;
-  if (showHints) showHints.checked = Settings.showHints;
-  if (mipmapping) mipmapping.checked = Settings.mipmapping;
-  if (namesEnabled) namesEnabled.checked = Settings.namesEnabled;
-  if (bandwidth) bandwidth.value = String(Settings.bandwidth);
-  if (hudEnabled) hudEnabled.checked = Settings.hudEnabled;
-  if (showCooldown) showCooldown.checked = Settings.showCooldown;
-  if (logLength) logLength.value = String(Settings.logLength);
-  if (displayMinimap) displayMinimap.checked = Settings.displayMinimap;
-  if (bigKillMessage) bigKillMessage.checked = Settings.bigKillMessage;
-  if (showKeyboardHints) showKeyboardHints.checked = Settings.showKeyboardHints;
-  if (showOwnName) showOwnName.checked = Settings.showOwnName;
-  if (allowDarkblueShips)
-    allowDarkblueShips.checked = Settings.allowDarkblueShips;
-  if (nameSize) nameSize.value = String(Settings.nameSize);
-  if (background) background.value = Settings.background;
-
-  setSoundEnabled(Settings.soundEnabled, false);
-
-  const graphicsElem = document.getElementById(`graphics-${Settings.graphics}`);
-  graphicsElem?.classList.add(
-    "graphics-bar__option--selected",
-    "setting-selected",
+/**
+ * Dispatches a global notification event so live subsystems react immediately
+ * when settings change without requiring a page reload.
+ */
+export function dispatchSettingsChanged(): void {
+  window.dispatchEvent(
+    new CustomEvent<SettingsData>("spaceone:settings-changed", {
+      detail: { ...Settings },
+    }),
   );
 }
 
-(window as any).getTextureMapRules = function () {
-  return textureMapRules;
-};
-(window as any).getModeMapRules = function () {
-  return spriteModeMapRules;
-};
+/**
+ * Loads settings from `localStorage`, validates schema, and synchronizes DOM and audio state.
+ */
+export function loadSettings(): void {
+  let parsed: unknown = null;
+  try {
+    const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
+    if (raw) {
+      parsed = JSON.parse(raw);
+    }
+  } catch (err: unknown) {
+    console.error("Failed to parse saved settings:", err);
+  }
 
-load();
+  Object.assign(Settings, sanitizeSettings(parsed));
+  applyQueryOverrides();
+  syncAllOutputs();
+}
 
-// Override settings from querystring values
-const qs = new URLSearchParams(window.location.search);
-if (qs.has("themeCustom")) Settings.themeCustom = qs.get("themeCustom") ?? "";
-if (qs.has("leaderboardEnabled"))
-  Settings.leaderboardEnabled = qs.get("leaderboardEnabled") === "true";
-if (qs.has("hudEnabled")) Settings.hudEnabled = qs.get("hudEnabled") === "true";
-if (qs.has("namesEnabled"))
-  Settings.namesEnabled = qs.get("namesEnabled") === "true";
-if (qs.has("bandwidth")) Settings.bandwidth = Number(qs.get("bandwidth"));
-
-const gear = document.getElementById("gear");
-document.getElementById("settings")?.addEventListener("click", () => {
-  gear?.classList.remove("closed");
-  if (gear) gear.hidden = false;
-});
-
-document.getElementById("settings-cancel")?.addEventListener("click", () => {
-  gear?.classList.add("closed");
-  if (gear) gear.hidden = true;
-});
-
-document.getElementById("settings-save")?.addEventListener("click", () => {
-  save();
-  load();
-  gear?.classList.add("closed");
-  if (gear) gear.hidden = true;
-});
-
-document.getElementById("settings-reset")?.addEventListener("click", () => {
-  reset();
-  window.location.reload();
-});
+/**
+ * Restores all modal settings to `DEFAULT_SETTINGS` without resetting `graphics`,
+ * keeping the settings modal 100% live and reload-free.
+ */
+export function resetSettings(): void {
+  const currentGraphics = Settings.graphics;
+  Object.assign(Settings, DEFAULT_SETTINGS, { graphics: currentGraphics });
+  persistSettings();
+  syncAllOutputs();
+  dispatchSettingsChanged();
+  GameAudio.onUiClick();
+}
 
 /**
  * Updates sound enabled state, syncs UI icon/modal controls, and updates Web Audio master gain.
@@ -325,6 +216,91 @@ document.getElementById("settings-reset")?.addEventListener("click", () => {
 export function setSoundEnabled(enabled: boolean, playConfirm = false): void {
   Settings.soundEnabled = enabled;
   audioManager.setEnabled(enabled);
+  syncSoundControls();
+
+  if (enabled && playConfirm) {
+    GameAudio.onUiClick();
+  }
+}
+
+/**
+ * Updates SFX master volume percentage (`0` to `100`), updates Web Audio gain,
+ * and automatically unmutes if raised above `0` while muted.
+ *
+ * @param volume - Volume percentage in $[0, 100]$.
+ */
+export function setSoundVolume(volume: number): void {
+  const clamped = clampVolume(volume);
+  Settings.soundVolume = clamped;
+  audioManager.setVolume(clamped / 100);
+
+  if (clamped > 0 && !Settings.soundEnabled) {
+    setSoundEnabled(true, false);
+  }
+
+  syncVolumeControls();
+}
+
+/**
+ * Toggles sound effects on or off and persists the setting without reloading.
+ */
+export function toggleSound(): void {
+  setSoundEnabled(!Settings.soundEnabled, true);
+  persistSettings();
+  dispatchSettingsChanged();
+}
+
+function applyQueryOverrides(): void {
+  const qs = new URLSearchParams(window.location.search);
+  if (qs.has("leaderboardEnabled")) {
+    Settings.leaderboardEnabled = qs.get("leaderboardEnabled") === "true";
+  }
+  if (qs.has("hudEnabled")) {
+    Settings.hudEnabled = qs.get("hudEnabled") === "true";
+  }
+  if (qs.has("namesEnabled")) {
+    Settings.namesEnabled = qs.get("namesEnabled") === "true";
+  }
+  if (qs.has("bandwidth")) {
+    Settings.bandwidth = parseBandwidthTier(qs.get("bandwidth"));
+  }
+}
+
+const soundToggleBtn = document.getElementById(
+  "sound-toggle",
+) as HTMLButtonElement | null;
+const soundToggleIcon = document.getElementById("sound-toggle-icon");
+const soundEnabledInput = document.getElementById(
+  "settings-sound-enabled",
+) as HTMLInputElement | null;
+const soundVolumeInput = document.getElementById(
+  "settings-sound-volume",
+) as HTMLInputElement | null;
+const soundVolumeValue = document.getElementById("settings-sound-volume-value");
+const leaderboardEnabledInput = document.getElementById(
+  "settings-leaderboard-enabled",
+) as HTMLInputElement | null;
+const namesEnabledInput = document.getElementById(
+  "settings-names-enabled",
+) as HTMLInputElement | null;
+const showOwnNameInput = document.getElementById(
+  "settings-show-own-name",
+) as HTMLInputElement | null;
+const bigKillMessageInput = document.getElementById(
+  "settings-big-kill-message",
+) as HTMLInputElement | null;
+const hudEnabledInput = document.getElementById(
+  "settings-hud-enabled",
+) as HTMLInputElement | null;
+const rightClickBoostInput = document.getElementById(
+  "settings-right-click-boost",
+) as HTMLInputElement | null;
+const bandwidthSelect = document.getElementById(
+  "settings-bandwidth",
+) as HTMLSelectElement | null;
+
+function syncSoundControls(): void {
+  const enabled = Settings.soundEnabled;
 
   if (soundToggleBtn) {
     soundToggleBtn.classList.toggle("sound-toggle--muted", !enabled);
@@ -342,43 +318,164 @@ export function setSoundEnabled(enabled: boolean, playConfirm = false): void {
   if (soundEnabledInput) {
     soundEnabledInput.checked = enabled;
   }
+}
 
-  if (enabled && playConfirm) {
+function syncVolumeControls(): void {
+  if (soundVolumeInput) {
+    soundVolumeInput.value = String(Settings.soundVolume);
+  }
+  if (soundVolumeValue) {
+    soundVolumeValue.textContent = `${Settings.soundVolume}%`;
+  }
+}
+
+function syncGraphicsBar(): void {
+  const options = document.querySelectorAll<HTMLElement>(
+    "#graphics-bar-options [data-graphics]",
+  );
+  options.forEach((opt) => {
+    const isSelected = opt.dataset["graphics"] === Settings.graphics;
+    opt.classList.toggle("graphics-bar__option--selected", isSelected);
+    opt.classList.toggle("setting-selected", isSelected);
+  });
+}
+
+function syncModalInputs(): void {
+  syncSoundControls();
+  syncVolumeControls();
+
+  if (leaderboardEnabledInput) {
+    leaderboardEnabledInput.checked = Settings.leaderboardEnabled;
+  }
+  if (namesEnabledInput) {
+    namesEnabledInput.checked = Settings.namesEnabled;
+  }
+  if (showOwnNameInput) {
+    showOwnNameInput.checked = Settings.showOwnName;
+  }
+  if (bigKillMessageInput) {
+    bigKillMessageInput.checked = Settings.bigKillMessage;
+  }
+  if (hudEnabledInput) {
+    hudEnabledInput.checked = Settings.hudEnabled;
+  }
+  if (rightClickBoostInput) {
+    rightClickBoostInput.checked = Settings.rightClickBoost;
+  }
+  if (bandwidthSelect) {
+    bandwidthSelect.value = String(Settings.bandwidth);
+  }
+}
+
+function syncAllOutputs(): void {
+  audioManager.setVolume(Settings.soundVolume / 100);
+  setSoundEnabled(Settings.soundEnabled, false);
+  syncGraphicsBar();
+  syncModalInputs();
+}
+
+function bindLiveToggle(
+  input: HTMLInputElement | null,
+  applyValue: (checked: boolean) => void,
+): void {
+  if (!input) return;
+  input.addEventListener("change", () => {
+    applyValue(input.checked);
+    persistSettings();
+    dispatchSettingsChanged();
     GameAudio.onUiClick();
-  }
+  });
 }
 
-/**
- * Toggles sound effects on or off and persists the setting in cookies without reloading.
- */
-export function toggleSound(): void {
-  setSoundEnabled(!Settings.soundEnabled, true);
-  Cookies.set("settings", JSON.stringify(Settings), { expires: 300 });
-}
+function bindEventListeners(): void {
+  const graphicsOptions = document.querySelectorAll<HTMLElement>(
+    "#graphics-bar-options [data-graphics]",
+  );
+  graphicsOptions.forEach((elem) => {
+    elem.addEventListener("click", () => {
+      const nextGraphics = parseGraphicsQuality(elem.dataset["graphics"]);
+      if (!nextGraphics || nextGraphics === Settings.graphics) return;
+      Settings.graphics = nextGraphics;
+      persistSettings();
+      window.location.reload();
+    });
+  });
 
-soundToggleBtn?.addEventListener("click", (e) => {
-  e.stopPropagation();
-  toggleSound();
-});
+  soundToggleBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    toggleSound();
+  });
 
-window.addEventListener("keydown", (e) => {
-  if (e.ctrlKey || e.altKey || e.metaKey || e.repeat) return;
-  if (e.key.toLowerCase() !== "m") return;
+  soundEnabledInput?.addEventListener("change", () => {
+    setSoundEnabled(soundEnabledInput.checked, true);
+    persistSettings();
+    dispatchSettingsChanged();
+  });
 
-  const target = e.target as HTMLElement | null;
-  if (target) {
-    const tag = target.tagName;
-    if (
-      tag === "INPUT" ||
-      tag === "TEXTAREA" ||
-      tag === "SELECT" ||
-      target.isContentEditable
-    ) {
-      return;
+  soundVolumeInput?.addEventListener("input", () => {
+    setSoundVolume(Number(soundVolumeInput.value));
+    persistSettings();
+    dispatchSettingsChanged();
+  });
+
+  soundVolumeInput?.addEventListener("change", () => {
+    if (Settings.soundEnabled && Settings.soundVolume > 0) {
+      GameAudio.onUiClick();
     }
-  }
+  });
 
-  if (!GameAudio.isInGame()) return;
+  bindLiveToggle(leaderboardEnabledInput, (checked) => {
+    Settings.leaderboardEnabled = checked;
+  });
+  bindLiveToggle(namesEnabledInput, (checked) => {
+    Settings.namesEnabled = checked;
+  });
+  bindLiveToggle(showOwnNameInput, (checked) => {
+    Settings.showOwnName = checked;
+  });
+  bindLiveToggle(bigKillMessageInput, (checked) => {
+    Settings.bigKillMessage = checked;
+  });
+  bindLiveToggle(hudEnabledInput, (checked) => {
+    Settings.hudEnabled = checked;
+  });
+  bindLiveToggle(rightClickBoostInput, (checked) => {
+    Settings.rightClickBoost = checked;
+  });
 
-  toggleSound();
-});
+  bandwidthSelect?.addEventListener("change", () => {
+    Settings.bandwidth = parseBandwidthTier(bandwidthSelect.value);
+    persistSettings();
+    dispatchSettingsChanged();
+    GameAudio.onUiClick();
+  });
+
+  document.getElementById("settings-reset")?.addEventListener("click", () => {
+    resetSettings();
+  });
+
+  window.addEventListener("keydown", (e) => {
+    if (e.ctrlKey || e.altKey || e.metaKey || e.repeat) return;
+    if (e.key.toLowerCase() !== "m") return;
+
+    const target = e.target as HTMLElement | null;
+    if (target) {
+      const tag = target.tagName;
+      if (
+        tag === "INPUT" ||
+        tag === "TEXTAREA" ||
+        tag === "SELECT" ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+    }
+
+    if (!GameAudio.isInGame()) return;
+
+    toggleSound();
+  });
+}
+
+loadSettings();
+bindEventListeners();

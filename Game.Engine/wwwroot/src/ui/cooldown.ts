@@ -1,25 +1,23 @@
 /**
- * @file Dash / boost cooldown progress bar UI controller.
+ * @file Weapon shot cooldown progress bar UI controller.
  * @module ui/cooldown
  */
-
-import { Settings } from "./settings";
 
 const progress = document.getElementById("cooldown");
 const progressVal = document.getElementById("cooldown-value");
 
 /**
- * Controller managing the on-screen dash/boost cooldown charge meter.
+ * Controller managing the on-screen weapon shot cooldown charge meter.
  */
 export class Cooldown {
   /**
-   * Sets the cooldown meter progress ratio.
+   * Sets the weapon shot cooldown meter progress ratio and ensures the bar is visible.
    *
    * @param prog - Integer progress byte value $[0, 255]$.
    */
   setCooldown(prog: number): void {
     if (progress) {
-      progress.classList.toggle("is-hidden", !Settings.showCooldown);
+      progress.classList.remove("is-hidden");
     }
 
     if (progressVal) {
@@ -30,7 +28,7 @@ export class Cooldown {
   }
 
   /**
-   * Hides the cooldown meter.
+   * Hides the weapon shot cooldown meter.
    */
   hide(): void {
     if (progress) {
