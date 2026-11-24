@@ -172,6 +172,7 @@ $transition-fade: 0.5s ease;
 ```
 +---------------------------------------------------------------------------------------------------+
 | Top Viewport Controls (Fixed/Absolute)                                                            |
+|                                               [ ⚙️ ] [ 🔊 ] [ Graphics: HIGH/MEDIUM/LOW ]           |
 |                                                     [ SPECTATE 👁️ (Top: 45px, Right: 10px) ]       |
 |                                                     [ FULLSCREEN ⛶ (Top: 100px, Right: 10px) ]   |
 |                                                                                                   |
@@ -186,7 +187,7 @@ $transition-fade: 0.5s ease;
 |                      |  - Ship & Color Selector Carousel                  |                       |
 |                      |  - Player Nickname Input Box                       |                       |
 |                      |  - [ PLAY ] (55px Green Split-Gradient CTA)        |                       |
-|                      |  - Sub-dialog buttons: [⚙️ Settings] [🌍 Worlds]    |                       |
+|                      |  - World Selector Pill: [ 🌍 FFA  0 Online ▼ ]      |                       |
 |                      +----------------------------------------------------+                       |
 |                                                                                                   |
 | [ Arena Record (Bottom: 16px, Left: 16px) ]                                                       |
@@ -216,9 +217,10 @@ $transition-fade: 0.5s ease;
 
 ### 4.2 Modal Dialogs & Glassmorphism Panels (`components/_modals.scss`, `views/*`)
 
-* **Glassmorphism Backdrop**: Modals must declare `@include glassmorphism` with translucent dark navy fill (`rgba(10, 25, 55, 0.95)`), 2px solid border (`#3262d1`), and subtle backdrop blur (`backdrop-filter: blur(8px)`).
+* **Glassmorphism Backdrop**: Modals must declare `@include glassmorphism` or deep navy Spaceone dialog tokens (`$color-blue-navy`, `2px solid $color-blue-primary`, `box-shadow: 0 0 35px 5px rgba(0, 82, 255, 0.7)` as in `_worlds-modal.scss` and `_settings-modal.scss`).
 * **Modal Header Bar**: Header bands use deep blue shading (`rgba(0, 30, 80, 0.6)`) with high-contrast white header text and 1px bottom divider.
-* **Close Buttons (`.modal__close`)**: Floated right with `color: #aaaaaa`, transitioning to `color: #ffffff; text-shadow: 0 0 10px #ffffff;` on hover.
+* **Close Buttons (`.modal-dialog__close`)**: Floated right with `color: #aaaaaa`, transitioning to `color: #ffffff; text-shadow: 0 0 8px #ffffff;` on hover.
+* **Top-Right Settings Bar (`.top-settings-bar`)**: Houses `[ ⚙️ #settings-toggle ] [ 🔊 #sound-toggle ] [ Graphics: HIGH/MEDIUM/LOW #graphics-bar ]` using shared `.top-settings-bar__icon-btn` tiles without idle `transition: transform`.
 * **Viewport Anchoring**: Fixed overlay elements that must remain accessible across all menu/game states (such as the `#changelogButton` Captain's Log trigger) MUST be positioned via `position: fixed; z-index: 100;` outside the main spawnscreen container.
 
 ### 4.3 In-Game HUD & Indicators (`components/_hud-indicators.scss`, `components/_leaderboard.scss`)

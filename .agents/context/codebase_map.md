@@ -110,6 +110,7 @@ Pixi.js WebGL client application.
 | `Game.Engine/wwwroot/src/ui/leaderboard.ts` | `Leaderboard` | High-score table, player rankings, and CTF team score displays. |
 | `Game.Engine/wwwroot/src/ui/minimap.ts` | `Minimap` | Radar minimap rendering (friendly fleets, flags, bases, world bounds). |
 | `Game.Engine/wwwroot/src/ui/controls.ts` | `Controls` | Mouse and keyboard input aggregator (thrust, boost, aim angle, fire). |
+| `Game.Engine/wwwroot/src/ui/settings.ts` | `Settings`, `DEFAULT_SETTINGS`, `sanitizeSettings` | `localStorage` (`spaceone_settings`) preferences, top-right graphics/audio bar, and live modal synchronization. |
 | `Game.Engine/wwwroot/src/ui/toast.ts` | `showConnectionErrorToast`, `dismissToast` | Toast notification manager matching original Spaceone.io error toast fidelity. |
 | `Game.Engine/wwwroot/src/audio/audioManager.ts` | `AudioManager`, `audioManager` | Native Web Audio API engine: submix buses, DynamicsCompressor, spatial culling/panning, cooldowns, and priority voice stealing. |
 | `Game.Engine/wwwroot/src/audio/soundManifest.ts` | `SOUND_MANIFEST`, `SoundId`, `SoundPriority` | Vite glob audio manifest and per-cue mixing, concurrency, and variant configuration. |
