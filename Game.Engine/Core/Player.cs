@@ -75,6 +75,7 @@ namespace Game.Engine.Core
         public string LoginName { get; set; }
 
         public bool PendingDestruction { get; set; } = false;
+        public bool IsDestroyed { get; private set; } = false;
         private bool IsSpawning = false;
 
         public string IP { get; set; } = null;
@@ -144,6 +145,12 @@ namespace Game.Engine.Core
 
         public void Destroy()
         {
+            IsDestroyed = true;
+            lock (_observerLock)
+            {
+                _messageObservers?.Clear();
+            }
+
             Die();
 
             if (Fleet != null)
@@ -168,6 +175,7 @@ namespace Game.Engine.Core
 
         public void Init(World world)
         {
+            IsDestroyed = false;
             World = world;
             world.Actors.Add(this);
 
@@ -370,6 +378,9 @@ namespace Game.Engine.Core
 
             lock (_observerLock)
             {
+                if (IsDestroyed)
+                    return;
+
                 _messageObservers ??= new List<Action<PlayerMessage>>();
                 if (!_messageObservers.Contains(observer))
                     _messageObservers.Add(observer);

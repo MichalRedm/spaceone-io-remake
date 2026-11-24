@@ -55,6 +55,8 @@ namespace Game.Engine.Networking
 
         public Fleet SpectatingFleet = null;
 
+        private readonly object _observerStateLock = new object();
+        private bool _observerDisposed = false;
         private ObserverTarget _observerTarget = null;
         private Player _observedPlayer = null;
         private bool _observedMirrorPov = false;
@@ -99,27 +101,51 @@ namespace Game.Engine.Networking
                 _mirroredMessages.Enqueue(msg);
         }
 
-        private void UpdateObservedPlayer(Player target)
+        private void UpdateObservedPlayer(Player target, bool wantMirror)
         {
-            bool wantMirror = _observerTarget?.MirrorPov ?? false;
-            if (ReferenceEquals(_observedPlayer, target) && _observedMirrorPov == wantMirror)
-                return;
+            lock (_observerStateLock)
+            {
+                if (_observerDisposed)
+                {
+                    target = null;
+                    wantMirror = false;
+                }
 
-            if (_observedPlayer != null)
-                _observedPlayer.RemoveMessageObserver(OnObservedPlayerMessage);
+                if (ReferenceEquals(_observedPlayer, target) && _observedMirrorPov == wantMirror)
+                    return;
 
-            while (_mirroredMessages.TryDequeue(out _)) { }
+                if (_observedPlayer != null)
+                    _observedPlayer.RemoveMessageObserver(OnObservedPlayerMessage);
 
-            _observedPlayer = target;
-            _observedMirrorPov = wantMirror;
+                while (_mirroredMessages.TryDequeue(out _)) { }
 
-            if (_observedPlayer != null && wantMirror)
-                _observedPlayer.AddMessageObserver(OnObservedPlayerMessage);
+                _observedPlayer = target;
+                _observedMirrorPov = target != null && wantMirror;
+
+                if (_observedPlayer != null && _observedMirrorPov)
+                    _observedPlayer.AddMessageObserver(OnObservedPlayerMessage);
+            }
         }
 
         private void DetachObservedPlayer()
         {
-            UpdateObservedPlayer(null);
+            UpdateObservedPlayer(null, false);
+        }
+
+        private void ShutdownObserver()
+        {
+            lock (_observerStateLock)
+            {
+                _observerDisposed = true;
+                _observerTarget = null;
+                if (_observedPlayer != null)
+                {
+                    _observedPlayer.RemoveMessageObserver(OnObservedPlayerMessage);
+                    _observedPlayer = null;
+                }
+                _observedMirrorPov = false;
+                while (_mirroredMessages.TryDequeue(out _)) { }
+            }
         }
 
         private static Player FindBestAlivePlayer(List<Player> worldPlayers)
@@ -143,6 +169,7 @@ namespace Game.Engine.Networking
         }
 
         private void ResolveObserverView(
+            ObserverTarget observerTarget,
             List<Player> worldPlayers,
             out Player followPlayer,
             out Fleet followFleet,
@@ -152,11 +179,11 @@ namespace Game.Engine.Networking
             followFleet = null;
             followBody = null;
 
-            switch (_observerTarget.Mode)
+            switch (observerTarget.Mode)
             {
                 case ObserverMode.PlayerId:
                 {
-                    string targetId = _observerTarget.TargetValue;
+                    string targetId = observerTarget.TargetValue;
                     Player prefixMatch = null;
                     for (int i = 0; i < worldPlayers.Count; i++)
                     {
@@ -179,7 +206,7 @@ namespace Game.Engine.Networking
 
                 case ObserverMode.PlayerName:
                 {
-                    string targetName = _observerTarget.TargetValue;
+                    string targetName = observerTarget.TargetValue;
                     Player exactFallback = null;
                     Player prefixAlive = null;
                     Player prefixFallback = null;
@@ -213,7 +240,7 @@ namespace Game.Engine.Networking
 
                 case ObserverMode.FleetId:
                 {
-                    uint fleetId = _observerTarget.TargetFleetId;
+                    uint fleetId = observerTarget.TargetFleetId;
                     for (int i = 0; i < worldPlayers.Count; i++)
                     {
                         var p = worldPlayers[i];
@@ -225,9 +252,17 @@ namespace Game.Engine.Networking
                         }
                     }
                     // Stay locked on previously matched player at their death spot rather than jumping away
-                    if (followPlayer == null && _observedPlayer != null && !_observedPlayer.PendingDestruction)
+                    Player previousObserved;
+                    lock (_observerStateLock)
                     {
-                        followPlayer = _observedPlayer;
+                        previousObserved = _observedPlayer;
+                    }
+                    if (followPlayer == null
+                        && previousObserved != null
+                        && !previousObserved.IsDestroyed
+                        && !previousObserved.PendingDestruction)
+                    {
+                        followPlayer = previousObserved;
                         if (followPlayer.Fleet != null && followPlayer.Fleet.ID == fleetId)
                             followFleet = followPlayer.Fleet;
                     }
@@ -277,19 +312,19 @@ namespace Game.Engine.Networking
 
                 case ObserverMode.Point:
                 {
-                    _lastObservedPosition = _observerTarget.Point;
+                    _lastObservedPosition = observerTarget.Point;
                     followBody = new Body
                     {
                         DefinitionTime = world.Time,
-                        OriginalPosition = _observerTarget.Point,
-                        Position = _observerTarget.Point,
+                        OriginalPosition = observerTarget.Point,
+                        Position = observerTarget.Point,
                         Momentum = Vector2.Zero
                     };
                     break;
                 }
             }
 
-            UpdateObservedPlayer(followPlayer);
+            UpdateObservedPlayer(followPlayer, observerTarget.MirrorPov);
 
             if (followFleet != null)
             {
@@ -305,9 +340,9 @@ namespace Game.Engine.Networking
             }
             else if (followBody == null)
             {
-                if (_observerTarget.Mode == ObserverMode.PlayerId
-                    || _observerTarget.Mode == ObserverMode.PlayerName
-                    || _observerTarget.Mode == ObserverMode.FleetId)
+                if (observerTarget.Mode == ObserverMode.PlayerId
+                    || observerTarget.Mode == ObserverMode.PlayerName
+                    || observerTarget.Mode == ObserverMode.FleetId)
                 {
                     Vector2 holdPos = followPlayer?.DeathPosition ?? _lastObservedPosition;
                     _lastObservedPosition = holdPos;
@@ -328,6 +363,12 @@ namespace Game.Engine.Networking
             {
                 if (player != null)
                 {
+                    ObserverTarget activeObserverTarget;
+                    lock (_observerStateLock)
+                    {
+                        activeObserverTarget = IsObserver ? _observerTarget : null;
+                    }
+
                     Player observedPlayer = null;
                     Fleet followFleet = null;
                     Body followBody = null;
@@ -335,13 +376,21 @@ namespace Game.Engine.Networking
                     bool viewIsAlive = false;
                     byte viewCooldownBoost = 0;
                     byte viewCooldownShoot = 0;
+                    int spectatorCount = 0;
 
                     lock (world.Bodies)
                     {
-                        if (_observerTarget != null && _observerTarget.Mode != ObserverMode.None)
+                        var worldPlayers = Player.GetWorldPlayers(world);
+                        for (int i = 0; i < worldPlayers.Count; i++)
                         {
-                            var worldPlayers = Player.GetWorldPlayers(world);
-                            ResolveObserverView(worldPlayers, out observedPlayer, out followFleet, out followBody);
+                            var wp = worldPlayers[i];
+                            if (wp != null && !wp.IsObserver && (wp.Connection?.IsSpectating ?? false))
+                                spectatorCount++;
+                        }
+
+                        if (activeObserverTarget != null && activeObserverTarget.Mode != ObserverMode.None)
+                        {
+                            ResolveObserverView(activeObserverTarget, worldPlayers, out observedPlayer, out followFleet, out followBody);
                         }
                         // 1. If player has an alive fleet, follow their fleet
                         else if (player?.Fleet != null)
@@ -356,7 +405,6 @@ namespace Game.Engine.Networking
 
                             if (followFleet == null)
                             {
-                                var worldPlayers = Player.GetWorldPlayers(world);
                                 var bestPlayer = FindBestAlivePlayer(worldPlayers);
                                 followFleet = bestPlayer?.Fleet;
                                 SpectatingFleet = followFleet;
@@ -416,7 +464,7 @@ namespace Game.Engine.Networking
                             }
                         }
 
-                        mirrorPov = _observerTarget != null && _observerTarget.MirrorPov && observedPlayer != null;
+                        mirrorPov = activeObserverTarget != null && activeObserverTarget.MirrorPov && observedPlayer != null;
                         viewIsAlive = mirrorPov ? observedPlayer.IsAlive : (player?.IsAlive ?? false);
                         viewCooldownBoost = mirrorPov
                             ? (byte)((observedPlayer.Fleet?.BoostCooldownStatus * 255) ?? 0)
@@ -427,7 +475,7 @@ namespace Game.Engine.Networking
 
                         if (followBody != null)
                         {
-                            var size = _observerTarget?.ViewportRadius ?? ObserverTarget.DefaultViewportRadius;
+                            var size = activeObserverTarget?.ViewportRadius ?? ObserverTarget.DefaultViewportRadius;
                             var viewportHeight = size * 2;
                             var viewportWidth = size * 2;
 
@@ -605,14 +653,7 @@ namespace Game.Engine.Networking
                             NetWorldView.AddCustomData(builder, customOffset);
                         CustomData = followFleet?.CustomData;
 
-                        var players = Player.GetWorldPlayers(world);
                         NetWorldView.AddPlayerCount(builder, (uint)world.AdvertisedPlayerCount);
-                        int spectatorCount = 0;
-                        for (int i = 0; i < players.Count; i++)
-                        {
-                            if (players[i] != null && !players[i].IsObserver && (players[i].Connection?.IsSpectating ?? false))
-                                spectatorCount++;
-                        }
                         NetWorldView.AddSpectatorCount(builder, (uint)spectatorCount);
 
                         NetWorldView.AddCooldownBoost(builder, viewCooldownBoost);
@@ -876,6 +917,27 @@ namespace Game.Engine.Networking
                 case AllMessages.NetControlInput:
                     var input = quantum.Message<NetControlInput>().Value;
 
+                    if (IsObserver)
+                    {
+                        if (ObserverTarget.TryParse(input.SpectateControl, out var observerTarget))
+                        {
+                            lock (_observerStateLock)
+                            {
+                                _observerTarget = observerTarget;
+                            }
+                            IsSpectating = true;
+                        }
+                        else if (!string.IsNullOrEmpty(input.SpectateControl))
+                        {
+                            lock (_observerStateLock)
+                            {
+                                _observerTarget = null;
+                            }
+                            DetachObservedPlayer();
+                        }
+                        break;
+                    }
+
                     player?.SetControl(new ControlInput
                     {
                         Position = new Vector2(input.X, input.Y),
@@ -883,19 +945,6 @@ namespace Game.Engine.Networking
                         ShootRequested = input.Shoot,
                         CustomData = input.CustomData
                     });
-
-                    if (ObserverTarget.TryParse(input.SpectateControl, out var observerTarget))
-                    {
-                        _observerTarget = observerTarget;
-                        IsSpectating = true;
-                        break;
-                    }
-
-                    if (!string.IsNullOrEmpty(input.SpectateControl))
-                    {
-                        _observerTarget = null;
-                        DetachObservedPlayer();
-                    }
 
                     if (input.SpectateControl == "action:next")
                     {
@@ -937,7 +986,8 @@ namespace Game.Engine.Networking
                     break;
 
                 case AllMessages.NetExit:
-                    player.Exit();
+                    if (!IsObserver)
+                        player?.Exit();
                     break;
 
                 case AllMessages.NetAuthenticate:
@@ -994,7 +1044,7 @@ namespace Game.Engine.Networking
             {
                 connectionCts.Cancel();
                 ConnectionHeartbeat.Unregister(this);
-                DetachObservedPlayer();
+                ShutdownObserver();
 
                 if (player != null)
                 {
@@ -1080,7 +1130,7 @@ namespace Game.Engine.Networking
         {
             if (!disposedValue)
             {
-                DetachObservedPlayer();
+                ShutdownObserver();
                 if (disposing)
                 {
                     if (Socket != null)
