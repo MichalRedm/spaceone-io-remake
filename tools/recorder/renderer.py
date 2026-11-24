@@ -6,17 +6,15 @@ headless Playwright Chromium, Web Audio `OfflineAudioContext`, and FFmpeg.
 from __future__ import annotations
 
 import base64
-import functools
-import http.server
 import json
 import math
+import mimetypes
 import shutil
-import socketserver
 import subprocess
 import tempfile
-import threading
+import time
 import urllib.parse
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 
@@ -119,43 +117,62 @@ def parse_ui_overrides(show_items: list[str] | None, hide_items: list[str] | Non
     return overrides
 
 
-class _QuietHandler(http.server.SimpleHTTPRequestHandler):
-    def log_message(self, format: str, *args: Any) -> None:
-        return
+OFFLINE_ORIGIN = "http://spaceone.local"
+
+_MIME_TYPES: dict[str, str] = {
+    ".html": "text/html; charset=utf-8",
+    ".js": "application/javascript; charset=utf-8",
+    ".mjs": "application/javascript; charset=utf-8",
+    ".css": "text/css; charset=utf-8",
+    ".svg": "image/svg+xml",
+    ".png": "image/png",
+    ".webp": "image/webp",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".mp3": "audio/mpeg",
+    ".wav": "audio/wav",
+    ".json": "application/json; charset=utf-8",
+    ".wasm": "application/wasm",
+    ".ico": "image/x-icon",
+}
 
 
-class StaticDistServer:
-    """Ephemeral localhost HTTP server serving `Game.Engine/wwwroot/dist/` offline."""
+def _install_offline_dist_routes(page: Any, dist_dir: Path) -> str:
+    """
+    Serves `Game.Engine/wwwroot/dist/` deterministically via Playwright `route.fulfill`
+    and aborts external CDN URLs so offline rendering never stalls or depends on sockets.
+    """
+    dist_root = Path(dist_dir).resolve()
+    index_file = dist_root / "index.html"
+    if not index_file.is_file():
+        raise FileNotFoundError(
+            f"Built web client not found at {index_file}. "
+            "Run 'npm run build' inside Game.Engine/wwwroot first."
+        )
 
-    def __init__(self, dist_dir: Path) -> None:
-        self.dist_dir = Path(dist_dir)
-        self._httpd: socketserver.TCPServer | None = None
-        self._thread: threading.Thread | None = None
-        self.port: int = 0
+    def _handle_route(route: Any) -> None:
+        url: str = route.request.url
+        if url.startswith(("data:", "blob:")):
+            route.continue_()
+            return
+        if url == OFFLINE_ORIGIN or url.startswith(f"{OFFLINE_ORIGIN}/"):
+            raw_path = url[len(OFFLINE_ORIGIN) :].split("#", 1)[0].split("?", 1)[0]
+            rel = urllib.parse.unquote(raw_path.lstrip("/")) or "index.html"
+            fp = (dist_root / rel).resolve()
+            if fp.is_relative_to(dist_root) and fp.is_file():
+                ctype = (
+                    _MIME_TYPES.get(fp.suffix.lower())
+                    or mimetypes.guess_type(str(fp))[0]
+                    or "application/octet-stream"
+                )
+                route.fulfill(status=200, path=str(fp), content_type=ctype)
+                return
+            route.fulfill(status=404, body="Not found")
+            return
+        route.abort()
 
-    def __enter__(self) -> StaticDistServer:
-        index_file = self.dist_dir / "index.html"
-        if not index_file.exists():
-            raise FileNotFoundError(
-                f"Built web client not found at {index_file}. "
-                "Run 'npm run build' inside Game.Engine/wwwroot first."
-            )
-
-        class ReusableThreadingTCPServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
-            daemon_threads = True
-
-        handler = functools.partial(_QuietHandler, directory=str(self.dist_dir))
-        self._httpd = ReusableThreadingTCPServer(("127.0.0.1", 0), handler)
-        self.port = self._httpd.server_address[1]
-        self._thread = threading.Thread(target=self._httpd.serve_forever, daemon=True)
-        self._thread.start()
-        return self
-
-    def __exit__(self, exc_type: Any, exc: Any, tb: Any) -> None:
-        if self._httpd is not None:
-            self._httpd.shutdown()
-            self._httpd.server_close()
-            self._httpd = None
+    page.route("**/*", _handle_route)
+    return OFFLINE_ORIGIN
 
 
 def _ensure_ffmpeg_tools() -> tuple[str, str]:
@@ -193,9 +210,6 @@ def _launch_chromium(playwright_obj: Any):
     return playwright_obj.chromium.launch(
         headless=True,
         args=[
-            "--use-gl=angle",
-            "--enable-webgl",
-            "--ignore-gpu-blocklist",
             "--autoplay-policy=no-user-gesture-required",
             "--disable-background-timer-throttling",
             "--disable-renderer-backgrounding",
@@ -205,12 +219,13 @@ def _launch_chromium(playwright_obj: Any):
 
 def _setup_replay_page(
     page: Any,
-    base_url: str,
     s1rec_path: Path,
     options: RenderOptions,
     start_ms: int,
     pov_default: bool,
 ) -> None:
+    base_url = _install_offline_dist_routes(page, options.dist_dir)
+
     query = urllib.parse.urlencode(
         {
             "replay": "1",
@@ -220,7 +235,12 @@ def _setup_replay_page(
         }
     )
     page.goto(f"{base_url}/?{query}", wait_until="domcontentloaded", timeout=30000)
-    page.wait_for_function("() => Boolean(window.__spaceoneReplay)", timeout=30000)
+
+    deadline = time.monotonic() + 30.0
+    while not page.evaluate("() => Boolean(window.__spaceoneReplay)"):
+        if time.monotonic() >= deadline:
+            raise TimeoutError("Timed out waiting for window.__spaceoneReplay to initialize.")
+        time.sleep(0.05)
 
     resolved_ui_preset = options.ui_preset or ("player" if pov_default else "spectator")
     page.evaluate(
@@ -293,8 +313,7 @@ def render_replay_to_mp4(
     num_frames = max(1, int(math.floor(output_duration_sec * opts.fps)) + 1)
 
     effective_audio = opts.enable_audio and speed <= 2.5
-    if opts.enable_audio and not effective_audio:
-        opts.enable_audio = False
+    page_opts = opts if effective_audio == opts.enable_audio else replace(opts, enable_audio=effective_audio)
 
     frame_fmt = "png" if opts.lossless_frames else "jpeg"
     input_codec = "png" if opts.lossless_frames else "mjpeg"
@@ -330,65 +349,61 @@ def render_replay_to_mp4(
             ffmpeg_cmd.extend(["-movflags", "+faststart"])
         ffmpeg_cmd.append(str(target_video_path))
 
-        with StaticDistServer(opts.dist_dir) as dist_srv:
-            base_url = f"http://127.0.0.1:{dist_srv.port}"
-            with sync_playwright() as pw:
-                browser = _launch_chromium(pw)
-                context = browser.new_context(
-                    viewport={"width": opts.width, "height": opts.height},
-                    device_scale_factor=1,
-                )
-                page = context.new_page()
-                cdp = context.new_cdp_session(page)
+        with sync_playwright() as pw:
+            browser = _launch_chromium(pw)
+            context = browser.new_context(
+                viewport={"width": opts.width, "height": opts.height},
+                device_scale_factor=1,
+            )
+            page = context.new_page()
+            cdp = context.new_cdp_session(page)
 
-                ff_proc = subprocess.Popen(
-                    ffmpeg_cmd,
-                    stdin=subprocess.PIPE,
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.PIPE,
-                )
+            ff_proc = subprocess.Popen(
+                ffmpeg_cmd,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.PIPE,
+            )
 
-                audio_b64 = ""
-                try:
-                    _setup_replay_page(
-                        page, base_url, src_path, opts, start_ms, pov_default
+            audio_b64 = ""
+            try:
+                _setup_replay_page(page, src_path, page_opts, start_ms, pov_default)
+
+                shot_params: dict[str, Any] = {"format": frame_fmt}
+                if frame_fmt == "jpeg":
+                    shot_params["quality"] = 94
+
+                assert ff_proc.stdin is not None
+                for i in range(num_frames):
+                    output_ms = (i * 1000.0) / opts.fps
+                    page.evaluate(
+                        "t => window.__spaceoneReplay.stepTo(t)", output_ms
                     )
+                    shot = cdp.send("Page.captureScreenshot", shot_params)
+                    ff_proc.stdin.write(base64.b64decode(shot["data"]))
 
-                    shot_params: dict[str, Any] = {"format": frame_fmt}
-                    if frame_fmt == "jpeg":
-                        shot_params["quality"] = 94
+                ff_proc.stdin.close()
+                ff_stderr = ff_proc.stderr.read().decode("utf-8", errors="replace") if ff_proc.stderr else ""
+                rc = ff_proc.wait()
+                if rc != 0:
+                    raise RuntimeError(f"FFmpeg video encode failed ({rc}):\n{ff_stderr}")
 
-                    assert ff_proc.stdin is not None
-                    for i in range(num_frames):
-                        output_ms = (i * 1000.0) / opts.fps
-                        page.evaluate(
-                            "t => window.__spaceoneReplay.stepTo(t)", output_ms
-                        )
-                        shot = cdp.send("Page.captureScreenshot", shot_params)
-                        ff_proc.stdin.write(base64.b64decode(shot["data"]))
-
-                    ff_proc.stdin.close()
-                    ff_stderr = ff_proc.stderr.read().decode("utf-8", errors="replace") if ff_proc.stderr else ""
-                    rc = ff_proc.wait()
-                    if rc != 0:
-                        raise RuntimeError(f"FFmpeg video encode failed ({rc}):\n{ff_stderr}")
-
-                    if effective_audio:
-                        audio_b64 = page.evaluate(
-                            "d => window.__spaceoneReplay.renderAudioWavBase64(d)",
-                            output_duration_sec,
-                        )
-                finally:
-                    if ff_proc.poll() is None:
-                        try:
-                            if ff_proc.stdin and not ff_proc.stdin.closed:
-                                ff_proc.stdin.close()
-                        except Exception:
-                            pass
-                        ff_proc.kill()
-                        ff_proc.wait()
-                    context.close()
-                    browser.close()
+                if effective_audio:
+                    audio_b64 = page.evaluate(
+                        "d => window.__spaceoneReplay.renderAudioWavBase64(d)",
+                        output_duration_sec,
+                    )
+            finally:
+                if ff_proc.poll() is None:
+                    try:
+                        if ff_proc.stdin and not ff_proc.stdin.closed:
+                            ff_proc.stdin.close()
+                    except Exception:
+                        pass
+                    ff_proc.kill()
+                    ff_proc.wait()
+                context.close()
+                browser.close()
 
         if effective_audio:
             wav_bytes = base64.b64decode(audio_b64) if audio_b64 else b""
@@ -477,33 +492,29 @@ def extract_frames(
 
     saved_files: list[Path] = []
     # Disable audio decode overhead during pure image extraction
-    frame_opts = RenderOptions(**{**opts.__dict__, "enable_audio": False})
+    frame_opts = replace(opts, enable_audio=False)
 
-    with StaticDistServer(frame_opts.dist_dir) as dist_srv:
-        base_url = f"http://127.0.0.1:{dist_srv.port}"
-        with sync_playwright() as pw:
-            browser = _launch_chromium(pw)
-            context = browser.new_context(
-                viewport={"width": frame_opts.width, "height": frame_opts.height},
-                device_scale_factor=1,
-            )
-            page = context.new_page()
-            cdp = context.new_cdp_session(page)
-            try:
-                _setup_replay_page(
-                    page, base_url, src_path, frame_opts, 0, pov_default
+    with sync_playwright() as pw:
+        browser = _launch_chromium(pw)
+        context = browser.new_context(
+            viewport={"width": frame_opts.width, "height": frame_opts.height},
+            device_scale_factor=1,
+        )
+        page = context.new_page()
+        cdp = context.new_cdp_session(page)
+        try:
+            _setup_replay_page(page, src_path, frame_opts, 0, pov_default)
+            for idx, t_sec in enumerate(targets):
+                page.evaluate(
+                    "t => window.__spaceoneReplay.stepTo(t)", t_sec * 1000.0
                 )
-                for idx, t_sec in enumerate(targets):
-                    page.evaluate(
-                        "t => window.__spaceoneReplay.stepTo(t)", t_sec * 1000.0
-                    )
-                    shot = cdp.send("Page.captureScreenshot", {"format": "png"})
-                    frame_path = out_dir / f"frame_{idx:03d}_{t_sec:.2f}s.png"
-                    frame_path.write_bytes(base64.b64decode(shot["data"]))
-                    saved_files.append(frame_path)
-            finally:
-                context.close()
-                browser.close()
+                shot = cdp.send("Page.captureScreenshot", {"format": "png"})
+                frame_path = out_dir / f"frame_{idx:03d}_{t_sec:.2f}s.png"
+                frame_path.write_bytes(base64.b64decode(shot["data"]))
+                saved_files.append(frame_path)
+        finally:
+            context.close()
+            browser.close()
 
     contact_sheet_path: Path | None = None
     if contact_sheet and saved_files:

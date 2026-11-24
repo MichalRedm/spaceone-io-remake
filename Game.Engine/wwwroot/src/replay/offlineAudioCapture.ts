@@ -306,7 +306,14 @@ export class OfflineAudioCapture implements AudioCaptureSink {
 
       const startOutSec = voice.startSec / safeSpeed;
       if (startOutSec >= safeDuration) continue;
-      if (startOutSec + audioBuf.duration <= 0) continue;
+      const rate = Math.max(0.25, voice.playbackRate);
+      const bufferOffset =
+        startOutSec < 0 ? -startOutSec * safeSpeed * rate : 0;
+      if (bufferOffset >= audioBuf.duration) continue;
+
+      const stopOutSec =
+        voice.stopSec !== null ? voice.stopSec / safeSpeed : null;
+      if (stopOutSec !== null && stopOutSec <= 0) continue;
 
       const source = ctx.createBufferSource();
       source.buffer = audioBuf;
@@ -314,18 +321,7 @@ export class OfflineAudioCapture implements AudioCaptureSink {
 
       const gainNode = ctx.createGain();
       const scheduleWhen = Math.max(0, startOutSec);
-      const bufferOffset = startOutSec < 0 ? -startOutSec : 0;
       gainNode.gain.setValueAtTime(voice.gain, scheduleWhen);
-
-      if (voice.stopSec !== null) {
-        const stopOutSec = voice.stopSec / safeSpeed;
-        if (stopOutSec <= 0) continue;
-        const clampedStop = Math.max(scheduleWhen, stopOutSec);
-        const fadeEndSec = clampedStop + AUDIO_CONSTANTS.VOICE_STEAL_FADE_SEC;
-        gainNode.gain.setValueAtTime(voice.gain, clampedStop);
-        gainNode.gain.linearRampToValueAtTime(0, fadeEndSec);
-        source.stop(Math.min(safeDuration, fadeEndSec + 0.002));
-      }
 
       const targetBus = buses[voice.bus];
       if (
@@ -343,6 +339,14 @@ export class OfflineAudioCapture implements AudioCaptureSink {
       }
 
       source.start(scheduleWhen, bufferOffset);
+
+      if (stopOutSec !== null) {
+        const clampedStop = Math.max(scheduleWhen, stopOutSec);
+        const fadeEndSec = clampedStop + AUDIO_CONSTANTS.VOICE_STEAL_FADE_SEC;
+        gainNode.gain.setValueAtTime(voice.gain, clampedStop);
+        gainNode.gain.linearRampToValueAtTime(0, fadeEndSec);
+        source.stop(Math.min(safeDuration, fadeEndSec + 0.002));
+      }
     }
 
     const rendered = await ctx.startRendering();
