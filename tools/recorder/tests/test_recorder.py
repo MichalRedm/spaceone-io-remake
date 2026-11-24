@@ -321,6 +321,12 @@ class RecorderTests(unittest.TestCase):
                 self.assertEqual(_cmd_sessions(sess_args), 0)
                 self.assertFalse(meta_file.exists())
 
+                corrupt_file = sess_dir / "corrupt.json"
+                corrupt_file.write_text("{not-json", encoding="utf-8")
+                stop_all_args = parser.parse_args(["stop", "--all", "--timeout", "1.0"])
+                self.assertEqual(_cmd_stop(stop_all_args), 1)
+                self.assertFalse(corrupt_file.exists())
+
             rec_path = Path(tmp) / "short.s1rec"
             pkt = _build_synthetic_world_view(1000, 1, True, 0.0, 0.0, [])
             with ReplayWriter(rec_path, {"worldKey": "default"}) as w:
@@ -328,6 +334,69 @@ class RecorderTests(unittest.TestCase):
                 w.write_frame(2000, pkt)
             with self.assertRaises(ValueError):
                 render_replay_to_mp4(rec_path, Path(tmp) / "out.mp4", RenderOptions(start_sec=3.0))
+
+    def test_capture_many_isolates_worker_stop_events(self) -> None:
+        import asyncio
+        from unittest.mock import patch
+        from tools.recorder.capture import CaptureConfig, CaptureResult, capture_many, capture_single
+
+        class _FakeWs:
+            def __init__(self, pkt: bytes) -> None:
+                self._pkt = pkt
+
+            async def __aenter__(self) -> "_FakeWs":
+                return self
+
+            async def __aexit__(self, *args: object) -> None:
+                return None
+
+            async def send(self, _data: bytes) -> None:
+                return None
+
+            async def recv(self) -> bytes:
+                await asyncio.sleep(0.03)
+                return self._pkt
+
+        pkt_a = _build_synthetic_world_view(1000, 1, True, 0.0, 0.0, [])
+        pkt_b = _build_synthetic_world_view(1000, 2, True, 0.0, 0.0, [])
+
+        async def _run() -> tuple[CaptureResult, CaptureResult]:
+            with tempfile.TemporaryDirectory() as tmp:
+                cfg_fast = CaptureConfig(
+                    server_url="http://localhost:5000",
+                    world="default",
+                    target=build_target_spec("player", "aaa", pov=True),
+                    output_path=Path(tmp) / "fast.s1rec",
+                    duration_sec=0.15,
+                    ping_interval_sec=10.0,
+                )
+                cfg_slow = CaptureConfig(
+                    server_url="http://localhost:5000",
+                    world="default",
+                    target=build_target_spec("player", "bbb", pov=True),
+                    output_path=Path(tmp) / "slow.s1rec",
+                    duration_sec=0.45,
+                    ping_interval_sec=10.0,
+                )
+
+                def _fake_connect(url: str, **_kwargs: object) -> _FakeWs:
+                    return _FakeWs(pkt_a if "bbb" not in url else pkt_b)
+
+                async def _single_or_many() -> list[CaptureResult]:
+                    return await capture_many([cfg_fast, cfg_slow])
+
+                with (
+                    patch("tools.recorder.capture.fetch_world_hook", return_value=None),
+                    patch("tools.recorder.capture.websockets.connect", side_effect=_fake_connect),
+                ):
+                    results = await _single_or_many()
+                    self.assertEqual(len(results), 2)
+                    return results[0], results[1]
+
+        res_fast, res_slow = asyncio.run(_run())
+        self.assertEqual(res_fast.stop_reason, "duration_reached")
+        self.assertEqual(res_slow.stop_reason, "duration_reached")
+        self.assertGreater(res_slow.duration_ms, res_fast.duration_ms)
 
 
 if __name__ == "__main__":

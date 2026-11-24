@@ -5,6 +5,7 @@ for quantitative physics analysis and bot evaluation (`analysis/`).
 
 from __future__ import annotations
 
+import contextlib
 import csv
 import json
 from pathlib import Path
@@ -33,13 +34,15 @@ def export_trajectories(
     Reconstructs active bodies and groups across snapshots and exports CSV or JSONL trajectories.
     """
     out_file = Path(output_path)
-    out_file.parent.mkdir(parents=True, exist_ok=True)
     fmt = (
         output_format.lower()
         if output_format
         else ("jsonl" if out_file.suffix.lower() in (".jsonl", ".ndjson") else "csv")
     )
+    if fmt not in ("csv", "jsonl"):
+        raise ValueError(f"Unsupported export format '{fmt}'. Use 'csv' or 'jsonl'.")
 
+    out_file.parent.mkdir(parents=True, exist_ok=True)
     _, gen = iter_replay_frames(s1rec_path)
     bodies: dict[int, BodyUpdate] = {}
     groups: dict[int, GroupUpdate] = {}
@@ -50,39 +53,37 @@ def export_trajectories(
     rows_written = 0
     ticks_exported = 0
 
-    if fmt == "csv":
-        fp = open(out_file, "w", newline="", encoding="utf-8")
-        writer = csv.writer(fp)
-        writer.writerow(
-            [
-                "elapsed_ms",
-                "server_time_ms",
-                "tracked_fleet_id",
-                "is_alive",
-                "camera_x",
-                "camera_y",
-                "body_id",
-                "group_id",
-                "group_name",
-                "sprite",
-                "x",
-                "y",
-                "vx",
-                "vy",
-                "angle",
-                "angular_velocity",
-                "size",
-                "mode",
-                "is_tracked_fleet",
-            ]
-        )
-    elif fmt == "jsonl":
-        fp = open(out_file, "w", encoding="utf-8")
-        writer = None
-    else:
-        raise ValueError(f"Unsupported export format '{fmt}'. Use 'csv' or 'jsonl'.")
-
-    try:
+    with contextlib.closing(gen), open(
+        out_file,
+        "w",
+        newline="" if fmt == "csv" else None,
+        encoding="utf-8",
+    ) as fp:
+        writer = csv.writer(fp) if fmt == "csv" else None
+        if writer is not None:
+            writer.writerow(
+                [
+                    "elapsed_ms",
+                    "server_time_ms",
+                    "tracked_fleet_id",
+                    "is_alive",
+                    "camera_x",
+                    "camera_y",
+                    "body_id",
+                    "group_id",
+                    "group_name",
+                    "sprite",
+                    "x",
+                    "y",
+                    "vx",
+                    "vy",
+                    "angle",
+                    "angular_velocity",
+                    "size",
+                    "mode",
+                    "is_tracked_fleet",
+                ]
+            )
         for frame in gen:
             summary = peek_quantum(frame.payload)
             if summary.message_type != AllMessages.NetWorldView:
@@ -178,8 +179,6 @@ def export_trajectories(
                         + "\n"
                     )
                 rows_written += 1
-    finally:
-        fp.close()
 
     return {
         "output": str(out_file),

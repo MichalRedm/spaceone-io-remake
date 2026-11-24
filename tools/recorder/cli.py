@@ -313,7 +313,11 @@ def _spawn_background_record(args: argparse.Namespace) -> int:
 
     child_argv: list[str] = [sys.executable, "-m", "tools.recorder", "record"]
     skip_next = False
-    raw_args = sys.argv[2:]  # arguments after 'record'
+    try:
+        rec_idx = sys.argv.index("record", 1)
+        raw_args = sys.argv[rec_idx + 1 :]
+    except ValueError:
+        raw_args = sys.argv[2:]
     for tok in raw_args:
         if skip_next:
             skip_next = False
@@ -574,8 +578,18 @@ def _cmd_stop(args: argparse.Namespace) -> int:
             print(f"Session metadata not found: {meta_path}")
             exit_code = 1
             continue
-        meta = json.loads(meta_path.read_text(encoding="utf-8"))
-        stop_path = Path(meta["stop_sentinel"])
+        meta = None
+        try:
+            meta = json.loads(meta_path.read_text(encoding="utf-8"))
+        except Exception as exc:
+            print(f"Corrupt session metadata removed ({meta_path}): {exc}")
+            try:
+                meta_path.unlink()
+            except OSError:
+                pass
+            exit_code = 1
+            continue
+        stop_path = Path(meta.get("stop_sentinel") or _session_paths(str(meta.get("session") or meta_path.stem))[1])
         pid = int(meta.get("pid", 0))
         session_name = str(meta.get("session") or meta_path.stem)
 
@@ -597,10 +611,7 @@ def _cmd_stop(args: argparse.Namespace) -> int:
             print(f"Warning: session '{session_name}' (PID {pid}) is still finishing/rendering. Check {meta.get('log')}.")
         else:
             print(f"Session '{session_name}' stopped cleanly.")
-            if stop_path.exists():
-                stop_path.unlink()
-            if meta_path.exists():
-                meta_path.unlink()
+            _cleanup_session_files(session_name)
 
     return exit_code
 

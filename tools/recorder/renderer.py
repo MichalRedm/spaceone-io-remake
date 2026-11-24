@@ -363,63 +363,65 @@ def render_replay_to_mp4(
 
         with sync_playwright() as pw:
             browser = _launch_chromium(pw)
-            context = browser.new_context(
-                viewport={"width": opts.width, "height": opts.height},
-                device_scale_factor=1,
-            )
-            page = context.new_page()
-            cdp = context.new_cdp_session(page)
-
-            with open(ffmpeg_log_path, "w", encoding="utf-8") as ff_log_fp:
-                ff_proc = subprocess.Popen(
-                    ffmpeg_cmd,
-                    stdin=subprocess.PIPE,
-                    stdout=subprocess.DEVNULL,
-                    stderr=ff_log_fp,
+            try:
+                context = browser.new_context(
+                    viewport={"width": opts.width, "height": opts.height},
+                    device_scale_factor=1,
                 )
-
-                audio_b64 = ""
                 try:
-                    _setup_replay_page(page, src_path, page_opts, start_ms, pov_default)
+                    page = context.new_page()
+                    cdp = context.new_cdp_session(page)
 
-                    shot_params: dict[str, Any] = {"format": frame_fmt}
-                    if frame_fmt == "jpeg":
-                        shot_params["quality"] = 94
-
-                    assert ff_proc.stdin is not None
-                    for i in range(num_frames):
-                        output_ms = (i * 1000.0) / opts.fps
-                        page.evaluate(
-                            "t => window.__spaceoneReplay.stepTo(t)", output_ms
+                    with open(ffmpeg_log_path, "w", encoding="utf-8") as ff_log_fp:
+                        ff_proc = subprocess.Popen(
+                            ffmpeg_cmd,
+                            stdin=subprocess.PIPE,
+                            stdout=subprocess.DEVNULL,
+                            stderr=ff_log_fp,
                         )
-                        shot = cdp.send("Page.captureScreenshot", shot_params)
-                        ff_proc.stdin.write(base64.b64decode(shot["data"]))
 
-                    ff_proc.stdin.close()
-                    rc = ff_proc.wait()
-                    ff_log_fp.flush()
-                    if rc != 0:
-                        ff_stderr = ffmpeg_log_path.read_text(encoding="utf-8", errors="replace")
-                        raise RuntimeError(f"FFmpeg video encode failed ({rc}):\n{ff_stderr}")
-
-                    if effective_audio:
-                        audio_b64 = page.evaluate(
-                            "d => window.__spaceoneReplay.renderAudioWavBase64(d)",
-                            output_duration_sec,
-                        )
-                finally:
-                    if ff_proc.poll() is None:
+                        audio_b64 = ""
                         try:
-                            if ff_proc.stdin and not ff_proc.stdin.closed:
-                                ff_proc.stdin.close()
-                        except Exception:
-                            pass
-                        ff_proc.kill()
-                        ff_proc.wait()
-                    try:
-                        context.close()
-                    finally:
-                        browser.close()
+                            _setup_replay_page(page, src_path, page_opts, start_ms, pov_default)
+
+                            shot_params: dict[str, Any] = {"format": frame_fmt}
+                            if frame_fmt == "jpeg":
+                                shot_params["quality"] = 94
+
+                            assert ff_proc.stdin is not None
+                            for i in range(num_frames):
+                                output_ms = (i * 1000.0) / opts.fps
+                                page.evaluate(
+                                    "t => window.__spaceoneReplay.stepTo(t)", output_ms
+                                )
+                                shot = cdp.send("Page.captureScreenshot", shot_params)
+                                ff_proc.stdin.write(base64.b64decode(shot["data"]))
+
+                            ff_proc.stdin.close()
+                            rc = ff_proc.wait()
+                            ff_log_fp.flush()
+                            if rc != 0:
+                                ff_stderr = ffmpeg_log_path.read_text(encoding="utf-8", errors="replace")
+                                raise RuntimeError(f"FFmpeg video encode failed ({rc}):\n{ff_stderr}")
+
+                            if effective_audio:
+                                audio_b64 = page.evaluate(
+                                    "d => window.__spaceoneReplay.renderAudioWavBase64(d)",
+                                    output_duration_sec,
+                                )
+                        finally:
+                            if ff_proc.poll() is None:
+                                try:
+                                    if ff_proc.stdin and not ff_proc.stdin.closed:
+                                        ff_proc.stdin.close()
+                                except Exception:
+                                    pass
+                                ff_proc.kill()
+                                ff_proc.wait()
+                finally:
+                    context.close()
+            finally:
+                browser.close()
 
         if effective_audio:
             wav_bytes = base64.b64decode(audio_b64) if audio_b64 else b""
@@ -512,27 +514,27 @@ def extract_frames(
 
     with sync_playwright() as pw:
         browser = _launch_chromium(pw)
-        context = browser.new_context(
-            viewport={"width": frame_opts.width, "height": frame_opts.height},
-            device_scale_factor=1,
-        )
-        page = context.new_page()
-        cdp = context.new_cdp_session(page)
         try:
-            _setup_replay_page(page, src_path, frame_opts, 0, pov_default)
-            for idx, t_sec in enumerate(targets):
-                page.evaluate(
-                    "t => window.__spaceoneReplay.stepTo(t)", t_sec * 1000.0
-                )
-                shot = cdp.send("Page.captureScreenshot", {"format": "png"})
-                frame_path = out_dir / f"frame_{idx:03d}_{t_sec:.2f}s.png"
-                frame_path.write_bytes(base64.b64decode(shot["data"]))
-                saved_files.append(frame_path)
-        finally:
+            context = browser.new_context(
+                viewport={"width": frame_opts.width, "height": frame_opts.height},
+                device_scale_factor=1,
+            )
             try:
-                context.close()
+                page = context.new_page()
+                cdp = context.new_cdp_session(page)
+                _setup_replay_page(page, src_path, frame_opts, 0, pov_default)
+                for idx, t_sec in enumerate(targets):
+                    page.evaluate(
+                        "t => window.__spaceoneReplay.stepTo(t)", t_sec * 1000.0
+                    )
+                    shot = cdp.send("Page.captureScreenshot", {"format": "png"})
+                    frame_path = out_dir / f"frame_{idx:03d}_{t_sec:.2f}s.png"
+                    frame_path.write_bytes(base64.b64decode(shot["data"]))
+                    saved_files.append(frame_path)
             finally:
-                browser.close()
+                context.close()
+        finally:
+            browser.close()
 
     contact_sheet_path: Path | None = None
     if contact_sheet and saved_files:

@@ -89,7 +89,8 @@ async def capture_single(
     if hook is not None:
         header["hook"] = hook
 
-    stop_event = external_stop or asyncio.Event()
+    # Never mutate caller's external_stop so one finishing worker cannot abort siblings.
+    local_stop = asyncio.Event()
     stop_reason = "completed"
     max_bytes = (
         int(config.max_size_mb * 1024 * 1024) if config.max_size_mb > 0 else 0
@@ -122,7 +123,12 @@ async def capture_single(
                 last_ping = 0.0
                 last_player_check = 0.0
                 seen_target_in_world = False
-                while not stop_event.is_set():
+                while not local_stop.is_set():
+                    if external_stop is not None and external_stop.is_set():
+                        stop_reason = "interrupted"
+                        local_stop.set()
+                        break
+
                     now = time.monotonic()
                     if now - last_ping >= config.ping_interval_sec:
                         try:
@@ -137,7 +143,7 @@ async def capture_single(
                         and config.stop_sentinel_path.exists()
                     ):
                         stop_reason = "manual_stop"
-                        stop_event.set()
+                        local_stop.set()
                         break
 
                     if (
@@ -169,7 +175,7 @@ async def capture_single(
                                 seen_target_in_world = True
                             elif seen_target_in_world:
                                 stop_reason = "target_disconnected"
-                                stop_event.set()
+                                local_stop.set()
                                 break
                         except Exception:
                             pass
@@ -178,14 +184,14 @@ async def capture_single(
                         elapsed_s = now - start_mono
                         if config.duration_sec > 0 and elapsed_s >= config.duration_sec:
                             stop_reason = "duration_reached"
-                            stop_event.set()
+                            local_stop.set()
                             break
                         if (
                             config.max_duration_sec > 0
                             and elapsed_s >= config.max_duration_sec
                         ):
                             stop_reason = "max_duration_reached"
-                            stop_event.set()
+                            local_stop.set()
                             break
 
                     if (
@@ -193,14 +199,19 @@ async def capture_single(
                         and now >= death_deadline_mono
                     ):
                         stop_reason = "target_died"
-                        stop_event.set()
+                        local_stop.set()
                         break
 
                     await asyncio.sleep(0.1)
 
             bg_task = asyncio.create_task(_ping_and_sentinel_loop())
             try:
-                while not stop_event.is_set():
+                while not local_stop.is_set():
+                    if external_stop is not None and external_stop.is_set():
+                        stop_reason = "interrupted"
+                        local_stop.set()
+                        break
+
                     try:
                         raw = await asyncio.wait_for(ws.recv(), timeout=0.25)
                     except asyncio.TimeoutError:
@@ -258,10 +269,10 @@ async def capture_single(
 
                     if max_bytes > 0 and writer.bytes_written >= max_bytes:
                         stop_reason = "max_size_reached"
-                        stop_event.set()
+                        local_stop.set()
                         break
             finally:
-                stop_event.set()
+                local_stop.set()
                 bg_task.cancel()
                 try:
                     await bg_task
@@ -286,20 +297,24 @@ async def capture_many(configs: list[CaptureConfig]) -> list[CaptureResult]:
     external_stop = asyncio.Event()
     loop = asyncio.get_running_loop()
 
-    def _on_signal(*_args: Any) -> None:
-        external_stop.set()
+    def _request_stop(*_args: Any) -> None:
+        if not loop.is_closed():
+            loop.call_soon_threadsafe(external_stop.set)
 
-    installed_signals: list[signal.Signals] = []
+    installed_loop_signals: list[signal.Signals] = []
+    restored_signal_handlers: list[tuple[signal.Signals, Any]] = []
     for sig_name in ("SIGINT", "SIGTERM"):
         sig = getattr(signal, sig_name, None)
         if sig is None:
             continue
         try:
-            loop.add_signal_handler(sig, _on_signal)
-            installed_signals.append(sig)
+            loop.add_signal_handler(sig, external_stop.set)
+            installed_loop_signals.append(sig)
         except (NotImplementedError, RuntimeError):
             try:
-                signal.signal(sig, _on_signal)
+                prev = signal.getsignal(sig)
+                signal.signal(sig, _request_stop)
+                restored_signal_handlers.append((sig, prev))
             except Exception:
                 pass
 
@@ -307,8 +322,13 @@ async def capture_many(configs: list[CaptureConfig]) -> list[CaptureResult]:
         tasks = [capture_single(cfg, external_stop=external_stop) for cfg in configs]
         return list(await asyncio.gather(*tasks))
     finally:
-        for sig in installed_signals:
+        for sig in installed_loop_signals:
             try:
                 loop.remove_signal_handler(sig)
+            except Exception:
+                pass
+        for sig, prev in restored_signal_handlers:
+            try:
+                signal.signal(sig, prev)
             except Exception:
                 pass
