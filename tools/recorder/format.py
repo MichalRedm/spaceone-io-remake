@@ -11,6 +11,7 @@ Format layout (all multi-byte integers little-endian):
 
 from __future__ import annotations
 
+import contextlib
 import gzip
 import io
 import json
@@ -166,7 +167,8 @@ def iter_replay_frames(
 def read_replay(path: str | Path) -> ReplayArchive:
     """Reads an entire `.s1rec` or `.s1rec.gz` archive into memory."""
     header, gen = iter_replay_frames(path)
-    frames = list(gen)
+    with contextlib.closing(gen):
+        frames = list(gen)
     duration_ms = frames[-1].elapsed_ms if frames else 0
     return ReplayArchive(header=header, frames=frames, duration_ms=duration_ms)
 
@@ -189,46 +191,47 @@ def inspect_replay(path: str | Path) -> dict[str, Any]:
     announcements: list[dict[str, Any]] = []
     fleet_ids_seen: set[int] = set()
 
-    for frame in gen:
-        total_frames += 1
-        duration_ms = frame.elapsed_ms
-        try:
-            summary = peek_quantum(frame.payload)
-        except Exception:
-            continue
+    with contextlib.closing(gen):
+        for frame in gen:
+            total_frames += 1
+            duration_ms = frame.elapsed_ms
+            try:
+                summary = peek_quantum(frame.payload)
+            except Exception:
+                continue
 
-        if summary.message_type != AllMessages.NetWorldView:
-            continue
+            if summary.message_type != AllMessages.NetWorldView:
+                continue
 
-        world_view_frames += 1
-        if first_server_time is None:
-            first_server_time = summary.server_time
-        last_server_time = summary.server_time
-        world_size = summary.world_size or world_size
-        max_players = max(max_players, summary.player_count)
-        if summary.fleet_id:
-            fleet_ids_seen.add(summary.fleet_id)
+            world_view_frames += 1
+            if first_server_time is None:
+                first_server_time = summary.server_time
+            last_server_time = summary.server_time
+            world_size = summary.world_size or world_size
+            max_players = max(max_players, summary.player_count)
+            if summary.fleet_id:
+                fleet_ids_seen.add(summary.fleet_id)
 
-        if current_alive is None:
-            current_alive = summary.is_alive
-            segment_start = frame.elapsed_ms
-        elif summary.is_alive != current_alive:
-            if current_alive:
-                alive_segments.append(
-                    {"start_ms": segment_start, "end_ms": frame.elapsed_ms}
+            if current_alive is None:
+                current_alive = summary.is_alive
+                segment_start = frame.elapsed_ms
+            elif summary.is_alive != current_alive:
+                if current_alive:
+                    alive_segments.append(
+                        {"start_ms": segment_start, "end_ms": frame.elapsed_ms}
+                    )
+                current_alive = summary.is_alive
+                segment_start = frame.elapsed_ms
+
+            for ann in summary.announcements:
+                announcements.append(
+                    {
+                        "elapsed_ms": frame.elapsed_ms,
+                        "type": ann.event_type,
+                        "text": ann.text,
+                        "points_delta": ann.points_delta,
+                    }
                 )
-            current_alive = summary.is_alive
-            segment_start = frame.elapsed_ms
-
-        for ann in summary.announcements:
-            announcements.append(
-                {
-                    "elapsed_ms": frame.elapsed_ms,
-                    "type": ann.event_type,
-                    "text": ann.text,
-                    "points_delta": ann.points_delta,
-                }
-            )
 
     if current_alive:
         alive_segments.append({"start_ms": segment_start, "end_ms": duration_ms})

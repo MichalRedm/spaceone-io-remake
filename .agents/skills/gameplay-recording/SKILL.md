@@ -60,7 +60,7 @@ dotnet run --project Game.Util -- --server http://localhost:5000 server connecti
   - `--wait-for-target <sec>`: Poll until a bot/player connects before starting.
 - **Termination triggers**:
   - `--duration <sec>`: Fixed duration (`0` = indefinite until Ctrl+C / `stop`).
-  - `--wait-for-spawn`: Start the recording timer once the target spawns alive.
+  - `--wait-for-spawn`: Start the recording timer once the target spawns alive *(note: static obstacles/bases already inside the pre-spawn viewport are delta-compressed by `BodyCache` and won't be re-sent on spawn; omit `--wait-for-spawn` and trim with `render --start` if capturing static CTF bases/obstacles in a fixed spawn zone)*.
   - `--stop-on-death` + `--post-death-delay 1.5`: Stop automatically after the tracked player dies (capturing trailing explosion/death audio).
   - `--stop-on-disconnect`: Stop if the tracked player disconnects.
   - `--background --session <name>`: Run capture detached in the background; stop cleanly later with `stop`.
