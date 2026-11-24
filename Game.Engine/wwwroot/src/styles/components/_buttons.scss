@@ -156,29 +156,4 @@
     width: 100%;
     margin-top: 10px;
   }
-
-  // Settings Save / Reset / Cancel Actions
-  &--settings-save {
-    background: $color-blue-button-start;
-    color: $color-text-main;
-    border: 1px solid $color-blue-accent;
-    padding: 8px 16px;
-    border-radius: 6px;
-  }
-
-  &--settings-cancel {
-    background: #444;
-    color: $color-text-main;
-    border: 1px solid #666;
-    padding: 8px 16px;
-    border-radius: 6px;
-  }
-
-  &--settings-reset {
-    background: $color-danger;
-    color: $color-text-main;
-    border: 1px solid color.adjust($color-danger, $lightness: 15%);
-    padding: 8px 16px;
-    border-radius: 6px;
-  }
 }

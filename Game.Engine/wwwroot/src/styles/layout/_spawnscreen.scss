@@ -93,7 +93,7 @@
   }
 }
 
-// Top-Right Settings Bar (Sound Toggle + Graphics Quality)
+// Top-Right Settings Bar (Settings Gear + Sound Toggle + Graphics Quality)
 .top-settings-bar {
   position: absolute;
   top: 10px;
@@ -102,29 +102,36 @@
   display: flex;
   align-items: center;
   gap: 8px;
+
+  &__icon-btn {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: $color-text-main;
+    font-size: 1.05em;
+    transition:
+      color $transition-fast,
+      box-shadow $transition-fast,
+      border-color $transition-fast,
+      opacity $transition-fast;
+
+    &:hover {
+      color: $color-blue-accent;
+      border-color: $color-blue-accent;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $color-blue-accent;
+      outline-offset: 2px;
+    }
+  }
 }
 
 .sound-toggle {
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  color: $color-text-main;
-  font-size: 1.05em;
-  transition:
-    color $transition-fast,
-    box-shadow $transition-fast,
-    border-color $transition-fast,
-    opacity $transition-fast;
-
-  &:hover {
-    color: $color-blue-accent;
-    border-color: $color-blue-accent;
-  }
-
   &--muted {
     color: $color-text-muted;
     opacity: 0.72;
@@ -132,13 +139,13 @@
 }
 
 .graphics-bar,
-#settings {
+#graphics-bar {
   position: relative;
   height: 40px;
   min-width: 300px;
 
   &__label,
-  #settings-text {
+  #graphics-bar-options {
     white-space: nowrap;
     text-align: center;
     position: absolute;

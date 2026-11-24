@@ -11,6 +11,7 @@
   border: none;
 }
 
-[hidden] {
+[hidden],
+.is-hidden {
   display: none !important;
 }

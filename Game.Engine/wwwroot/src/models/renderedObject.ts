@@ -48,7 +48,7 @@ const _spriteModeMapRules = getDefaultSpriteModeMapRules(Settings.graphics);
 
 // Initialise the atlas textures once at module load time.
 textureCache.initAtlases = () => {
-  preloadAllGameTextures(_textureMapRules, Settings.mipmapping);
+  preloadAllGameTextures(_textureMapRules, true);
 };
 textureCache.initAtlases();
 
