@@ -410,7 +410,8 @@ namespace Game.Engine.Core
                 ExtraData = extraData,
                 PointsDelta = pointsDelta
             };
-            this.Messages.Add(playerMessage);
+            if (!IsObserver)
+                this.Messages.Add(playerMessage);
 
             Action<PlayerMessage>[] snapshot = null;
             lock (_observerLock)

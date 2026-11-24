@@ -113,10 +113,9 @@ namespace Game.Engine.Networking
                     observedFleetId = 0;
                 }
 
-                if (ReferenceEquals(_observedPlayer, target)
-                    && _observedMirrorPov == wantMirror
-                    && _observedFleetId == observedFleetId)
+                if (ReferenceEquals(_observedPlayer, target) && _observedMirrorPov == wantMirror)
                 {
+                    _observedFleetId = target != null ? observedFleetId : 0;
                     return;
                 }
 
