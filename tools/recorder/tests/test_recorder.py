@@ -32,6 +32,7 @@ from tools.recorder.flatbuffers_wire import (
 from tools.recorder.format import ReplayWriter, inspect_replay, read_replay
 from tools.recorder.renderer import (
     RenderOptions,
+    extract_frames,
     parse_ui_overrides,
     parse_viewport,
     render_replay_to_mp4,
@@ -334,6 +335,10 @@ class RecorderTests(unittest.TestCase):
                 w.write_frame(2000, pkt)
             with self.assertRaises(ValueError):
                 render_replay_to_mp4(rec_path, Path(tmp) / "out.mp4", RenderOptions(start_sec=3.0))
+            with self.assertRaises(ValueError):
+                extract_frames(rec_path, Path(tmp) / "frames", options=RenderOptions(start_sec=3.0))
+            with self.assertRaises(ValueError):
+                extract_frames(rec_path, Path(tmp) / "frames", options=RenderOptions(start_sec=1.5, end_sec=1.0))
 
     def test_capture_many_isolates_worker_stop_events(self) -> None:
         import asyncio
