@@ -123,13 +123,18 @@ Pixi.js WebGL client application.
 | `Game.Engine/wwwroot/src/replay/offlineAudioCapture.ts` | `OfflineAudioCapture` | `OfflineAudioContext` sink capturing spatial SFX events and synthesizing sample-accurate stereo WAV. |
 | `Game.Engine/wwwroot/src/replay/replayBridge.ts` | `ReplayController` | Typed replay bridge (`window.__spaceoneReplay`) driving stepped PixiJS rendering and audio synthesis. |
 | `tools/sfx/generate_sfx.py` | Procedural SFX Generator | Deterministic NumPy/SciPy + ffmpeg synthesizer & DSP QC verifier for the 20 ambient `.mp3` assets in `Game.Engine/wwwroot/audio/`. |
-| `tools/recorder/cli.py` | Gameplay Recording CLI (`python -m tools.recorder`) | CLI subcommands (`worlds`, `players`, `record`, `sessions`, `stop`, `render`, `inspect`, `export`, `frames`) running under `uv`. |
+| `tools/recorder/cli.py` | Gameplay Recording CLI (`python -m tools.recorder`) | CLI subcommands (`worlds`, `players`, `record`, `sessions`, `stop`, `render`, `inspect`, `export`, `frames`, plus `original list\|inspect\|render\|frames\|export`) running under `uv`. |
 | `tools/recorder/capture.py` | `capture_single`, `capture_many` | Lightweight async WebSocket observer capturing `.s1rec` / `.s1rec.gz` replays with death/duration/sentinel triggers. |
 | `tools/recorder/renderer.py` | `render_replay_to_mp4`, `extract_frames` | Headless Playwright Chromium + `OfflineAudioContext` + FFmpeg converter producing MP4s and keyframe PNGs. |
-| `tools/recorder/format.py` | `ReplayWriter`, `read_replay`, `inspect_replay` | `.s1rec` / `.s1rec.gz` v1 reader, crash-safe writer, and metadata inspector. |
+| `tools/recorder/format.py` | `ReplayWriter`, `read_replay`, `inspect_replay`, `is_s1rec_file` | `.s1rec` / `.s1rec.gz` v1 reader, crash-safe writer, format detector, and metadata inspector. |
 | `tools/recorder/flatbuffers_wire.py` | `MiniFlatBufferBuilder`, `peek_quantum` | Zero-dependency FlatBuffers encoder/decoder matching `game.fbs`. |
 | `tools/recorder/discovery.py` | `fetch_players`, `fetch_worlds`, `wait_for_matching_player` | HTTP player/bot discovery and target resolution against `/api/v1/server/players`. |
 | `tools/recorder/exporter.py` | `export_trajectories` | Reconstructs delta `NetWorldView` entity states into CSV/JSONL trajectories for `analysis/`. |
+| `tools/recorder/timeparse.py` | `parse_timestamp_sec`, `format_timestamp` | Parses and formats `sec` / `MM:SS` / `HH:MM:SS` timestamp ranges across remake and original commands. |
+| `tools/recorder/original_format.py` | `inspect_original_recording`, `list_original_recordings`, `slice_original_stream` | Parses archived original Spaceone.io `<III` binary streams, detects playability, extracts alive spans, and slices streams. |
+| `tools/recorder/original_renderer.py` | `render_original_to_mp4`, `extract_original_frames` | Deterministic offline Playwright + archived WASM + FFmpeg renderer producing player-accurate MP4s and keyframes. |
+| `tools/recorder/original_exporter.py` | `export_original_trajectories` | Decodes original `0x10` WorldUpdates into CSV/JSONL trajectories for `analysis/`. |
+| `tools/recorder/original_harness.html` | `window.__spaceoneOriginalReplay` | Offline HTML runner hosting `spaceone.io_wasm.{js,wasm}` with 60Hz virtual clock, `MockWebSocket`, and `Exo 2` font shim. |
 
 ---
 
