@@ -4,6 +4,11 @@
 
 @use "../abstracts" as *;
 
+:root {
+  // 1 ScreenSpace reference unit (matches original GameRendering::ScreenSpace(1))
+  --hud-unit: min(calc(100vw / 1920), calc(100vh / 1080));
+}
+
 html {
   height: 100%;
 }

@@ -7,31 +7,49 @@
 .leaderboard,
 #leaderboard-container {
   position: absolute;
-  top: 20px;
-  right: 20px;
-  width: 260px;
+  top: calc(15 * var(--hud-unit));
+  right: calc(15 * var(--hud-unit));
+  width: calc(300 * var(--hud-unit));
+  padding: calc(12 * var(--hud-unit)) calc(12 * var(--hud-unit))
+    calc(14 * var(--hud-unit));
+  background-color: rgba(0, 0, 0, 0.4);
+
+  &.leaderboard--empty {
+    display: none !important;
+  }
 
   &__header,
   #leaderboard-header {
     text-align: center;
-    font-size: 22pt;
-    font-weight: lighter;
-    margin-bottom: 6px;
+    font-size: calc(36 * var(--hud-unit));
+    font-weight: 400;
+    line-height: 1.15;
+    margin-bottom: calc(6 * var(--hud-unit));
   }
 
   &__table,
   #leaderboard,
   #leaderboard-left {
+    display: block;
     width: 100%;
-    table-layout: fixed;
     border-collapse: collapse;
     padding: 0;
     margin: 0;
-    font-size: 15pt;
+    font-size: calc(24 * var(--hud-unit));
+
+    tbody {
+      display: block;
+      width: 100%;
+    }
 
     tr {
-      height: 24px;
-      line-height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: calc(8 * var(--hud-unit));
+      width: 100%;
+      height: calc(28.8 * var(--hud-unit));
+      line-height: calc(28.8 * var(--hud-unit));
       margin: 0;
       padding: 0;
       border: none;
@@ -41,19 +59,20 @@
       margin: 0;
       padding: 0;
       border: none;
-      vertical-align: middle;
     }
 
     .name {
+      flex: 1 1 auto;
+      min-width: 0;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      padding-right: 8px;
     }
 
     tr td:last-child,
     .score {
-      width: 60px;
+      flex: 0 0 auto;
+      width: auto;
       text-align: right;
       white-space: nowrap;
     }
@@ -101,7 +120,9 @@
 .arena-record,
 #record {
   position: fixed;
-  bottom: 16px;
-  left: 16px;
-  font-size: 11pt;
+  bottom: calc(12 * var(--hud-unit));
+  left: calc(16 * var(--hud-unit));
+  font-size: calc(16 * var(--hud-unit));
+  line-height: calc(22 * var(--hud-unit));
+  @include hud-text-stroke;
 }

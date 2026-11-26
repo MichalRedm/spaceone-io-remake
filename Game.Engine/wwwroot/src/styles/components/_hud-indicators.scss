@@ -7,11 +7,11 @@
 .autofire-indicator,
 #autofire-container {
   position: fixed;
-  right: 8px;
-  bottom: 14px;
-  font-size: 14pt;
-  color: $color-text-muted;
-  transition: color $transition-fast;
+  right: calc(12 * var(--hud-unit));
+  bottom: calc(12 * var(--hud-unit));
+  font-size: calc(24 * var(--hud-unit));
+  color: $color-text-main;
+  @include hud-text-stroke;
 
   &--active {
     color: $color-text-main;
@@ -21,18 +21,19 @@
 .fleet-size,
 #fleet-size-container {
   position: absolute;
-  top: 32px;
-  left: 16px;
-  font-size: 14pt;
+  top: calc(44 * var(--hud-unit));
+  left: calc(16 * var(--hud-unit));
+  font-size: calc(24 * var(--hud-unit));
+  @include hud-text-stroke;
 }
 
 .player-name-hud,
 #self-nick-container {
   position: absolute;
-  bottom: calc(5vh + 30px);
+  bottom: calc(82 * var(--hud-unit));
   left: 50%;
   transform: translateX(-50%);
-  font-size: 14pt;
+  font-size: calc(24 * var(--hud-unit));
 }
 
 .tracking-arrow {
@@ -95,9 +96,10 @@ body.loading .tracking-arrow {
 
 .score-popup,
 .plusScore {
-  font-size: 40px;
+  font-size: calc(55 * var(--hud-unit));
+  font-weight: 400;
   opacity: 0;
-  animation: plusScore 2.5s;
+  animation: plusScore 1s linear forwards;
   position: absolute;
   white-space: nowrap;
 }
@@ -105,11 +107,12 @@ body.loading .tracking-arrow {
 .kill-banner,
 #big-log {
   position: absolute;
-  top: 4em;
+  top: calc(108 * var(--hud-unit));
   left: 50%;
   transform: translate(-50%, -50%);
-  font-size: 32px;
-  font-weight: 700;
+  font-size: calc(46 * var(--hud-unit));
+  font-weight: 400;
+  white-space: nowrap;
 }
 
 .danger-zone-warning,
@@ -146,8 +149,8 @@ body.loading .tracking-arrow {
 .stats-hud,
 #hud {
   position: fixed;
-  top: 62px;
-  left: 16px;
+  top: calc(84 * var(--hud-unit));
+  left: calc(16 * var(--hud-unit));
   padding: 4px 10px;
   border-radius: 6px;
   background: rgba(6, 11, 25, 0.72);
@@ -162,7 +165,7 @@ body.loading .tracking-arrow {
   z-index: $z-index-base;
 
   body.spectating & {
-    top: 32px;
+    top: calc(32 * var(--hud-unit));
   }
 }
 
