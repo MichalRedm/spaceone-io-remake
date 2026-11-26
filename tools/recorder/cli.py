@@ -28,7 +28,20 @@ from .discovery import (
     wait_for_matching_player,
 )
 from .exporter import export_trajectories
-from .format import inspect_replay
+from .format import inspect_replay, is_s1rec_file
+from .original_exporter import export_original_trajectories
+from .original_format import (
+    DEFAULT_ORIGINAL_PLAYBACK_DIR,
+    inspect_original_recording,
+    is_original_playback_file,
+    list_original_recordings,
+    resolve_original_recording,
+)
+from .original_renderer import (
+    OriginalRenderOptions,
+    extract_original_frames,
+    render_original_to_mp4,
+)
 from .renderer import (
     DEFAULT_DIST_DIR,
     GRAPHICS_MODES,
@@ -41,6 +54,7 @@ from .renderer import (
     parse_viewport,
     render_replay_to_mp4,
 )
+from .timeparse import parse_timestamp_sec
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 SESSIONS_DIR = REPO_ROOT / ".recorder_sessions"
@@ -87,12 +101,82 @@ def _add_render_flags(parser: argparse.ArgumentParser, include_profile: bool = T
     parser.add_argument("--audio-volume", type=int, default=100, help="Master SFX volume 0..100 (default: 100)")
     parser.add_argument("--zoom", type=float, default=1000.0, help="Camera zoom distance (default: 1000)")
     parser.add_argument("--overlay-info", action="store_true", help="Show debug telemetry overlay bar")
-    parser.add_argument("--start", type=float, default=0.0, help="Trim start time in seconds")
-    parser.add_argument("--end", type=float, default=None, help="Trim end time in seconds")
+    parser.add_argument(
+        "--start",
+        type=parse_timestamp_sec,
+        default=0.0,
+        help="Trim start timestamp (seconds, MM:SS, or HH:MM:SS)",
+    )
+    parser.add_argument(
+        "--end",
+        type=parse_timestamp_sec,
+        default=None,
+        help="Trim end timestamp (seconds, MM:SS, or HH:MM:SS)",
+    )
     parser.add_argument("--speed", type=float, default=1.0, help="Playback speed multiplier (e.g. 0.5 for slow-mo)")
     parser.add_argument("--seed", type=int, default=None, help="Deterministic audio PRNG seed")
     parser.add_argument("--fast-frames", action="store_true", help="Use JPEG frames instead of PNG when piping to FFmpeg")
     parser.add_argument("--dist-dir", default=str(DEFAULT_DIST_DIR), help="Path to built wwwroot/dist directory")
+
+
+def _add_original_render_flags(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--profile",
+        choices=tuple(RENDER_PROFILES.keys()),
+        default=None,
+        help="Preset render profile: 'human' (1280x720@30), 'hd' (1920x1080@60), 'agent' (960x540@30)",
+    )
+    parser.add_argument("--viewport", default=None, help="Viewport size WxH (e.g. 1280x720, 1920x1080, 960x540)")
+    parser.add_argument("--fps", type=int, default=None, help="Output video framerate (default: profile fps)")
+    parser.add_argument("--crf", type=int, default=None, help="H.264 CRF quality (lower=higher quality)")
+    parser.add_argument("--preset", default="medium", help="FFmpeg x264 preset (default: medium)")
+    parser.add_argument("--graphics", choices=GRAPHICS_MODES, default=None, help="Original client graphics setting")
+    parser.add_argument("--overlay-info", action="store_true", help="Show compact developer telemetry overlay")
+    parser.add_argument("--no-fadeout", action="store_true", help="Suppress black death/spawn fadeout overlay")
+    parser.add_argument(
+        "--start",
+        type=parse_timestamp_sec,
+        default=0.0,
+        help="Trim start timestamp (seconds, MM:SS, or HH:MM:SS)",
+    )
+    parser.add_argument(
+        "--end",
+        type=parse_timestamp_sec,
+        default=None,
+        help="Trim end timestamp (seconds, MM:SS, or HH:MM:SS)",
+    )
+    parser.add_argument("--speed", type=float, default=1.0, help="Playback speed multiplier (e.g. 0.5 for slow-mo)")
+    parser.add_argument("--fast-frames", action="store_true", help="Use JPEG frames instead of PNG when piping to FFmpeg")
+    parser.add_argument(
+        "--allow-remote-fonts",
+        action="store_true",
+        help="Allow fetching Google Fonts Exo 2 online instead of local offline fallback",
+    )
+
+
+def build_original_render_options(args: argparse.Namespace) -> OriginalRenderOptions:
+    """Resolves OriginalRenderOptions by merging `--profile` defaults with explicit CLI flags."""
+    profile_cfg = RENDER_PROFILES.get(getattr(args, "profile", None) or "human", RENDER_PROFILES["human"])
+    w, h = parse_viewport(args.viewport) if args.viewport else profile_cfg["viewport"]
+    fps = args.fps if args.fps is not None else int(profile_cfg["fps"])
+    crf = args.crf if args.crf is not None else int(profile_cfg["crf"])
+    graphics = args.graphics if args.graphics is not None else str(profile_cfg["graphics"])
+
+    return OriginalRenderOptions(
+        width=w,
+        height=h,
+        fps=max(1, fps),
+        crf=max(0, min(51, crf)),
+        preset=args.preset,
+        graphics=graphics,
+        no_fadeout=bool(getattr(args, "no_fadeout", False)),
+        overlay_info=bool(getattr(args, "overlay_info", False)),
+        start_sec=max(0.0, float(args.start)),
+        end_sec=args.end,
+        speed=args.speed if args.speed > 0 else 1.0,
+        lossless_frames=not bool(getattr(args, "fast_frames", False)),
+        allow_remote_fonts=bool(getattr(args, "allow_remote_fonts", False)),
+    )
 
 
 def build_render_options(args: argparse.Namespace) -> RenderOptions:
@@ -290,6 +374,30 @@ def _default_render_output_path(src: Path) -> Path:
     if lower.endswith(".s1rec.gz"):
         return src.with_name(src.name[: -len(".s1rec.gz")] + ".mp4")
     return src.with_suffix(".mp4")
+
+
+def _default_original_output_path(src: Path) -> Path:
+    """Computes safe default `.mp4` output path without writing into `reference/`."""
+    try:
+        if src.resolve().is_relative_to(DEFAULT_ORIGINAL_PLAYBACK_DIR.resolve()):
+            return DEFAULT_RECORDINGS_DIR / f"{src.name}.mp4"
+    except OSError:
+        pass
+    return src.with_suffix(".mp4")
+
+
+def _detect_original_target(input_spec: str) -> Path | None:
+    """Returns resolved Path if `input_spec` points to an original Spaceone.io capture."""
+    direct = Path(input_spec)
+    if direct.is_file():
+        if is_s1rec_file(direct):
+            return None
+        return direct if is_original_playback_file(direct) else None
+    try:
+        resolved = resolve_original_recording(input_spec)
+    except FileNotFoundError:
+        return None
+    return resolved if is_original_playback_file(resolved) else None
 
 
 def _spawn_background_record(args: argparse.Namespace) -> int:
@@ -617,6 +725,8 @@ def _cmd_stop(args: argparse.Namespace) -> int:
 
 
 def _cmd_render(args: argparse.Namespace) -> int:
+    if _detect_original_target(args.input) is not None:
+        return _cmd_original_render(args)
     src = Path(args.input)
     out = Path(args.output) if args.output else _default_render_output_path(src)
     opts = build_render_options(args)
@@ -633,6 +743,8 @@ def _cmd_render(args: argparse.Namespace) -> int:
 
 
 def _cmd_inspect(args: argparse.Namespace) -> int:
+    if _detect_original_target(args.input) is not None:
+        return _cmd_original_inspect(args)
     info = inspect_replay(args.input)
     if args.json:
         print(json.dumps(info, indent=2))
@@ -661,6 +773,8 @@ def _cmd_inspect(args: argparse.Namespace) -> int:
 
 
 def _cmd_export(args: argparse.Namespace) -> int:
+    if _detect_original_target(args.input) is not None:
+        return _cmd_original_export(args)
     res = export_trajectories(
         s1rec_path=args.input,
         output_path=args.output,
@@ -675,8 +789,10 @@ def _cmd_export(args: argparse.Namespace) -> int:
 
 
 def _cmd_frames(args: argparse.Namespace) -> int:
+    if _detect_original_target(args.input) is not None:
+        return _cmd_original_frames(args)
     timestamps = (
-        [float(x.strip()) for x in args.timestamps.split(",") if x.strip()]
+        [parse_timestamp_sec(x.strip()) for x in args.timestamps.split(",") if x.strip()]
         if args.timestamps
         else None
     )
@@ -689,6 +805,132 @@ def _cmd_frames(args: argparse.Namespace) -> int:
         contact_sheet=args.contact_sheet,
         columns=args.columns,
         options=opts,
+    )
+    print(json.dumps(res, indent=2))
+    return 0
+
+
+def _cmd_original_list(args: argparse.Namespace) -> int:
+    playback_dir = Path(args.dir) if args.dir else None
+    rows = list_original_recordings(
+        playback_dir=playback_dir,
+        include_empty=args.all,
+        detailed=args.detailed,
+    )
+    if args.json:
+        print(json.dumps(rows, indent=2))
+        return 0
+    if not rows:
+        print("No original recordings found.")
+        return 0
+
+    print(
+        f"{'ID':<12} {'SIZE(MB)':>8} {'DURATION':>10} {'WU_PKTS':>8} {'DATE_UTC':<20} {'DETAILS'}"
+    )
+    print("-" * 88)
+    for r in rows:
+        size_mb = r["file_size_bytes"] / (1024 * 1024)
+        date_str = (r.get("recorded_at_utc") or "")[:19].replace("T", " ")
+        details = ""
+        if args.detailed and r.get("playable"):
+            names = ", ".join(r.get("player_names") or []) or "<unnamed>"
+            details = f"spans={len(r.get('alive_segments') or [])} maxN={r.get('max_fleet_size', 0)} names={names}"
+        elif not r.get("playable"):
+            details = "(empty/handshake-only)"
+        print(
+            f"{r['recording_id']:<12} {size_mb:>8.2f} {r['duration_fmt']:>10} "
+            f"{r['world_update_count']:>8} {date_str:<20} {details}"
+        )
+    return 0
+
+
+def _cmd_original_inspect(args: argparse.Namespace) -> int:
+    info = inspect_original_recording(args.input)
+    if args.json:
+        print(json.dumps(info, indent=2))
+        return 0
+
+    print(
+        f"Recording:     {info['recording_id']} ({info['file_size_bytes'] / (1024 * 1024):.2f} MB)"
+    )
+    print(f"Path:          {info['file']}")
+    print(f"Recorded UTC:  {info.get('recorded_at_utc') or '?'}")
+    print(
+        f"Duration:      {info['duration_sec']:.2f}s ({info['duration_fmt']}) | "
+        f"{info['world_update_count']} WorldUpdates ({info['avg_snapshot_hz']} Hz), "
+        f"{info['total_packets']} packets"
+    )
+    print(f"Playable:      {info['playable']} | Dash Events: {info['dash_events_count']}")
+    if info["borders"]:
+        b = info["borders"]
+        print(
+            f"Borders:       x=[{b['minX']:.1f}, {b['maxX']:.1f}] y=[{b['minY']:.1f}, {b['maxY']:.1f}]"
+        )
+    print(
+        f"Player Names:  {info['player_names']} | Max Ships: {info['max_fleet_size']} | Max Score: {info['max_score']}"
+    )
+    print(f"Alive Spans ({len(info['alive_segments'])}):")
+    for seg in info["alive_segments"]:
+        print(
+            f"  [{seg['index']}] {seg['start_fmt']} -> {seg['end_fmt']} "
+            f"({seg['duration_sec']:.1f}s) | fleet={seg['fleet_id']} "
+            f"name='{seg['player_name']}' peak_ships={seg['peak_ships']} score={seg['peak_score']} "
+            f"| --start {seg['start_ms']/1000:.2f} --end {seg['end_ms']/1000:.2f}"
+        )
+    if info["announcements"]:
+        print(f"Kill Announcements ({len(info['announcements'])}):")
+        for ann in info["announcements"][:15]:
+            print(
+                f"  t={ann['time_fmt']} You killed {ann['victim_name']} (+{ann['points_delta']})"
+            )
+    return 0
+
+
+def _cmd_original_render(args: argparse.Namespace) -> int:
+    src = resolve_original_recording(args.input)
+    out = Path(args.output) if args.output else _default_original_output_path(src)
+    opts = build_original_render_options(args)
+    result = render_original_to_mp4(src, out, opts)
+    if args.json:
+        print(json.dumps(result, indent=2))
+    else:
+        print(
+            f"Rendered {result['output']} ({result['viewport']} @ {result['fps']}fps, "
+            f"graphics={result['graphics']}, range={result['range_sec'][0]}s..{result['range_sec'][1]}s, "
+            f"{result['duration_sec']}s, {result['size_bytes'] / (1024 * 1024):.2f} MB)"
+        )
+    return 0
+
+
+def _cmd_original_frames(args: argparse.Namespace) -> int:
+    timestamps = (
+        [parse_timestamp_sec(x.strip()) for x in args.timestamps.split(",") if x.strip()]
+        if args.timestamps
+        else None
+    )
+    opts = build_original_render_options(args)
+    res = extract_original_frames(
+        recording_path=args.input,
+        output_dir=args.output_dir,
+        timestamps_sec=timestamps,
+        interval_sec=args.interval,
+        contact_sheet=args.contact_sheet,
+        columns=args.columns,
+        options=opts,
+    )
+    print(json.dumps(res, indent=2))
+    return 0
+
+
+def _cmd_original_export(args: argparse.Namespace) -> int:
+    res = export_original_trajectories(
+        recording_path=args.input,
+        output_path=args.output,
+        output_format=args.format,
+        start_sec=args.start,
+        end_sec=args.end,
+        tracked_only=args.tracked_only,
+        ships_only=args.ships_only,
     )
     print(json.dumps(res, indent=2))
     return 0
@@ -768,40 +1010,91 @@ def build_parser() -> argparse.ArgumentParser:
     p_stop.set_defaults(func=_cmd_stop)
 
     # render / convert
-    p_ren = sub.add_parser("render", aliases=["convert"], help="Convert .s1rec / .s1rec.gz to MP4 video")
-    p_ren.add_argument("input", help="Input .s1rec or .s1rec.gz file")
-    p_ren.add_argument("-o", "--output", default=None, help="Output .mp4 path (default: <input>.mp4)")
+    p_ren = sub.add_parser("render", aliases=["convert"], help="Convert .s1rec/.s1rec.gz or original recording to MP4 video")
+    p_ren.add_argument("input", help="Input .s1rec/.s1rec.gz file or original recording path/ID")
+    p_ren.add_argument("-o", "--output", default=None, help="Output .mp4 path (default: <input>.mp4 or recordings/<id>.mp4)")
     p_ren.add_argument("--json", action="store_true")
     _add_render_flags(p_ren, include_profile=True)
     p_ren.set_defaults(func=_cmd_render)
 
     # inspect
-    p_ins = sub.add_parser("inspect", help="Inspect .s1rec header, duration, fleet IDs, and events")
-    p_ins.add_argument("input", help="Input .s1rec or .s1rec.gz file")
+    p_ins = sub.add_parser("inspect", help="Inspect .s1rec or original recording header, duration, alive spans, and events")
+    p_ins.add_argument("input", help="Input .s1rec/.s1rec.gz file or original recording path/ID")
     p_ins.add_argument("--json", action="store_true")
     p_ins.set_defaults(func=_cmd_inspect)
 
     # export
-    p_exp = sub.add_parser("export", help="Export entity trajectories from .s1rec to CSV or JSONL")
-    p_exp.add_argument("input", help="Input .s1rec or .s1rec.gz file")
+    p_exp = sub.add_parser("export", help="Export entity trajectories from .s1rec or original recording to CSV or JSONL")
+    p_exp.add_argument("input", help="Input .s1rec/.s1rec.gz file or original recording path/ID")
     p_exp.add_argument("-o", "--output", required=True, help="Output .csv or .jsonl path")
     p_exp.add_argument("--format", choices=("csv", "jsonl"), default=None)
-    p_exp.add_argument("--start", type=float, default=0.0)
-    p_exp.add_argument("--end", type=float, default=None)
+    p_exp.add_argument("--start", type=parse_timestamp_sec, default=0.0, help="Start timestamp (sec, MM:SS, or HH:MM:SS)")
+    p_exp.add_argument("--end", type=parse_timestamp_sec, default=None, help="End timestamp (sec, MM:SS, or HH:MM:SS)")
     p_exp.add_argument("--tracked-only", action="store_true", help="Export only bodies belonging to tracked fleet")
     p_exp.add_argument("--ships-only", action="store_true", help="Export only ship entities")
     p_exp.set_defaults(func=_cmd_export)
 
     # frames
-    p_frm = sub.add_parser("frames", help="Extract PNG keyframes or a contact sheet from .s1rec")
-    p_frm.add_argument("input", help="Input .s1rec or .s1rec.gz file")
+    p_frm = sub.add_parser("frames", help="Extract PNG keyframes or a contact sheet from .s1rec or original recording")
+    p_frm.add_argument("input", help="Input .s1rec/.s1rec.gz file or original recording path/ID")
     p_frm.add_argument("-o", "--output-dir", required=True, help="Directory for output PNGs")
-    p_frm.add_argument("--timestamps", default=None, help="Comma-separated timestamps in seconds (e.g. 1.0,5.5,12)")
+    p_frm.add_argument("--timestamps", default=None, help="Comma-separated timestamps (e.g. 1.0,0:15,1:02.5)")
     p_frm.add_argument("--interval", type=float, default=2.0, help="Frame sampling interval in seconds")
     p_frm.add_argument("--contact-sheet", action="store_true", help="Also generate contact_sheet.png")
     p_frm.add_argument("--columns", type=int, default=4, help="Contact sheet columns (default: 4)")
     _add_render_flags(p_frm, include_profile=True)
     p_frm.set_defaults(func=_cmd_frames)
+
+    # original (archived Spaceone.io binary playback tools)
+    p_orig = sub.add_parser(
+        "original",
+        help="Inspect, export, and render archived original Spaceone.io binary recordings",
+    )
+    orig_sub = p_orig.add_subparsers(dest="original_command", required=True)
+
+    p_olist = orig_sub.add_parser("list", help="Catalog archived original Spaceone.io recordings")
+    p_olist.add_argument("--dir", default=None, help="Override playback directory")
+    p_olist.add_argument("--all", action="store_true", help="Include 0-byte and handshake-only files")
+    p_olist.add_argument("--detailed", action="store_true", help="Scan player names and alive spans (slower)")
+    p_olist.add_argument("--json", action="store_true")
+    p_olist.set_defaults(func=_cmd_original_list)
+
+    p_oins = orig_sub.add_parser("inspect", help="Inspect timeline, alive spans, borders, and kills of an original recording")
+    p_oins.add_argument("input", help="Recording path or ID (e.g. 2LTLT1~F)")
+    p_oins.add_argument("--json", action="store_true")
+    p_oins.set_defaults(func=_cmd_original_inspect)
+
+    p_oren = orig_sub.add_parser(
+        "render",
+        aliases=["convert"],
+        help="Render an original Spaceone.io recording to MP4 via archived WASM client",
+    )
+    p_oren.add_argument("input", help="Recording path or ID (e.g. 2LTLT1~F)")
+    p_oren.add_argument("-o", "--output", default=None, help="Output .mp4 path (default: recordings/<id>.mp4)")
+    p_oren.add_argument("--json", action="store_true")
+    _add_original_render_flags(p_oren)
+    p_oren.set_defaults(func=_cmd_original_render)
+
+    p_ofrm = orig_sub.add_parser("frames", help="Extract PNG keyframes or contact sheet from an original recording")
+    p_ofrm.add_argument("input", help="Recording path or ID (e.g. 2LTLT1~F)")
+    p_ofrm.add_argument("-o", "--output-dir", required=True, help="Directory for output PNGs")
+    p_ofrm.add_argument("--timestamps", default=None, help="Comma-separated timestamps (e.g. 10,0:15,1:02.5)")
+    p_ofrm.add_argument("--interval", type=float, default=2.0, help="Frame sampling interval in seconds")
+    p_ofrm.add_argument("--contact-sheet", action="store_true", help="Also generate contact_sheet.png")
+    p_ofrm.add_argument("--columns", type=int, default=4, help="Contact sheet columns (default: 4)")
+    p_ofrm.add_argument("--json", action="store_true")
+    _add_original_render_flags(p_ofrm)
+    p_ofrm.set_defaults(func=_cmd_original_frames)
+
+    p_oexp = orig_sub.add_parser("export", help="Export original Spaceone.io entity trajectories to CSV or JSONL")
+    p_oexp.add_argument("input", help="Recording path or ID (e.g. 2LTLT1~F)")
+    p_oexp.add_argument("-o", "--output", required=True, help="Output .csv or .jsonl path")
+    p_oexp.add_argument("--format", choices=("csv", "jsonl"), default=None)
+    p_oexp.add_argument("--start", type=parse_timestamp_sec, default=0.0, help="Start timestamp (sec, MM:SS, or HH:MM:SS)")
+    p_oexp.add_argument("--end", type=parse_timestamp_sec, default=None, help="End timestamp (sec, MM:SS, or HH:MM:SS)")
+    p_oexp.add_argument("--tracked-only", action="store_true", help="Export only player fleet (`isMyFleet`)")
+    p_oexp.add_argument("--ships-only", action="store_true", help="Export only ship entities")
+    p_oexp.set_defaults(func=_cmd_original_export)
 
     return parser
 

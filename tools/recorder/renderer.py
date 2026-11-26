@@ -119,7 +119,7 @@ def parse_ui_overrides(show_items: list[str] | None, hide_items: list[str] | Non
 
 OFFLINE_ORIGIN = "http://spaceone.local"
 
-_MIME_TYPES: dict[str, str] = {
+OFFLINE_MIME_TYPES: dict[str, str] = {
     ".html": "text/html; charset=utf-8",
     ".js": "application/javascript; charset=utf-8",
     ".mjs": "application/javascript; charset=utf-8",
@@ -135,6 +135,8 @@ _MIME_TYPES: dict[str, str] = {
     ".wasm": "application/wasm",
     ".ico": "image/x-icon",
 }
+
+_MIME_TYPES = OFFLINE_MIME_TYPES
 
 
 def _install_offline_dist_routes(page: Any, dist_dir: Path) -> str:
@@ -175,7 +177,7 @@ def _install_offline_dist_routes(page: Any, dist_dir: Path) -> str:
     return OFFLINE_ORIGIN
 
 
-def _ensure_ffmpeg_tools() -> tuple[str, str]:
+def ensure_ffmpeg_tools() -> tuple[str, str]:
     ffmpeg_bin = shutil.which("ffmpeg")
     ffprobe_bin = shutil.which("ffprobe")
     if not ffmpeg_bin or not ffprobe_bin:
@@ -185,7 +187,7 @@ def _ensure_ffmpeg_tools() -> tuple[str, str]:
     return ffmpeg_bin, ffprobe_bin
 
 
-def _probe_media(ffprobe_bin: str, path: Path) -> dict[str, Any]:
+def probe_media(ffprobe_bin: str, path: Path) -> dict[str, Any]:
     proc = subprocess.run(
         [
             ffprobe_bin,
@@ -206,7 +208,7 @@ def _probe_media(ffprobe_bin: str, path: Path) -> dict[str, Any]:
     return json.loads(proc.stdout)
 
 
-def _launch_chromium(playwright_obj: Any):
+def launch_chromium(playwright_obj: Any):
     return playwright_obj.chromium.launch(
         headless=True,
         args=[
@@ -215,6 +217,37 @@ def _launch_chromium(playwright_obj: Any):
             "--disable-renderer-backgrounding",
         ],
     )
+
+
+def build_contact_sheet(
+    image_paths: list[Path],
+    output_path: Path,
+    frame_width: int,
+    frame_height: int,
+    columns: int = 4,
+) -> Path | None:
+    """Builds a tiled PNG contact sheet from extracted keyframe PNGs."""
+    if not image_paths:
+        return None
+    cols = max(1, columns)
+    rows = math.ceil(len(image_paths) / cols)
+    thumb_w = max(160, frame_width // 2)
+    thumb_h = max(90, frame_height // 2)
+    sheet = Image.new("RGB", (cols * thumb_w, rows * thumb_h), (6, 10, 22))
+    for idx, fp in enumerate(image_paths):
+        with Image.open(fp) as im:
+            resized = im.convert("RGB").resize(
+                (thumb_w, thumb_h), Image.Resampling.LANCZOS
+            )
+            r, c = divmod(idx, cols)
+            sheet.paste(resized, (c * thumb_w, r * thumb_h))
+    sheet.save(output_path)
+    return output_path
+
+
+_ensure_ffmpeg_tools = ensure_ffmpeg_tools
+_probe_media = probe_media
+_launch_chromium = launch_chromium
 
 
 def _setup_replay_page(
@@ -494,26 +527,45 @@ def extract_frames(
     pov_default = bool(tracking.get("pov", True))
     duration_sec = archive.duration_ms / 1000.0
 
+    start_sec = max(0.0, float(opts.start_sec))
+    if archive.duration_ms > 0 and start_sec >= duration_sec:
+        raise ValueError(
+            f"--start ({start_sec:.2f}s) must be less than replay duration ({duration_sec:.2f}s)."
+        )
+    end_sec = (
+        duration_sec
+        if opts.end_sec is None
+        else min(duration_sec, float(opts.end_sec))
+    )
+    if opts.end_sec is not None and end_sec <= start_sec:
+        raise ValueError(
+            f"--end ({opts.end_sec:.2f}s) must be greater than --start ({start_sec:.2f}s)."
+        )
+
     if timestamps_sec:
         targets = sorted(
             {max(0.0, min(duration_sec, float(t))) for t in timestamps_sec}
         )
+        setup_start_ms = 0
+        base_sec = 0.0
     else:
         step = max(0.25, interval_sec if interval_sec and interval_sec > 0 else 2.0)
         targets = []
-        t = 0.0
-        while t <= duration_sec + 1e-6:
-            targets.append(round(min(duration_sec, t), 3))
+        t = start_sec
+        while t <= end_sec + 1e-6:
+            targets.append(round(min(end_sec, t), 3))
             t += step
         if not targets:
-            targets = [0.0]
+            targets = [round(start_sec, 3)]
+        setup_start_ms = int(round(start_sec * 1000.0))
+        base_sec = start_sec
 
     saved_files: list[Path] = []
-    # Disable audio decode overhead during pure image extraction
-    frame_opts = replace(opts, enable_audio=False)
+    # Disable audio decode overhead and force 1.0x speed so frame timestamps match replay time
+    frame_opts = replace(opts, enable_audio=False, speed=1.0)
 
     with sync_playwright() as pw:
-        browser = _launch_chromium(pw)
+        browser = launch_chromium(pw)
         try:
             context = browser.new_context(
                 viewport={"width": frame_opts.width, "height": frame_opts.height},
@@ -522,10 +574,11 @@ def extract_frames(
             try:
                 page = context.new_page()
                 cdp = context.new_cdp_session(page)
-                _setup_replay_page(page, src_path, frame_opts, 0, pov_default)
+                _setup_replay_page(page, src_path, frame_opts, setup_start_ms, pov_default)
                 for idx, t_sec in enumerate(targets):
+                    rel_ms = max(0.0, (t_sec - base_sec) * 1000.0)
                     page.evaluate(
-                        "t => window.__spaceoneReplay.stepTo(t)", t_sec * 1000.0
+                        "t => window.__spaceoneReplay.stepTo(t)", rel_ms
                     )
                     shot = cdp.send("Page.captureScreenshot", {"format": "png"})
                     frame_path = out_dir / f"frame_{idx:03d}_{t_sec:.2f}s.png"
@@ -538,20 +591,13 @@ def extract_frames(
 
     contact_sheet_path: Path | None = None
     if contact_sheet and saved_files:
-        cols = max(1, columns)
-        rows = math.ceil(len(saved_files) / cols)
-        thumb_w = max(160, frame_opts.width // 2)
-        thumb_h = max(90, frame_opts.height // 2)
-        sheet = Image.new("RGB", (cols * thumb_w, rows * thumb_h), (6, 10, 22))
-        for idx, fp in enumerate(saved_files):
-            with Image.open(fp) as im:
-                resized = im.convert("RGB").resize(
-                    (thumb_w, thumb_h), Image.Resampling.LANCZOS
-                )
-                r, c = divmod(idx, cols)
-                sheet.paste(resized, (c * thumb_w, r * thumb_h))
-        contact_sheet_path = out_dir / "contact_sheet.png"
-        sheet.save(contact_sheet_path)
+        contact_sheet_path = build_contact_sheet(
+            saved_files,
+            out_dir / "contact_sheet.png",
+            frame_opts.width,
+            frame_opts.height,
+            columns=columns,
+        )
 
     return {
         "output_dir": str(out_dir),

@@ -106,6 +106,18 @@ def _open_replay_stream(path: Path) -> BinaryIO:
     return open(path, "rb")
 
 
+def is_s1rec_file(path: str | Path) -> bool:
+    """Returns True if `path` is a valid raw or gzip-compressed `.s1rec` v1 archive."""
+    file_path = Path(path)
+    if not file_path.is_file():
+        return False
+    try:
+        with _open_replay_stream(file_path) as stream:
+            return _read_exact(stream, len(S1REC_MAGIC)) == S1REC_MAGIC
+    except (OSError, EOFError, ValueError):
+        return False
+
+
 def _read_exact(stream: BinaryIO, count: int) -> bytes:
     chunks: list[bytes] = []
     remaining = count

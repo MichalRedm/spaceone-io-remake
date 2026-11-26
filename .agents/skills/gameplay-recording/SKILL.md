@@ -1,11 +1,11 @@
 ---
 name: gameplay-recording
-description: Record live Spaceone.io Remake gameplay to lossless .s1rec streams, inspect/export telemetry trajectories, and render deterministic player-accurate MP4 videos with spatial SFX for human playback or multimodal AI analysis.
+description: Record live Spaceone.io Remake gameplay to lossless .s1rec streams, inspect/export telemetry trajectories, and render deterministic player-accurate MP4 videos (for both Remake .s1rec and archived Original Spaceone.io binary recordings) for human playback or multimodal AI analysis.
 ---
 
 # Gameplay Recording & Replay Toolkit
 
-Use this skill whenever you need to capture gameplay videos or binary telemetry sessions, evaluate `HumanoidBot` / `ContextRobot` behavior visually, inspect physics/flocking/VFX/audio behavior via multimodal `read_file`, or produce human-watchable gameplay clips.
+Use this skill whenever you need to capture gameplay videos or binary telemetry sessions, convert archived **original Spaceone.io** recordings (`reference/space1-original/server-ansible/record/playback/*`) into MP4s or keyframes, evaluate `HumanoidBot` / `ContextRobot` behavior visually, inspect physics/flocking/VFX/audio behavior via multimodal `read_file`, or produce human-watchable gameplay clips.
 
 ---
 
@@ -29,10 +29,11 @@ uv run --project tools/recorder python -m tools.recorder <subcommand> ...
 
 ---
 
-## 2. Two-Stage Architecture (`.s1rec` -> `.mp4`)
+## 2. Two-Stage Architecture (`.s1rec` & Original Captures -> `.mp4`)
 
-1. **Capture (`.s1rec` / `.s1rec.gz`)**: Connects via WebSocket (`/api/v1/connect?world=...&observer=1`) as a passive zero-overhead observer (does not count toward `PlayerCount` or `SpectatorCount` and never switches targets on death). Writes timestamped `NetQuantum` FlatBuffer packets + JSON metadata header.
-2. **Offline Render (`.mp4` / PNG frames)**: Launches headless Playwright Chromium with `?replay=1`, injects `.s1rec` packets into the **real PixiJS WebGL client + DOM HUD + `AudioManager` (`OfflineAudioContext`)** on a deterministic virtual clock, and muxes frames + sample-accurate stereo SFX via `ffmpeg`. **No running game server is required during `render` or `frames`.**
+1. **Remake Capture (`.s1rec` / `.s1rec.gz`)**: Connects via WebSocket (`/api/v1/connect?world=...&observer=1`) as a passive zero-overhead observer (does not count toward `PlayerCount` or `SpectatorCount` and never switches targets on death). Writes timestamped `NetQuantum` FlatBuffer packets + JSON metadata header.
+2. **Remake Offline Render (`.mp4` / PNG frames)**: Launches headless Playwright Chromium with `?replay=1`, injects `.s1rec` packets into the **real PixiJS WebGL client + DOM HUD + `AudioManager` (`OfflineAudioContext`)** on a deterministic virtual clock, and muxes frames + sample-accurate stereo SFX via `ffmpeg`. **No running game server is required during `render` or `frames`.**
+3. **Original Spaceone.io Offline Render (`original render` / `original frames`)**: Reads archived Maestro-framed binary recordings (`reference/space1-original/server-ansible/record/playback/*`), serves the archived **original Spaceone.io WebAssembly client** (`spaceone.io_wasm.{js,wasm}` + `assets/`) offline in headless Chromium on a 60Hz deterministic virtual clock + `MockWebSocket`, and encodes authentic player-viewport `.mp4` videos (video-only, since original Spaceone.io had no audio). Top-level `render`, `inspect`, `frames`, and `export` auto-detect `.s1rec` vs. original playback files automatically.
 
 ---
 
@@ -81,9 +82,11 @@ uv run --project tools/recorder python -m tools.recorder stop --all
 ```
 
 ### Offline Conversion, Keyframes, Inspection & Trajectory Export
+Both `--start` and `--end` (and `--timestamps`) accept plain seconds (`12.5`) or `MM:SS` / `HH:MM:SS` (`02:15`, `0:10:30.5`) across all offline commands:
+
 ```powershell
 # Re-render .s1rec offline at any viewport, speed, trim window, or UI preset
-uv run --project tools/recorder python -m tools.recorder render recordings/match.s1rec -o recordings/fight_slowmo.mp4 --profile agent --start 12 --end 18 --speed 0.5 --overlay-info
+uv run --project tools/recorder python -m tools.recorder render recordings/match.s1rec -o recordings/fight_slowmo.mp4 --profile agent --start 0:12 --end 0:18 --speed 0.5 --overlay-info
 
 # Inspect metadata, duration, alive spans, fleet IDs, and kill announcements
 uv run --project tools/recorder python -m tools.recorder inspect recordings/match.s1rec
@@ -91,9 +94,38 @@ uv run --project tools/recorder python -m tools.recorder inspect recordings/matc
 # Export reconstructed per-tick entity kinematics to CSV or JSONL for analysis/
 uv run --project tools/recorder python -m tools.recorder export recordings/match.s1rec -o recordings/traj.csv --tracked-only --ships-only
 
-# Extract crisp PNG frames or a tiled contact sheet for rapid visual review
-uv run --project tools/recorder python -m tools.recorder frames recordings/match.s1rec -o recordings/frames --interval 2.0 --contact-sheet
+# Extract crisp PNG frames or a tiled contact sheet (supports --start / --end trimming)
+uv run --project tools/recorder python -m tools.recorder frames recordings/match.s1rec -o recordings/frames --start 0:10 --end 0:20 --interval 2.0 --contact-sheet
 ```
+
+### Original Spaceone.io Archive Conversion (`original`)
+Convert archived original Spaceone.io recordings (`reference/space1-original/server-ansible/record/playback/*`) via the archived WASM frontend. Short recording IDs (e.g. `2LTLT1~F`) resolve automatically, and top-level `inspect`/`render`/`frames`/`export` also auto-detect original files:
+
+```powershell
+# Catalog playable original recordings (skips 0-byte/handshake-only captures unless --all)
+uv run --project tools/recorder python -m tools.recorder original list
+uv run --project tools/recorder python -m tools.recorder original list --detailed
+
+# Inspect alive segments, borders, player names, dash counts, and kill announcements
+uv run --project tools/recorder python -m tools.recorder original inspect 2LTLT1~F
+
+# Render a trimmed slice at agent resolution with dev telemetry overlay (supports MM:SS)
+uv run --project tools/recorder python -m tools.recorder original render 2LTLT1~F -o recordings/orig_clip.mp4 --profile agent --start 1:30 --end 1:50 --overlay-info
+
+# Render slow-motion or distraction-free low graphics at a specific viewport
+uv run --project tools/recorder python -m tools.recorder original render 2LTLT1~F -o recordings/orig_slow.mp4 --viewport 1280x720 --graphics low --start 10:00 --end 10:06 --speed 0.5 --no-fadeout
+
+# Extract keyframes / contact sheet from a trimmed original window
+uv run --project tools/recorder python -m tools.recorder original frames 2LTLT1~F -o recordings/orig_frames --start 1:30 --end 1:42 --interval 2.0 --contact-sheet --profile agent
+
+# Export original WorldUpdate entity kinematics to CSV or JSONL
+uv run --project tools/recorder python -m tools.recorder original export 2LTLT1~F -o recordings/orig_traj.csv --start 1:30 --end 1:50 --tracked-only --ships-only
+```
+
+Original-specific flags:
+- `--graphics high|medium|low`: Maps directly to `window.core.setGraphics(...)` (`low` hides starfield, glow, trails, and particles for clean kinematic observation).
+- `--no-fadeout`: Suppresses the black death/spawn fadeout overlay when inspecting spawn/death transitions.
+- `--allow-remote-fonts`: Fetches Google Fonts `Exo 2` online (offline default uses a local `@font-face` fallback so `FontDetect` still renders the Leaderboard deterministically offline).
 
 ---
 
@@ -143,3 +175,20 @@ Open the `.mp4` with `read_file` to verify PixiJS glow/particles, DOM HUD scalin
 ### Playbook D: Reproducible Bug Capture & PR Evidence
 1. Reproduce the bug while recording `--duration 15` (or `--background --session repro` followed by `stop`).
 2. Render a crisp `--profile agent` or `human` MP4 slice trimming directly around the anomaly (`--start ... --end ...`), inspect via `read_file`, and embed/reference results in your walkthrough.
+
+### Playbook E: Original vs. Remake Physics Visual & Kinematic Comparison
+1. Discover candidate original gameplay segments (cruising, tight turns, dash/split bursts, multi-ship flocking):
+   ```powershell
+   uv run --project tools/recorder python -m tools.recorder original list --detailed
+   uv run --project tools/recorder python -m tools.recorder original inspect 2LTLT1~F
+   ```
+2. Render a focused `10–20s` original ground-truth clip (and optional `0.5x` slow-mo slice) + matching CSV trajectory:
+   ```powershell
+   uv run --project tools/recorder python -m tools.recorder original render 2LTLT1~F -o recordings/orig_dash.mp4 --profile agent --start 1:30 --end 1:45 --overlay-info
+   uv run --project tools/recorder python -m tools.recorder original render 2LTLT1~F -o recordings/orig_dash_slow.mp4 --profile agent --start 1:34 --end 1:39 --speed 0.5 --overlay-info
+   uv run --project tools/recorder python -m tools.recorder original export 2LTLT1~F -o recordings/orig_dash.csv --start 1:30 --end 1:45 --tracked-only --ships-only
+   ```
+3. Capture matching remake gameplay with `record --profile agent --overlay-info` and compare **both** `.mp4` videos visually via `read_file` alongside quantitative trajectory comparisons in `analysis/`.
+
+> [!NOTE]
+> **Original Client Visual Caveats**: Original WASM renders faithfully reproduce three client-side quirks from the archived game: (1) ships lag `~100 ms` via `INTERP_TIME = 100 ms` while bullets extrapolate forward (`vel / 40.0 * dt`), so explosions may appear ahead of lagged target ships; (2) archived packet-arrival jitter causes bullets to overshoot during network spikes; and (3) bullets fade in over `320 ms` (with `alpha / 8` head attenuation for the first `120–160 ms`), making shots appear late after firing. Cross-check exact coordinates with `original export`.
