@@ -227,7 +227,7 @@ $transition-fade: 0.5s ease;
 
 * **Leaderboard (`.leaderboard`)**:
   * Positioned at `top: calc(15 * var(--hud-unit)); right: calc(15 * var(--hud-unit)); width: calc(300 * var(--hud-unit));` with `rgba(0, 0, 0, 0.4)` translucent backdrop and `12u 12u 14u` padding (hidden via `.leaderboard--empty` when no rows exist).
-  * **Table Layout & Truncation Rule**: Tables declare `table-layout: fixed; width: 100%; border-collapse: collapse;` with strict `28.8u` row heights (`24u` font). Name cells (`.name`) must declare `white-space: nowrap; overflow: hidden; text-overflow: ellipsis;` to prevent multiline breakage, and score cells (`.score`) declare `width: calc(76 * var(--hud-unit)); text-align: right;`.
+  * **Table Layout & Truncation Rule**: Rows use flex layout (`display: flex; justify-content: space-between; gap: calc(8 * var(--hud-unit));`) with strict `28.8u` row heights (`24u` font). Name cells (`.name`) declare `flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;` and score cells (`.score`) size dynamically (`flex: 0 0 auto; width: auto; text-align: right;`) so names are only truncated when they would actually collide with the score.
   * **Player Row Highlighting Rule**: All opposing player rows MUST render in default white (`#ffffff`). ONLY the local player's own row (`.leaderboard__row--self`) receives the dynamic ship color modifier (`.leaderboard__row--cyan`, `.leaderboard__row--pink`, etc.).
 * **HUD Text Outlines & Autofire**:
   * `--hud-unit: min(calc(100vw / 1920), calc(100vh / 1080))` scales all in-game HUD elements proportionally to the original `GameRendering::ScreenSpace` system.

@@ -30,14 +30,24 @@
   &__table,
   #leaderboard,
   #leaderboard-left {
+    display: block;
     width: 100%;
-    table-layout: fixed;
     border-collapse: collapse;
     padding: 0;
     margin: 0;
     font-size: calc(24 * var(--hud-unit));
 
+    tbody {
+      display: block;
+      width: 100%;
+    }
+
     tr {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: calc(8 * var(--hud-unit));
+      width: 100%;
       height: calc(28.8 * var(--hud-unit));
       line-height: calc(28.8 * var(--hud-unit));
       margin: 0;
@@ -49,19 +59,20 @@
       margin: 0;
       padding: 0;
       border: none;
-      vertical-align: middle;
     }
 
     .name {
+      flex: 1 1 auto;
+      min-width: 0;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      padding-right: calc(10 * var(--hud-unit));
     }
 
     tr td:last-child,
     .score {
-      width: calc(76 * var(--hud-unit));
+      flex: 0 0 auto;
+      width: auto;
       text-align: right;
       white-space: nowrap;
     }
