@@ -1,4 +1,4 @@
-"""Spaceone.io Remake gameplay recording and deterministic MP4 rendering toolkit."""
+"""Spaceone.io Remake & Original Spaceone.io gameplay recording and deterministic MP4 rendering toolkit."""
 
 __all__ = [
     "capture",
@@ -7,5 +7,9 @@ __all__ = [
     "exporter",
     "flatbuffers_wire",
     "format",
+    "original_exporter",
+    "original_format",
+    "original_renderer",
     "renderer",
+    "timeparse",
 ]
