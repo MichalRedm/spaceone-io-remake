@@ -46,3 +46,11 @@ Pair quantitative trajectory loss fitting in `analysis/` with direct multimodal 
    - Inspect both original and remake `.mp4` clips directly with `read_file` to compare ship turn responsiveness, boost split acceleration, flocking compaction, bullet travel, and out-of-bounds decay in real gameplay context.
    - Export the remake `.s1rec` archive via `python -m tools.recorder export ... --ships-only` into CSV trajectories for direct numeric comparison against `reference/space1-original/recordings/` and `original export` CSVs.
 4. **Slow-Motion Micro-Inspection**: Re-render anomalous moments offline at `0.5x` speed with developer telemetry (`render ... --start <t1> --end <t2> --speed 0.5 --overlay-info` for either `.s1rec` or original captures) without re-running the live match.
+
+> [!NOTE]
+> **Original Client Visual Caveats (Do Not Confuse With Server Physics)**:
+> When inspecting original WASM renders (`original render`), keep three authentic original-client quirks in mind:
+> 1. **Ship Interpolation vs. Bullet Extrapolation (~100 ms mismatch)**: Ships interpolate backwards over `INTERP_TIME = 100 ms`, whereas bullets are extrapolated forward client-side (`vel / 40.0 * dt`), so bullet explosions often appear ahead of the visually lagged target ship.
+> 2. **Recorded Network Jitter**: Archived sessions were captured client-side with real WebSocket arrival timestamps; packet-gap spikes (`> 60 ms`) cause client-extrapolated bullets to visually overshoot before deletion packets arrive.
+> 3. **Delayed Bullet Fade-In (320 ms / ~160 ms head visibility)**: `Cell::DrawBulletWithTrail` fades bullets in over 8 server ticks (`320 ms`) and scales head opacity by `alpha / 8` while `alpha < 0.5`, making newly fired bullets nearly invisible (`1.5%–4.7%`) for the first `120–160 ms`.
+> Always verify exact spawn, muzzle, and impact coordinates via `original export` or `analysis/`.

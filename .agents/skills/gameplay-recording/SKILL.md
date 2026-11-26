@@ -189,3 +189,6 @@ Open the `.mp4` with `read_file` to verify PixiJS glow/particles, DOM HUD scalin
    uv run --project tools/recorder python -m tools.recorder original export 2LTLT1~F -o recordings/orig_dash.csv --start 1:30 --end 1:45 --tracked-only --ships-only
    ```
 3. Capture matching remake gameplay with `record --profile agent --overlay-info` and compare **both** `.mp4` videos visually via `read_file` alongside quantitative trajectory comparisons in `analysis/`.
+
+> [!NOTE]
+> **Original Client Visual Caveats**: Original WASM renders faithfully reproduce three client-side quirks from the archived game: (1) ships lag `~100 ms` via `INTERP_TIME = 100 ms` while bullets extrapolate forward (`vel / 40.0 * dt`), so explosions may appear ahead of lagged target ships; (2) archived packet-arrival jitter causes bullets to overshoot during network spikes; and (3) bullets fade in over `320 ms` (with `alpha / 8` head attenuation for the first `120–160 ms`), making shots appear late after firing. Cross-check exact coordinates with `original export`.
