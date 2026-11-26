@@ -163,14 +163,14 @@ namespace Game.Robots.Strategies
             bool isAimingAtEnemy = false;
             if (dangerousEnemy != null && Vector2.Distance(dangerousEnemy.Center, bot.Position) < bot.Parameters.SafeDistance * 2)
             {
-                if (bot.CanShoot || bot.CooldownShoot <= 0.15f)
+                if (bot.CanShoot || bot.CooldownShoot >= 0.85f)
                 {
                     isAimingAtEnemy = true;
                     var predictedPosition = bot.ComputeHumanAimPoint(dangerousEnemy.Center, dangerousEnemy.Momentum);
                     
                     bot.Cursor.SetTarget(predictedPosition, speed: bot.Parameters.FlickAimSpeed);
                     
-                    if (bot.CanShoot && (bot.Cursor.IsAimedAt(predictedPosition, bot.Parameters.FiringAngleTolerance) || bot.CooldownShoot <= 0f))
+                    if (bot.CanShoot && bot.Cursor.IsAimedAt(predictedPosition, bot.Parameters.FiringAngleTolerance))
                     {
                         bot.ShootAt(predictedPosition);
                     }

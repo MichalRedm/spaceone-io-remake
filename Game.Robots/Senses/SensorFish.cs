@@ -3,19 +3,23 @@ namespace Game.Robots.Senses
     using Game.API.Common;
     using Game.Robots.Models;
     using System.Collections.Generic;
-    using System.Linq;
 
     public class SensorFish : ISense
     {
         private readonly Robot Robot;
 
-        public IEnumerable<Ship> AllVisibleFish => _allVisibleFish;
+        public IReadOnlyList<Ship> AllVisibleFish => _allVisibleFish;
         private readonly List<Ship> _allVisibleFish = new List<Ship>();
         private readonly List<Ship> _shipPool = new List<Ship>();
 
         public SensorFish(Robot robot)
         {
             this.Robot = robot;
+        }
+
+        public static bool IsFishSprite(Sprites sprite)
+        {
+            return sprite >= Sprites.fish && sprite <= Sprites.fish_yellow;
         }
 
         public void Sense()
@@ -25,7 +29,7 @@ namespace Game.Robots.Senses
 
             foreach (var b in Robot.Bodies)
             {
-                if (b.Group?.Type == GroupTypes.Fish || b.Sprite == Sprites.fish)
+                if (b.Group?.Type == GroupTypes.Fish || IsFishSprite(b.Sprite))
                 {
                     Ship s;
                     if (poolIndex < _shipPool.Count)
@@ -39,6 +43,7 @@ namespace Game.Robots.Senses
                     }
                     
                     s.ID = b.ID;
+                    s.Sprite = b.Sprite;
                     s.Angle = b.Angle;
                     s.Momentum = b.Momentum;
                     s.Position = b.Position;

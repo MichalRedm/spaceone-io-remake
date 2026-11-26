@@ -3,19 +3,24 @@ namespace Game.Robots.Senses
     using Game.API.Common;
     using Game.Robots.Models;
     using System.Collections.Generic;
-    using System.Linq;
 
     public class SensorAbandoned : ISense
     {
         private readonly Robot Robot;
 
-        public IEnumerable<Ship> AllVisibleAbandoned => _allVisibleAbandoned;
+        public IReadOnlyList<Ship> AllVisibleAbandoned => _allVisibleAbandoned;
         private readonly List<Ship> _allVisibleAbandoned = new List<Ship>();
         private readonly List<Ship> _shipPool = new List<Ship>();
 
         public SensorAbandoned(Robot robot)
         {
             this.Robot = robot;
+        }
+
+        public static bool IsAbandonedSprite(Sprites sprite)
+        {
+            return sprite == Sprites.ship_gray
+                || (sprite >= Sprites.ship_ab_green && sprite <= Sprites.ship_ab_yellow);
         }
 
         public void Sense()
@@ -25,7 +30,7 @@ namespace Game.Robots.Senses
 
             foreach (var b in Robot.Bodies)
             {
-                if (b.Sprite == Sprites.ship_gray)
+                if (IsAbandonedSprite(b.Sprite))
                 {
                     Ship s;
                     if (poolIndex < _shipPool.Count)
@@ -39,6 +44,7 @@ namespace Game.Robots.Senses
                     }
                     
                     s.ID = b.ID;
+                    s.Sprite = b.Sprite;
                     s.Angle = b.Angle;
                     s.Momentum = b.Momentum;
                     s.Position = b.Position;

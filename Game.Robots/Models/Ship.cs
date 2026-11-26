@@ -1,10 +1,12 @@
 namespace Game.Robots.Models
 {
+    using Game.API.Common;
     using System.Numerics;
 
     public class Ship
     {
         public uint ID { get; set; }
+        public Sprites Sprite { get; set; }
         public Vector2 Position { get; set; }
         public Vector2 Momentum { get; set; }
         public int Size { get; set; }
@@ -15,6 +17,7 @@ namespace Game.Robots.Models
         {
             Ship ns = new Ship();
             ns.ID = this.ID;
+            ns.Sprite = this.Sprite;
             ns.Size = this.Size;
             ns.Position = new Vector2(this.Position.X, this.Position.Y);
             ns.Momentum = new Vector2(this.Momentum.X, this.Momentum.Y);

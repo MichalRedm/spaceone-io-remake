@@ -115,43 +115,43 @@ namespace Game.Robots.Framework
 
             // 1. Aiming & Mouse Mechanics:
             // Flick speed has the single highest correlation (+0.548) with success:
-            FlickAimSpeed = Math.Clamp((0.18f + 0.78f * MathF.Pow(_skillLevel, 1.15f)) * Jitter(1.0f, 0.05f), 0.12f, 0.98f);
-            CruisingSpeed = Math.Clamp((0.08f + 0.22f * _skillLevel) * Jitter(1.0f, 0.06f), 0.06f, 0.35f);
+            FlickAimSpeed = Math.Clamp((0.18f + 0.815f * _skillLevel) * Jitter(1.0f, 0.04f), 0.12f, 0.995f);
+            CruisingSpeed = Math.Clamp((0.08f + 0.40f * _skillLevel) * Jitter(1.0f, 0.06f), 0.06f, 0.52f);
 
-            // Aim jitter (-0.262 correlation): ~0.36 rad (~21 deg) down to 0.015 rad (< 1 deg)
-            AimJitter = Math.Clamp((0.36f * (1.0f - _skillLevel) + 0.015f) * Jitter(1.0f, 0.12f), 0.01f, 0.45f);
-            CursorTremorRadius = Math.Clamp((35f * (1.0f - _skillLevel) + 2f) * Jitter(1.0f, 0.15f), 1f, 45f);
+            // Aim jitter (-0.262 correlation): ~0.375 rad (~21.5 deg) down to 0.004 rad (< 0.25 deg)
+            AimJitter = Math.Clamp((0.371f * (1.0f - _skillLevel) + 0.004f) * Jitter(1.0f, 0.12f), 0.003f, 0.45f);
+            CursorTremorRadius = Math.Clamp((36.7f * (1.0f - _skillLevel) + 0.3f) * Jitter(1.0f, 0.15f), 0.2f, 45f);
 
             // Predictive Aim (+0.203 correlation):
-            PredictiveAimFactor = Math.Clamp(MathF.Pow(_skillLevel, 1.35f) * Jitter(1.0f, 0.08f), 0f, 1f);
+            PredictiveAimFactor = Math.Clamp(_skillLevel * Jitter(1.0f, 0.06f), 0f, 1f);
 
             // Flight direction coupling: complete beginners shoot where flying, rapidly decouples by skill 0.3-0.4
             AimInFlightDirectionWeight = Math.Clamp((1.0f - MathF.Pow(_skillLevel, 0.5f)) * 0.92f * Jitter(1.0f, 0.10f), 0f, 0.95f);
 
             // Firing angle tolerance (-0.128 correlation):
-            FiringAngleTolerance = Math.Clamp(0.65f - 0.48f * MathF.Pow(_skillLevel, 0.75f), 0.14f, 0.70f);
+            FiringAngleTolerance = Math.Clamp(0.65f - 0.59f * _skillLevel, 0.05f, 0.70f);
 
-            // Reaction time: 540ms (noob) down to 125ms (pro)
-            ReactionLatencyMs = (int)Math.Clamp(Jitter(540f - 415f * _skillLevel, 0.08f), 115f, 600f);
+            // Reaction time: 540ms (noob) down to 55ms (pro)
+            ReactionLatencyMs = (int)Math.Clamp(Jitter(540f - 485f * _skillLevel, 0.08f), 45f, 600f);
 
             // Danger zone awareness:
             DangerZoneBuffer = Math.Clamp(80f + 320f * _skillLevel, 60f, 450f);
 
             // 2. Probabilistic Bullet Dodging:
             // In humans, dodging is not a weak force, but a probabilistic perception check!
-            // Noobs dodge occasionally (~25-35%), intermediates dodge reliably (~65-75%), pros dodge almost every time (90-99%).
-            BulletDodgeProbability = Math.Clamp((0.22f + 0.76f * MathF.Pow(_skillLevel, 0.70f)) * Jitter(1.0f, 0.05f), 0.15f, 0.99f);
-            // Angular error: noobs panic-dodge with high angular error (~0.65 rad / ~37 deg); pros dodge cleanly at 90 deg (< 0.03 rad)
-            BulletDodgeAngularError = Math.Clamp((0.65f * MathF.Pow(1.0f - _skillLevel, 1.35f) + 0.015f) * Jitter(1.0f, 0.08f), 0.01f, 0.75f);
-            BulletDodgeSkill = Math.Clamp(0.15f + 0.85f * MathF.Pow(_skillLevel, 0.85f), 0.10f, 1.0f);
+            // Noobs dodge occasionally (~25-35%), intermediates dodge reliably (~65-75%), pros dodge almost every time (90-99.8%).
+            BulletDodgeProbability = Math.Clamp((0.22f + 0.778f * MathF.Pow(_skillLevel, 0.70f)) * Jitter(1.0f, 0.04f), 0.15f, 0.998f);
+            // Angular error: noobs panic-dodge with high angular error (~0.66 rad / ~38 deg); pros dodge cleanly at 90 deg (~0.004 rad)
+            BulletDodgeAngularError = Math.Clamp((0.661f * MathF.Pow(1.0f - _skillLevel, 1.35f) + 0.004f) * Jitter(1.0f, 0.08f), 0.003f, 0.75f);
+            BulletDodgeSkill = Math.Clamp(0.15f + 1.30f * _skillLevel, 0.10f, 1.50f);
 
             // 3. Movement & Symmetry Breaking:
             // Low-skill bots have erratic steering noise (breaks circling symmetry); pros have disciplined trajectories
-            SteeringNoiseAmplitude = Math.Clamp((0.45f * (1.0f - _skillLevel) + 0.05f) * Jitter(1.0f, 0.10f), 0.03f, 0.55f);
+            SteeringNoiseAmplitude = Math.Clamp((0.485f * (1.0f - _skillLevel) + 0.015f) * Jitter(1.0f, 0.10f), 0.01f, 0.55f);
 
             // 4. Decision & Strategy Non-Determinism:
             // Beginners get distracted or hesitate (high perceptual noise in utility); pros evaluate utilities deterministically
-            PerceptualNoise = Math.Clamp(0.35f * (1.0f - MathF.Pow(_skillLevel, 0.8f)), 0.02f, 0.40f);
+            PerceptualNoise = Math.Clamp(0.35f * (1.0f - _skillLevel), 0.005f, 0.40f);
 
             // 5. Dash & Boost Mechanics (Judicious Boost Usage):
             // Empirical finding: High boost hesitancy (+0.288) correlates with success because spamming boost drains fleet mass!
@@ -183,7 +183,7 @@ namespace Game.Robots.Framework
             {
                 OffensiveDashEnabled = true;
                 DefensiveDashEnabled = true;
-                BoostHesitancy = 0.03f; // Even pros don't boost recklessly
+                BoostHesitancy = 0.01f; // Top players react without delay
                 MinimumShipsToOffensiveDash = (int)Jitter(12, 0.15f);
                 MinimumShipsToDefensiveDash = 4;
             }
@@ -201,7 +201,7 @@ namespace Game.Robots.Framework
             }
             else
             {
-                OffscreenMemoryDurationMs = (long)Jitter(3500 + (long)(_skillLevel * 2500), 0.10f);
+                OffscreenMemoryDurationMs = (long)Jitter(3500 + (long)(_skillLevel * 4000), 0.10f);
                 TracksOffscreenBullets = true;
             }
 
@@ -230,7 +230,7 @@ namespace Game.Robots.Framework
                     PursuitDistance = Jitter(330f, 0.1f);
                     LeaderHuntTendency = Math.Clamp(Jitter(0.75f, 0.15f), 0.5f, 0.95f);
                     TargetFleetSize = Math.Max(10, TargetFleetSize - 6);
-                    FlickAimSpeed = Math.Clamp(FlickAimSpeed * 1.10f, 0.15f, 0.98f);
+                    FlickAimSpeed = Math.Clamp(FlickAimSpeed * 1.10f, 0.15f, 0.995f);
                     break;
 
                 case "cautious":

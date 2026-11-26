@@ -43,12 +43,6 @@ namespace Game.Robots.Strategies
                 
                 float utility = (distanceUtility + urgencyBonus + leaderBonus) * bot.Parameters.EngageUtilityMultiplier * enemy.Certainty;
 
-                // If outmatched beyond retreat threshold, defer combat to EscapeStrategy
-                if (ratio < bot.Parameters.RetreatThreshold)
-                {
-                    utility *= 0.3f;
-                }
-
                 // Apply target lock hysteresis to prevent rapid switching between equal targets
                 if (_targetFleetId != 0 && enemy.FleetID == _targetFleetId)
                 {
@@ -95,6 +89,7 @@ namespace Game.Robots.Strategies
         private long _lastOrbitDecisionTime = 0;
         private long _nextBulletScanTime = 0;
         private Vector2 _activeDodgeImpulse = Vector2.Zero;
+        private float _activeDodgeThreatDist = float.MaxValue;
         private long _activeDodgeStartTime = 0;
         private long _activeDodgeUntil = 0;
         private long _lastDefensiveDashTime = 0;
@@ -191,6 +186,7 @@ namespace Game.Robots.Strategies
                         float dodgeStrength = 5.5f + 4.0f * bot.Parameters.BulletDodgeSkill;
                         float weight = Math.Clamp(1.0f - (threateningBulletDist / 800f), 0.25f, 1.0f);
                         _activeDodgeImpulse = perpB * (weight * weight * dodgeStrength);
+                        _activeDodgeThreatDist = threateningBulletDist;
                         
                         // Stronger players react much faster:
                         long latency = (long)(bot.Parameters.ReactionLatencyMs * (0.60f - 0.25f * bot.Parameters.SkillLevel));
@@ -211,7 +207,7 @@ namespace Game.Robots.Strategies
                 && (bot.GameTime - _lastDefensiveDashTime > 1200)
                 && myFleet.Ships.Count >= bot.Parameters.MinimumShipsToDefensiveDash;
 
-            if (isDodging && canDefensiveDash && threateningBulletDist < 450f && bot.GameTime >= _flashDashUntil)
+            if (isDodging && canDefensiveDash && _activeDodgeThreatDist < 450f && bot.GameTime >= _flashDashUntil)
             {
                 bool hesitates = bot.Parameters.BoostHesitancy > 0.001f && (Random.Shared.NextDouble() < bot.Parameters.BoostHesitancy);
                 if (!hesitates)
@@ -277,10 +273,10 @@ namespace Game.Robots.Strategies
             }
 
             // 4. AIMING & SHOOTING PHASE:
-            // When shot is almost ready (CooldownShoot <= 0.15f) or ready (CanShoot), move mouse onto opponent
+            // When shot is almost ready (CooldownShoot >= 0.85f) or ready (CanShoot), move mouse onto opponent
             bool isAimingToShoot = target != null 
                 && !isFlashDashing 
-                && (bot.CanShoot || bot.CooldownShoot <= 0.15f || (bot.GameTime - _lastShotTime < 40));
+                && (bot.CanShoot || bot.CooldownShoot >= 0.85f || (bot.GameTime - _lastShotTime < 40));
 
             if (isAimingToShoot)
             {

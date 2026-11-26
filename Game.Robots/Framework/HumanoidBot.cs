@@ -41,7 +41,6 @@ namespace Game.Robots.Framework
             // Load Strategies
             _strategies.Add(new Strategies.CruisingStrategy());
             _strategies.Add(new Strategies.EngageStrategy());
-            _strategies.Add(new Strategies.EscapeStrategy());
         }
 
         protected override Task OnSpawnAsync()
@@ -52,6 +51,7 @@ namespace Game.Robots.Framework
                 Parameters.ApplySkillLevel(Parameters.SkillLevel, Parameters.Playstyle, Name?.GetHashCode());
             }
             OffScreenTracker.Clear();
+            Cursor.Reset();
 
             Log($"HumanoidBot '{Name}' spawned (Level: {Parameters.SkillLevel:F2}, Style: {Parameters.Playstyle}, Custom: {Parameters.IsCustom})!");
             return base.OnSpawnAsync();

@@ -3,14 +3,12 @@ namespace Game.Robots.Senses
     using Game.API.Client;
     using Game.API.Common;
     using System.Collections.Generic;
-    using System.Linq;
-    using System.Numerics;
 
     public class SensorBullets : ISense
     {
         private readonly Robot Robot;
 
-        public IEnumerable<Body> VisibleBullets => _visibleBullets;
+        public IReadOnlyList<Body> VisibleBullets => _visibleBullets;
         private readonly List<Body> _visibleBullets = new List<Body>();
 
         public SensorBullets(Robot robot)

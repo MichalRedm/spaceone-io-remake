@@ -1,10 +1,8 @@
 namespace Game.Robots.Senses
 {
-    using Game.API.Client;
     using Game.API.Common;
     using Game.Robots.Models;
     using System.Collections.Generic;
-    using System.Linq;
 
     public class SensorFleets : ISense
     {
@@ -100,6 +98,6 @@ namespace Game.Robots.Senses
             }
         }
 
-        public IEnumerable<Fleet> Others => _others;
+        public IReadOnlyList<Fleet> Others => _others;
     }
 }

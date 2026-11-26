@@ -24,6 +24,7 @@ namespace Game.Robots.Framework
     {
         private readonly HumanoidBot _bot;
         private readonly Dictionary<uint, TrackedEnemy> _tracked = new Dictionary<uint, TrackedEnemy>();
+        private readonly List<uint> _toRemove = new List<uint>();
         private long _lastUpdateTime = 0;
 
         public IEnumerable<TrackedEnemy> TrackedEnemies => _tracked.Values;
@@ -44,12 +45,9 @@ namespace Game.Robots.Framework
             float dt = _lastUpdateTime == 0 ? 0f : (gameTime - _lastUpdateTime);
             _lastUpdateTime = gameTime;
 
-            var activeFleetIds = new HashSet<uint>();
-
             // 1. Direct sensory updates for enemies currently on radar/screen
             foreach (var enemy in _bot.SensorFleets.Others)
             {
-                activeFleetIds.Add(enemy.ID);
                 bool inViewport = _bot.IsPointInViewport(enemy.Center, margin: 120f);
 
                 if (inViewport)
@@ -139,7 +137,7 @@ namespace Game.Robots.Framework
             }
 
             // 3. Prune expired or non-existent tracked enemies
-            var toRemove = new List<uint>();
+            _toRemove.Clear();
             foreach (var kvp in _tracked)
             {
                 var enemy = kvp.Value;
@@ -147,13 +145,13 @@ namespace Game.Robots.Framework
 
                 if (enemy.Certainty <= 0.01f || age > _bot.Parameters.OffscreenMemoryDurationMs)
                 {
-                    toRemove.Add(kvp.Key);
+                    _toRemove.Add(kvp.Key);
                 }
             }
 
-            foreach (var id in toRemove)
+            for (int i = 0; i < _toRemove.Count; i++)
             {
-                _tracked.Remove(id);
+                _tracked.Remove(_toRemove[i]);
             }
         }
 
