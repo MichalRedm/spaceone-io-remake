@@ -42,6 +42,14 @@ namespace Game.Engine.Core
 
         public List<PlayerMessage> Messages { get; set; } = new List<PlayerMessage>();
 
+        private readonly object _observerLock = new object();
+        private List<Action<PlayerMessage>> _messageObservers = null;
+
+        /// <summary>
+        /// True when this connection is a passive observer/recorder that should not count as an active player or spectator.
+        /// </summary>
+        public bool IsObserver { get; set; } = false;
+
         public bool IsAlive { get; set; } = false;
         public bool IsStillPlaying { get; set; } = false;
         public long AliveSince { get; set; } = 0;
@@ -67,6 +75,7 @@ namespace Game.Engine.Core
         public string LoginName { get; set; }
 
         public bool PendingDestruction { get; set; } = false;
+        public bool IsDestroyed { get; private set; } = false;
         private bool IsSpawning = false;
 
         public string IP { get; set; } = null;
@@ -129,12 +138,19 @@ namespace Game.Engine.Core
                 PendingDestruction = false;
             }
 
-            IsStillPlaying = !PendingDestruction &&
-                DeadSince > World.Time - World.Hook.PlayerCountGracePeriodMS;
+            IsStillPlaying = !IsObserver
+                && !PendingDestruction
+                && DeadSince > World.Time - World.Hook.PlayerCountGracePeriodMS;
         }
 
         public void Destroy()
         {
+            IsDestroyed = true;
+            lock (_observerLock)
+            {
+                _messageObservers?.Clear();
+            }
+
             Die();
 
             if (Fleet != null)
@@ -159,6 +175,7 @@ namespace Game.Engine.Core
 
         public void Init(World world)
         {
+            IsDestroyed = false;
             World = world;
             world.Actors.Add(this);
 
@@ -351,15 +368,63 @@ namespace Game.Engine.Core
             }
         }
 
+        /// <summary>
+        /// Registers a non-destructive observer callback invoked when messages are sent to this player.
+        /// </summary>
+        public void AddMessageObserver(Action<PlayerMessage> observer)
+        {
+            if (observer == null)
+                return;
+
+            lock (_observerLock)
+            {
+                if (IsDestroyed)
+                    return;
+
+                _messageObservers ??= new List<Action<PlayerMessage>>();
+                if (!_messageObservers.Contains(observer))
+                    _messageObservers.Add(observer);
+            }
+        }
+
+        /// <summary>
+        /// Unregisters a previously attached message observer callback.
+        /// </summary>
+        public void RemoveMessageObserver(Action<PlayerMessage> observer)
+        {
+            if (observer == null)
+                return;
+
+            lock (_observerLock)
+            {
+                _messageObservers?.Remove(observer);
+            }
+        }
+
         public void SendMessage(string message, string type = "message", int pointsDelta = 0, object extraData = null)
         {
-            this.Messages.Add(new PlayerMessage
+            var playerMessage = new PlayerMessage
             {
                 Type = type,
                 Message = message,
                 ExtraData = extraData,
                 PointsDelta = pointsDelta
-            });
+            };
+            if (!IsObserver)
+                this.Messages.Add(playerMessage);
+
+            Action<PlayerMessage>[] snapshot = null;
+            lock (_observerLock)
+            {
+                if (_messageObservers != null && _messageObservers.Count > 0)
+                    snapshot = _messageObservers.ToArray();
+            }
+
+            if (snapshot != null)
+            {
+                for (int i = 0; i < snapshot.Length; i++)
+                    snapshot[i](playerMessage);
+            }
         }
 
         public List<PlayerMessage> GetMessages()

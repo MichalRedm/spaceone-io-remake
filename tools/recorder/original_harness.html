@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Spaceone.io Original Replay Harness</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #000;
+      }
+
+      #canvas {
+        display: block;
+        width: 100vw;
+        height: 100vh;
+        background: #000;
+      }
+
+      #recording-dev-overlay {
+        position: fixed;
+        top: 8px;
+        left: 8px;
+        z-index: 9999;
+        padding: 4px 10px;
+        border-radius: 4px;
+        background: rgba(4, 10, 26, 0.78);
+        border: 1px solid rgba(90, 175, 255, 0.45);
+        color: #dff2ff;
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 12px;
+        line-height: 1.35;
+        pointer-events: none;
+        white-space: nowrap;
+      }
+    </style>
+    <script>
+      (function () {
+        var qs = new URLSearchParams(window.location.search);
+        if (qs.get("allowRemoteFonts") === "1") {
+          var link = document.createElement("link");
+          link.rel = "stylesheet";
+          link.href = "https://fonts.googleapis.com/css?family=Exo+2";
+          document.head.appendChild(link);
+        } else {
+          // Offline @font-face ensures FontDetect.isFontLoaded("Exo 2") returns true
+          // in GameRendering::UpdateScoreboard() without requiring internet access.
+          var style = document.createElement("style");
+          style.textContent =
+            "@font-face { font-family: 'Exo 2'; font-style: normal; font-weight: 400; " +
+            "src: local('Exo 2'), local('Segoe UI'), local('Arial'), local('DejaVu Sans'), local('Liberation Sans'); }";
+          document.head.appendChild(style);
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <canvas id="canvas" width="1280" height="720"></canvas>
+    <div id="recording-dev-overlay" hidden></div>
+
+    <script>
+      (function () {
+        "use strict";
+
+        // ------------------------------------------------------------------
+        // 1. Canvas sizing (1:1 CSS pixels matching Playwright viewport)
+        // ------------------------------------------------------------------
+        var canvas = document.getElementById("canvas");
+        function syncCanvasSize() {
+          canvas.width = Math.max(1, window.innerWidth);
+          canvas.height = Math.max(1, window.innerHeight);
+        }
+        syncCanvasSize();
+        window.addEventListener("resize", syncCanvasSize);
+
+        // ------------------------------------------------------------------
+        // 2. Deterministic Virtual Clock & Manual rAF Queue (pre-WASM)
+        // ------------------------------------------------------------------
+        var nativeSetTimeout = window.setTimeout.bind(window);
+        var nativeClearTimeout = window.clearTimeout.bind(window);
+        var BASE_PERF_MS = 10000;
+        var BASE_EPOCH_MS = 1700000000000;
+        var virtualMs = 0;
+
+        var nextTimerId = 100000;
+        var virtualTimers = new Map();
+        var nextRafId = 1;
+        var rafQueue = [];
+
+        // Disable idle callbacks so WASM does not depend on browser idle scheduling.
+        try {
+          window.requestIdleCallback = undefined;
+        } catch (_e) {}
+
+        try {
+          Object.defineProperty(window.performance, "now", {
+            configurable: true,
+            writable: true,
+            value: function () {
+              return BASE_PERF_MS + virtualMs;
+            },
+          });
+        } catch (_e) {
+          window.performance.now = function () {
+            return BASE_PERF_MS + virtualMs;
+          };
+        }
+
+        Date.now = function () {
+          return BASE_EPOCH_MS + Math.floor(virtualMs);
+        };
+
+        window.setTimeout = function (handler, delay) {
+          var args = Array.prototype.slice.call(arguments, 2);
+          if (!window.core) {
+            return nativeSetTimeout.apply(window, [handler, delay].concat(args));
+          }
+          var ms = typeof delay === "number" && isFinite(delay) ? Math.max(0, delay) : 0;
+          var id = nextTimerId++;
+          var fn =
+            typeof handler === "function"
+              ? function () {
+                  handler.apply(window, args);
+                }
+              : function () {};
+          virtualTimers.set(id, { id: id, at: virtualMs + ms, fn: fn });
+          return id;
+        };
+
+        window.clearTimeout = function (id) {
+          if (id === undefined || id === null) return;
+          if (!virtualTimers.delete(id)) {
+            nativeClearTimeout(id);
+          }
+        };
+
+        window.requestAnimationFrame = function (cb) {
+          var id = nextRafId++;
+          rafQueue.push({ id: id, cb: cb });
+          return id;
+        };
+
+        window.cancelAnimationFrame = function (id) {
+          rafQueue = rafQueue.filter(function (entry) {
+            return entry.id !== id;
+          });
+        };
+
+        function advanceVirtualTime(targetMs, runTimers) {
+          var clamped = Math.max(virtualMs, targetMs);
+          if (runTimers === false) {
+            // Shift pending timers forward during silent warmup so everySecond() does not
+            // observe 0 FPS and trigger false "running slow" warnings before visual pre-roll.
+            var delta = clamped - virtualMs;
+            if (delta > 0) {
+              virtualTimers.forEach(function (entry) {
+                entry.at += delta;
+              });
+            }
+            virtualMs = clamped;
+            return;
+          }
+          while (true) {
+            var earliest = null;
+            virtualTimers.forEach(function (entry) {
+              if (entry.at <= clamped) {
+                if (!earliest || entry.at < earliest.at) {
+                  earliest = entry;
+                }
+              }
+            });
+            if (!earliest) break;
+            virtualTimers.delete(earliest.id);
+            virtualMs = Math.max(virtualMs, earliest.at);
+            try {
+              earliest.fn();
+            } catch (err) {
+              console.error("Virtual timer error:", err);
+            }
+          }
+          virtualMs = clamped;
+        }
+
+        function resetVirtualClock() {
+          var prevMs = virtualMs;
+          virtualMs = 0;
+          // Re-anchor existing virtual timers (such as WASM's everySecond loop) to t=0.
+          virtualTimers.forEach(function (entry) {
+            entry.at = Math.max(0, entry.at - prevMs);
+          });
+        }
+
+        function flushAnimationFrames() {
+          if (rafQueue.length === 0) return;
+          var batch = rafQueue.slice();
+          rafQueue = [];
+          var nowPerf = BASE_PERF_MS + virtualMs;
+          for (var i = 0; i < batch.length; i++) {
+            try {
+              batch[i].cb(nowPerf);
+            } catch (err) {
+              console.error("rAF callback error:", err);
+            }
+          }
+        }
+
+        // ------------------------------------------------------------------
+        // 3. Asset & Atlas Loading Trackers + Minimal Shims
+        // ------------------------------------------------------------------
+        var pendingAssets = 0;
+        var NativeImage = window.Image;
+        window.Image = function () {
+          var img = new NativeImage();
+          var settled = false;
+          var counted = false;
+
+          function markDone() {
+            if (!settled && counted) {
+              settled = true;
+              pendingAssets = Math.max(0, pendingAssets - 1);
+            }
+          }
+
+          img.addEventListener("load", markDone);
+          img.addEventListener("error", markDone);
+
+          var srcDesc = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
+          if (srcDesc && srcDesc.set) {
+            Object.defineProperty(img, "src", {
+              configurable: true,
+              enumerable: true,
+              get: function () {
+                return srcDesc.get.call(this);
+              },
+              set: function (val) {
+                if (!counted && val) {
+                  counted = true;
+                  pendingAssets++;
+                }
+                srcDesc.set.call(this, val);
+              },
+            });
+          }
+          return img;
+        };
+
+        window.$ = {
+          getJSON: function (url, cb) {
+            pendingAssets++;
+            fetch(url)
+              .then(function (resp) {
+                if (!resp.ok) throw new Error("Failed to fetch " + url + ": " + resp.status);
+                return resp.json();
+              })
+              .then(function (data) {
+                try {
+                  cb(data);
+                } finally {
+                  pendingAssets = Math.max(0, pendingAssets - 1);
+                }
+              })
+              .catch(function (err) {
+                console.error("getJSON error:", err);
+                pendingAssets = Math.max(0, pendingAssets - 1);
+              });
+          },
+        };
+
+        window.MCSDK = {
+          analytics: {
+            sendInitEvent: function () {},
+            sendEvent: function () {},
+          },
+          ads: {
+            refreshSlot: function () {},
+          },
+        };
+
+        // Preload static images lazily constructed by GameRendering on first draw.
+        ["img/BG.jpg", "img/Leader_Arrow.png"].forEach(function (src) {
+          var pre = new window.Image();
+          pre.src = src;
+        });
+
+        // ------------------------------------------------------------------
+        // 4. Deterministic MockWebSocket + Maestro Ping Auto-Responder
+        // ------------------------------------------------------------------
+        var activeSocket = null;
+        var PONG_PACKET = new Uint8Array([
+          0x08, 0x01, 0x12, 0x06, 0xc2, 0x01, 0x03, 0x0a, 0x01, 0x60,
+        ]);
+
+        function readVarInt(bytes, state) {
+          var val = 0;
+          var shift = 0;
+          while (state.pos < bytes.length) {
+            var b = bytes[state.pos++];
+            val |= (b & 0x7f) << shift;
+            if ((b & 0x80) === 0) break;
+            shift += 7;
+          }
+          return val;
+        }
+
+        function parseVariableOpcode(bytes, extra) {
+          var state = { pos: 0 };
+          var count = extra ? 2 : 1;
+          for (var i = 0; i < count; i++) {
+            if (state.pos + 3 > bytes.length) return -1;
+            state.pos += 3;
+            readVarInt(bytes, state);
+          }
+          if (state.pos + 2 > bytes.length) return -1;
+          state.pos += 2;
+          var vb1 = readVarInt(bytes, state);
+          if (vb1 !== 0) {
+            if (state.pos >= bytes.length) return -1;
+            state.pos += 1;
+            readVarInt(bytes, state);
+            if (state.pos < bytes.length) {
+              return bytes[state.pos];
+            }
+          }
+          return -1;
+        }
+
+        function MockWebSocket(url) {
+          this.url = url;
+          this.binaryType = "arraybuffer";
+          this.readyState = 0;
+          this.onopen = null;
+          this.onerror = null;
+          this.onclose = null;
+          this.onmessage = null;
+          activeSocket = this;
+
+          var self = this;
+          nativeSetTimeout(function () {
+            self.readyState = 1;
+            if (typeof self.onopen === "function") {
+              self.onopen();
+            }
+          }, 0);
+        }
+
+        MockWebSocket.prototype.send = function (data) {
+          var bytes =
+            data instanceof Uint8Array
+              ? data
+              : new Uint8Array(data.buffer || data, data.byteOffset || 0, data.byteLength || data.length);
+          var op = parseVariableOpcode(bytes, true);
+          if (op === 0x21 && typeof this.onmessage === "function") {
+            // Immediate 0ms Maestro sync pong for client OUT_PING
+            this.onmessage({ data: PONG_PACKET.buffer.slice(0) });
+          }
+        };
+
+        MockWebSocket.prototype.close = function () {
+          this.readyState = 3;
+        };
+
+        MockWebSocket.prototype.inject = function (uint8) {
+          if (typeof this.onmessage === "function") {
+            var copy = uint8.slice();
+            this.onmessage({ data: copy.buffer });
+          }
+        };
+
+        window.WebSocket = MockWebSocket;
+
+        // ------------------------------------------------------------------
+        // 5. Window.IO Lifecycle Hooks
+        // ------------------------------------------------------------------
+        var coreLoaded = false;
+        window.IO = {
+          RightMouseClickEnabled: function () {},
+          setHighScore: function () {},
+          setContinentCode: function () {},
+          setCountryCode: function () {},
+          setAWSRegionCode: function () {},
+          hasSentNick: function () {},
+          showArenaFullNotification: function () {},
+          onPlayerDeath: function () {},
+          onPlayerSpawn: function () {},
+          onDisconnect: function () {},
+          maestroConnected: function () {
+            if (window.core) {
+              window.core.sendEnterGameRequest("", false);
+            }
+          },
+          gameServerConnected: function () {
+            if (window.core) {
+              window.core.setFadeout(false);
+              window.core.sendNick("", 0);
+            }
+          },
+          onFlocksCoreLoaded: function () {
+            coreLoaded = true;
+            if (window.core) {
+              window.core.connectToMaestro("ws://spaceone-original.local/ws");
+            }
+          },
+        };
+
+        // ------------------------------------------------------------------
+        // 6. Lightweight 0x10 WorldUpdate Telemetry Parser (for --overlay-info)
+        // ------------------------------------------------------------------
+        function createReader(bytes) {
+          return {
+            bytes: bytes,
+            view: new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength),
+            pos: 0,
+            u8: function () {
+              return this.bytes[this.pos++];
+            },
+            i16: function () {
+              var v = this.view.getInt16(this.pos, true);
+              this.pos += 2;
+              return v;
+            },
+            u16: function () {
+              var v = this.view.getUint16(this.pos, true);
+              this.pos += 2;
+              return v;
+            },
+            i32: function () {
+              var v = this.view.getInt32(this.pos, true);
+              this.pos += 4;
+              return v;
+            },
+            u32: function () {
+              var v = this.view.getUint32(this.pos, true);
+              this.pos += 4;
+              return v;
+            },
+            f32: function () {
+              var v = this.view.getFloat32(this.pos, true);
+              this.pos += 4;
+              return v;
+            },
+            f64: function () {
+              var v = this.view.getFloat64(this.pos, true);
+              this.pos += 8;
+              return v;
+            },
+            vbyte: function () {
+              var val = 0;
+              var shift = 0;
+              while (this.pos < this.bytes.length) {
+                var b = this.bytes[this.pos++];
+                val |= (b & 0x7f) << shift;
+                if ((b & 0x80) === 0) break;
+                shift += 7;
+              }
+              return val;
+            },
+            str: function () {
+              var start = this.pos;
+              while (this.pos < this.bytes.length && this.bytes[this.pos] !== 0) {
+                this.pos++;
+              }
+              var slice = this.bytes.subarray(start, this.pos);
+              if (this.pos < this.bytes.length) this.pos++;
+              return new TextDecoder().decode(slice);
+            },
+          };
+        }
+
+        function skipCell(r) {
+          r.pos += 4 + 4 + 4 + 4 + 4 + 8 + 1 + 2;
+          var flags = r.i16();
+          if (flags & 2) r.pos += 8;
+          if (flags & 4) r.pos += 4;
+        }
+
+        function extractWorldTelemetry(bytes, state) {
+          try {
+            var r = createReader(bytes);
+            r.pos += 3;
+            r.vbyte();
+            r.pos += 2;
+            var vb1 = r.vbyte();
+            if (vb1 === 0) return;
+            r.pos += 1;
+            r.vbyte();
+            if (r.pos >= r.bytes.length) return;
+            var op = r.u8();
+            if (op !== 0x10) return;
+
+            state.wuIndex++;
+            var hasLeader = r.u8();
+            if (hasLeader) r.pos += 8;
+            r.str(); // version
+            r.pos += 4; // drawStarfield + isInterpolating + numValidBoids
+            state.isDangerZone = r.u8() === 1;
+            r.pos += 10; // cooldownPerc(8) + curFood(1) + reqFood(1)
+
+            var numFleets = r.u32();
+            var foundMyFleet = false;
+            for (var i = 0; i < numFleets; i++) {
+              var fleetSize = r.u32();
+              if (fleetSize === 0) continue;
+              var fid = r.u32();
+              var fsizeServer = r.u16();
+              var bcx = r.i32();
+              var bcy = r.i32();
+              r.pos += 34; // dbfx(8)+dbfy(8)+bftx(4)+bfty(4)+foods(4)+kills(4)+flags(2)
+              var flags = r.view.getUint16(r.pos - 2, true);
+              r.pos += 1; // isSpawnProtected
+              if (flags & 1) r.pos += 3; // color
+              r.pos += 1; // selectedSet
+              if (flags & 4) r.pos += 4; // dashTicks
+              var name = flags & 2 ? r.str() : "";
+              r.pos += 8; // leaderboardPosition(4) + score(4)
+              var isMyFleet = r.u8() === 1;
+
+              for (var j = 0; j < fleetSize; j++) {
+                skipCell(r);
+              }
+
+              if (isMyFleet) {
+                foundMyFleet = true;
+                state.isAlive = fsizeServer > 0;
+                state.fleetId = fid;
+                if (name) state.fleetName = name;
+                state.shipCount = fsizeServer;
+                state.isDashing = Boolean(flags & 4);
+                state.bcx = bcx;
+                state.bcy = bcy;
+              }
+            }
+            if (!foundMyFleet) {
+              state.isAlive = false;
+              state.shipCount = 0;
+              state.isDashing = false;
+            }
+          } catch (_e) {}
+        }
+
+        // ------------------------------------------------------------------
+        // 7. Replay Controller Bridge (window.__spaceoneOriginalReplay)
+        // ------------------------------------------------------------------
+        var config = {
+          graphics: "high",
+          noFadeout: false,
+          overlayInfo: false,
+          recordingId: "",
+          speed: 1.0,
+        };
+
+        var packets = [];
+        var packetCursor = 0;
+        var startOffsetMs = 0;
+        var lastVirtualStepMs = 0;
+        var telemetry = {
+          wuIndex: 0,
+          isAlive: false,
+          fleetId: 0,
+          fleetName: "",
+          shipCount: 0,
+          isDashing: false,
+          isDangerZone: false,
+          bcx: 0,
+          bcy: 0,
+        };
+
+        function updateOverlay() {
+          var el = document.getElementById("recording-dev-overlay");
+          if (!el) return;
+          el.hidden = !config.overlayInfo;
+          if (!config.overlayInfo) return;
+          var tSec = (virtualMs / 1000).toFixed(2);
+          var flags = [];
+          if (telemetry.isDashing) flags.push("DASH");
+          if (telemetry.isDangerZone) flags.push("DANGER");
+          var flagStr = flags.length ? " | " + flags.join(",") : "";
+          var stateStr = telemetry.isAlive
+            ? "ALIVE (" + telemetry.shipCount + " ships)"
+            : "SPECTATE/DEAD";
+          var nameStr = telemetry.fleetName || "unknown";
+          el.textContent =
+            "[ORIG:" +
+            (config.recordingId || "?") +
+            "] t=" +
+            tSec +
+            "s | wu=#" +
+            telemetry.wuIndex +
+            " | " +
+            nameStr +
+            " [F:" +
+            telemetry.fleetId +
+            "] | " +
+            stateStr +
+            " | bc=(" +
+            telemetry.bcx +
+            ", " +
+            telemetry.bcy +
+            ")" +
+            flagStr;
+        }
+
+        function injectPacket(pkt) {
+          var op = parseVariableOpcode(pkt.payload, false);
+          if (op === 0x60) return; // Skip recorded pongs (matches server-ansible/replay.js)
+          extractWorldTelemetry(pkt.payload, telemetry);
+          activeSocket.inject(pkt.payload);
+        }
+
+        function parseRecordingBuffer(buffer) {
+          var view = new DataView(buffer);
+          var bytes = new Uint8Array(buffer);
+          var pos = 0;
+          var list = [];
+          var firstTs = null;
+          while (pos + 12 <= bytes.length) {
+            var high = view.getUint32(pos, true);
+            var low = view.getUint32(pos + 4, true);
+            var len = view.getUint32(pos + 8, true);
+            pos += 12;
+            if (pos + len > bytes.length) break;
+            var ts = high * 4294967296 + low;
+            if (firstTs === null) firstTs = ts;
+            list.push({
+              elapsedMs: Math.max(0, ts - firstTs),
+              payload: bytes.subarray(pos, pos + len),
+            });
+            pos += len;
+          }
+          return list;
+        }
+
+        window.__spaceoneOriginalReplay = {
+          waitForReady: function () {
+            return new Promise(function (resolve, reject) {
+              var maxPolls = 1200; // ~30 seconds
+              function poll() {
+                var ready =
+                  coreLoaded &&
+                  window.core &&
+                  activeSocket &&
+                  activeSocket.readyState === 1 &&
+                  pendingAssets === 0;
+                if (ready) {
+                  var fontsReady =
+                    document.fonts && document.fonts.ready
+                      ? document.fonts.ready
+                      : Promise.resolve();
+                  fontsReady.then(resolve, resolve);
+                  return;
+                }
+                if (--maxPolls <= 0) {
+                  reject(
+                    new Error(
+                      "Timed out waiting for original WASM/assets (coreLoaded=" +
+                        coreLoaded +
+                        ", pendingAssets=" +
+                        pendingAssets +
+                        ")"
+                    )
+                  );
+                  return;
+                }
+                nativeSetTimeout(poll, 25);
+              }
+              poll();
+            });
+          },
+
+          configure: function (opts) {
+            if (opts.graphics) config.graphics = opts.graphics;
+            if (opts.noFadeout !== undefined) config.noFadeout = Boolean(opts.noFadeout);
+            if (opts.overlayInfo !== undefined) config.overlayInfo = Boolean(opts.overlayInfo);
+            if (opts.recordingId !== undefined) config.recordingId = String(opts.recordingId);
+            if (opts.speed !== undefined && opts.speed > 0) config.speed = Number(opts.speed);
+
+            if (window.core) {
+              window.core.setGraphics(config.graphics);
+            }
+            updateOverlay();
+          },
+
+          loadRecording: function (url, startMs) {
+            return fetch(url)
+              .then(function (resp) {
+                if (!resp.ok) throw new Error("Failed to load recording: " + resp.status);
+                return resp.arrayBuffer();
+              })
+              .then(function (buf) {
+                packets = parseRecordingBuffer(buf);
+                packetCursor = 0;
+                startOffsetMs = Math.max(0, Number(startMs || 0));
+                lastVirtualStepMs = 0;
+                telemetry.wuIndex = 0;
+                telemetry.isAlive = false;
+                telemetry.fleetId = 0;
+                telemetry.fleetName = "";
+                telemetry.shipCount = 0;
+                telemetry.isDashing = false;
+                telemetry.isDangerZone = false;
+                resetVirtualClock();
+
+                var prerollStartMs = Math.max(0, startOffsetMs - 2000);
+
+                // Phase 1: Silent warmup without draw() or particle allocations
+                if (prerollStartMs > 0) {
+                  window.core.setGraphics("low");
+                  while (packetCursor < packets.length) {
+                    var pkt = packets[packetCursor];
+                    if (pkt.elapsedMs > prerollStartMs) break;
+                    advanceVirtualTime(pkt.elapsedMs, false);
+                    injectPacket(pkt);
+                    packetCursor++;
+                  }
+                  advanceVirtualTime(prerollStartMs, false);
+                  lastVirtualStepMs = prerollStartMs;
+                }
+
+                // Restore user graphics setting before visual pre-roll
+                window.core.setGraphics(config.graphics);
+
+                // Phase 2: 60Hz visual pre-roll so camera smoothing & fadeout settle
+                var stepMs = 1000.0 / 60.0;
+                while (lastVirtualStepMs < startOffsetMs) {
+                  var nextMs = Math.min(startOffsetMs, lastVirtualStepMs + stepMs);
+                  advanceVirtualTime(nextMs);
+                  while (packetCursor < packets.length) {
+                    var p = packets[packetCursor];
+                    if (p.elapsedMs > nextMs) break;
+                    injectPacket(p);
+                    packetCursor++;
+                  }
+                  if (config.noFadeout && window.core) {
+                    window.core.setFadeout(false);
+                  }
+                  flushAnimationFrames();
+                  lastVirtualStepMs = nextMs;
+                }
+
+                // Ensure at least one initial frame is drawn at startOffsetMs
+                if (startOffsetMs === 0) {
+                  while (packetCursor < packets.length && packets[packetCursor].elapsedMs <= 0) {
+                    injectPacket(packets[packetCursor]);
+                    packetCursor++;
+                  }
+                  if (config.noFadeout && window.core) {
+                    window.core.setFadeout(false);
+                  }
+                  flushAnimationFrames();
+                }
+
+                updateOverlay();
+                return {
+                  packetCount: packets.length,
+                  startOffsetMs: startOffsetMs,
+                };
+              });
+          },
+
+          stepTo: function (outputTimeMs) {
+            var targetReplayMs = startOffsetMs + Number(outputTimeMs) * config.speed;
+            var prev = lastVirtualStepMs;
+            var delta = Math.max(0, targetReplayMs - prev);
+            var step60Hz = 1000.0 / 60.0;
+            var subSteps = delta > step60Hz + 0.01 ? Math.ceil(delta / step60Hz) : 1;
+
+            for (var s = 1; s <= subSteps; s++) {
+              var subMs = prev + (delta * s) / subSteps;
+              advanceVirtualTime(subMs);
+              while (packetCursor < packets.length) {
+                var pkt = packets[packetCursor];
+                if (pkt.elapsedMs > subMs) break;
+                injectPacket(pkt);
+                packetCursor++;
+              }
+              if (config.noFadeout && window.core) {
+                window.core.setFadeout(false);
+              }
+              flushAnimationFrames();
+            }
+
+            lastVirtualStepMs = targetReplayMs;
+            updateOverlay();
+            return this.getStatus();
+          },
+
+          getStatus: function () {
+            return {
+              virtualTimeMs: virtualMs,
+              packetCursor: packetCursor,
+              totalPackets: packets.length,
+              wuIndex: telemetry.wuIndex,
+              isAlive: telemetry.isAlive,
+              fleetId: telemetry.fleetId,
+              fleetName: telemetry.fleetName,
+              shipCount: telemetry.shipCount,
+              isDashing: telemetry.isDashing,
+              isDangerZone: telemetry.isDangerZone,
+              done: packetCursor >= packets.length,
+            };
+          },
+        };
+      })();
+    </script>
+    <script src="spaceone.io_wasm.js" charset="utf-8"></script>
+  </body>
+</html>

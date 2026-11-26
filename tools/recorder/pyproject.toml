@@ -1,0 +1,10 @@
+[project]
+name = "spaceone-recorder"
+version = "0.1.0"
+description = "Gameplay recording and deterministic offline MP4 replay toolkit for Spaceone.io Remake"
+requires-python = ">=3.11"
+dependencies = [
+    "websockets>=12.0",
+    "playwright>=1.44.0",
+    "pillow>=13.0.0",
+]

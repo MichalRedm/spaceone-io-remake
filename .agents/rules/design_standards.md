@@ -163,7 +163,7 @@ $transition-fade: 0.5s ease;
 ```
 
 * **Pulsing Neon Glows**: Interactive buttons employ 2-second infinite keyframes (`pulse-yellow`, `pulse-blue`, `pulse-pink`, `pulse-purple`) oscillating `box-shadow` spread from full intensity to 50% opacity.
-* **Floating Score Indicators (`plusScore`)**: Spawned score gains (`+5`, `+25`) animate over 2.5 seconds, rising 200px upward from `translate(-50%, -75%)` to `translate(-50%, calc(-75% - 200px))` with smooth opacity fade-in/out.
+* **Floating Score Indicators (`plusScore`)**: Spawned score gains (`+5`, `+25`) animate over 1 second (`linear`), rising `108u` upward from `calc(-50% - 75u)` to `calc(-50% - 183u)` while fading linearly from `1` to `0`.
 
 ---
 
@@ -176,7 +176,7 @@ $transition-fade: 0.5s ease;
 |                                                     [ SPECTATE 👁️ (Top: 45px, Right: 10px) ]       |
 |                                                     [ FULLSCREEN ⛶ (Top: 100px, Right: 10px) ]   |
 |                                                                                                   |
-| [ Leaderboard (Top: 20px, Right: 20px - In-Game Only) ]                                           |
+| [ Leaderboard (Top: 15u, Right: 15u - In-Game Only) ]                                             |
 |                                                                                                   |
 |                                 [ DANGER ZONE (Top: 10em, Center) ]                               |
 |                                 [ KILL BANNER (Top: 4em, Center) ]                                |
@@ -190,9 +190,9 @@ $transition-fade: 0.5s ease;
 |                      |  - World Selector Pill: [ 🌍 FFA  0 Online ▼ ]      |                       |
 |                      +----------------------------------------------------+                       |
 |                                                                                                   |
-| [ Arena Record (Bottom: 16px, Left: 16px) ]                                                       |
+| [ Arena Record (Bottom: 12u, Left: 16u) ]                                                         |
 | [ CAPTAIN'S LOG 📜 (Bottom: 35px, Left: 35px - Viewport Fixed) ]                                  |
-| [ Autofire Indicator (Bottom: 14px, Right: 8px) ]                                                 |
+| [ Autofire Indicator (Bottom: 12u, Right: 12u) ]                                                  |
 +---------------------------------------------------------------------------------------------------+
 ```
 
@@ -226,17 +226,20 @@ $transition-fade: 0.5s ease;
 ### 4.3 In-Game HUD & Indicators (`components/_hud-indicators.scss`, `components/_leaderboard.scss`)
 
 * **Leaderboard (`.leaderboard`)**:
-  * Positioned at `top: 20px; right: 20px; width: 260px;`.
-  * **Table Layout & Truncation Rule**: Tables declare `table-layout: fixed; width: 100%; border-collapse: collapse;` with strict `24px` row heights. Name cells (`.name`) must declare `white-space: nowrap; overflow: hidden; text-overflow: ellipsis;` to prevent multiline breakage, and score cells (`.score`) declare `width: 60px; text-align: right;`.
+  * Positioned at `top: calc(15 * var(--hud-unit)); right: calc(15 * var(--hud-unit)); width: calc(300 * var(--hud-unit));` with `rgba(0, 0, 0, 0.4)` translucent backdrop and `12u 12u 14u` padding (hidden via `.leaderboard--empty` when no rows exist).
+  * **Table Layout & Truncation Rule**: Rows use flex layout (`display: flex; justify-content: space-between; gap: calc(8 * var(--hud-unit));`) with strict `28.8u` row heights (`24u` font). Name cells (`.name`) declare `flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;` and score cells (`.score`) size dynamically (`flex: 0 0 auto; width: auto; text-align: right;`) so names are only truncated when they would actually collide with the score.
   * **Player Row Highlighting Rule**: All opposing player rows MUST render in default white (`#ffffff`). ONLY the local player's own row (`.leaderboard__row--self`) receives the dynamic ship color modifier (`.leaderboard__row--cyan`, `.leaderboard__row--pink`, etc.).
+* **HUD Text Outlines & Autofire**:
+  * `--hud-unit: min(calc(100vw / 1920), calc(100vh / 1080))` scales all in-game HUD elements proportionally to the original `GameRendering::ScreenSpace` system.
+  * `#fleet-size-container`, `#record`, and `#autofire-container` use `@include hud-text-stroke` (`-webkit-text-stroke: 0.2em #000000; paint-order: stroke fill;`), and `#autofire-container` remains `#ffffff` in both `ON` and `OFF` states.
 * **Danger Zone Warning (`.danger-zone-warning`)**:
   * Positioned at `top: 10em; left: 50%; transform: translate(-50%, -50%); width: 128px; display: none;`.
   * Shown dynamically via chained modifier specificity: `&.danger-zone-warning--visible { display: block; }`.
 * **Floating Score Indicators (`.score-popup`, `.plusScore`)**:
   * Positioned inside `#plusScoreContainer` at screen midpoint (`top: 50%; left: 50%; transform: translate(-50%, -50%)`).
-  * Floating score numbers MUST declare `white-space: nowrap;` and translate from `translate(-50%, -75%)` to ensure perfect horizontal centering over the ship.
+  * Floating score numbers MUST declare `white-space: nowrap;` and start at `translate(-50%, calc(-50% - 75 * var(--hud-unit)))` so the horizontal midpoint of the text aligns with the anchor.
 * **Cooldown Bar (`.cooldown-bar`)**:
-  * Positioned at `bottom: 5vh; left: 50%; transform: translateX(-50%); width: 200px; height: 12px;`.
+  * Positioned at `bottom: calc(55 * var(--hud-unit)); left: 50%; transform: translateX(-50%); width: 20%; height: calc(10 * var(--hud-unit));`.
   * Glowing border (`border: 2px solid $color-blue-border; box-shadow: 0 0 10px $color-blue-primary;`).
   * Fill states: `.cooldown-bar__fill--ready` (solid `#0052ff`) vs recharging transition.
 

@@ -1,0 +1,111 @@
+// -----------------------------------------------------------------------------
+// VIEWS: RECORDING & REPLAY UI VISIBILITY OVERRIDES
+// -----------------------------------------------------------------------------
+
+.recording-dev-overlay {
+  position: fixed;
+  bottom: 12px;
+  left: 12px;
+  z-index: 40;
+  padding: 6px 10px;
+  border-radius: 4px;
+  background: rgba(6, 12, 28, 0.78);
+  border: 1px solid rgba(100, 180, 255, 0.35);
+  color: #cfe8ff;
+  font-family: "Exo 2", monospace;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+  white-space: nowrap;
+
+  &.is-hidden {
+    display: none !important;
+  }
+}
+
+body {
+  &.rec-hide--leaderboard {
+    #leaderboard-container,
+    #leaderboard-left,
+    #leaderboard-center {
+      display: none !important;
+    }
+  }
+
+  &.rec-hide--arena-record {
+    #record {
+      display: none !important;
+    }
+  }
+
+  &.rec-hide--own-name {
+    #self-nick-container {
+      display: none !important;
+    }
+  }
+
+  &.rec-hide--fleet-size {
+    #fleet-size-container {
+      display: none !important;
+    }
+  }
+
+  &.rec-hide--cooldown {
+    #cooldown {
+      display: none !important;
+    }
+  }
+
+  &.rec-hide--autofire {
+    #autofire-container {
+      display: none !important;
+    }
+  }
+
+  &.rec-hide--tracking-arrows {
+    #leader-arrow,
+    #ctf-arrow-blue,
+    #ctf-arrow-red {
+      display: none !important;
+    }
+  }
+
+  &.rec-hide--kill-banner {
+    #big-log {
+      display: none !important;
+    }
+  }
+
+  &.rec-hide--score-popups {
+    #plus-score-container {
+      display: none !important;
+    }
+  }
+
+  &.rec-hide--danger-zone {
+    #danger-zone-warning {
+      display: none !important;
+    }
+  }
+
+  &.rec-hide--ctf-hud {
+    #ctf-arena,
+    #ctf-notification {
+      display: none !important;
+    }
+  }
+
+  &.rec-hide--vignette {
+    #shadowmaker {
+      display: none !important;
+    }
+  }
+
+  &.rec-hide--death-menu {
+    .visibility,
+    #overlay {
+      display: none !important;
+      opacity: 0 !important;
+    }
+  }
+}

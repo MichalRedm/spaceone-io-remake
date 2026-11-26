@@ -59,9 +59,17 @@ import { Vector2 } from "../math/vector2";
 import { CustomContainer } from "../rendering/customContainer";
 import { preloadAllAssets } from "../rendering/atlasLoader";
 import { GameAudio } from "../audio/gameAudio";
+import { ReplayController } from "../replay/replayBridge";
+import { isReplayMode } from "../replay/virtualClock";
+
+const replayMode = isReplayMode();
+let replayDeathMenuEnabled = false;
+let replayPovMode = true;
 
 bootstrapPopups();
-initFeaturedVideo();
+if (!replayMode) {
+  initFeaturedVideo();
+}
 GameAudio.init();
 
 window.Game = window.Game || {};
@@ -70,7 +78,7 @@ pixiAny.tilemap = pixiAny.tilemap || pixi_tilemap;
 
 const size = { width: 1000, height: 500 };
 const canvas = document.getElementById("game-canvas") as HTMLCanvasElement;
-const zoom = 1000;
+let zoom = 1000;
 const cameraDrag = 0.7;
 
 PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.LINEAR;
@@ -78,13 +86,17 @@ const app = new PIXI.Application(<any>{
   view: canvas,
   transparent: true,
 });
+if (replayMode) {
+  app.ticker.stop();
+  app.ticker.minFPS = 1;
+}
 app.stage = new pixiAny.display.Stage();
 (<any>app.stage).group.enableSort = true;
 const container = new CustomContainer();
 app.stage.addChild(container);
 
 // Preload all assets and warm up GPU before gameplay
-preloadAllAssets(app, true);
+const assetsReadyPromise = preloadAllAssets(app, true);
 
 const backgroundGroup = new pixiAny.display.Group(0, true);
 const tileGroup = new pixiAny.display.Group(1, true);
@@ -307,6 +319,14 @@ const spawnButton = document.getElementById("spawn") as HTMLInputElement | null;
 let isSpawning = false;
 let pendingSpawn = false;
 let spawnTimeout: ReturnType<typeof setTimeout> | null = null;
+let deathUiTimeout: ReturnType<typeof setTimeout> | null = null;
+
+function clearDeathUiTimeout(): void {
+  if (deathUiTimeout) {
+    clearTimeout(deathUiTimeout);
+    deathUiTimeout = null;
+  }
+}
 
 function setSpawnButtonState(state: "ready" | "connecting" | "spawning"): void {
   if (!spawnButton) return;
@@ -352,6 +372,7 @@ connection.onDisconnected = () => {
       clearTimeout(spawnTimeout);
       spawnTimeout = null;
     }
+    clearDeathUiTimeout();
     document.body.classList.remove("alive");
     document.body.classList.remove("spectating");
     document.body.classList.add("dead");
@@ -380,6 +401,7 @@ connection.onView = (newView) => {
     spawnGraceUntil = performance.now() + GameAudio.getPostSpawnGraceMs();
     GameAudio.setState(true, false, ownFleetID, worldSize);
     GameAudio.onPlayerSpawn();
+    clearDeathUiTimeout();
     if (spawnTimeout) {
       clearTimeout(spawnTimeout);
       spawnTimeout = null;
@@ -394,6 +416,7 @@ connection.onView = (newView) => {
     hide(".visibility4");
     show(".visibility2");
     show(".visibility3");
+    hud.update();
     const overlay = document.getElementById("overlay");
     if (overlay) {
       overlay.style.transition = "none";
@@ -409,13 +432,20 @@ connection.onView = (newView) => {
     }
     setSpawnButtonState("ready");
 
-    setTimeout(function () {
+    clearDeathUiTimeout();
+    deathUiTimeout = setTimeout(function () {
+      deathUiTimeout = null;
       document.body.classList.remove("alive");
-      document.body.classList.add("spectating");
+      if (!replayMode || !replayPovMode) {
+        document.body.classList.add("spectating");
+      }
       document.body.classList.add("dead");
-      fadeIn(".visibility", 2000);
+      if (!replayMode || replayDeathMenuEnabled) {
+        fadeIn(".visibility", 2000);
+        animateOpacity("#overlay", 0.8, 2000);
+      }
       hide(".visibility3");
-      animateOpacity("#overlay", 0.8, 2000);
+      hud.update();
     }, 1000);
 
     Events.Death((gameTime - (aliveSince ?? gameTime)) / 1000);
@@ -557,48 +587,50 @@ let lastControl: {
   chat: null,
 };
 
-setInterval(() => {
-  if (
-    angle !== lastControl.angle ||
-    aimTarget.x !== lastControl.aimTarget?.x ||
-    aimTarget.y !== lastControl.aimTarget?.y ||
-    Controls.boost !== lastControl.boost ||
-    Controls.shoot !== lastControl.shoot ||
-    message.txt !== lastControl.chat
-  ) {
-    let spectateControl: string | undefined = undefined;
-    if (isSpectating) {
-      if (Controls.shoot) spectateControl = "action:next";
-      else spectateControl = "spectating";
+if (!replayMode) {
+  setInterval(() => {
+    if (
+      angle !== lastControl.angle ||
+      aimTarget.x !== lastControl.aimTarget?.x ||
+      aimTarget.y !== lastControl.aimTarget?.y ||
+      Controls.boost !== lastControl.boost ||
+      Controls.shoot !== lastControl.shoot ||
+      message.txt !== lastControl.chat
+    ) {
+      let spectateControl: string | undefined = undefined;
+      if (isSpectating) {
+        if (Controls.shoot) spectateControl = "action:next";
+        else spectateControl = "spectating";
+      }
+
+      let customData: string | undefined = undefined;
+
+      if (message.time + 3000 > Date.now())
+        customData = JSON.stringify({ chat: message.txt });
+
+      connection.sendControl(
+        angle,
+        Controls.boost,
+        Controls.shoot,
+        aimTarget.x,
+        aimTarget.y,
+        spectateControl,
+        customData,
+      );
+
+      lastControl.angle = angle;
+      if (!lastControl.aimTarget) {
+        lastControl.aimTarget = new Vector2(aimTarget.x, aimTarget.y);
+      } else {
+        lastControl.aimTarget.x = aimTarget.x;
+        lastControl.aimTarget.y = aimTarget.y;
+      }
+      lastControl.boost = Controls.boost;
+      lastControl.shoot = Controls.shoot;
+      lastControl.chat = message.txt;
     }
-
-    let customData: string | undefined = undefined;
-
-    if (message.time + 3000 > Date.now())
-      customData = JSON.stringify({ chat: message.txt });
-
-    connection.sendControl(
-      angle,
-      Controls.boost,
-      Controls.shoot,
-      aimTarget.x,
-      aimTarget.y,
-      spectateControl,
-      customData,
-    );
-
-    lastControl.angle = angle;
-    if (!lastControl.aimTarget) {
-      lastControl.aimTarget = new Vector2(aimTarget.x, aimTarget.y);
-    } else {
-      lastControl.aimTarget.x = aimTarget.x;
-      lastControl.aimTarget.y = aimTarget.y;
-    }
-    lastControl.boost = Controls.boost;
-    lastControl.shoot = Controls.shoot;
-    lastControl.chat = message.txt;
-  }
-}, 10);
+  }, 10);
+}
 
 LobbyCallbacks.onLobbyClose = function () {
   clearLeaderboards();
@@ -834,7 +866,9 @@ document.addEventListener("visibilitychange", () => {
     window.Game.isBackgrounded = false;
   }
 });
-setInterval(doPing, 1000);
+if (!replayMode) {
+  setInterval(doPing, 1000);
+}
 
 const graphics = new PIXI.Graphics();
 container.addChild(graphics);
@@ -1161,4 +1195,80 @@ export function shake(
       shakingElements.splice(shakingElements.indexOf(element), 1);
     }
   }
+}
+
+if (replayMode) {
+  const replayController = new ReplayController({
+    injectPacket: (payload: Uint8Array) => {
+      connection.injectRawPacket(payload);
+    },
+    resetSession: () => {
+      clearDeathUiTimeout();
+      cache.empty();
+      clearLeaderboards();
+      view = null;
+      fleetID = 0;
+      ownFleetID = 0;
+      lastAliveState = null;
+      serverTimeOffset = false;
+      lastOffset = 0;
+      gameTime = 0;
+      lastCamera.x = 0;
+      lastCamera.y = 0;
+      lastPosition = null;
+      currentFleetSize = -1;
+      lastDangerZoneState = null;
+      isSpectating = !replayPovMode;
+      document.body.classList.remove("alive");
+      document.body.classList.add("dead");
+      document.body.classList.toggle("spectating", !replayPovMode);
+      const overlayEl = document.getElementById("overlay");
+      if (overlayEl) {
+        overlayEl.style.transition = "none";
+        overlayEl.style.opacity = "0";
+      }
+      if (dangerZoneWarning) {
+        dangerZoneWarning.classList.remove("danger-zone-warning--visible");
+      }
+      if (fleetSizeDisplay) {
+        fleetSizeDisplay.innerText = "0";
+      }
+      GameAudio.setState(false, !replayPovMode, 0, worldSize);
+      app.ticker.lastTime = performance.now() - 1000 / 60;
+    },
+    stepRenderFrame: (nowMs: number) => {
+      app.ticker.update(nowMs);
+    },
+    setZoom: (nextZoom: number) => {
+      if (nextZoom > 0) {
+        zoom = nextZoom;
+        sizeCanvas();
+      }
+    },
+    setDeathMenuEnabled: (enabled: boolean) => {
+      replayDeathMenuEnabled = enabled;
+    },
+    setPovMode: (pov: boolean) => {
+      replayPovMode = pov;
+      isSpectating = !pov;
+    },
+    getStateSnapshot: () => {
+      const ownGroup = fleetID > 0 ? cache.getGroup(fleetID) : undefined;
+      return {
+        isAlive: Boolean(view?.isAlive),
+        fleetID,
+        shipCount:
+          ownGroup?.renderer?.ships?.length ?? Math.max(0, currentFleetSize),
+        cameraX: currentCameraPosition.x,
+        cameraY: currentCameraPosition.y,
+        serverTime: view?.time ?? 0,
+        trackedName: ownGroup?.Caption ?? "",
+      };
+    },
+    waitForAtlases: () => assetsReadyPromise,
+  });
+
+  (
+    window as unknown as { __spaceoneReplay?: ReplayController }
+  ).__spaceoneReplay = replayController;
 }

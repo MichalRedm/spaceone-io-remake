@@ -6,6 +6,7 @@
 import { escapeHtml } from "../ui/leaderboard";
 import { pressPopup, closePopup } from "../ui/popupUtils";
 import { ArenaLink } from "./arenaLink";
+import { isReplayMode } from "../replay/virtualClock";
 
 const arenaLinkHelper = new ArenaLink();
 
@@ -674,5 +675,7 @@ window.addEventListener("focus", () => {
   refreshList(false);
 });
 
-startIdlePolling();
-refreshList(false);
+if (!isReplayMode()) {
+  startIdlePolling();
+  refreshList(false);
+}

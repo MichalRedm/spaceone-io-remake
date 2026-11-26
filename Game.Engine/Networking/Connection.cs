@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 namespace Game.Engine.Networking
 {
     using Game.API.Common;
+    using Game.API.Common.Models;
     using Game.Engine.Core;
     using Game.Engine.Core.Steering;
     using Game.Engine.Networking.FlatBuffers;
@@ -12,6 +13,7 @@ namespace Game.Engine.Networking
     using Nito.AsyncEx;
     using RBush;
     using System;
+    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
@@ -49,7 +51,21 @@ namespace Game.Engine.Networking
 
         public bool IsSpectating { get; set; } = false;
 
+        public bool IsObserver { get; private set; } = false;
+
         public Fleet SpectatingFleet = null;
+
+        private readonly object _observerStateLock = new object();
+        private bool _observerDisposed = false;
+        private ObserverTarget _observerTarget = null;
+        private Player _observedPlayer = null;
+        private bool _observedMirrorPov = false;
+        private uint _observedFleetId = 0;
+        private Fleet _leaderFleet = null;
+        private uint _leaderSwitchedAt = 0;
+        private Vector2 _lastObservedPosition = Vector2.Zero;
+        private readonly ConcurrentQueue<PlayerMessage> _mirroredMessages = new ConcurrentQueue<PlayerMessage>();
+        private readonly List<PlayerMessage> _mirroredMessageScratch = new List<PlayerMessage>();
 
         public string CustomData = null;
 
@@ -80,19 +96,318 @@ namespace Game.Engine.Networking
             return Vec2.CreateVec2(builder, vector.X, vector.Y);
         }
 
+        private void OnObservedPlayerMessage(PlayerMessage msg)
+        {
+            if (msg != null)
+                _mirroredMessages.Enqueue(msg);
+        }
+
+        private void UpdateObservedPlayer(Player target, bool wantMirror, uint observedFleetId = 0)
+        {
+            lock (_observerStateLock)
+            {
+                if (_observerDisposed)
+                {
+                    target = null;
+                    wantMirror = false;
+                    observedFleetId = 0;
+                }
+
+                if (ReferenceEquals(_observedPlayer, target) && _observedMirrorPov == wantMirror)
+                {
+                    _observedFleetId = target != null ? observedFleetId : 0;
+                    return;
+                }
+
+                if (_observedPlayer != null)
+                    _observedPlayer.RemoveMessageObserver(OnObservedPlayerMessage);
+
+                while (_mirroredMessages.TryDequeue(out _)) { }
+
+                _observedPlayer = target;
+                _observedMirrorPov = target != null && wantMirror;
+                _observedFleetId = target != null ? observedFleetId : 0;
+
+                if (_observedPlayer != null && _observedMirrorPov)
+                    _observedPlayer.AddMessageObserver(OnObservedPlayerMessage);
+            }
+        }
+
+        private void DetachObservedPlayer()
+        {
+            UpdateObservedPlayer(null, false);
+        }
+
+        private void ShutdownObserver()
+        {
+            lock (_observerStateLock)
+            {
+                _observerDisposed = true;
+                _observerTarget = null;
+                if (_observedPlayer != null)
+                {
+                    _observedPlayer.RemoveMessageObserver(OnObservedPlayerMessage);
+                    _observedPlayer = null;
+                }
+                _observedMirrorPov = false;
+                _observedFleetId = 0;
+                while (_mirroredMessages.TryDequeue(out _)) { }
+            }
+        }
+
+        private static Player FindBestAlivePlayer(List<Player> worldPlayers)
+        {
+            Player bestPlayer = null;
+            long bestScore = -1;
+            for (int i = 0; i < worldPlayers.Count; i++)
+            {
+                var p = worldPlayers[i];
+                if (p != null && !p.IsObserver && p.IsAlive && p.Fleet != null)
+                {
+                    long score = (long)p.Score * 10000 + (10000 - p.Fleet.ID);
+                    if (score > bestScore)
+                    {
+                        bestScore = score;
+                        bestPlayer = p;
+                    }
+                }
+            }
+            return bestPlayer;
+        }
+
+        private void ResolveObserverView(
+            ObserverTarget observerTarget,
+            List<Player> worldPlayers,
+            out Player followPlayer,
+            out Fleet followFleet,
+            out Body followBody)
+        {
+            followPlayer = null;
+            followFleet = null;
+            followBody = null;
+
+            switch (observerTarget.Mode)
+            {
+                case ObserverMode.PlayerId:
+                {
+                    string targetId = observerTarget.TargetValue;
+                    Player prefixMatch = null;
+                    for (int i = 0; i < worldPlayers.Count; i++)
+                    {
+                        var p = worldPlayers[i];
+                        if (p == null || p.IsObserver || string.IsNullOrEmpty(p.PlayerID))
+                            continue;
+
+                        if (string.Equals(p.PlayerID, targetId, StringComparison.OrdinalIgnoreCase))
+                        {
+                            followPlayer = p;
+                            break;
+                        }
+                        if (prefixMatch == null && p.PlayerID.StartsWith(targetId, StringComparison.OrdinalIgnoreCase))
+                            prefixMatch = p;
+                    }
+                    followPlayer ??= prefixMatch;
+                    followFleet = followPlayer?.Fleet;
+                    break;
+                }
+
+                case ObserverMode.PlayerName:
+                {
+                    string targetName = observerTarget.TargetValue;
+                    Player exactFallback = null;
+                    Player prefixAlive = null;
+                    Player prefixFallback = null;
+                    for (int i = 0; i < worldPlayers.Count; i++)
+                    {
+                        var p = worldPlayers[i];
+                        if (p == null || p.IsObserver || string.IsNullOrEmpty(p.Name))
+                            continue;
+
+                        if (string.Equals(p.Name, targetName, StringComparison.OrdinalIgnoreCase))
+                        {
+                            if (p.IsAlive)
+                            {
+                                followPlayer = p;
+                                break;
+                            }
+                            exactFallback ??= p;
+                        }
+                        else if (p.Name.StartsWith(targetName, StringComparison.OrdinalIgnoreCase))
+                        {
+                            if (p.IsAlive)
+                                prefixAlive ??= p;
+                            else
+                                prefixFallback ??= p;
+                        }
+                    }
+                    followPlayer ??= exactFallback ?? prefixAlive ?? prefixFallback;
+                    followFleet = followPlayer?.Fleet;
+                    break;
+                }
+
+                case ObserverMode.FleetId:
+                {
+                    uint fleetId = observerTarget.TargetFleetId;
+                    for (int i = 0; i < worldPlayers.Count; i++)
+                    {
+                        var p = worldPlayers[i];
+                        if (p != null && !p.IsObserver && p.Fleet != null && p.Fleet.ID == fleetId)
+                        {
+                            followPlayer = p;
+                            followFleet = p.Fleet;
+                            break;
+                        }
+                    }
+                    // Stay locked on previously matched player at their death spot unless they respawned under a new fleet
+                    Player previousObserved;
+                    uint previousFleetId;
+                    lock (_observerStateLock)
+                    {
+                        previousObserved = _observedPlayer;
+                        previousFleetId = _observedFleetId;
+                    }
+                    if (followPlayer == null
+                        && previousObserved != null
+                        && previousFleetId == fleetId
+                        && !previousObserved.IsAlive
+                        && !previousObserved.IsDestroyed
+                        && !previousObserved.PendingDestruction)
+                    {
+                        followPlayer = previousObserved;
+                        if (followPlayer.Fleet != null && followPlayer.Fleet.ID == fleetId)
+                            followFleet = followPlayer.Fleet;
+                    }
+                    break;
+                }
+
+                case ObserverMode.Leader:
+                {
+                    Player best = FindBestAlivePlayer(worldPlayers);
+                    if (_leaderFleet != null && _leaderFleet.Exists && _leaderFleet.Owner != null && _leaderFleet.Owner.IsAlive)
+                    {
+                        if (best != null
+                            && best.Fleet != _leaderFleet
+                            && best.Score > _leaderFleet.Owner.Score
+                            && world.Time >= _leaderSwitchedAt + 3000)
+                        {
+                            _leaderFleet = best.Fleet;
+                            _leaderSwitchedAt = world.Time;
+                        }
+                    }
+                    else
+                    {
+                        _leaderFleet = best?.Fleet;
+                        _leaderSwitchedAt = world.Time;
+                    }
+
+                    followFleet = _leaderFleet;
+                    followPlayer = _leaderFleet?.Owner;
+                    break;
+                }
+
+                case ObserverMode.Auto:
+                {
+                    if (SpectatingFleet != null && SpectatingFleet.Exists)
+                    {
+                        followFleet = SpectatingFleet;
+                        followPlayer = SpectatingFleet.Owner;
+                    }
+                    else
+                    {
+                        followPlayer = FindBestAlivePlayer(worldPlayers);
+                        followFleet = followPlayer?.Fleet;
+                        SpectatingFleet = followFleet;
+                    }
+                    break;
+                }
+
+                case ObserverMode.Point:
+                {
+                    _lastObservedPosition = observerTarget.Point;
+                    followBody = new Body
+                    {
+                        DefinitionTime = world.Time,
+                        OriginalPosition = observerTarget.Point,
+                        Position = observerTarget.Point,
+                        Momentum = Vector2.Zero
+                    };
+                    break;
+                }
+            }
+
+            uint resolvedFleetId = observerTarget.Mode == ObserverMode.FleetId
+                ? observerTarget.TargetFleetId
+                : (followFleet?.ID ?? 0);
+            UpdateObservedPlayer(followPlayer, observerTarget.MirrorPov, resolvedFleetId);
+
+            if (followFleet != null)
+            {
+                var center = FleetMath.FleetCenterNaive(followFleet.Ships);
+                _lastObservedPosition = center;
+                followBody = new Body
+                {
+                    DefinitionTime = world.Time,
+                    OriginalPosition = center,
+                    Position = center,
+                    Momentum = followFleet.FleetMomentum
+                };
+            }
+            else if (followBody == null)
+            {
+                if (observerTarget.Mode == ObserverMode.PlayerId
+                    || observerTarget.Mode == ObserverMode.PlayerName
+                    || observerTarget.Mode == ObserverMode.FleetId)
+                {
+                    Vector2 holdPos = followPlayer?.DeathPosition ?? _lastObservedPosition;
+                    _lastObservedPosition = holdPos;
+                    followBody = new Body
+                    {
+                        DefinitionTime = world.Time,
+                        OriginalPosition = holdPos,
+                        Position = holdPos,
+                        Momentum = Vector2.Zero
+                    };
+                }
+            }
+        }
+
         public async Task StepAsync(CancellationToken cancellationToken)
         {
             try
             {
                 if (player != null)
                 {
+                    ObserverTarget activeObserverTarget;
+                    lock (_observerStateLock)
+                    {
+                        activeObserverTarget = IsObserver ? _observerTarget : null;
+                    }
+
+                    Player observedPlayer = null;
                     Fleet followFleet = null;
                     Body followBody = null;
+                    bool mirrorPov = false;
+                    bool viewIsAlive = false;
+                    byte viewCooldownBoost = 0;
+                    byte viewCooldownShoot = 0;
+                    int spectatorCount = 0;
 
                     lock (world.Bodies)
                     {
+                        var worldPlayers = Player.GetWorldPlayers(world);
+                        for (int i = 0; i < worldPlayers.Count; i++)
+                        {
+                            var wp = worldPlayers[i];
+                            if (wp != null && !wp.IsObserver && (wp.Connection?.IsSpectating ?? false))
+                                spectatorCount++;
+                        }
+
+                        if (activeObserverTarget != null && activeObserverTarget.Mode != ObserverMode.None)
+                        {
+                            ResolveObserverView(activeObserverTarget, worldPlayers, out observedPlayer, out followFleet, out followBody);
+                        }
                         // 1. If player has an alive fleet, follow their fleet
-                        if (player?.Fleet != null)
+                        else if (player?.Fleet != null)
                         {
                             followFleet = player.Fleet;
                         }
@@ -104,30 +419,14 @@ namespace Game.Engine.Networking
 
                             if (followFleet == null)
                             {
-                                var worldPlayers = Player.GetWorldPlayers(world);
-                                Player bestPlayer = null;
-                                long bestScore = -1;
-                                for (int i = 0; i < worldPlayers.Count; i++)
-                                {
-                                    var p = worldPlayers[i];
-                                    if (p != null && p.IsAlive)
-                                    {
-                                        long score = (long)p.Score * 10000 + (10000 - (p.Fleet?.ID ?? 0));
-                                        if (score > bestScore)
-                                        {
-                                            bestScore = score;
-                                            bestPlayer = p;
-                                        }
-                                    }
-                                }
-
+                                var bestPlayer = FindBestAlivePlayer(worldPlayers);
                                 followFleet = bestPlayer?.Fleet;
                                 SpectatingFleet = followFleet;
                             }
                         }
 
                         // if we're watching a fleet, watch the center of their fleet
-                        if (followFleet != null)
+                        if (followBody == null && followFleet != null)
                         {
                             var center = FleetMath.FleetCenterNaive(followFleet.Ships);
                             followBody = new Body
@@ -179,9 +478,18 @@ namespace Game.Engine.Networking
                             }
                         }
 
+                        mirrorPov = activeObserverTarget != null && activeObserverTarget.MirrorPov && observedPlayer != null;
+                        viewIsAlive = mirrorPov ? observedPlayer.IsAlive : (player?.IsAlive ?? false);
+                        viewCooldownBoost = mirrorPov
+                            ? (byte)((observedPlayer.Fleet?.BoostCooldownStatus * 255) ?? 0)
+                            : (byte)((player?.Fleet?.BoostCooldownStatus * 255) ?? 0);
+                        viewCooldownShoot = mirrorPov
+                            ? (byte)((observedPlayer.Fleet?.ShootCooldownStatus * 255) ?? 0)
+                            : (byte)((player?.Fleet?.ShootCooldownStatus * 255) ?? 0);
+
                         if (followBody != null)
                         {
-                            var size = 2000;
+                            var size = activeObserverTarget?.ViewportRadius ?? ObserverTarget.DefaultViewportRadius;
                             var viewportHeight = size * 2;
                             var viewportWidth = size * 2;
 
@@ -281,14 +589,30 @@ namespace Game.Engine.Networking
 
                         var deletesVector = NetWorldView.CreateDeletesVector(builder, bodyDeletes);
 
-                        var messages = player.GetMessages();
+                        List<PlayerMessage> messages;
+                        if (mirrorPov)
+                        {
+                            _mirroredMessageScratch.Clear();
+                            while (_mirroredMessages.TryDequeue(out var mirroredMsg))
+                                _mirroredMessageScratch.Add(mirroredMsg);
+                            messages = _mirroredMessageScratch.Count > 0 ? _mirroredMessageScratch : null;
+                        }
+                        else if (IsObserver)
+                        {
+                            messages = null;
+                        }
+                        else
+                        {
+                            messages = player.GetMessages();
+                        }
+
                         VectorOffset announcementsVector = new VectorOffset();
                         if (messages != null && messages.Count > 0)
                         {
                             announcementsVector = NetWorldView.CreateAnnouncementsVector(builder, messages.Select(e =>
                             {
-                                var stringType = builder.CreateString(e.Type);
-                                var stringMessage = builder.CreateString(e.Message);
+                                var stringType = builder.CreateString(e.Type ?? "");
+                                var stringMessage = builder.CreateString(e.Message ?? "");
                                 var stringExtraData = e.ExtraData != null
                                     ? builder.CreateString(JsonConvert.SerializeObject(e.ExtraData))
                                     : new StringOffset();
@@ -328,7 +652,7 @@ namespace Game.Engine.Networking
                         );
 
                         NetWorldView.AddCamera(builder, cameraBody);
-                        NetWorldView.AddIsAlive(builder, player?.IsAlive ?? false);
+                        NetWorldView.AddIsAlive(builder, viewIsAlive);
                         NetWorldView.AddTime(builder, world.Time);
 
                         NetWorldView.AddUpdates(builder, updatesVector);
@@ -343,18 +667,11 @@ namespace Game.Engine.Networking
                             NetWorldView.AddCustomData(builder, customOffset);
                         CustomData = followFleet?.CustomData;
 
-                        var players = Player.GetWorldPlayers(world);
                         NetWorldView.AddPlayerCount(builder, (uint)world.AdvertisedPlayerCount);
-                        int spectatorCount = 0;
-                        for (int i = 0; i < players.Count; i++)
-                        {
-                            if (players[i]?.Connection?.IsSpectating ?? false)
-                                spectatorCount++;
-                        }
                         NetWorldView.AddSpectatorCount(builder, (uint)spectatorCount);
 
-                        NetWorldView.AddCooldownBoost(builder, (byte)((player?.Fleet?.BoostCooldownStatus * 255) ?? 0));
-                        NetWorldView.AddCooldownShoot(builder, (byte)((player?.Fleet?.ShootCooldownStatus * 255) ?? 0));
+                        NetWorldView.AddCooldownBoost(builder, viewCooldownBoost);
+                        NetWorldView.AddCooldownShoot(builder, viewCooldownShoot);
                         NetWorldView.AddWorldSize(builder, (ushort)world.Hook.WorldSize);
 
                         if (followFleet != null)
@@ -505,7 +822,8 @@ namespace Game.Engine.Networking
             this.ClientVPS = ping.Vps;
             this.ClientUPS = ping.Ups;
             this.ClientCS = ping.Cs;
-            this.Bandwidth = Math.Min(ping.BandwidthThrottle, 150u);
+            uint maxBandwidth = IsObserver ? 1000u : 150u;
+            this.Bandwidth = Math.Min(ping.BandwidthThrottle, maxBandwidth);
             this.Latency = ping.Latency;
 
             if (player != null)
@@ -524,6 +842,8 @@ namespace Game.Engine.Networking
                     break;
 
                 case AllMessages.NetSpawn:
+                    if (IsObserver)
+                        break;
                     var spawn = quantum.Message<NetSpawn>().Value;
                     var color = "red";
 
@@ -611,6 +931,27 @@ namespace Game.Engine.Networking
                 case AllMessages.NetControlInput:
                     var input = quantum.Message<NetControlInput>().Value;
 
+                    if (IsObserver)
+                    {
+                        if (ObserverTarget.TryParse(input.SpectateControl, out var observerTarget))
+                        {
+                            lock (_observerStateLock)
+                            {
+                                _observerTarget = observerTarget;
+                            }
+                            IsSpectating = true;
+                        }
+                        else if (!string.IsNullOrEmpty(input.SpectateControl))
+                        {
+                            lock (_observerStateLock)
+                            {
+                                _observerTarget = null;
+                            }
+                            DetachObservedPlayer();
+                        }
+                        break;
+                    }
+
                     player?.SetControl(new ControlInput
                     {
                         Position = new Vector2(input.X, input.Y),
@@ -659,7 +1000,8 @@ namespace Game.Engine.Networking
                     break;
 
                 case AllMessages.NetExit:
-                    player.Exit();
+                    if (!IsObserver)
+                        player?.Exit();
                     break;
 
                 case AllMessages.NetAuthenticate:
@@ -678,10 +1020,12 @@ namespace Game.Engine.Networking
             Socket = socket;
 
             var worldRequest = httpContext.Request.Query["world"].FirstOrDefault();
+            var observerParam = httpContext.Request.Query["observer"].FirstOrDefault();
+            IsObserver = observerParam == "1" || string.Equals(observerParam, "true", StringComparison.OrdinalIgnoreCase);
 
             world = Worlds.Find(worldRequest);
 
-            this.Logger.LogInformation($"New Connection: '{worldRequest}' resolved to world '{world?.Hook?.Name}' (WorldKey: '{world?.WorldKey}', ArenaID: '{world?.ArenaID}')");
+            this.Logger.LogInformation($"New Connection: '{worldRequest}' resolved to world '{world?.Hook?.Name}' (WorldKey: '{world?.WorldKey}', ArenaID: '{world?.ArenaID}', Observer: {IsObserver})");
 
             var builder = new FlatBufferBuilder(1);
             await SendPingAsync();
@@ -698,7 +1042,8 @@ namespace Game.Engine.Networking
                     player = new Player
                     {
                         IP = httpContext.Connection.RemoteIpAddress.ToString(),
-                        Connection = this
+                        Connection = this,
+                        IsObserver = IsObserver
                     };
                     player.Init(world);
                 }
@@ -713,6 +1058,7 @@ namespace Game.Engine.Networking
             {
                 connectionCts.Cancel();
                 ConnectionHeartbeat.Unregister(this);
+                ShutdownObserver();
 
                 if (player != null)
                 {
@@ -798,6 +1144,7 @@ namespace Game.Engine.Networking
         {
             if (!disposedValue)
             {
+                ShutdownObserver();
                 if (disposing)
                 {
                     if (Socket != null)

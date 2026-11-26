@@ -7,13 +7,13 @@
 .cooldown-bar,
 #cooldown {
   position: absolute;
-  bottom: 5vh;
+  bottom: calc(55 * var(--hud-unit));
   left: 50%;
-  width: 22%;
-  height: 8px;
+  width: 20%;
+  height: calc(10 * var(--hud-unit));
   transform: translateX(-50%);
   background-color: $color-bg-dark;
-  border-radius: 4px;
+  border-radius: calc(5 * var(--hud-unit));
   padding: 0;
 
   &__fill,
