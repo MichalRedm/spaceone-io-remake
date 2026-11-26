@@ -78,6 +78,7 @@ export function clear(): void {
     ctfArena.hidden = true;
   }
   if (leaderboard) leaderboard.innerHTML = "";
+  leaderboardContainer?.classList.add("leaderboard--empty");
   if (leaderboardLeft) leaderboardLeft.innerHTML = "";
   if (leaderboardCenter) {
     leaderboardCenter.innerHTML = "";
@@ -539,6 +540,10 @@ export class Leaderboard {
         leaderboardLeft.classList.add("is-hidden");
       }
     }
+
+    // Hide leaderboard backdrop when there are no entries
+    const hasRows = Boolean(leaderboard && leaderboard.querySelector("tr"));
+    leaderboardContainer?.classList.toggle("leaderboard--empty", !hasRows);
 
     // Re-apply visibility after mode branches so #leaderboard-center stays hidden when disabled
     syncLeaderboardVisibility();

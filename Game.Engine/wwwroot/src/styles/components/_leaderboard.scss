@@ -7,16 +7,24 @@
 .leaderboard,
 #leaderboard-container {
   position: absolute;
-  top: 20px;
-  right: 20px;
-  width: 260px;
+  top: calc(15 * var(--hud-unit));
+  right: calc(15 * var(--hud-unit));
+  width: calc(300 * var(--hud-unit));
+  padding: calc(12 * var(--hud-unit)) calc(12 * var(--hud-unit))
+    calc(14 * var(--hud-unit));
+  background-color: rgba(0, 0, 0, 0.4);
+
+  &.leaderboard--empty {
+    display: none !important;
+  }
 
   &__header,
   #leaderboard-header {
     text-align: center;
-    font-size: 22pt;
-    font-weight: lighter;
-    margin-bottom: 6px;
+    font-size: calc(36 * var(--hud-unit));
+    font-weight: 400;
+    line-height: 1.15;
+    margin-bottom: calc(6 * var(--hud-unit));
   }
 
   &__table,
@@ -27,11 +35,11 @@
     border-collapse: collapse;
     padding: 0;
     margin: 0;
-    font-size: 15pt;
+    font-size: calc(24 * var(--hud-unit));
 
     tr {
-      height: 24px;
-      line-height: 24px;
+      height: calc(28.8 * var(--hud-unit));
+      line-height: calc(28.8 * var(--hud-unit));
       margin: 0;
       padding: 0;
       border: none;
@@ -48,12 +56,12 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      padding-right: 8px;
+      padding-right: calc(10 * var(--hud-unit));
     }
 
     tr td:last-child,
     .score {
-      width: 60px;
+      width: calc(76 * var(--hud-unit));
       text-align: right;
       white-space: nowrap;
     }
@@ -101,7 +109,9 @@
 .arena-record,
 #record {
   position: fixed;
-  bottom: 16px;
-  left: 16px;
-  font-size: 11pt;
+  bottom: calc(12 * var(--hud-unit));
+  left: calc(16 * var(--hud-unit));
+  font-size: calc(16 * var(--hud-unit));
+  line-height: calc(22 * var(--hud-unit));
+  @include hud-text-stroke;
 }
