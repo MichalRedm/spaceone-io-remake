@@ -5,6 +5,7 @@
 
 import { audioManager } from "../audio/audioManager";
 import { GameAudio } from "../audio/gameAudio";
+import { isReplayMode } from "../replay/virtualClock";
 
 /** Supported graphics quality presets matching the top-bar selector. */
 export type GraphicsQuality = "high" | "medium" | "low";
@@ -156,6 +157,7 @@ export function sanitizeSettings(raw: unknown): SettingsData {
  * Writes current `Settings` to `localStorage` safely.
  */
 export function persistSettings(): void {
+  if (isReplayMode()) return;
   try {
     localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(Settings));
   } catch {
@@ -252,6 +254,16 @@ export function toggleSound(): void {
 
 function applyQueryOverrides(): void {
   const qs = new URLSearchParams(window.location.search);
+  const gfx = parseGraphicsQuality(qs.get("graphics"));
+  if (gfx) {
+    Settings.graphics = gfx;
+  }
+  if (qs.has("soundEnabled")) {
+    Settings.soundEnabled = qs.get("soundEnabled") === "true";
+  }
+  if (qs.has("soundVolume")) {
+    Settings.soundVolume = clampVolume(qs.get("soundVolume"));
+  }
   if (qs.has("leaderboardEnabled")) {
     Settings.leaderboardEnabled = qs.get("leaderboardEnabled") === "true";
   }
@@ -260,6 +272,12 @@ function applyQueryOverrides(): void {
   }
   if (qs.has("namesEnabled")) {
     Settings.namesEnabled = qs.get("namesEnabled") === "true";
+  }
+  if (qs.has("showOwnName")) {
+    Settings.showOwnName = qs.get("showOwnName") === "true";
+  }
+  if (qs.has("bigKillMessage")) {
+    Settings.bigKillMessage = qs.get("bigKillMessage") === "true";
   }
   if (qs.has("bandwidth")) {
     Settings.bandwidth = parseBandwidthTier(qs.get("bandwidth"));

@@ -85,7 +85,9 @@ Kinematic calculations and spatial offsets for multi-ship formations.
 
 | File Path | Key Classes | Responsibilities & Invariants |
 | :--- | :--- | :--- |
-| `Game.Engine/Networking/Connection.cs` | `Connection` : `IDisposable` | ASP.NET Core WebSocket connection handler. Bridges client WebSockets to `Player`/`World`, receives client inputs (`NetControlInput`), and encodes `NetWorldView` packets via FlatBuffers. |
+| `Game.Engine/Networking/Connection.cs` | `Connection` : `IDisposable` | ASP.NET Core WebSocket connection handler. Bridges client WebSockets to `Player`/`World`, receives client inputs (`NetControlInput`), supports `?observer=1` recording sessions, and encodes `NetWorldView` packets via FlatBuffers. |
+| `Game.Engine/Networking/ObserverMode.cs` | `ObserverMode` (enum) | Camera/HUD tracking modes (`PlayerId`, `PlayerName`, `FleetId`, `Leader`, `Auto`, `Point`) for observer connections. |
+| `Game.Engine/Networking/ObserverTarget.cs` | `ObserverTarget` | Parses `observe:*` wire commands from `NetControlInput.SpectateControl` with POV mirroring and viewport radius bounds. |
 | `Game.Engine/Networking/BodyCache.cs` | `BodyCache` | Delta compression tracker; computes body appearance/update/deletion sets sent to each client. |
 | `Game.Engine.Networking.FlatBuffers/game.fbs` | FlatBuffers Schema | The binary wire protocol definition: `NetWorldView`, `NetControlInput`, `NetSpawn`, `NetPing`, `NetLeaderboard`, `NetEvent`. |
 
@@ -115,7 +117,19 @@ Pixi.js WebGL client application.
 | `Game.Engine/wwwroot/src/audio/audioManager.ts` | `AudioManager`, `audioManager` | Native Web Audio API engine: submix buses, DynamicsCompressor, spatial culling/panning, cooldowns, and priority voice stealing. |
 | `Game.Engine/wwwroot/src/audio/soundManifest.ts` | `SOUND_MANIFEST`, `SoundId`, `SoundPriority` | Vite glob audio manifest and per-cue mixing, concurrency, and variant configuration. |
 | `Game.Engine/wwwroot/src/audio/gameAudio.ts` | `GameAudio` | High-level gameplay audio facade translating entity snapshots, fleet events, and UI triggers into spatialized SFX. |
+| `Game.Engine/wwwroot/src/replay/virtualClock.ts` | `VirtualClock` (`isReplayMode`, `installVirtualClock`) | Deterministic virtual timeline patching `performance.now`, `Date.now`, and virtual timers during `?replay=1`. |
+| `Game.Engine/wwwroot/src/replay/replayFormat.ts` | `parseReplayBuffer`, `ReplayRecorder` | Browser-side `.s1rec` v1 binary parser and in-memory packet recorder foundation for future UI replay. |
+| `Game.Engine/wwwroot/src/replay/uiVisibility.ts` | `resolveUiVisibility`, `applyUiVisibility` | Presets (`player`, `spectator`, `clean`, `none`) and 15-element HUD/DOM visibility controller. |
+| `Game.Engine/wwwroot/src/replay/offlineAudioCapture.ts` | `OfflineAudioCapture` | `OfflineAudioContext` sink capturing spatial SFX events and synthesizing sample-accurate stereo WAV. |
+| `Game.Engine/wwwroot/src/replay/replayBridge.ts` | `ReplayController` | Typed replay bridge (`window.__spaceoneReplay`) driving stepped PixiJS rendering and audio synthesis. |
 | `tools/sfx/generate_sfx.py` | Procedural SFX Generator | Deterministic NumPy/SciPy + ffmpeg synthesizer & DSP QC verifier for the 20 ambient `.mp3` assets in `Game.Engine/wwwroot/audio/`. |
+| `tools/recorder/cli.py` | Gameplay Recording CLI (`python -m tools.recorder`) | CLI subcommands (`worlds`, `players`, `record`, `sessions`, `stop`, `render`, `inspect`, `export`, `frames`) running under `uv`. |
+| `tools/recorder/capture.py` | `capture_single`, `capture_many` | Lightweight async WebSocket observer capturing `.s1rec` / `.s1rec.gz` replays with death/duration/sentinel triggers. |
+| `tools/recorder/renderer.py` | `render_replay_to_mp4`, `extract_frames` | Headless Playwright Chromium + `OfflineAudioContext` + FFmpeg converter producing MP4s and keyframe PNGs. |
+| `tools/recorder/format.py` | `ReplayWriter`, `read_replay`, `inspect_replay` | `.s1rec` / `.s1rec.gz` v1 reader, crash-safe writer, and metadata inspector. |
+| `tools/recorder/flatbuffers_wire.py` | `MiniFlatBufferBuilder`, `peek_quantum` | Zero-dependency FlatBuffers encoder/decoder matching `game.fbs`. |
+| `tools/recorder/discovery.py` | `fetch_players`, `fetch_worlds`, `wait_for_matching_player` | HTTP player/bot discovery and target resolution against `/api/v1/server/players`. |
+| `tools/recorder/exporter.py` | `export_trajectories` | Reconstructs delta `NetWorldView` entity states into CSV/JSONL trajectories for `analysis/`. |
 
 ---
 
