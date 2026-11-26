@@ -31,6 +31,7 @@ Rebuild and launch a high-fidelity remake of the multiplayer 2D fleet shooter **
 - [x] Add vector graphics engineering tooling suite in `.agents/skills/vector-graphics-engineering/` for retro-neon asset creation.
 - [x] Add dedicated visual reverse-engineering skill and automated parity tooling suite in `.agents/skills/visual-reverse-engineering/` for graphic-agnostic sprite calibration and verification gating.
 - [x] Build zero-dependency Native Web Audio API spatial SFX engine (`Game.Engine/wwwroot/src/audio/`), minimalistic menu toggle + in-game `M` hotkey, procedural Hi-Fi Hadamard FDN SFX pack (`tools/sfx/generate_sfx.py`), and formalized audio standards (`.agents/rules/audio_standards.md`).
+- [x] Build gameplay recording & offline MP4 replay toolkit (`tools/recorder/`, `Game.Engine/wwwroot/src/replay/`, server observer mode in `Connection.cs`, and `.agents/skills/gameplay-recording/SKILL.md`).
 - [ ] Redesign CTF game mode sprites (base, flag, flag tracking arrows, score indicator) to match Spaceone retro neon aesthetics.
 - [ ] **Phase 2 (Reverse-Engineering)**: Identify single-ship ($N=1$) core movement equation (discrete drag vs. kinematic heading velocity).
 - [ ] **Phase 3 (Reverse-Engineering)**: Calibrate multi-ship fleet swarm dynamics (follower separation radius and spring cohesion).

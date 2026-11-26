@@ -11,7 +11,10 @@
  * and installs it onto the global scope before any rendering or UI subsystems load.
  */
 
+import { installVirtualClock } from "../replay/virtualClock";
 import * as pixiModule from "pixi.js";
+
+installVirtualClock();
 
 // In ESM, module namespace objects are sealed and non-extensible.
 // We assign all properties into a mutable object on window.PIXI and globalThis.PIXI

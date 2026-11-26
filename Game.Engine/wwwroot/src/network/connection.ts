@@ -19,6 +19,7 @@ import { Controls } from "../ui/controls";
 import type { LeaderboardData } from "../ui/leaderboard";
 import { showConnectionErrorToast, dismissToast } from "../ui/toast";
 import { WorldConfig } from "../models/worldConfig";
+import { isReplayMode } from "../replay/virtualClock";
 
 type NetFB = typeof Game.Engine.Networking.FlatBuffers;
 
@@ -114,19 +115,21 @@ export class Connection {
 
     this.bandwidthThrottle = Settings.bandwidth;
 
-    setInterval(() => {
-      if (self.connected) {
-        self.sendPing();
-      }
-    }, 250);
+    if (!isReplayMode()) {
+      setInterval(() => {
+        if (self.connected) {
+          self.sendPing();
+        }
+      }, 250);
 
-    setInterval(() => {
-      self.statBytesDownPerSecond = self.statBytesDown;
-      self.statBytesUpPerSecond = self.statBytesUp;
+      setInterval(() => {
+        self.statBytesDownPerSecond = self.statBytesDown;
+        self.statBytesUpPerSecond = self.statBytesUp;
 
-      self.statBytesUp = 0;
-      self.statBytesDown = 0;
-    }, 1000);
+        self.statBytesUp = 0;
+        self.statBytesDown = 0;
+      }, 1000);
+    }
   }
 
   /**
@@ -484,10 +487,22 @@ export class Connection {
   }
 
   /**
+   * Injects a raw binary `NetQuantum` FlatBuffers packet directly into the decoder pipeline
+   * (used by offline replay rendering and future in-game replay playback).
+   */
+  public injectRawPacket(data: Uint8Array): void {
+    this.processPacketBytes(data);
+  }
+
+  /**
    * Internal WebSocket binary message dispatcher decoding FlatBuffers `NetQuantum` roots.
    */
   onMessage(event: MessageEvent): void {
     const data = new Uint8Array(event.data);
+    this.processPacketBytes(data);
+  }
+
+  private processPacketBytes(data: Uint8Array): void {
     const buf = new flatbuffers.ByteBuffer(data);
 
     this.statBytesDown += data.byteLength;

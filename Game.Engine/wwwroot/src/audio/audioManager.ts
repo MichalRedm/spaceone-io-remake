@@ -31,6 +31,30 @@ export interface PlaySoundOptions {
   priorityOverride?: SoundPriority;
 }
 
+/** Sink interface for sample-accurate offline Web Audio capture during replay rendering. */
+export interface AudioCaptureSink {
+  hasDecodedBuffer(variantFile: string): boolean;
+  getDurationSec(variantFile: string): number;
+  nextRandom(): number;
+  recordVoiceStart(params: {
+    soundId: SoundId;
+    variantFile: string;
+    bus: SoundBus;
+    gain: number;
+    pan: number;
+    playbackRate: number;
+  }): number;
+  recordVoiceStop(voiceId: number): void;
+}
+
+interface OfflineActiveVoice {
+  id: SoundId;
+  sinkId: number;
+  priority: SoundPriority;
+  startedAt: number;
+  endsAt: number;
+}
+
 interface ActiveVoice {
   id: SoundId;
   priority: SoundPriority;
@@ -40,7 +64,7 @@ interface ActiveVoice {
   pannerNode: StereoPannerNode | null;
 }
 
-const AUDIO_CONSTANTS = {
+export const AUDIO_CONSTANTS = {
   MASTER_GAIN: 0.85,
   MUTE_RAMP_SEC: 0.015,
   VOICE_STEAL_FADE_SEC: 0.035,
@@ -55,7 +79,7 @@ const AUDIO_CONSTANTS = {
   COMPRESSOR_RELEASE_SEC: 0.18,
 } as const;
 
-const BUS_GAINS: Record<SoundBus, number> = {
+export const BUS_GAINS: Record<SoundBus, number> = {
   weapons: 0.78,
   explosions: 0.95,
   gameplay: 0.95,
@@ -90,9 +114,22 @@ export class AudioManager {
   private decodingBuffers = new Map<string, Promise<AudioBuffer | null>>();
 
   private activeVoices = new Set<ActiveVoice>();
+  private offlineVoices = new Set<OfflineActiveVoice>();
+  private offlineSink: AudioCaptureSink | null = null;
   private activeCountById = new Map<SoundId, number>();
   private lastPlayedTime = new Map<SoundId, number>();
   private lastVariantById = new Map<SoundId, number>();
+
+  /**
+   * Attaches or clears an offline audio capture sink for deterministic replay WAV synthesis.
+   */
+  attachOfflineCapture(sink: AudioCaptureSink | null): void {
+    this.offlineSink = sink;
+    this.offlineVoices.clear();
+    this.activeCountById.clear();
+    this.lastPlayedTime.clear();
+    this.lastVariantById.clear();
+  }
 
   private enabled = true;
   private volume = 1.0;
@@ -205,10 +242,20 @@ export class AudioManager {
   play(id: SoundId, options: PlaySoundOptions = {}): void {
     if (!this.enabled) return;
     if (document.hidden || window.Game?.isBackgrounded) return;
-    if (!this.ctx || this.ctx.state !== "running" || !this.buses) return;
+    const isOffline = this.offlineSink !== null;
+    if (
+      !isOffline &&
+      (!this.ctx || this.ctx.state !== "running" || !this.buses)
+    ) {
+      return;
+    }
 
     const def = SOUND_MANIFEST[id];
     const nowMs = performance.now();
+
+    if (isOffline) {
+      this.pruneOfflineVoices(nowMs);
+    }
 
     const prevTime = this.lastPlayedTime.get(id) ?? -Infinity;
     if (nowMs - prevTime < def.minIntervalMs) {
@@ -247,7 +294,65 @@ export class AudioManager {
       );
     }
 
-    const variantFile = this.pickVariant(id, def.variants);
+    const rng = this.offlineSink
+      ? () => this.offlineSink!.nextRandom()
+      : Math.random;
+    const variantFile = this.pickVariant(id, def.variants, rng);
+
+    if (isOffline) {
+      if (!this.offlineSink!.hasDecodedBuffer(variantFile)) {
+        return;
+      }
+      const priority = options.priorityOverride ?? def.priority;
+      const activeForId = this.activeCountById.get(id) ?? 0;
+      if (
+        activeForId >= def.maxConcurrent &&
+        !this.stealOldestOfflineVoiceForId(id)
+      ) {
+        return;
+      }
+      if (
+        this.offlineVoices.size >= AUDIO_CONSTANTS.MAX_CONCURRENT_VOICES &&
+        !this.stealLowestPriorityOfflineVoice(priority)
+      ) {
+        return;
+      }
+
+      const pitchRand =
+        def.pitchJitter > 0 ? 1 + (rng() * 2 - 1) * def.pitchJitter : 1;
+      const gainRand =
+        def.gainJitter > 0 ? 1 + (rng() * 2 - 1) * def.gainJitter : 1;
+
+      const finalGain = clamp(
+        def.baseGain * spatialGain * (options.gainScale ?? 1) * gainRand,
+        0.001,
+        1.2,
+      );
+      const finalRate = clamp(pitchRand * (options.pitchScale ?? 1), 0.5, 2.0);
+      const sinkId = this.offlineSink!.recordVoiceStart({
+        soundId: id,
+        variantFile,
+        bus: def.bus,
+        gain: finalGain,
+        pan: def.spatial ? pan : 0,
+        playbackRate: finalRate,
+      });
+      const durationMs =
+        (this.offlineSink!.getDurationSec(variantFile) / finalRate) * 1000;
+      this.offlineVoices.add({
+        id,
+        sinkId,
+        priority,
+        startedAt: nowMs,
+        endsAt: nowMs + Math.max(20, durationMs),
+      });
+      this.activeCountById.set(id, (this.activeCountById.get(id) ?? 0) + 1);
+      this.lastPlayedTime.set(id, nowMs);
+      return;
+    }
+
+    if (!this.ctx || !this.buses) return;
+
     const buffer = this.decodedBuffers.get(variantFile);
     if (!buffer) {
       // Trigger lazy decode for next trigger without blocking current frame
@@ -486,19 +591,76 @@ export class AudioManager {
     return promise;
   }
 
-  private pickVariant(id: SoundId, variants: readonly string[]): string {
+  private pickVariant(
+    id: SoundId,
+    variants: readonly string[],
+    rng: () => number = Math.random,
+  ): string {
     if (variants.length <= 1) {
       return variants[0] ?? "";
     }
     const lastIdx = this.lastVariantById.get(id) ?? -1;
-    let idx = Math.floor(Math.random() * variants.length);
+    let idx = Math.floor(rng() * variants.length);
     if (idx === lastIdx) {
       idx =
-        (idx + 1 + Math.floor(Math.random() * (variants.length - 1))) %
-        variants.length;
+        (idx + 1 + Math.floor(rng() * (variants.length - 1))) % variants.length;
     }
     this.lastVariantById.set(id, idx);
     return variants[idx] ?? variants[0] ?? "";
+  }
+
+  private pruneOfflineVoices(nowMs: number): void {
+    for (const voice of Array.from(this.offlineVoices)) {
+      if (nowMs >= voice.endsAt) {
+        this.removeOfflineVoice(voice);
+      }
+    }
+  }
+
+  private removeOfflineVoice(voice: OfflineActiveVoice): void {
+    if (!this.offlineVoices.delete(voice)) return;
+    const prevCount = this.activeCountById.get(voice.id) ?? 0;
+    if (prevCount <= 1) {
+      this.activeCountById.delete(voice.id);
+    } else {
+      this.activeCountById.set(voice.id, prevCount - 1);
+    }
+  }
+
+  private stealOldestOfflineVoiceForId(id: SoundId): boolean {
+    let oldest: OfflineActiveVoice | null = null;
+    for (const voice of this.offlineVoices) {
+      if (voice.id === id && (!oldest || voice.startedAt < oldest.startedAt)) {
+        oldest = voice;
+      }
+    }
+    if (!oldest) return false;
+    this.removeOfflineVoice(oldest);
+    this.offlineSink?.recordVoiceStop(oldest.sinkId);
+    return true;
+  }
+
+  private stealLowestPriorityOfflineVoice(
+    incomingPriority: SoundPriority,
+  ): boolean {
+    let victim: OfflineActiveVoice | null = null;
+    for (const voice of this.offlineVoices) {
+      if (voice.priority > incomingPriority) continue;
+      if (
+        !victim ||
+        voice.priority < victim.priority ||
+        (voice.priority === victim.priority &&
+          voice.startedAt < victim.startedAt)
+      ) {
+        victim = voice;
+      }
+    }
+    if (!victim || victim.priority > incomingPriority) {
+      return false;
+    }
+    this.removeOfflineVoice(victim);
+    this.offlineSink?.recordVoiceStop(victim.sinkId);
+    return true;
   }
 
   private stealOldestVoiceForId(id: SoundId): boolean {
