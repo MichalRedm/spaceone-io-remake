@@ -25,15 +25,11 @@
 // In-Game floating score gain indicator animation
 @keyframes plusScore {
   0% {
-    opacity: 0;
-    transform: translate(-50%, -75%);
-  }
-  25%,
-  50% {
     opacity: 1;
+    transform: translate(-50%, calc(-50% - 75 * var(--hud-unit)));
   }
   100% {
     opacity: 0;
-    transform: translate(-50%, calc(-75% - 200px));
+    transform: translate(-50%, calc(-50% - 183 * var(--hud-unit)));
   }
 }

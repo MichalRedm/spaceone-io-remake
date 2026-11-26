@@ -163,7 +163,7 @@ $transition-fade: 0.5s ease;
 ```
 
 * **Pulsing Neon Glows**: Interactive buttons employ 2-second infinite keyframes (`pulse-yellow`, `pulse-blue`, `pulse-pink`, `pulse-purple`) oscillating `box-shadow` spread from full intensity to 50% opacity.
-* **Floating Score Indicators (`plusScore`)**: Spawned score gains (`+5`, `+25`) animate over 2.5 seconds, rising 200px upward from `translate(-50%, -75%)` to `translate(-50%, calc(-75% - 200px))` with smooth opacity fade-in/out.
+* **Floating Score Indicators (`plusScore`)**: Spawned score gains (`+5`, `+25`) animate over 1 second (`linear`), rising `108u` upward from `calc(-50% - 75u)` to `calc(-50% - 183u)` while fading linearly from `1` to `0`.
 
 ---
 
@@ -237,7 +237,7 @@ $transition-fade: 0.5s ease;
   * Shown dynamically via chained modifier specificity: `&.danger-zone-warning--visible { display: block; }`.
 * **Floating Score Indicators (`.score-popup`, `.plusScore`)**:
   * Positioned inside `#plusScoreContainer` at screen midpoint (`top: 50%; left: 50%; transform: translate(-50%, -50%)`).
-  * Floating score numbers MUST declare `white-space: nowrap;` and translate from `translate(-50%, -75%)` to ensure perfect horizontal centering over the ship.
+  * Floating score numbers MUST declare `white-space: nowrap;` and start at `translate(-50%, calc(-50% - 75 * var(--hud-unit)))` so the horizontal midpoint of the text aligns with the anchor.
 * **Cooldown Bar (`.cooldown-bar`)**:
   * Positioned at `bottom: calc(55 * var(--hud-unit)); left: 50%; transform: translateX(-50%); width: 20%; height: calc(10 * var(--hud-unit));`.
   * Glowing border (`border: 2px solid $color-blue-border; box-shadow: 0 0 10px $color-blue-primary;`).

@@ -96,9 +96,10 @@ body.loading .tracking-arrow {
 
 .score-popup,
 .plusScore {
-  font-size: calc(40 * var(--hud-unit));
+  font-size: calc(55 * var(--hud-unit));
+  font-weight: 400;
   opacity: 0;
-  animation: plusScore 2.5s;
+  animation: plusScore 1s linear forwards;
   position: absolute;
   white-space: nowrap;
 }
@@ -106,11 +107,12 @@ body.loading .tracking-arrow {
 .kill-banner,
 #big-log {
   position: absolute;
-  top: 4em;
+  top: calc(108 * var(--hud-unit));
   left: 50%;
   transform: translate(-50%, -50%);
-  font-size: calc(32 * var(--hud-unit));
-  font-weight: 700;
+  font-size: calc(46 * var(--hud-unit));
+  font-weight: 400;
+  white-space: nowrap;
 }
 
 .danger-zone-warning,
